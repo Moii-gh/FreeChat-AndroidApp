@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;Comment puis-je vous aider?
+button_create_image;Créer une image
+button_help_me_write;Aidez-moi à écrire
+button_create_idea;Générer une idée
+button_write_code;Écrire du code
+main_panel_input;Posez une question
+button_camera;Caméra
+button_photo;Photo
+button_files;Fichiers
+button_create_image;Créer une image
+button_create_image_description;Créer n'importe quelle image
+button_Search_the_web;Recherche sur le web
+button_Search_the_web_description;Rechercher de nouvelles informations en temps réel
+button _purchase_research;Recherche d'achats
+button _purchase_research_description;Obtenir un guide d'achat détaillé
+button_stud_ and_training;Études et formation
+button_stud_ and_training_description;Apprenez un nouveau concept
+panel_create_image;Image
+main_panel_input_create_image;Créer une image
+panel_search;Recherche
+main_panel_input_panel_search;Recherche sur le web
+panel_purchase_research;Recherche d'achats
+main_panel_input_purchase_research;Recherche de produits
+panel_stud_ and_training;Études
+main_panel_stud_ and_training;Formation et études
+button_new_chat;Nouveau chat
+button_telegram_bot;Bot Telegram
+history_lable_today;Aujourd'hui
+history_lable_in_the_last_7_days;Dans les 7 derniers jours
+history_lable_previously;Précédemment
+user_subscription;Gratuit
+interlineation;FreeChat fait de son mieux, mais peut faire des erreurs
+profile_and_settings;Profil et paramètres
+button_edit_profile;Modifier le profil
+setting;Paramètres
+button_personalization;Personnalisation
+button_apps;Mode IA
+button_language;Langue
+button_security;Sécurité
+button_Information_about;À propos de
+button_report_a_problem;Signaler un problème
+app_version;FreeChat Android <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;Nom
+input_edit_name;<input_edit_name>
+panel_edit_emeil;Email
+input_edit_email;<input_edit_email>
+lable_personalization;Personnalisation
+lable_personalization_instructions;Instructions personnalisées
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;Langue
+lable_select_language;Sélectionner la langue
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;Sécurité
+lable_your_password;Votre mot de passe
+input_password;<input_password>
+button_show_password;Afficher le mot de passe
+button_hide_password;Masquer le mot de passe
+button_change_password;Changer le mot de passe
+lable_apps;Mode IA
+button_lable_search_for_apps;Rechercher des applications
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;Toutes les applications
+button_mycalculator;MyCalculator
+app_mycalculator_description;Calculatrice Romanikha Tsvetkova
+main_lable_mycalculator;MyCalculator
+button_install_app;Installer
+in_app_mycalculator_description;Calculatrice Romanikha Tsvetkova
+app_description;Description
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203,9K évaluations
+total_install_app;40M+
+install_app_description;Téléchargements
+total_weight_app;30,1 Mo
+weight_app_deacription;Taille
+button_write_a_review;Écrire un avis
+toast_no_limits;Pas de limites dans le mode actuel.
+toast_anonymous_chat;Chat anonyme
+speech_speak_now;Parlez...
+speech_listening;Écoute...
+speech_error_audio;Erreur audio
+speech_error_client;Erreur client
+speech_error_permission;Pas de permission
+speech_error_network;Erreur réseau
+speech_error_no_match;Parole non reconnue
+speech_error_busy;Service occupé
+speech_error_server;Erreur serveur
+speech_error_timeout;Silence
+speech_error_generic;Erreur de reconnaissance
+toast_chat_deleted;Chat supprimé
+dialog_confirm;Confirmation
+dialog_delete_all_history;Supprimer TOUT l'historique des chats ?
+button_delete;Supprimer
+toast_all_history_deleted;Tout l'historique a été supprimé
+button_cancel;Annuler
+section_pinned;Épinglés
+no_chat_history;Aucun historique de chat
+no_search_results;Rien trouvé
+menu_rename;Renommer
+menu_unpin_chat;Désépingler le chat
+menu_pin_chat;Épingler le chat
+toast_chat_not_saved;Chat non enregistré
+label_untitled;Sans titre
+dialog_rename_hint;Nouveau nom
+button_ok;OK
+toast_load_error;Erreur de chargement
+toast_chat_empty;Le chat est vide
+export_sender_you;Vous
+export_sender_bot;Bot
+toast_doc_saved;Document enregistré
+toast_doc_error;Erreur lors de la création du document
+toast_limits_exhausted;Vous avez épuisé vos requêtes gratuites ! Appuyez sur le bouton +5 ci-dessus.
+toast_error;Erreur
+toast_open_attachment_error;Impossible d'ouvrir la pièce jointe
+image_creating;Création d'images...
+image_ready;Image prête
+code_copy;Copier
+code_copied;Copié !
+toast_liked;Aimé !
+toast_disliked;Pas aimé
+toast_copied;Copié
+menu_regenerate;Régénérer
+toast_image_copied;Image copiée
+toast_image_copy_error;Erreur de copie de l'image
+toast_share_error;Erreur de partage
+toast_reward;Vous avez reçu +5 requêtes gratuites !
+toast_ad_loading;La publicité charge encore, patientez...
+ai_thinking;Réflexion...
+label_file_analysis;Analyse de fichier/photo
+label_new_chat;Nouveau chat
+toast_logout;Vous êtes déconnecté
+toast_profile_saved;Profil enregistré
+toast_name_empty;Le nom ne peut pas être vide
+toast_changes_saved;Modifications enregistrées
+dialog_new_password_hint;Nouveau mot de passe
+dialog_change_password;Changer le mot de passe
+button_save;Enregistrer
+toast_password_changed;Mot de passe changé
+toast_password_empty;Le mot de passe ne peut pas être vide
+toast_instructions_saved;Instructions enregistrées
+share_image;Partager l'image
+share;Partager
+ai_mode_vsegpt_title;Mode payant (VseGPT)
+ai_mode_vsegpt_desc;Modèles utilisés : deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;Mode gratuit (avec limites)
+ai_mode_free_desc;Utilise les modèles de base Google. Toutes les limites actuelles sont maintenues
+ai_mode_auto_title;Mode automatique
+ai_mode_auto_desc;Le système sélectionne dynamiquement le meilleur modèle selon la tâche et la réponse

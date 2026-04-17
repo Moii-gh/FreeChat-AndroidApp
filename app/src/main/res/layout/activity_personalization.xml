@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000000">
+
+    <!-- TOOLBAR -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_arrow_back"
+            android:padding="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/bg_circle_outline"
+            app:tint="#FFFFFF"/>
+
+        <TextView
+            android:id="@+id/tvToolbarTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Персонализация"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+        <ImageView
+            android:id="@+id/btnSave"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/ic_check"
+            android:padding="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/bg_circle_outline"
+            app:tint="#FFFFFF"/>
+    </RelativeLayout>
+
+    <!-- Instruction label -->
+    <TextView
+        android:id="@+id/tvInstructionsLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:text="Пользовательские инстукции"
+        android:textColor="#8E8E93"
+        android:textSize="14sp"/>
+
+    <!-- Instructions input -->
+    <EditText
+        android:id="@+id/etInstructions"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/edit_text_bg"
+        android:padding="16dp"
+        android:gravity="top|start"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textColorHint="#555555"
+        android:hint=""
+        android:inputType="textMultiLine"
+        android:cursorVisible="true"/>
+
+</LinearLayout>

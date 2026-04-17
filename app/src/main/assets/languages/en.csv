@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;What can I help you with?
+button_create_image;Create image
+button_help_me_write;Help me write
+button_create_idea;Create an idea
+button_write_code;Write code
+main_panel_input;Ask a question
+button_camera;Camera
+button_photo;Photo
+button_files;Files
+button_create_image;Create image
+button_create_image_description;Create any image
+button_Search_the_web;Search the web
+button_Search_the_web_description;Search for new information in real-time
+button _purchase_research;Purchase research
+button _purchase_research_description;Get a detailed shopping guide
+button_stud_ and_training;Study and training
+button_stud_ and_training_description;Learn a new concept
+panel_create_image;Image
+main_panel_input_create_image;Create image
+panel_search;Search
+main_panel_input_panel_search;Search the web
+panel_purchase_research;Purchase research
+main_panel_input_purchase_research;Product search
+panel_stud_ and_training;Study
+main_panel_stud_ and_training;Training and study
+button_new_chat;New chat
+button_telegram_bot;Telegram bot
+history_lable_today;Today
+history_lable_in_the_last_7_days;In the last 7 days
+history_lable_previously;Previously
+user_subscription;Free
+interlineation;FreeChat tries its best, but may make mistakes
+profile_and_settings;Profile and settings
+button_edit_profile;Edit profile
+setting;Settings
+button_personalization;Personalization
+button_apps;AI Mode
+button_language;Language
+button_security;Security
+button_Information_about;About
+button_report_a_problem;Report a problem
+app_version;FreeChat Android <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;Name
+input_edit_name;<input_edit_name>
+panel_edit_emeil;Email
+input_edit_email;<input_edit_email>
+lable_personalization;Personalization
+lable_personalization_instructions;Custom instructions
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;Language
+lable_select_language;Select language
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;Security
+lable_your_password;Your password
+input_password;<input_password>
+button_show_password;Show password
+button_hide_password;Hide password
+button_change_password;Change password
+lable_apps;AI Mode
+button_lable_search_for_apps;Search for apps
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;All apps
+button_mycalculator;MyCalculator
+app_mycalculator_description;Romanikha Tsvetkova Calculator
+main_lable_mycalculator;MyCalculator
+button_install_app;Install
+in_app_mycalculator_description;Romanikha Tsvetkova Calculator
+app_description;Description
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203.9K ratings
+total_install_app;40M+
+install_app_description;Downloads
+total_weight_app;30.1 MB
+weight_app_deacription;Size
+button_write_a_review;Write a review
+toast_no_limits;No limits in current mode.
+toast_anonymous_chat;Anonymous chat
+speech_speak_now;Speak now...
+speech_listening;Listening...
+speech_error_audio;Audio error
+speech_error_client;Client error
+speech_error_permission;No permission
+speech_error_network;Network error
+speech_error_no_match;Speech not recognized
+speech_error_busy;Service busy
+speech_error_server;Server error
+speech_error_timeout;Silence
+speech_error_generic;Recognition error
+toast_chat_deleted;Chat deleted
+dialog_confirm;Confirmation
+dialog_delete_all_history;Delete ALL chat history?
+button_delete;Delete
+toast_all_history_deleted;All history deleted
+button_cancel;Cancel
+section_pinned;Pinned
+no_chat_history;No chat history
+no_search_results;Nothing found
+menu_rename;Rename
+menu_unpin_chat;Unpin chat
+menu_pin_chat;Pin chat
+toast_chat_not_saved;Chat not saved
+label_untitled;Untitled
+dialog_rename_hint;New name
+button_ok;OK
+toast_load_error;Load error
+toast_chat_empty;Chat is empty
+export_sender_you;You
+export_sender_bot;Bot
+toast_doc_saved;Document saved
+toast_doc_error;Error creating document
+toast_limits_exhausted;You have run out of free requests for today! Press the +5 button above.
+toast_error;Error
+toast_open_attachment_error;Failed to open attachment
+image_creating;Creating images...
+image_ready;Image ready
+code_copy;Copy
+code_copied;Copied!
+toast_liked;Liked!
+toast_disliked;Disliked
+toast_copied;Copied
+menu_regenerate;Regenerate
+toast_image_copied;Image copied
+toast_image_copy_error;Error copying image
+toast_share_error;Error sharing
+toast_reward;You received +5 free requests!
+toast_ad_loading;Ad is still loading, please wait...
+ai_thinking;Thinking...
+label_file_analysis;File/photo analysis
+label_new_chat;New chat
+toast_logout;You have been logged out
+toast_profile_saved;Profile saved
+toast_name_empty;Name cannot be empty
+toast_changes_saved;Changes saved
+dialog_new_password_hint;New password
+dialog_change_password;Change password
+button_save;Save
+toast_password_changed;Password changed
+toast_password_empty;Password cannot be empty
+toast_instructions_saved;Instructions saved
+share_image;Share image
+share;Share
+ai_mode_vsegpt_title;Paid mode (VseGPT)
+ai_mode_vsegpt_desc;Models used: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;Free mode (with limits)
+ai_mode_free_desc;Uses basic Google models. All current limits are preserved
+ai_mode_auto_title;Automatic mode
+ai_mode_auto_desc;The system dynamically selects the best model based on the task and response

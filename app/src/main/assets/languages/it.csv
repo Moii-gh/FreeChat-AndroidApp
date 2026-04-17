@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;Come posso aiutarti?
+button_create_image;Crea immagine
+button_help_me_write;Aiutami a scrivere
+button_create_idea;Genera un'idea
+button_write_code;Scrivi codice
+main_panel_input;Fai una domanda
+button_camera;Fotocamera
+button_photo;Foto
+button_files;File
+button_create_image;Crea immagine
+button_create_image_description;Crea qualsiasi immagine
+button_Search_the_web;Cerca sul web
+button_Search_the_web_description;Cerca nuove informazioni in tempo reale
+button _purchase_research;Ricerca acquisti
+button _purchase_research_description;Ottieni una guida dettagliata agli acquisti
+button_stud_ and_training;Studio e formazione
+button_stud_ and_training_description;Impara un nuovo concetto
+panel_create_image;Immagine
+main_panel_input_create_image;Crea immagine
+panel_search;Cerca
+main_panel_input_panel_search;Cerca sul web
+panel_purchase_research;Ricerca acquisti
+main_panel_input_purchase_research;Ricerca prodotti
+panel_stud_ and_training;Studio
+main_panel_stud_ and_training;Formazione e studio
+button_new_chat;Nuova chat
+button_telegram_bot;Bot Telegram
+history_lable_today;Oggi
+history_lable_in_the_last_7_days;Negli ultimi 7 giorni
+history_lable_previously;Precedentemente
+user_subscription;Gratis
+interlineation;FreeChat fa del suo meglio, ma può commettere errori
+profile_and_settings;Profilo e impostazioni
+button_edit_profile;Modifica profilo
+setting;Impostazioni
+button_personalization;Personalizzazione
+button_apps;Modalità IA
+button_language;Lingua
+button_security;Sicurezza
+button_Information_about;Informazioni su
+button_report_a_problem;Segnala un problema
+app_version;FreeChat Android <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;Nome
+input_edit_name;<input_edit_name>
+panel_edit_emeil;Email
+input_edit_email;<input_edit_email>
+lable_personalization;Personalizzazione
+lable_personalization_instructions;Istruzioni personalizzate
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;Lingua
+lable_select_language;Seleziona lingua
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;Sicurezza
+lable_your_password;La tua password
+input_password;<input_password>
+button_show_password;Mostra password
+button_hide_password;Nascondi password
+button_change_password;Cambia password
+lable_apps;Modalità IA
+button_lable_search_for_apps;Cerca app
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;Tutte le app
+button_mycalculator;MyCalculator
+app_mycalculator_description;Calcolatrice Romanikha Tsvetkova
+main_lable_mycalculator;MyCalculator
+button_install_app;Installa
+in_app_mycalculator_description;Calcolatrice Romanikha Tsvetkova
+app_description;Descrizione
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203,9K valutazioni
+total_install_app;40M+
+install_app_description;Download
+total_weight_app;30,1 MB
+weight_app_deacription;Dimensione
+button_write_a_review;Scrivi una recensione
+toast_no_limits;Nessun limite nella modalità corrente.
+toast_anonymous_chat;Chat anonima
+speech_speak_now;Parla...
+speech_listening;Ascolto...
+speech_error_audio;Errore audio
+speech_error_client;Errore client
+speech_error_permission;Nessun permesso
+speech_error_network;Errore di rete
+speech_error_no_match;Voce non riconosciuta
+speech_error_busy;Servizio occupato
+speech_error_server;Errore del server
+speech_error_timeout;Silenzio
+speech_error_generic;Errore di riconoscimento
+toast_chat_deleted;Chat eliminata
+dialog_confirm;Conferma
+dialog_delete_all_history;Eliminare TUTTA la cronologia delle chat?
+button_delete;Elimina
+toast_all_history_deleted;Tutta la cronologia è stata eliminata
+button_cancel;Annulla
+section_pinned;Fissati
+no_chat_history;Nessuna cronologia chat
+no_search_results;Nessun risultato
+menu_rename;Rinomina
+menu_unpin_chat;Sblocca chat
+menu_pin_chat;Fissa chat
+toast_chat_not_saved;Chat non salvata
+label_untitled;Senza titolo
+dialog_rename_hint;Nuovo nome
+button_ok;OK
+toast_load_error;Errore di caricamento
+toast_chat_empty;La chat è vuota
+export_sender_you;Tu
+export_sender_bot;Bot
+toast_doc_saved;Documento salvato
+toast_doc_error;Errore nella creazione del documento
+toast_limits_exhausted;Hai esaurito le richieste gratuite per oggi! Premi il pulsante +5 in alto.
+toast_error;Errore
+toast_open_attachment_error;Impossibile aprire l'allegato
+image_creating;Creazione immagini...
+image_ready;Immagine pronta
+code_copy;Copia
+code_copied;Copiato!
+toast_liked;Piaciuto!
+toast_disliked;Non piaciuto
+toast_copied;Copiato
+menu_regenerate;Rigenera
+toast_image_copied;Immagine copiata
+toast_image_copy_error;Errore copia immagine
+toast_share_error;Errore di condivisione
+toast_reward;Hai ricevuto +5 richieste gratuite!
+toast_ad_loading;La pubblicità sta ancora caricando, attendi...
+ai_thinking;Sto pensando...
+label_file_analysis;Analisi file/foto
+label_new_chat;Nuova chat
+toast_logout;Sei uscito dal profilo
+toast_profile_saved;Profilo salvato
+toast_name_empty;Il nome non può essere vuoto
+toast_changes_saved;Modifiche salvate
+dialog_new_password_hint;Nuova password
+dialog_change_password;Cambio password
+button_save;Salva
+toast_password_changed;Password cambiata
+toast_password_empty;La password non può essere vuota
+toast_instructions_saved;Istruzioni salvate
+share_image;Condividi immagine
+share;Condividi
+ai_mode_vsegpt_title;Modalità a pagamento (VseGPT)
+ai_mode_vsegpt_desc;Modelli utilizzati: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;Modalità gratuita (con limiti)
+ai_mode_free_desc;Utilizza i modelli base di Google. Tutti i limiti attuali vengono mantenuti
+ai_mode_auto_title;Modalità automatica
+ai_mode_auto_desc;Il sistema seleziona dinamicamente il modello migliore in base al compito e alla risposta

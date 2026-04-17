@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;Хрю хрю?
+button_create_image;Хрююю
+button_help_me_write;Хрю хрююю
+button_create_idea;Хрююю
+button_write_code;Хрр хрююю
+main_panel_input;Хрююю
+button_camera;Хвииии
+button_photo;Хрии
+button_files;Хрюююю
+button_create_image;Хвииииии
+button_create_image_description;Хрю хрю хрю
+button_Search_the_web;Фр фр
+button_Search_the_web_description;"""поросячiй вiзг""…."
+button _purchase_research;хвии хвии
+button _purchase_research_description;Фр фр фр
+button_stud_ and_training;Хвии хрю
+button_stud_ and_training_description;Хрю хви
+panel_create_image;Хрвиии
+main_panel_input_create_image;Фррр хви
+panel_search;Хрюююююююю
+main_panel_input_panel_search;Хрюююю
+panel_purchase_research;Хвииииии
+main_panel_input_purchase_research;Хвииииии хрюююю
+panel_stud_ and_training;Хвиии хрюю хвиии
+main_panel_stud_ and_training;Фррр хвиии
+button_new_chat;Хви хви хвии
+button_telegram_bot;Telegram-хрю
+history_lable_today;Фр
+history_lable_in_the_last_7_days;Фррррррр
+history_lable_previously;Фррр
+user_subscription;Free
+interlineation;FreeChat хлопiц удалiй, поросячiй вiзг горi
+profile_and_settings;Хвиии
+button_edit_profile;Фррр
+setting;Хр хр хр фр
+button_personalization;Хррррр хвииии
+button_apps;Режим роботи ШІ
+button_language;Хрюююю
+button_security;Хви хрю хрю
+button_Information_about;Хрююю фр 
+button_report_a_problem;"""сотрястi воздiх"""
+app_version;FreeChat Abdroid <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;Хрррюю
+input_edit_name;<input_edit_name>
+panel_edit_emeil;Фррр
+input_edit_email;<input_edit_email>
+lable_personalization;Хрююююю хввв
+lable_personalization_instructions;Хрююююююююююююю
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;Хрюмова
+lable_select_language;Хррррррр
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;Хви хрю хрю
+lable_your_password;Хря хря
+input_password;<input_password>
+button_show_password;Хррр хрю
+button_hide_password;Хвии хрю
+button_change_password;Хвии хвии хрю
+lable_apps;Режим роботи ШІ
+button_lable_search_for_apps;Фррррр фррр фррррр
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;Хррррр хвииии
+button_mycalculator;MyCalculator
+app_mycalculator_description;Калькулятор Романихи Цветковой
+main_lable_mycalculator;MyCalculator
+button_install_app;Хррррр хвииии фрррр
+in_app_mycalculator_description;Калькулятор Романихи Цветковой
+app_description;Хвиии хрюююююююююююю
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203,9 тыс хлопцiв
+total_install_app;40 млн + потужнiв
+install_app_description;Хвииии
+total_weight_app;30.1 MB
+weight_app_deacription;Хрююю хвви фрр
+button_write_a_review;Хрююю фрррр хвии хррр
+toast_no_limits;Хрю хрю хрю фрррр.
+toast_anonymous_chat;Хрююю хвии
+speech_speak_now;Хрю хрю...
+speech_listening;Хвиии...
+speech_error_audio;Хрю фрр
+speech_error_client;Хрю хвии
+speech_error_permission;Хрю хрю хрю
+speech_error_network;Фрр фрр
+speech_error_no_match;Хрю хвии фрр
+speech_error_busy;Хвии хвии
+speech_error_server;Фрр хрю
+speech_error_timeout;Хвиииии
+speech_error_generic;Хрю фрр хвии
+toast_chat_deleted;Хрю хвии фрр
+dialog_confirm;Хрююю
+dialog_delete_all_history;Хрю хрю хрю хрю хрю?
+button_delete;Хрююю
+toast_all_history_deleted;Хрю хрю хрю фрр
+button_cancel;Фрррр
+section_pinned;Хвиии хрююю
+no_chat_history;Хрю хрю фрр хвии
+no_search_results;Фрр хрю хвии
+menu_rename;Хрююю фрр
+menu_unpin_chat;Хвии хрю фрр
+menu_pin_chat;Хвии хрю хрююю
+toast_chat_not_saved;Хрю фрр хвии
+label_untitled;Хрю хрю
+dialog_rename_hint;Хрююю хвии
+button_ok;ОК
+toast_load_error;Хрю фрр
+toast_chat_empty;Хрю хвии
+export_sender_you;Хрю
+export_sender_bot;Фрр
+toast_doc_saved;Хрююю фрр хвии
+toast_doc_error;Хрю фрр хвии хрююю
+toast_limits_exhausted;Хрю хрю хрю! Хвии +5 фрррр.
+toast_error;Хрю
+toast_open_attachment_error;Фрр хрю хвии
+image_creating;Хрююю хвии фрр...
+image_ready;Хрююю хвии!
+code_copy;Хрююю
+code_copied;Хрю!
+toast_liked;Хвии!
+toast_disliked;Фрр
+toast_copied;Хрю!
+menu_regenerate;Хрююю фрр хвии
+toast_image_copied;Хрююю хрю!
+toast_image_copy_error;Фрр хрю хвии
+toast_share_error;Фрр хрю
+toast_reward;Хрю +5 хвии!
+toast_ad_loading;Хрююю фрр хвии хрю...
+ai_thinking;Хрююююю...
+label_file_analysis;Хрю фрр хвии
+label_new_chat;Хви хви хвии
+toast_logout;Хрю хвии фрр
+toast_profile_saved;Хрююю хвии!
+toast_name_empty;Хрю фрр хвии
+toast_changes_saved;Хрю хвии!
+dialog_new_password_hint;Хрю хря
+dialog_change_password;Хвии хря
+button_save;Хвии
+toast_password_changed;Хря хрю!
+toast_password_empty;Хря фрр хрю
+toast_instructions_saved;Хрююю хвии!
+share_image;Хрююю фрр
+share;Фрррр
+ai_mode_vsegpt_title;Хрю хрю (VseGPT)
+ai_mode_vsegpt_desc;Хрю хрю: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;Фрр хрю (хрю хрю)
+ai_mode_free_desc;Хрю фрр хвии. Хрю хрю хрю хвии
+ai_mode_auto_title;Хрююю фрр
+ai_mode_auto_desc;Хрю хрю хвии фрр хрю хрю хвии хрююю

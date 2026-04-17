@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/rounded_dialog_bg"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="28dp"
+    android:paddingBottom="32dp">
+
+    <!-- Avatar -->
+    <FrameLayout
+        android:id="@+id/dialogAvatarContainer"
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:layout_gravity="center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/avatar_settings_bg">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="44dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@android:color/transparent">
+            
+            <ImageView
+                android:id="@+id/ivDialogAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"/>
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/dialogAvatarLetter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="P"
+            android:textColor="#CCCCCC"
+            android:textSize="40sp"
+            android:textStyle="bold"/>
+            
+        <!-- Small edit icon badge indicator -->
+        <FrameLayout
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="0dp"
+            android:background="@drawable/circle_button_bg">
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_pen"
+                app:tint="#FFFFFF"/>
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Name label -->
+    <TextView
+        android:id="@+id/tvLabelDialogName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:textColor="#8E8E93"
+        android:textSize="13sp"/>
+
+    <EditText
+        android:id="@+id/etProfileName"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/edit_text_bg"
+        android:paddingHorizontal="16dp"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textColorHint="#8E8E93"
+        android:inputType="textPersonName"
+        android:singleLine="true"/>
+
+    <!-- Email label -->
+    <TextView
+        android:id="@+id/tvLabelDialogEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#8E8E93"
+        android:textSize="13sp"/>
+
+    <EditText
+        android:id="@+id/etProfileEmail"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/edit_text_bg"
+        android:paddingHorizontal="16dp"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textColorHint="#8E8E93"
+        android:inputType="textEmailAddress"
+        android:singleLine="true"/>
+
+    <!-- Save button (outline style) -->
+    <TextView
+        android:id="@+id/btnSaveProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/btn_edit_profile_outline"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="10dp"
+        android:textColor="#CCCCCC"
+        android:textSize="13sp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+</LinearLayout>

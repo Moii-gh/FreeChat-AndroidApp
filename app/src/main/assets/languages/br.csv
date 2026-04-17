@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;Чым магу дапамагчы?
+button_create_image;Стварыць малюнак
+button_help_me_write;Дапамажы мне напісаць
+button_create_idea;Прыдумаць ідэю
+button_write_code;Напісаць код
+main_panel_input;Задайце пытанне
+button_camera;Камера
+button_photo;Фота
+button_files;Файлы
+button_create_image;Стварыць малюнак
+button_create_image_description;Стварыць любы малюнак
+button_Search_the_web;Пошук у сетцы
+button_Search_the_web_description;Шукаць новую інфармацыю ў рэжыме п…
+button _purchase_research;Даследаванне пакупак
+button _purchase_research_description;Атрымаць падрабязны гід па пакупках
+button_stud_ and_training;Вучоба і навучанне
+button_stud_ and_training_description;Вывучыце новую канцэпцыю
+panel_create_image;Малюнак
+main_panel_input_create_image;Стварыць малюнак
+panel_search;Пошук
+main_panel_input_panel_search;Пошук у сетцы
+panel_purchase_research;Даследаванне пакупак
+main_panel_input_purchase_research;Пошук пакупак
+panel_stud_ and_training;Вучоба
+main_panel_stud_ and_training;Навучанне і вучоба
+button_new_chat;Новы чат
+button_telegram_bot;Telegram-бот
+history_lable_today;Сёння
+history_lable_in_the_last_7_days;За апошнія 7 дзён
+history_lable_previously;Раней
+user_subscription;Free
+interlineation;FreeChat імкнецца, але можа памыляцца
+profile_and_settings;Профіль і наладкі
+button_edit_profile;Рэдагаваць профіль
+setting;Налады
+button_personalization;Персаналізацыя
+button_apps;Рэжым працы ШІ
+button_language;Мова
+button_security;Бяспека
+button_Information_about;Звесткі аб
+button_report_a_problem;Паведаміць аб праблеме
+app_version;FreeChat Abdroid <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;Імя
+input_edit_name;<input_edit_name>
+panel_edit_emeil;Пошта
+input_edit_email;<input_edit_email>
+lable_personalization;Персаналізацыя
+lable_personalization_instructions;Карыстальніцкія інструкцыі
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;Мова
+lable_select_language;Абраць мову
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;Бяспека
+lable_your_password;Ваш пароль
+input_password;<input_password>
+button_show_password;Паказаць пароль
+button_hide_password;Схаваць пароль
+button_change_password;Змяніць пароль
+lable_apps;Рэжым працы ШІ
+button_lable_search_for_apps;Пошук прыкладанняў
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;Усе прыкладанні
+button_mycalculator;MyCalculator
+app_mycalculator_description;Калькулятор Романихи Цветковой
+main_lable_mycalculator;MyCalculator
+button_install_app;Устанавіць
+in_app_mycalculator_description;Калькулятор Романихи Цветковой
+app_description;Апісанне
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203,9 тыс адзнак
+total_install_app;40 млн +
+install_app_description;Спампоўвання
+total_weight_app;30.1 MB
+weight_app_deacription;Памер
+button_write_a_review;Напісаць водгук
+toast_no_limits;У бягучым рэжыме няма лімітаў.
+toast_anonymous_chat;Ананімны чат
+speech_speak_now;Гаварыце...
+speech_listening;Слухаю...
+speech_error_audio;Памылка гуку
+speech_error_client;Памылка кліента
+speech_error_permission;Няма дазволу
+speech_error_network;Памылка сеткі
+speech_error_no_match;Маўленне не распазнана
+speech_error_busy;Служба занята
+speech_error_server;Памылка сервера
+speech_error_timeout;Цішыня
+speech_error_generic;Памылка распазнавання
+toast_chat_deleted;Чат выдалены
+dialog_confirm;Пацвярджэнне
+dialog_delete_all_history;Выдаліць УСЮ гісторыю чатаў?
+button_delete;Выдаліць
+toast_all_history_deleted;Уся гісторыя выдалена
+button_cancel;Адмена
+section_pinned;Замацаваныя
+no_chat_history;Няма гісторыі чатаў
+no_search_results;Нічога не знойдзена
+menu_rename;Перайменаваць
+menu_unpin_chat;Адмацаваць чат
+menu_pin_chat;Замацаваць чат
+toast_chat_not_saved;Чат не захаваны
+label_untitled;Без назвы
+dialog_rename_hint;Новая назва
+button_ok;ОК
+toast_load_error;Памылка загрузкі
+toast_chat_empty;Чат пусты
+export_sender_you;Вы
+export_sender_bot;Бот
+toast_doc_saved;Дакумент захаваны
+toast_doc_error;Памылка пры стварэнні дакумента
+toast_limits_exhausted;У вас скончыліся бясплатныя запыты на сёння! Націсніце кнопку +5 зверху.
+toast_error;Памылка
+toast_open_attachment_error;Не ўдалося адкрыць далучэнне
+image_creating;Стварэнне малюнкаў...
+image_ready;Малюнак гатовы
+code_copy;Скапіраваць
+code_copied;Скапіравана!
+toast_liked;Спадабалася!
+toast_disliked;Не спадабалася
+toast_copied;Скапіравана
+menu_regenerate;Перагенераваць
+toast_image_copied;Малюнак скапіраваны
+toast_image_copy_error;Памылка капіравання малюнка
+toast_share_error;Памылка пры абмене
+toast_reward;Вы атрымалі +5 бясплатных запытаў!
+toast_ad_loading;Рэклама яшчэ загружаецца, пачакайце...
+ai_thinking;Думаю...
+label_file_analysis;Аналіз файла/фота
+label_new_chat;Новы чат
+toast_logout;Вы выйшлі з профілю
+toast_profile_saved;Профіль захаваны
+toast_name_empty;Імя не можа быць пустым
+toast_changes_saved;Змены захаваны
+dialog_new_password_hint;Новы пароль
+dialog_change_password;Змена пароля
+button_save;Захаваць
+toast_password_changed;Пароль зменены
+toast_password_empty;Пароль не можа быць пустым
+toast_instructions_saved;Інструкцыі захаваны
+share_image;Абмяняцца малюнкам
+share;Абмяняцца
+ai_mode_vsegpt_title;Платны рэжым (VseGPT)
+ai_mode_vsegpt_desc;Выкарыстоўваюцца мадэлі: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;Бясплатны рэжым (з лімітамі)
+ai_mode_free_desc;Выкарыстоўваюцца базавыя мадэлі Google. Захоўваюцца ўсе бягучыя ліміты
+ai_mode_auto_title;Аўтаматычны рэжым
+ai_mode_auto_desc;Сістэма дынамічна выбірае лепшую мадэль у залежнасці ад задачы і адказу

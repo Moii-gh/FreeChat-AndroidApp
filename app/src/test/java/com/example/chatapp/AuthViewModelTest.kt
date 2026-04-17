@@ -1,0 +1,305 @@
+package com.example.chatapp
+
+import com.example.chatapp.data.AccountSessionStore
+import com.example.chatapp.data.AuthRepositoryContract
+import com.example.chatapp.data.NetworkResult
+import com.example.chatapp.network.dto.ApiUser
+import com.example.chatapp.network.dto.AuthResponse
+import com.example.chatapp.network.dto.ChangePasswordRequest
+import com.example.chatapp.network.dto.TelegramAuthBeginResponse
+import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
+import com.example.chatapp.network.dto.TelegramCompleteLoginRequest
+import com.example.chatapp.network.dto.TelegramCompleteMigrationRequest
+import com.example.chatapp.network.dto.TelegramCompleteRegistrationRequest
+import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
+import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
+import com.example.chatapp.viewmodel.AuthViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import java.time.LocalDate
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class AuthViewModelTest {
+
+    private val dispatcher: TestDispatcher = StandardTestDispatcher()
+    private lateinit var repository: FakeAuthRepository
+    private lateinit var accountStore: FakeAccountSessionStore
+    private lateinit var viewModel: AuthViewModel
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(dispatcher)
+        repository = FakeAuthRepository()
+        accountStore = FakeAccountSessionStore()
+        viewModel = AuthViewModel(repository, accountStore)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `legacy email regex handles valid and invalid addresses`() {
+        viewModel.onLegacyEmailChanged("wrong")
+        assertFalse(viewModel.uiState.value.isLegacyEmailValid)
+
+        viewModel.onLegacyEmailChanged("hello@example.com")
+        assertTrue(viewModel.uiState.value.isLegacyEmailValid)
+    }
+
+    @Test
+    fun `password minimum length is enforced`() {
+        viewModel.onPasswordChanged("12345")
+        assertFalse(viewModel.uiState.value.isPasswordValid)
+
+        viewModel.onPasswordChanged("123456")
+        assertTrue(viewModel.uiState.value.isPasswordValid)
+    }
+
+    @Test
+    fun `full name and birth date are required for about you step`() {
+        viewModel.onFullNameChanged("   ")
+        assertFalse(viewModel.uiState.value.canContinueFromAboutYou)
+
+        viewModel.onFullNameChanged("Ada Lovelace")
+        viewModel.updateBirthDateDraft(day = 9, month = 12, year = 1995)
+        viewModel.confirmBirthDateSelection()
+
+        assertTrue(viewModel.uiState.value.canContinueFromAboutYou)
+    }
+
+    @Test
+    fun `confirming birth date moves draft into selected date`() {
+        viewModel.updateBirthDateDraft(day = 29, month = 2, year = 2024)
+        viewModel.confirmBirthDateSelection()
+
+        assertEquals(LocalDate.of(2024, 2, 29), viewModel.uiState.value.birthDate)
+    }
+
+    @Test
+    fun `telegram registration flow authenticates user after code and password`() = runTest(dispatcher) {
+        viewModel.beginTelegramRegistration()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isLoading)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertEquals("challenge-register", viewModel.uiState.value.telegramChallengeId)
+        assertEquals("Откройте Telegram и отправьте команду /start", viewModel.uiState.value.infoMessage)
+
+        viewModel.onTelegramCodeChanged("123456")
+        viewModel.verifyTelegramCode()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isVerifyingTelegramCode)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isTelegramCodeVerified)
+
+        viewModel.onFullNameChanged("Ada Lovelace")
+        viewModel.updateBirthDateDraft(day = 9, month = 12, year = 1995)
+        viewModel.confirmBirthDateSelection()
+        viewModel.onPasswordChanged("123456")
+
+        viewModel.submitPasswordStep()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isLoading)
+        advanceUntilIdle()
+
+        assertEquals("jwt-token", viewModel.uiState.value.authToken)
+        assertEquals("Ada Lovelace", accountStore.lastUser?.fullName)
+        assertNotNull(repository.lastCompleteRegistrationRequest)
+    }
+
+    @Test
+    fun `migration flow auto completes after verified telegram code`() = runTest(dispatcher) {
+        viewModel.onLegacyEmailChanged("legacy@example.com")
+        viewModel.onLegacyPasswordChanged("123456")
+
+        viewModel.beginTelegramMigration()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isLoading)
+        advanceUntilIdle()
+
+        assertEquals("challenge-migrate", viewModel.uiState.value.telegramChallengeId)
+
+        viewModel.onTelegramCodeChanged("123456")
+        viewModel.verifyTelegramCode()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isVerifyingTelegramCode)
+        advanceUntilIdle()
+
+        assertEquals("jwt-token", viewModel.uiState.value.authToken)
+        assertNotNull(repository.lastCompleteMigrationRequest)
+    }
+}
+
+private class FakeAuthRepository : AuthRepositoryContract {
+    var beginRegistrationResult: NetworkResult<TelegramAuthBeginResponse> = NetworkResult.Success(
+        TelegramAuthBeginResponse(
+            message = "Откройте Telegram и отправьте команду /start",
+            challengeId = "challenge-register",
+            botUrl = "https://t.me/freechat_bot?start=register",
+            expiresAt = "2026-04-16T12:00:00Z"
+        )
+    )
+    var beginLoginResult: NetworkResult<TelegramAuthBeginResponse> = NetworkResult.Success(
+        TelegramAuthBeginResponse(
+            message = "Откройте Telegram и отправьте команду /start",
+            challengeId = "challenge-login",
+            botUrl = "https://t.me/freechat_bot?start=login",
+            expiresAt = "2026-04-16T12:00:00Z"
+        )
+    )
+    var beginMigrationResult: NetworkResult<TelegramAuthBeginResponse> = NetworkResult.Success(
+        TelegramAuthBeginResponse(
+            message = "Откройте Telegram и отправьте команду /start",
+            challengeId = "challenge-migrate",
+            botUrl = "https://t.me/freechat_bot?start=migrate",
+            expiresAt = "2026-04-16T12:00:00Z"
+        )
+    )
+    var verifyCodeResult: NetworkResult<TelegramVerifyCodeResponse> = NetworkResult.Success(
+        TelegramVerifyCodeResponse(
+            message = "Код подтверждён",
+            verified = true,
+            purpose = "register"
+        )
+    )
+    var lastCompleteRegistrationRequest: TelegramCompleteRegistrationRequest? = null
+    var lastCompleteMigrationRequest: TelegramCompleteMigrationRequest? = null
+
+    override suspend fun beginTelegramRegistration(): NetworkResult<TelegramAuthBeginResponse> {
+        delay(25)
+        return beginRegistrationResult
+    }
+
+    override suspend fun beginTelegramLogin(): NetworkResult<TelegramAuthBeginResponse> {
+        delay(25)
+        return beginLoginResult
+    }
+
+    override suspend fun verifyTelegramCode(
+        request: TelegramVerifyCodeRequest
+    ): NetworkResult<TelegramVerifyCodeResponse> {
+        delay(25)
+        return verifyCodeResult
+    }
+
+    override suspend fun completeTelegramRegistration(
+        request: TelegramCompleteRegistrationRequest
+    ): NetworkResult<AuthResponse> {
+        lastCompleteRegistrationRequest = request
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Аккаунт создан",
+                token = "jwt-token",
+                user = ApiUser(
+                    id = "user-1",
+                    email = null,
+                    fullName = request.fullName,
+                    birthDate = request.birthDate,
+                    isVerified = true,
+                    telegramUsername = "ada",
+                    authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun completeTelegramLogin(
+        request: TelegramCompleteLoginRequest
+    ): NetworkResult<AuthResponse> {
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Вход выполнен",
+                token = "jwt-token",
+                user = ApiUser(
+                    id = "user-1",
+                    email = null,
+                    fullName = "Ada Lovelace",
+                    birthDate = "1995-12-09",
+                    isVerified = true,
+                    telegramUsername = "ada",
+                    authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun beginTelegramMigration(
+        request: TelegramBeginMigrationRequest
+    ): NetworkResult<TelegramAuthBeginResponse> {
+        delay(25)
+        return beginMigrationResult
+    }
+
+    override suspend fun completeTelegramMigration(
+        request: TelegramCompleteMigrationRequest
+    ): NetworkResult<AuthResponse> {
+        lastCompleteMigrationRequest = request
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Аккаунт переведён на Telegram",
+                token = "jwt-token",
+                user = ApiUser(
+                    id = "user-legacy",
+                    email = "legacy@example.com",
+                    fullName = "Legacy User",
+                    birthDate = "1990-01-01",
+                    isVerified = true,
+                    telegramUsername = "legacy_user",
+                    authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun changePassword(
+        token: String,
+        request: ChangePasswordRequest
+    ): NetworkResult<AuthResponse> {
+        delay(25)
+        return NetworkResult.Success(AuthResponse(message = "Пароль успешно изменён"))
+    }
+}
+
+private class FakeAccountSessionStore : AccountSessionStore {
+    var lastUser: ApiUser? = null
+    var lastToken: String? = null
+
+    override fun saveAuthenticatedUser(user: ApiUser?, token: String?) {
+        lastUser = user
+        lastToken = token
+    }
+
+    override fun isSignedIn(): Boolean = !lastToken.isNullOrBlank()
+
+    override fun clearSession() = Unit
+
+    override fun getAuthToken(): String? = lastToken
+
+    override fun getCurrentUserId(): String? = lastUser?.id
+
+    override fun getCurrentUserEmail(): String? = lastUser?.email
+
+    override fun getCurrentUserName(): String? = lastUser?.fullName
+}

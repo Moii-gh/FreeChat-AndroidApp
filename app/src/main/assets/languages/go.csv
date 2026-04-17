@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;რით შემიძლია დახმარება?
+button_create_image;შექმენით სურათი
+button_help_me_write;დამეხმარეთ დაწერა
+button_create_idea;იდეა მოიფიქროთ
+button_write_code;დაწერე კოდი
+main_panel_input;დასვით კითხვა
+button_camera;კამერა
+button_photo;ფოტო
+button_files;ფაილები
+button_create_image;შექმენით სურათი
+button_create_image_description;შექმენით ნებისმიერი სურათი
+button_Search_the_web;მოძებნეთ ინტერნეტში
+button_Search_the_web_description;ახალი ინფორმაციის ძიება p-ში…
+button _purchase_research;შესყიდვების კვლევა
+button _purchase_research_description;მიიღეთ დეტალური სავაჭრო სახელმძღვანელო
+button_stud_ and_training;სწავლა და ტრენინგი
+button_stud_ and_training_description;ისწავლეთ ახალი კონცეფცია
+panel_create_image;გამოსახულება
+main_panel_input_create_image;შექმენით სურათი
+panel_search;ძიება
+main_panel_input_panel_search;მოძებნეთ ინტერნეტში
+panel_purchase_research;შესყიდვების კვლევა
+main_panel_input_purchase_research;მოძებნეთ შესყიდვები
+panel_stud_ and_training;კვლევები
+main_panel_stud_ and_training;განათლება და სწავლა
+button_new_chat;ახალი ჩატი
+button_telegram_bot;Telegram-ის ბოტი
+history_lable_today;დღეს
+history_lable_in_the_last_7_days;ბოლო 7 დღის განმავლობაში
+history_lable_previously;ადრე
+user_subscription;Free
+interlineation;FreeChat ბევრს ცდილობს, მაგრამ შეიძლება შეცდომებიც დაუშვას.
+profile_and_settings;პროფილი და პარამეტრები
+button_edit_profile;პროფილის რედაქტირება
+setting;პარამეტრები
+button_personalization;პერსონალიზაცია
+button_apps;AI რეჟიმი
+button_language;ენა
+button_security;უსაფრთხოება
+button_Information_about;ინფორმაცია იმის შესახებ
+button_report_a_problem;შეატყობინეთ პრობლემას
+app_version;FreeChat Abdroid <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;სახელი
+input_edit_name;<input_edit_name>
+panel_edit_emeil;ფოსტა
+input_edit_email;<input_edit_email>
+lable_personalization;პერსონალიზაცია
+lable_personalization_instructions;მომხმარებლის ინსტრუქციები
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;ენა
+lable_select_language;აირჩიეთ ენა
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;უსაფრთხოება
+lable_your_password;თქვენი პაროლი
+input_password;<input_password>
+button_show_password;პაროლის ჩვენება
+button_hide_password;პაროლის დამალვა
+button_change_password;პაროლის შეცვლა
+lable_apps;AI რეჟიმი
+button_lable_search_for_apps;აპლიკაციები
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;ყველა აპლიკაცია
+button_mycalculator;MyCalculator
+app_mycalculator_description;რომანიხა ცვეტკოვას კალკულატორი
+main_lable_mycalculator;MyCalculator
+button_install_app;დააინსტალირეთ
+in_app_mycalculator_description;რომანიხა ცვეტკოვას კალკულატორი
+app_description;აღწერა
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203.9 ათასი შეფასება
+total_install_app;40 მილიონი +
+install_app_description;ჩამოტვირთვები
+total_weight_app;30.1 MB
+weight_app_deacription;ზომა
+button_write_a_review;დაწერეთ მიმოხილვა
+toast_no_limits;მიმდინარე რეჟიმში ლიმიტები არ არის.
+toast_anonymous_chat;ანონიმური ჩატი
+speech_speak_now;ილაპარაკეთ...
+speech_listening;ვუსმენ...
+speech_error_audio;აუდიო შეცდომა
+speech_error_client;კლიენტის შეცდომა
+speech_error_permission;ნებართვა არ არის
+speech_error_network;ქსელის შეცდომა
+speech_error_no_match;მეტყველება ვერ ამოიცნო
+speech_error_busy;სერვისი დაკავებულია
+speech_error_server;სერვერის შეცდომა
+speech_error_timeout;სიჩუმე
+speech_error_generic;ამოცნობის შეცდომა
+toast_chat_deleted;ჩატი წაიშალა
+dialog_confirm;დადასტურება
+dialog_delete_all_history;წავშალოთ მთელი ჩატის ისტორია?
+button_delete;წაშლა
+toast_all_history_deleted;მთელი ისტორია წაიშალა
+button_cancel;გაუქმება
+section_pinned;მიმაგრებული
+no_chat_history;ჩატის ისტორია არ არის
+no_search_results;არაფერი მოიძებნა
+menu_rename;გადარქმევა
+menu_unpin_chat;ჩატის მოხსნა
+menu_pin_chat;ჩატის მიმაგრება
+toast_chat_not_saved;ჩატი არ არის შენახული
+label_untitled;უსახელო
+dialog_rename_hint;ახალი სახელი
+button_ok;OK
+toast_load_error;ჩატვირთვის შეცდომა
+toast_chat_empty;ჩატი ცარიელია
+export_sender_you;თქვენ
+export_sender_bot;ბოტი
+toast_doc_saved;დოკუმენტი შენახულია
+toast_doc_error;დოკუმენტის შექმნის შეცდომა
+toast_limits_exhausted;თქვენი უფასო მოთხოვნები ამოიწურა! დააჭირეთ ზემოთ +5 ღილაკს.
+toast_error;შეცდომა
+toast_open_attachment_error;დანართის გახსნა ვერ მოხერხდა
+image_creating;სურათების შექმნა...
+image_ready;სურათი მზადაა
+code_copy;კოპირება
+code_copied;კოპირებულია!
+toast_liked;მოეწონა!
+toast_disliked;არ მოეწონა
+toast_copied;კოპირებულია
+menu_regenerate;ხელახლა გენერირება
+toast_image_copied;სურათი კოპირებულია
+toast_image_copy_error;სურათის კოპირების შეცდომა
+toast_share_error;გაზიარების შეცდომა
+toast_reward;თქვენ მიიღეთ +5 უფასო მოთხოვნა!
+toast_ad_loading;რეკლამა ჯერ იტვირთება, მოიცადეთ...
+ai_thinking;ვფიქრობ...
+label_file_analysis;ფაილის/ფოტოს ანალიზი
+label_new_chat;ახალი ჩატი
+toast_logout;თქვენ გამოხვედით პროფილიდან
+toast_profile_saved;პროფილი შენახულია
+toast_name_empty;სახელი არ შეიძლება იყოს ცარიელი
+toast_changes_saved;ცვლილებები შენახულია
+dialog_new_password_hint;ახალი პაროლი
+dialog_change_password;პაროლის შეცვლა
+button_save;შენახვა
+toast_password_changed;პაროლი შეიცვალა
+toast_password_empty;პაროლი არ შეიძლება იყოს ცარიელი
+toast_instructions_saved;ინსტრუქციები შენახულია
+share_image;სურათის გაზიარება
+share;გაზიარება
+ai_mode_vsegpt_title;ფასიანი რეჟიმი (VseGPT)
+ai_mode_vsegpt_desc;გამოყენებული მოდელები: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;უფასო რეჟიმი (ლიმიტებით)
+ai_mode_free_desc;გამოიყენება Google-ის ძირითადი მოდელები. ყველა მიმდინარე ლიმიტი შენარჩუნებულია
+ai_mode_auto_title;ავტომატური რეჟიმი
+ai_mode_auto_desc;სისტემა დინამიურად ირჩევს საუკეთესო მოდელს ამოცანისა და პასუხის მიხედვით

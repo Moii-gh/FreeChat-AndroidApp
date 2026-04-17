@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="surface_dark">#212121</color> <color name="surface_dark_highlight">#2F2F2F</color>
+    <color name="text_hint">#8E8E93</color>
+    <color name="chatgpt_green">#10A37F</color>
+    <color name="chatgpt_yellow">#F2C94C</color>
+    <color name="chatgpt_purple">#AB68FF</color>
+</resources>

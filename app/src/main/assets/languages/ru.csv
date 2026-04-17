@@ -1,0 +1,162 @@
+TID;TEXT
+welcome_question;Чем могу помочь?
+button_create_image;Создать изображение
+button_help_me_write;Помоги мне написать
+button_create_idea;Придумать идею
+button_write_code;Написать код
+main_panel_input;Задайте вопрос
+button_camera;Камера
+button_photo;Фото
+button_files;Файлы
+button_create_image;Создать изображение
+button_create_image_description;Создать любое изображение
+button_Search_the_web;Поиск в сети
+button_Search_the_web_description;Искать новую информацию в режиме п…
+button _purchase_research;Исследование покупок
+button _purchase_research_description;Получить подробный гид по покупкам
+button_stud_ and_training;Учеба и обучение
+button_stud_ and_training_description;Изучите новую концепцию
+panel_create_image;Изображение
+main_panel_input_create_image;Создать изображение
+panel_search;Поиск
+main_panel_input_panel_search;Поиск в сети
+panel_purchase_research;Исследование покупок
+main_panel_input_purchase_research;Поиск покупок
+panel_stud_ and_training;Учеба
+main_panel_stud_ and_training;Обучение и учеба
+button_new_chat;Новый чат
+button_telegram_bot;Telegram-бот
+history_lable_today;Сегодня
+history_lable_in_the_last_7_days;За последние 7 дней
+history_lable_previously;Ранее
+user_subscription;Free
+interlineation;FreeChat старается, но может ошибаться
+profile_and_settings;Профиль и настройки
+button_edit_profile;Редактировать профиль
+setting;Настройки
+button_personalization;Персонализация
+button_apps;Режим работы ИИ
+button_language;Язык
+button_security;Безопасность
+button_Information_about;Сведения о
+button_report_a_problem;Сообщить о проблеме
+app_version;FreeChat Abdroid <version>
+user_email;<mail>
+user_input;<user_input>
+chat_ai_output;<chat_ai_output>
+add_input_photo;<add_input_photo>
+add_input_files;<add_input_files>
+panel_edit_name;Имя
+input_edit_name;<input_edit_name>
+panel_edit_emeil;Почта
+input_edit_email;<input_edit_email>
+lable_personalization;Персонализация
+lable_personalization_instructions;Пользовательские инструкции
+input_personalization_instructions;<input_personalization_instructions>
+lable_language;Язык
+lable_select_language;Выбрать язык
+button_select_language_russian;Русский
+button_select_language_english;English
+button_select_language_ukrainian;Українська
+button_select_language_french;Français
+button_select_language_italian;Italiano
+button_select_language_old_russian;Руснацькый
+button_select_language_pirate_speak;Pirate Speak
+button_select_language_hindi;हिन्दी (Hindi)
+button_select_language_georgian;ქართული (Georgian)
+lable_security;Безопасность
+lable_your_password;Ваш пароль
+input_password;<input_password>
+button_show_password;Показать пароль
+button_hide_password;Скрыть пароль
+button_change_password;Сменить пароль
+lable_apps;Режим работы ИИ
+button_lable_search_for_apps;Поиск приложений
+input_search_for_apps;<input_search_for_apps>
+button_lable_all_apps;Все приложения
+button_mycalculator;MyCalculator
+app_mycalculator_description;Калькулятор Романихи Цветковой
+main_lable_mycalculator;MyCalculator
+button_install_app;Установить
+in_app_mycalculator_description;Калькулятор Романихи Цветковой
+app_description;Описание
+app_description_2;MyCalculator
+rating_app;1,1
+total_rating_app;203,9 тыс оценок
+total_install_app;40 млн +
+install_app_description;Скачиваний
+total_weight_app;30.1 MB
+weight_app_deacription;Размер
+button_write_a_review;Написать отзыв
+toast_no_limits;В текущем режиме нет лимитов.
+toast_anonymous_chat;Анонимный чат
+speech_speak_now;Говорите...
+speech_listening;Слушаю...
+speech_error_audio;Ошибка звука
+speech_error_client;Ошибка клиента
+speech_error_permission;Нет разрешения
+speech_error_network;Ошибка сети
+speech_error_no_match;Речь не распознана
+speech_error_busy;Служба занята
+speech_error_server;Ошибка сервера
+speech_error_timeout;Тишина
+speech_error_generic;Ошибка распознавания
+toast_chat_deleted;Чат удален
+dialog_confirm;Подтверждение
+dialog_delete_all_history;Удалить ВСЮ историю чатов?
+button_delete;Удалить
+toast_all_history_deleted;Вся история удалена
+button_cancel;Отмена
+section_pinned;Закреплённые
+no_chat_history;Нет истории чатов
+no_search_results;Ничего не найдено
+menu_rename;Переименовать
+menu_unpin_chat;Открепить чат
+menu_pin_chat;Закрепить чат
+toast_chat_not_saved;Чат не сохранен
+label_untitled;Без названия
+dialog_rename_hint;Новое название
+button_ok;ОК
+toast_load_error;Ошибка загрузки
+toast_chat_empty;Чат пуст
+export_sender_you;Вы
+export_sender_bot;Бот
+toast_doc_saved;Документ сохранен
+toast_doc_error;Ошибка при создании документа
+toast_limits_exhausted;У вас закончились бесплатные запросы на сегодня! Нажмите кнопку +5 сверху.
+toast_error;Ошибка
+toast_open_attachment_error;Не удалось открыть вложение
+image_creating;Создание изображений...
+image_ready;Изображение готово
+code_copy;Скопировать
+code_copied;Скопировано!
+toast_liked;Понравилось!
+toast_disliked;Не понравилось
+toast_copied;Скопировано
+menu_regenerate;Перегенерировать
+toast_image_copied;Изображение скопировано
+toast_image_copy_error;Ошибка копирования изображения
+toast_share_error;Ошибка при попытке поделиться
+toast_reward;Вы получили +5 бесплатных запросов!
+toast_ad_loading;Реклама еще загружается, подождите пару секунд...
+ai_thinking;Думаю...
+label_file_analysis;Анализ файла/фото
+label_new_chat;Новый чат
+toast_logout;Вы вышли из профиля
+toast_profile_saved;Профиль сохранён
+toast_name_empty;Имя не может быть пустым
+toast_changes_saved;Изменения сохранены
+dialog_new_password_hint;Новый пароль
+dialog_change_password;Смена пароля
+button_save;Сохранить
+toast_password_changed;Пароль изменён
+toast_password_empty;Пароль не может быть пустым
+toast_instructions_saved;Инструкции сохранены
+share_image;Поделиться изображением
+share;Поделиться
+ai_mode_vsegpt_title;Платный режим (VseGPT)
+ai_mode_vsegpt_desc;Используются модели: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_free_title;Бесплатный режим (с лимитами)
+ai_mode_free_desc;Используются базовые модели Google. Сохраняются все текущие лимиты
+ai_mode_auto_title;Автоматический режим
+ai_mode_auto_desc;Система динамически выбирает лучшую модель в зависимости от задачи и ответа
