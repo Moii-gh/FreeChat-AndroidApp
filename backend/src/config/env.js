@@ -9,7 +9,7 @@ const env = {
   databaseUrl: process.env.DATABASE_URL || "",
   jwtSecret: process.env.JWT_SECRET || "change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  mailFrom: process.env.MAIL_FROM || "no-reply@freechat.local",
+  mailFrom: process.env.MAIL_FROM || "no-reply@example.local",
   smtpHost: process.env.SMTP_HOST || "",
   smtpPort: Number(process.env.SMTP_PORT || 587),
   smtpSecure: process.env.SMTP_SECURE === "true",

@@ -161,7 +161,7 @@ test("POST /api/telegram-auth/begin-registration creates challenge and bot url",
     telegramChallengeModel: challengeModel,
     telegramConfig: {
       isConfigured: true,
-      botUsername: "freechat_test_bot"
+      botUsername: "sample_app_test_bot"
     }
   });
 
@@ -171,7 +171,7 @@ test("POST /api/telegram-auth/begin-registration creates challenge and bot url",
 
   assert.equal(response.status, 200);
   assert.match(response.body.challengeId, /^00000000-0000-4000-8000-/);
-  assert.match(response.body.botUrl, /^https:\/\/t\.me\/freechat_test_bot\?start=/);
+  assert.match(response.body.botUrl, /^https:\/\/t\.me\/sample_app_test_bot\?start=/);
 });
 
 test("telegram bot /start generates code and links telegram identity", async () => {
@@ -187,7 +187,7 @@ test("telegram bot /start generates code and links telegram identity", async () 
     userModel,
     challengeModel,
     botToken: "token",
-    botUsername: "freechat_test_bot",
+    botUsername: "sample_app_test_bot",
     fetchImpl
   });
 
@@ -204,7 +204,7 @@ test("telegram bot /start generates code and links telegram identity", async () 
   assert.equal(updatedChallenge.telegram_chat_id, "1001");
   assert.match(updatedChallenge.code, /^\d{6}$/);
   assert.equal(calls.length, 1);
-  assert.match(calls[0].text, /Код FreeChat:/);
+  assert.match(calls[0].text, /Код подтверждения:/);
 });
 
 test("POST /api/telegram-auth/verify-code rejects wrong code", async () => {
@@ -226,7 +226,7 @@ test("POST /api/telegram-auth/verify-code rejects wrong code", async () => {
     telegramChallengeModel: challengeModel,
     telegramConfig: {
       isConfigured: true,
-      botUsername: "freechat_test_bot"
+      botUsername: "sample_app_test_bot"
     }
   });
 
@@ -260,7 +260,7 @@ test("POST /api/telegram-auth/complete-registration creates telegram user", asyn
     telegramChallengeModel: challengeModel,
     telegramConfig: {
       isConfigured: true,
-      botUsername: "freechat_test_bot"
+      botUsername: "sample_app_test_bot"
     }
   });
 
@@ -313,7 +313,7 @@ test("telegram login works only for linked telegram account", async () => {
     telegramChallengeModel: challengeModel,
     telegramConfig: {
       isConfigured: true,
-      botUsername: "freechat_test_bot"
+      botUsername: "sample_app_test_bot"
     }
   });
 
@@ -351,7 +351,7 @@ test("migration flow validates legacy user and completes binding", async () => {
     telegramChallengeModel: challengeModel,
     telegramConfig: {
       isConfigured: true,
-      botUsername: "freechat_test_bot"
+      botUsername: "sample_app_test_bot"
     }
   });
 
@@ -411,7 +411,7 @@ test("telegram already linked to another account is rejected by bot", async () =
     userModel,
     challengeModel,
     botToken: "token",
-    botUsername: "freechat_test_bot",
+      botUsername: "sample_app_test_bot",
     fetchImpl
   });
 

@@ -14,10 +14,7 @@ class SyncRepository(context: Context) {
     private val db = AppDatabase.getDatabase(context)
     private val dao = db.chatDao()
     private val sessionStore = SharedPrefsAccountSessionStore(context)
-    
-    // We assume backend URL is available via build config or similar. Let's hardcode the dev url, or better use BuildConfig like others.
-    // Wait, FreeChatActivity uses "http://138.124.97.180:4000/api/" for AuthApiService.
-    private val baseUrl = "http://138.124.97.180:4000/api/"
+    private val baseUrl = BuildConfig.APP_API_BASE_URL
 
     suspend fun trySync() = withContext(Dispatchers.IO) {
         val token = sessionStore.getAuthToken() ?: return@withContext

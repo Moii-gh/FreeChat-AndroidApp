@@ -11,7 +11,6 @@ import com.example.chatapp.LocaleHelper
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.network.AiApiService
 import com.example.chatapp.network.AiModelSelector
-import com.example.chatapp.util.ApiKeyProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -171,7 +170,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     fun generateAndSetChatTitle(chatId: String, firstMessage: String, onDone: () -> Unit) {
         viewModelScope.launch {
-            val aiTitle = repository.generateChatTitle(firstMessage, ApiKeyProvider.geminiApiKey)
+            val aiTitle = repository.generateChatTitle(firstMessage)
             if (aiTitle != null) {
                 currentChatTitle = aiTitle
                 repository.updateChatTitle(chatId, aiTitle)
@@ -222,7 +221,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         onComplete: () -> Unit,
         onFallbackRequired: () -> Unit,
         onError: (String) -> Unit,
-        forceVseGpt: Boolean = false,
+        forceFallbackRoute: Boolean = false,
         modeOverride: String? = null,
         useModeOverride: Boolean = false
     ) {
@@ -249,7 +248,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val hasVision = messagesToKeep.any { it.has("base64") }
 
         val target = AiModelSelector.selectTarget(
-            effectiveMode, aiMode, hasVision, forceVseGpt, ApiKeyProvider.geminiApiKey
+            effectiveMode, aiMode, hasVision, forceFallbackRoute
         )
 
         viewModelScope.launch {
@@ -260,7 +259,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 customInstructions = customInstructions,
                 chatContextSummary = chatContextSummary,
                 aiMode = aiMode,
-                forceVseGpt = forceVseGpt,
+                forceFallbackRoute = forceFallbackRoute,
                 callback = object : AiApiService.StreamCallback {
                     override fun onChunk(accumulatedText: String) {
                         onChunk(accumulatedText)
@@ -325,7 +324,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Фоновая суммаризация контекста через Gemini */
+    /** Фоновая суммаризация контекста через внешний AI-сервис */
     private fun launchSummarization(messagesToSummarize: List<JSONObject>) {
         val hash = messagesToSummarize.hashCode().toString()
         val context = getApplication<Application>()

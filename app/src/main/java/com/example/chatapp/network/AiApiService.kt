@@ -1,5 +1,6 @@
 package com.example.chatapp.network
 
+import com.example.chatapp.BuildConfig
 import com.example.chatapp.util.ApiKeyProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,29 +12,15 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Сервис для взаимодействия с AI API (Gemini, VseGPT).
- * Отвечает за формирование запросов, стриминг ответов и верификацию.
- */
 object AiApiService {
 
-    /**
-     * Callback для стриминга — вызывается на каждый новый чанк ответа.
-     */
     interface StreamCallback {
-        /** Вызывается при получении нового чанка текста */
         fun onChunk(accumulatedText: String)
-        /** Вызывается при завершении стриминга */
         fun onComplete(fullText: String)
-        /** Вызывается при ошибке */
         fun onError(errorMessage: String)
-        /** Вызывается когда нужна повторная генерация через fallback бэкенд */
         fun onFallbackRequired()
     }
 
-    /**
-     * Формирует системный промпт на основе режима, инструкций и контекстной выжимки.
-     */
     fun buildSystemPrompt(
         currentMode: String?,
         customInstructions: String,
@@ -57,10 +44,7 @@ object AiApiService {
         return if (parts.isNotEmpty()) parts.joinToString("\n\n") else null
     }
 
-    /**
-     * Формирует тело запроса в нативном формате Google Gemini API.
-     */
-    fun buildNativeGeminiRequestBody(
+    fun buildNativeRequestBody(
         messagesToKeep: List<JSONObject>,
         systemPrompt: String?
     ): String {
@@ -74,37 +58,35 @@ object AiApiService {
             val contents = JSONArray()
             messagesToKeep.forEach { msg ->
                 val role = if (msg.getString("role") == "assistant") "model" else "user"
-                val contentObj = JSONObject().apply {
-                    put("role", role)
-                    val parts = JSONArray()
-                    parts.put(JSONObject().apply { put("text", msg.getString("content")) })
-                    if (msg.has("base64")) {
-                        val mimeType = msg.optString("mimeType", "image/jpeg")
-                        parts.put(JSONObject().apply {
-                            put("inline_data", JSONObject().apply {
-                                put("mime_type", mimeType)
-                                put("data", msg.getString("base64"))
-                            })
+                contents.put(
+                    JSONObject().apply {
+                        put("role", role)
+                        put("parts", JSONArray().apply {
+                            put(JSONObject().apply { put("text", msg.getString("content")) })
+                            if (msg.has("base64")) {
+                                val mimeType = msg.optString("mimeType", "image/jpeg")
+                                put(JSONObject().apply {
+                                    put("inline_data", JSONObject().apply {
+                                        put("mime_type", mimeType)
+                                        put("data", msg.getString("base64"))
+                                    })
+                                })
+                            }
                         })
                     }
-                    put("parts", parts)
-                }
-                contents.put(contentObj)
+                )
             }
             put("contents", contents)
         }.toString()
     }
 
-    /**
-     * Формирует тело запроса в формате OpenAI (для VseGPT и Gemini image gen).
-     */
-    fun buildOpenAiRequestBody(
+    fun buildCompatibleRequestBody(
         target: AiTarget,
         messagesToKeep: List<JSONObject>,
         systemPrompt: String?
     ): String {
         return JSONObject().apply {
-            if (target.isImageGen) {
+            if (target.isImageGeneration) {
                 put("model", target.model)
                 put("response_format", "b64_json")
                 val lastPrompt = messagesToKeep.lastOrNull {
@@ -115,9 +97,9 @@ object AiApiService {
                 put("model", target.model)
                 put("stream", true)
 
-                val arr = JSONArray()
+                val messages = JSONArray()
                 if (systemPrompt != null) {
-                    arr.put(JSONObject().apply {
+                    messages.put(JSONObject().apply {
                         put("role", "system")
                         put("content", systemPrompt)
                     })
@@ -125,39 +107,37 @@ object AiApiService {
 
                 messagesToKeep.forEach { msg ->
                     if (msg.has("base64")) {
-                        val visionObj = JSONObject()
-                        visionObj.put("role", msg.getString("role"))
-
-                        val contentArr = JSONArray()
-                        contentArr.put(JSONObject().apply {
-                            put("type", "text")
-                            put("text", msg.getString("content"))
-                        })
-                        contentArr.put(JSONObject().apply {
-                            put("type", "image_url")
-                            put("image_url", JSONObject().apply {
-                                val mimeType = msg.optString("mimeType", "image/jpeg")
-                                put("url", "data:$mimeType;base64," + msg.getString("base64"))
-                            })
-                        })
-                        visionObj.put("content", contentArr)
-                        arr.put(visionObj)
+                        messages.put(
+                            JSONObject().apply {
+                                put("role", msg.getString("role"))
+                                put("content", JSONArray().apply {
+                                    put(JSONObject().apply {
+                                        put("type", "text")
+                                        put("text", msg.getString("content"))
+                                    })
+                                    put(JSONObject().apply {
+                                        put("type", "image_url")
+                                        put("image_url", JSONObject().apply {
+                                            val mimeType = msg.optString("mimeType", "image/jpeg")
+                                            put("url", "data:$mimeType;base64," + msg.getString("base64"))
+                                        })
+                                    })
+                                })
+                            }
+                        )
                     } else {
-                        arr.put(JSONObject().apply {
+                        messages.put(JSONObject().apply {
                             put("role", msg.getString("role"))
                             put("content", msg.getString("content"))
                         })
                     }
                 }
-                put("messages", arr)
+
+                put("messages", messages)
             }
         }.toString()
     }
 
-    /**
-     * Выполняет SSE-стриминг запроса к AI API.
-     * Передаёт чанки через callback, при ошибке может запросить fallback.
-     */
     suspend fun fetchStreamingResponse(
         target: AiTarget,
         messagesToKeep: List<JSONObject>,
@@ -165,32 +145,33 @@ object AiApiService {
         customInstructions: String,
         chatContextSummary: String,
         aiMode: String,
-        forceVseGpt: Boolean,
+        forceFallbackRoute: Boolean,
         callback: StreamCallback
     ) {
         withContext(Dispatchers.IO) {
+            if (!isTargetConfigured(target)) {
+                withContext(Dispatchers.Main) {
+                    callback.onError("AI сервис не настроен")
+                }
+                return@withContext
+            }
+
             try {
                 val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary)
-
-                val jsonInput = if (target.isNativeGemini) {
-                    buildNativeGeminiRequestBody(messagesToKeep, systemPrompt)
+                val jsonInput = if (target.usesNativeProtocol) {
+                    buildNativeRequestBody(messagesToKeep, systemPrompt)
                 } else {
-                    buildOpenAiRequestBody(target, messagesToKeep, systemPrompt)
+                    buildCompatibleRequestBody(target, messagesToKeep, systemPrompt)
                 }
 
-                val url = URL(target.apiUrl)
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json; utf-8")
-                if (!target.isNativeGemini) {
-                    val apiKey = if (target.backend == "vsegpt") {
-                        ApiKeyProvider.vsegptApiKey
-                    } else {
-                        ApiKeyProvider.geminiApiKey
+                val connection = (URL(target.apiUrl).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json; utf-8")
+                    if (!target.usesNativeProtocol) {
+                        setRequestProperty("Authorization", "Bearer ${resolvedApiKey(target.route)}")
                     }
-                    connection.setRequestProperty("Authorization", "Bearer $apiKey")
+                    doOutput = true
                 }
-                connection.doOutput = true
 
                 OutputStreamWriter(connection.outputStream).use {
                     it.write(jsonInput)
@@ -200,15 +181,19 @@ object AiApiService {
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     var finalReply = ""
 
-                    if (target.isImageGen) {
-                        val response = BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).readText()
-                        val b64 = JSONObject(response).getJSONArray("data").getJSONObject(0).getString("b64_json")
+                    if (target.isImageGeneration) {
+                        val response = BufferedReader(
+                            InputStreamReader(connection.inputStream, "utf-8")
+                        ).readText()
+                        val b64 = JSONObject(response)
+                            .getJSONArray("data")
+                            .getJSONObject(0)
+                            .getString("b64_json")
                         finalReply = "![image](data:image/png;base64,$b64)"
                         withContext(Dispatchers.Main) {
                             callback.onChunk(finalReply)
                         }
                     } else {
-                        // Streaming Server-Sent Events
                         val reader = BufferedReader(InputStreamReader(connection.inputStream, "utf-8"))
                         var line: String?
                         while (reader.readLine().also { line = it } != null) {
@@ -218,7 +203,7 @@ object AiApiService {
 
                                 try {
                                     val json = JSONObject(data)
-                                    val chunk = if (target.isNativeGemini) {
+                                    val chunk = if (target.usesNativeProtocol) {
                                         if (json.has("candidates")) {
                                             json.getJSONArray("candidates")
                                                 .getJSONObject(0)
@@ -226,7 +211,9 @@ object AiApiService {
                                                 .getJSONArray("parts")
                                                 .getJSONObject(0)
                                                 .optString("text", "")
-                                        } else ""
+                                        } else {
+                                            ""
+                                        }
                                     } else {
                                         if (json.has("choices")) {
                                             val choices = json.getJSONArray("choices")
@@ -234,8 +221,12 @@ object AiApiService {
                                                 choices.getJSONObject(0)
                                                     .getJSONObject("delta")
                                                     .optString("content", "")
-                                            } else ""
-                                        } else ""
+                                            } else {
+                                                ""
+                                            }
+                                        } else {
+                                            ""
+                                        }
                                     }
 
                                     if (chunk.isNotEmpty()) {
@@ -244,25 +235,27 @@ object AiApiService {
                                             callback.onChunk(finalReply)
                                         }
                                     }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
+                                } catch (_: Exception) {
                                 }
                             }
                         }
                     }
 
-                    // Проверка на ответ-заглушку Gemini (лимиты исчерпаны)
-                    if (aiMode == "auto" && !forceVseGpt && target.backend == "gemini") {
+                    if (aiMode == "auto" && !forceFallbackRoute && target.route == "primary") {
                         val isLimit = verifyResponseIsLimitError(finalReply)
                         if (isLimit) {
-                            withContext(Dispatchers.Main) { callback.onFallbackRequired() }
+                            withContext(Dispatchers.Main) {
+                                callback.onFallbackRequired()
+                            }
                             return@withContext
                         }
                     }
 
-                    withContext(Dispatchers.Main) { callback.onComplete(finalReply) }
+                    withContext(Dispatchers.Main) {
+                        callback.onComplete(finalReply)
+                    }
                 } else {
-                    handleHttpError(connection, aiMode, forceVseGpt, target, callback)
+                    handleHttpError(connection, aiMode, forceFallbackRoute, target, callback)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -272,58 +265,68 @@ object AiApiService {
         }
     }
 
-    /**
-     * Обработка HTTP-ошибки: если это лимит Gemini в auto-режиме → fallback,
-     * иначе → показываем сообщение об ошибке.
-     */
     private suspend fun handleHttpError(
         connection: HttpURLConnection,
         aiMode: String,
-        forceVseGpt: Boolean,
+        forceFallbackRoute: Boolean,
         target: AiTarget,
         callback: StreamCallback
     ) {
         val errorBody = try {
             connection.errorStream?.bufferedReader()?.readText() ?: ""
-        } catch (_: Exception) { "" }
+        } catch (_: Exception) {
+            ""
+        }
 
-        val isLimitHTTP = connection.responseCode == 429 ||
-                errorBody.contains("quota", true) ||
-                errorBody.contains("resource has been exhausted", true)
+        val isLimitHttp = connection.responseCode == 429 ||
+            errorBody.contains("quota", true) ||
+            errorBody.contains("resource has been exhausted", true)
 
-        if (aiMode == "auto" && !forceVseGpt && (isLimitHTTP || target.backend == "gemini")) {
-            withContext(Dispatchers.Main) { callback.onFallbackRequired() }
+        if (aiMode == "auto" && !forceFallbackRoute && (isLimitHttp || target.route == "primary")) {
+            withContext(Dispatchers.Main) {
+                callback.onFallbackRequired()
+            }
             return
         }
 
-        val errorMsg = try {
+        val errorMessage = try {
             JSONObject(errorBody).getJSONObject("error").getString("message")
-        } catch (_: Exception) { "Код ${connection.responseCode}" }
+        } catch (_: Exception) {
+            "Код ${connection.responseCode}"
+        }
 
-        withContext(Dispatchers.Main) { callback.onError("Ошибка: $errorMsg") }
+        withContext(Dispatchers.Main) {
+            callback.onError("Ошибка: $errorMessage")
+        }
     }
 
-    /**
-     * Верифицирует, является ли ответ сообщением об исчерпании лимитов.
-     * Отправляет ответ на проверку в DeepSeek через VseGPT.
-     */
     suspend fun verifyResponseIsLimitError(responseText: String): Boolean {
         if (responseText.isEmpty() || responseText.length < 10) return false
+        if (BuildConfig.SECONDARY_AI_CHAT_URL.isBlank() ||
+            BuildConfig.SECONDARY_AI_AUDIT_MODEL.isBlank() ||
+            ApiKeyProvider.secondaryAiApiKey.isBlank()
+        ) {
+            return false
+        }
+
         return withContext(Dispatchers.IO) {
             try {
-                val url = URL("https://api.vsegpt.ru/v1/chat/completions")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json; utf-8")
-                connection.setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.vsegptApiKey}")
-                connection.doOutput = true
+                val connection = (URL(BuildConfig.SECONDARY_AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json; utf-8")
+                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.secondaryAiApiKey}")
+                    doOutput = true
+                }
 
                 val jsonInput = JSONObject().apply {
-                    put("model", "deepseek/deepseek-v3.2-alt")
+                    put("model", BuildConfig.SECONDARY_AI_AUDIT_MODEL)
                     put("messages", JSONArray().apply {
                         put(JSONObject().apply {
                             put("role", "system")
-                            put("content", "Проанализируй следующий ответ ИИ. Содержит ли он сообщение об исчерпании лимитов, квоты или ошибке сервиса (например 'I am a free model and I reached my limits', 'Resource has been exhausted', 'Quota exceeded')? Ответь строго 'YES' если это так, и 'NO' если ответ ИИ нормальный.")
+                            put(
+                                "content",
+                                "Проанализируй следующий ответ ИИ. Содержит ли он сообщение об исчерпании лимитов, квоты или ошибке сервиса? Ответь строго YES или NO."
+                            )
                         })
                         put(JSONObject().apply {
                             put("role", "user")
@@ -339,41 +342,52 @@ object AiApiService {
                 }
 
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).readText()
+                    val response = BufferedReader(
+                        InputStreamReader(connection.inputStream, "utf-8")
+                    ).readText()
                     val answer = JSONObject(response)
-                        .getJSONArray("choices").getJSONObject(0)
-                        .getJSONObject("message").getString("content")
+                        .getJSONArray("choices")
+                        .getJSONObject(0)
+                        .getJSONObject("message")
+                        .getString("content")
+
                     return@withContext answer.trim().contains("YES", ignoreCase = true)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
             }
-            return@withContext false
+
+            false
         }
     }
 
-    /**
-     * Фоновая суммаризация старых сообщений для сжатия контекста.
-     * Предотвращает превышение лимита контекстного окна модели.
-     */
     suspend fun summarizeMessages(messagesToSummarize: List<JSONObject>): String? {
+        if (BuildConfig.SECONDARY_AI_CHAT_URL.isBlank() ||
+            BuildConfig.SECONDARY_AI_SUMMARY_MODEL.isBlank() ||
+            ApiKeyProvider.secondaryAiApiKey.isBlank()
+        ) {
+            return null
+        }
+
         return withContext(Dispatchers.IO) {
             try {
-                val url = URL("https://api.vsegpt.ru/v1/chat/completions")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json; utf-8")
-                conn.setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.vsegptApiKey}")
-                conn.doOutput = true
+                val connection = (URL(BuildConfig.SECONDARY_AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json; utf-8")
+                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.secondaryAiApiKey}")
+                    doOutput = true
+                }
 
-                val promptText = "Сделай краткую выжимку важных фактов из этой части переписки (сохрани ключевые детали):\n" +
-                    messagesToSummarize.joinToString("\n") { it.getString("role") + ": " + it.getString("content") }
+                val promptText =
+                    "Сделай краткую выжимку важных фактов из этой части переписки (сохрани ключевые детали):\n" +
+                        messagesToSummarize.joinToString("\n") {
+                            it.getString("role") + ": " + it.getString("content")
+                        }
 
                 val jsonInput = JSONObject().apply {
-                    put("model", "openai/gpt-5.4-nano")
+                    put("model", BuildConfig.SECONDARY_AI_SUMMARY_MODEL)
                     put("stream", false)
                     put("max_tokens", 300)
-                    val messages = JSONArray().apply {
+                    put("messages", JSONArray().apply {
                         put(JSONObject().apply {
                             put("role", "system")
                             put("content", "Обнови информацию.")
@@ -382,23 +396,44 @@ object AiApiService {
                             put("role", "user")
                             put("content", promptText)
                         })
-                    }
-                    put("messages", messages)
+                    })
                 }.toString()
 
-                OutputStreamWriter(conn.outputStream).use { it.write(jsonInput); it.flush() }
-                if (conn.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = BufferedReader(InputStreamReader(conn.inputStream, "utf-8")).readText()
+                OutputStreamWriter(connection.outputStream).use {
+                    it.write(jsonInput)
+                    it.flush()
+                }
+
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val response = BufferedReader(
+                        InputStreamReader(connection.inputStream, "utf-8")
+                    ).readText()
                     JSONObject(response)
                         .getJSONArray("choices")
                         .getJSONObject(0)
                         .getJSONObject("message")
                         .getString("content")
-                } else null
-            } catch (e: Exception) {
-                e.printStackTrace()
+                } else {
+                    null
+                }
+            } catch (_: Exception) {
                 null
             }
         }
     }
+
+    private fun isTargetConfigured(target: AiTarget): Boolean {
+        if (target.apiUrl.isBlank() || target.model.isBlank()) {
+            return false
+        }
+
+        return target.usesNativeProtocol || resolvedApiKey(target.route).isNotBlank()
+    }
+
+    private fun resolvedApiKey(route: String): String =
+        if (route == "secondary") {
+            ApiKeyProvider.secondaryAiApiKey
+        } else {
+            ApiKeyProvider.primaryAiApiKey
+        }
 }

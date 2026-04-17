@@ -77,11 +77,11 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.itemAbout).setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://freechat-policies.onrender.com/")))
+            openExternalLink(BuildConfig.PUBLIC_INFO_URL)
         }
 
         findViewById<View>(R.id.itemReport).setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/Kapibara1998")))
+            openExternalLink(BuildConfig.SUPPORT_URL)
         }
     }
 
@@ -193,5 +193,14 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun openExternalLink(url: String) {
+        if (url.isBlank()) {
+            Toast.makeText(this, "Ссылка недоступна", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
     }
 }

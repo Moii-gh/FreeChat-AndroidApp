@@ -35,9 +35,9 @@ class AiModeActivity : AppCompatActivity() {
 
         modes = listOf(
             ModeItem(
-                id = "vsegpt",
-                title = LocaleHelper.getString(this, "ai_mode_vsegpt_title"),
-                desc = LocaleHelper.getString(this, "ai_mode_vsegpt_desc")
+                id = "plus",
+                title = LocaleHelper.getString(this, "ai_mode_plus_title"),
+                desc = LocaleHelper.getString(this, "ai_mode_plus_desc")
             ),
             ModeItem(
                 id = "free",

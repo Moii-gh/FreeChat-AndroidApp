@@ -66,7 +66,7 @@ function createTelegramBotService({
     if (!startToken) {
       await sendMessage(
         chatId,
-        "Откройте ссылку из приложения FreeChat и запустите команду /start ещё раз."
+        "Откройте ссылку из приложения и запустите команду /start ещё раз."
       );
       return { ok: true };
     }
@@ -84,17 +84,17 @@ function createTelegramBotService({
 
     const linkedUser = await userModel.findByTelegramUserId(telegramUserId);
     if (challenge.purpose === "register" && linkedUser) {
-      await sendMessage(chatId, "Этот Telegram уже привязан к другому аккаунту FreeChat.");
+      await sendMessage(chatId, "Этот Telegram уже привязан к другому аккаунту.");
       return { ok: false, reason: "already_linked" };
     }
 
     if (challenge.purpose === "login" && !linkedUser) {
-      await sendMessage(chatId, "Этот Telegram ещё не привязан к аккаунту FreeChat.");
+      await sendMessage(chatId, "Этот Telegram ещё не привязан к аккаунту.");
       return { ok: false, reason: "not_linked" };
     }
 
     if (challenge.purpose === "migrate" && linkedUser && linkedUser.id !== challenge.user_id) {
-      await sendMessage(chatId, "Этот Telegram уже привязан к другому аккаунту FreeChat.");
+      await sendMessage(chatId, "Этот Telegram уже привязан к другому аккаунту.");
       return { ok: false, reason: "already_linked" };
     }
 
@@ -108,7 +108,7 @@ function createTelegramBotService({
 
     await sendMessage(
       chatId,
-      `Код FreeChat: ${code}\nВведите его в приложении в течение 10 минут.`
+      `Код подтверждения: ${code}\nВведите его в приложении в течение 10 минут.`
     );
 
     return { ok: true, code };

@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
     private val authViewModel: AuthViewModel by viewModels {
         AuthViewModel.Factory(
             repository = AuthRepository(
-                service = NetworkModule.createAuthApiService(BuildConfig.AUTH_BASE_URL)
+                service = NetworkModule.createAuthApiService(BuildConfig.APP_API_BASE_URL)
             ),
             accountSessionStore = accountSessionStore
         )

@@ -34,7 +34,7 @@ class SecurityActivity : AppCompatActivity() {
 
         sessionStore = SharedPrefsAccountSessionStore(this)
         authRepository = AuthRepository(
-            service = NetworkModule.createAuthApiService(BuildConfig.AUTH_BASE_URL)
+            service = NetworkModule.createAuthApiService(BuildConfig.APP_API_BASE_URL)
         )
 
         etPassword = findViewById(R.id.etPassword)

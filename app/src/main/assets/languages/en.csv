@@ -1,4 +1,4 @@
-TID;TEXT
+﻿TID;TEXT
 welcome_question;What can I help you with?
 button_create_image;Create image
 button_help_me_write;Help me write
@@ -154,9 +154,9 @@ toast_password_empty;Password cannot be empty
 toast_instructions_saved;Instructions saved
 share_image;Share image
 share;Share
-ai_mode_vsegpt_title;Paid mode (VseGPT)
-ai_mode_vsegpt_desc;Models used: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_plus_title;Extended mode
+ai_mode_plus_desc;Uses an expanded set of models and capabilities
 ai_mode_free_title;Free mode (with limits)
-ai_mode_free_desc;Uses basic Google models. All current limits are preserved
+ai_mode_free_desc;Uses the basic model tier. All current limits are preserved
 ai_mode_auto_title;Automatic mode
 ai_mode_auto_desc;The system dynamically selects the best model based on the task and response

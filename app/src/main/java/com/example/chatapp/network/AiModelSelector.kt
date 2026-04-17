@@ -1,122 +1,119 @@
 package com.example.chatapp.network
 
-/**
- * Конфигурация выбранного AI бэкенда и модели.
- * Результат работы AiModelSelector.
- */
+import com.example.chatapp.BuildConfig
+import com.example.chatapp.util.ApiKeyProvider
+import java.util.Locale
+
 data class AiTarget(
-    val backend: String,     // "gemini" или "vsegpt"
-    val model: String,       // Идентификатор модели
-    val apiUrl: String,      // Полный URL для запроса
-    val isNativeGemini: Boolean, // Нужен ли нативный формат Gemini (vs OpenAI)
-    val isImageGen: Boolean  // Режим генерации изображений
+    val route: String,
+    val model: String,
+    val apiUrl: String,
+    val usesNativeProtocol: Boolean,
+    val isImageGeneration: Boolean
 )
 
-/**
- * Выбор AI-модели и бэкенда на основе текущего режима и настроек.
- *
- * Логика выбора:
- * - search/shopping → всегда VseGPT (Perplexity)
- * - create_image + gemini → Gemini image gen
- * - create_image + vsegpt → Flux
- * - vision (base64 вложения) → VseGPT Qwen-VL
- * - auto → пробуем Gemini, при ошибке fallback на VseGPT
- */
 object AiModelSelector {
 
-    /**
-     * Определяет целевой бэкенд, модель и URL на основе параметров запроса.
-     *
-     * @param currentMode текущий режим чата (search, shopping, create_image, study, null)
-     * @param aiMode настройка пользователя (auto, free, vsegpt)
-     * @param hasVision true если в сообщениях есть base64-вложения (изображения)
-     * @param forceVseGpt true при повторной попытке после ошибки Gemini
-     * @param geminiApiKey ключ Google Gemini
-     */
     fun selectTarget(
         currentMode: String?,
         aiMode: String,
         hasVision: Boolean,
-        forceVseGpt: Boolean,
-        geminiApiKey: String
+        forceFallbackRoute: Boolean
     ): AiTarget {
-        val isImageGen = currentMode == "create_image"
-        val isVseGptMode = currentMode == "search" || currentMode == "shopping"
+        val isImageGeneration = currentMode == "create_image"
+        val requiresSecondaryRoute = currentMode == "search" || currentMode == "shopping"
 
-        var targetBackend = "gemini"
-        var targetModel = ""
+        var selectedRoute = "primary"
+        var selectedModel = ""
 
-        if (isVseGptMode) {
-            targetBackend = "vsegpt"
-            targetModel = "perplexity/llama-3.1-sonar-small-128k-online"
+        if (requiresSecondaryRoute) {
+            selectedRoute = "secondary"
+            selectedModel = BuildConfig.SECONDARY_AI_SEARCH_MODEL
         } else {
             when (aiMode) {
-                "vsegpt" -> {
-                    targetBackend = "vsegpt"
-                    targetModel = when {
-                        isImageGen -> "img-flux/flux-2-klein-4b"
-                        hasVision -> "openai/gpt-5.4-nano"
-                        else -> "openai/gpt-5.4-nano"
+                "plus" -> {
+                    selectedRoute = "secondary"
+                    selectedModel = when {
+                        isImageGeneration -> BuildConfig.SECONDARY_AI_IMAGE_MODEL
+                        hasVision -> BuildConfig.SECONDARY_AI_VISION_MODEL
+                        else -> BuildConfig.SECONDARY_AI_TEXT_MODEL
                     }
                 }
+
                 "free" -> {
-                    targetBackend = "gemini"
-                    targetModel = when {
-                        isImageGen -> "gemini-2.5-flash-image"
-                        else -> "gemini-2.5-flash"
+                    selectedRoute = "primary"
+                    selectedModel = if (isImageGeneration) {
+                        BuildConfig.PRIMARY_AI_IMAGE_MODEL
+                    } else {
+                        BuildConfig.PRIMARY_AI_TEXT_MODEL
                     }
                 }
+
                 "auto" -> {
-                    if (forceVseGpt) {
-                        targetBackend = "vsegpt"
-                        targetModel = when {
-                            isImageGen -> "img-flux/flux-2-klein-4b"
-                            hasVision -> "openai/gpt-5.4-nano"
-                            else -> "openai/gpt-5.4-nano"
+                    if (forceFallbackRoute) {
+                        selectedRoute = "secondary"
+                        selectedModel = when {
+                            isImageGeneration -> BuildConfig.SECONDARY_AI_IMAGE_MODEL
+                            hasVision -> BuildConfig.SECONDARY_AI_VISION_MODEL
+                            else -> BuildConfig.SECONDARY_AI_TEXT_MODEL
                         }
                     } else {
                         when {
-                            isImageGen -> {
-                                targetBackend = "vsegpt"
-                                targetModel = "img-flux/flux-2-klein-4b"
+                            isImageGeneration -> {
+                                selectedRoute = "secondary"
+                                selectedModel = BuildConfig.SECONDARY_AI_IMAGE_MODEL
                             }
+
                             hasVision -> {
-                                targetBackend = "vsegpt"
-                                targetModel = "openai/gpt-5.4-nano"
+                                selectedRoute = "secondary"
+                                selectedModel = BuildConfig.SECONDARY_AI_VISION_MODEL
                             }
+
                             else -> {
-                                targetBackend = "gemini"
-                                targetModel = "gemini-2.5-flash"
+                                selectedRoute = "primary"
+                                selectedModel = BuildConfig.PRIMARY_AI_TEXT_MODEL
                             }
                         }
                     }
                 }
+
                 else -> {
-                    targetBackend = "gemini"
-                    targetModel = "gemini-2.5-flash"
+                    selectedRoute = "primary"
+                    selectedModel = BuildConfig.PRIMARY_AI_TEXT_MODEL
                 }
             }
         }
 
-        val isNativeGemini = targetBackend == "gemini" && !isImageGen
-
+        val usesNativeProtocol = selectedRoute == "primary" && !isImageGeneration
         val apiUrl = when {
-            isImageGen && targetBackend == "gemini" ->
-                "https://generativelanguage.googleapis.com/v1beta/openai/images/generations"
-            isImageGen && targetBackend == "vsegpt" ->
-                "https://api.vsegpt.ru/v1/images/generations"
-            targetBackend == "vsegpt" ->
-                "https://api.vsegpt.ru/v1/chat/completions"
-            else ->
-                "https://generativelanguage.googleapis.com/v1beta/models/$targetModel:streamGenerateContent?alt=sse&key=$geminiApiKey"
+            isImageGeneration && selectedRoute == "primary" -> BuildConfig.PRIMARY_AI_IMAGE_URL
+            isImageGeneration && selectedRoute == "secondary" -> BuildConfig.SECONDARY_AI_IMAGE_URL
+            selectedRoute == "secondary" -> BuildConfig.SECONDARY_AI_CHAT_URL
+            else -> buildPrimaryStreamUrl(selectedModel)
         }
 
         return AiTarget(
-            backend = targetBackend,
-            model = targetModel,
+            route = selectedRoute,
+            model = selectedModel,
             apiUrl = apiUrl,
-            isNativeGemini = isNativeGemini,
-            isImageGen = isImageGen
+            usesNativeProtocol = usesNativeProtocol,
+            isImageGeneration = isImageGeneration
         )
+    }
+
+    private fun buildPrimaryStreamUrl(model: String): String {
+        val template = BuildConfig.PRIMARY_AI_STREAM_URL_TEMPLATE
+        if (template.isBlank()) {
+            return ""
+        }
+
+        return runCatching {
+            String.format(
+                Locale.US,
+                template,
+                model,
+                ApiKeyProvider.primaryAiApiKey
+            )
+        }.getOrElse { template }
     }
 }

@@ -1,4 +1,4 @@
-TID;TEXT
+﻿TID;TEXT
 welcome_question;Чым магу дапамагчы?
 button_create_image;Стварыць малюнак
 button_help_me_write;Дапамажы мне напісаць
@@ -154,9 +154,9 @@ toast_password_empty;Пароль не можа быць пустым
 toast_instructions_saved;Інструкцыі захаваны
 share_image;Абмяняцца малюнкам
 share;Абмяняцца
-ai_mode_vsegpt_title;Платны рэжым (VseGPT)
-ai_mode_vsegpt_desc;Выкарыстоўваюцца мадэлі: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_plus_title;Пашыраны рэжым
+ai_mode_plus_desc;Выкарыстоўваецца пашыраны набор мадэляў і магчымасцяў
 ai_mode_free_title;Бясплатны рэжым (з лімітамі)
-ai_mode_free_desc;Выкарыстоўваюцца базавыя мадэлі Google. Захоўваюцца ўсе бягучыя ліміты
+ai_mode_free_desc;Выкарыстоўваецца базавы набор мадэляў. Захоўваюцца ўсе бягучыя ліміты
 ai_mode_auto_title;Аўтаматычны рэжым
 ai_mode_auto_desc;Сістэма дынамічна выбірае лепшую мадэль у залежнасці ад задачы і адказу

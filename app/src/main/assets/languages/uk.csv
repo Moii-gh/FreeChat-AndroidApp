@@ -1,4 +1,4 @@
-TID;TEXT
+﻿TID;TEXT
 welcome_question;Хрю хрю?
 button_create_image;Хрююю
 button_help_me_write;Хрю хрююю
@@ -154,9 +154,9 @@ toast_password_empty;Хря фрр хрю
 toast_instructions_saved;Хрююю хвии!
 share_image;Хрююю фрр
 share;Фрррр
-ai_mode_vsegpt_title;Хрю хрю (VseGPT)
-ai_mode_vsegpt_desc;Хрю хрю: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_plus_title;Розширений режим
+ai_mode_plus_desc;Використовується розширений набір моделей і можливостей
 ai_mode_free_title;Фрр хрю (хрю хрю)
-ai_mode_free_desc;Хрю фрр хвии. Хрю хрю хрю хвии
+ai_mode_free_desc;Використовується базовий набір моделей. Усі поточні ліміти зберігаються
 ai_mode_auto_title;Хрююю фрр
 ai_mode_auto_desc;Хрю хрю хвии фрр хрю хрю хвии хрююю

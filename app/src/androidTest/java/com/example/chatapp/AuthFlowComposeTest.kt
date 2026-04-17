@@ -41,7 +41,7 @@ class AuthFlowComposeTest {
                 TelegramCodeScreen(
                     state = AuthUiState(
                         telegramChallengeId = "challenge-1",
-                        telegramBotUrl = "tg://resolve?domain=freechat_bot"
+                        telegramBotUrl = "tg://resolve?domain=sample_app_bot"
                     ),
                     onCodeChanged = {},
                     onOpenTelegram = {},

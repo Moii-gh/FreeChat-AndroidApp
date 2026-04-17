@@ -711,7 +711,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     toast(error)
                 }
             },
-            forceVseGpt = true,
+            forceFallbackRoute = true,
             modeOverride = modeOverride,
             useModeOverride = useModeOverride
         )

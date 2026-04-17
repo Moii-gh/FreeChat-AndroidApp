@@ -154,7 +154,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         TelegramAuthBeginResponse(
             message = "Откройте Telegram и отправьте команду /start",
             challengeId = "challenge-register",
-            botUrl = "https://t.me/freechat_bot?start=register",
+            botUrl = "https://t.me/sample_app_bot?start=register",
             expiresAt = "2026-04-16T12:00:00Z"
         )
     )
@@ -162,7 +162,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         TelegramAuthBeginResponse(
             message = "Откройте Telegram и отправьте команду /start",
             challengeId = "challenge-login",
-            botUrl = "https://t.me/freechat_bot?start=login",
+            botUrl = "https://t.me/sample_app_bot?start=login",
             expiresAt = "2026-04-16T12:00:00Z"
         )
     )
@@ -170,7 +170,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         TelegramAuthBeginResponse(
             message = "Откройте Telegram и отправьте команду /start",
             challengeId = "challenge-migrate",
-            botUrl = "https://t.me/freechat_bot?start=migrate",
+            botUrl = "https://t.me/sample_app_bot?start=migrate",
             expiresAt = "2026-04-16T12:00:00Z"
         )
     )

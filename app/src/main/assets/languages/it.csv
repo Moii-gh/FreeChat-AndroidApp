@@ -1,4 +1,4 @@
-TID;TEXT
+﻿TID;TEXT
 welcome_question;Come posso aiutarti?
 button_create_image;Crea immagine
 button_help_me_write;Aiutami a scrivere
@@ -154,9 +154,9 @@ toast_password_empty;La password non può essere vuota
 toast_instructions_saved;Istruzioni salvate
 share_image;Condividi immagine
 share;Condividi
-ai_mode_vsegpt_title;Modalità a pagamento (VseGPT)
-ai_mode_vsegpt_desc;Modelli utilizzati: deepseek-v3.2, flux-2, qwen-vl-plus
+ai_mode_plus_title;Modalità avanzata
+ai_mode_plus_desc;Usa un set esteso di modelli e capacità
 ai_mode_free_title;Modalità gratuita (con limiti)
-ai_mode_free_desc;Utilizza i modelli base di Google. Tutti i limiti attuali vengono mantenuti
+ai_mode_free_desc;Usa il livello base dei modelli. Tutti i limiti attuali vengono mantenuti
 ai_mode_auto_title;Modalità automatica
 ai_mode_auto_desc;Il sistema seleziona dinamicamente il modello migliore in base al compito e alla risposta

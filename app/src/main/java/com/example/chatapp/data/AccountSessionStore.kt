@@ -128,11 +128,12 @@ class AccountScopedSettings(
     }
 
     fun getAiMode(defaultValue: String = "auto"): String {
-        return prefs.getString(scopedKey("ai_mode"), defaultValue) ?: defaultValue
+        val storedValue = prefs.getString(scopedKey("ai_mode"), defaultValue) ?: defaultValue
+        return normalizeAiMode(storedValue)
     }
 
     fun saveAiMode(value: String) {
-        prefs.edit().putString(scopedKey("ai_mode"), value).apply()
+        prefs.edit().putString(scopedKey("ai_mode"), normalizeAiMode(value)).apply()
     }
 
     fun getUserInstructions(): String {
@@ -196,5 +197,10 @@ class AccountScopedSettings(
             .putInt(targetKey, prefs.getInt(legacyKey, 20))
             .remove(legacyKey)
             .apply()
+    }
+
+    private fun normalizeAiMode(value: String): String = when (value) {
+        "plus", "free", "auto" -> value
+        else -> "plus"
     }
 }

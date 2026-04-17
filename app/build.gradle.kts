@@ -17,6 +17,9 @@ if (envFile.exists()) {
     }
 }
 
+fun String.toBuildConfigString(): String =
+    "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 android {
     namespace = "com.example.chatapp"
     compileSdk = 34
@@ -30,12 +33,81 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "VSEGPT_API_KEY", "\"${envVars["VSEGPT_API_KEY"] ?: ""}\"")
-        buildConfigField("String", "GEMINI_API_KEY", "\"${envVars["GEMINI_API_KEY"] ?: ""}\"")
+        buildConfigField("String", "PRIMARY_AI_API_KEY", (envVars["PRIMARY_AI_API_KEY"] ?: "").toBuildConfigString())
+        buildConfigField("String", "SECONDARY_AI_API_KEY", (envVars["SECONDARY_AI_API_KEY"] ?: "").toBuildConfigString())
         buildConfigField(
             "String",
-            "AUTH_BASE_URL",
-            "\"${envVars["AUTH_BASE_URL"] ?: "http://138.124.97.180:4000/api/"}\""
+            "APP_API_BASE_URL",
+            (envVars["APP_API_BASE_URL"] ?: "http://10.0.2.2:4000/api/").toBuildConfigString()
+        )
+        buildConfigField("String", "PUBLIC_INFO_URL", (envVars["PUBLIC_INFO_URL"] ?: "").toBuildConfigString())
+        buildConfigField("String", "SUPPORT_URL", (envVars["SUPPORT_URL"] ?: "").toBuildConfigString())
+
+        buildConfigField(
+            "String",
+            "PRIMARY_AI_STREAM_URL_TEMPLATE",
+            (envVars["PRIMARY_AI_STREAM_URL_TEMPLATE"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "PRIMARY_AI_IMAGE_URL",
+            (envVars["PRIMARY_AI_IMAGE_URL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_CHAT_URL",
+            (envVars["SECONDARY_AI_CHAT_URL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_IMAGE_URL",
+            (envVars["SECONDARY_AI_IMAGE_URL"] ?: "").toBuildConfigString()
+        )
+
+        buildConfigField(
+            "String",
+            "PRIMARY_AI_TEXT_MODEL",
+            (envVars["PRIMARY_AI_TEXT_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "PRIMARY_AI_IMAGE_MODEL",
+            (envVars["PRIMARY_AI_IMAGE_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_TEXT_MODEL",
+            (envVars["SECONDARY_AI_TEXT_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_VISION_MODEL",
+            (envVars["SECONDARY_AI_VISION_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_IMAGE_MODEL",
+            (envVars["SECONDARY_AI_IMAGE_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_SEARCH_MODEL",
+            (envVars["SECONDARY_AI_SEARCH_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_TITLE_MODEL",
+            (envVars["SECONDARY_AI_TITLE_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_SUMMARY_MODEL",
+            (envVars["SECONDARY_AI_SUMMARY_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "SECONDARY_AI_AUDIT_MODEL",
+            (envVars["SECONDARY_AI_AUDIT_MODEL"] ?: "").toBuildConfigString()
         )
     }
 

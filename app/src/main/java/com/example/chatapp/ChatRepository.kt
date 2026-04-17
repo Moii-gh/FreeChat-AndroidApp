@@ -1,6 +1,7 @@
 package com.example.chatapp
 
 import android.content.Context
+import com.example.chatapp.util.ApiKeyProvider
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import kotlinx.coroutines.Dispatchers
@@ -104,21 +105,27 @@ class ChatRepository(context: Context) {
     suspend fun getMessageCount(chatId: String): Int = dao.getMessageCount(chatId)
 
     suspend fun generateChatTitle(
-        firstUserMessage: String,
-        apiKey: String
+        firstUserMessage: String
     ): String? = withContext(Dispatchers.IO) {
+        if (BuildConfig.SECONDARY_AI_CHAT_URL.isBlank() ||
+            BuildConfig.SECONDARY_AI_TITLE_MODEL.isBlank() ||
+            ApiKeyProvider.secondaryAiApiKey.isBlank()
+        ) {
+            return@withContext null
+        }
+
         try {
-            val url = URL("https://api.vsegpt.ru/v1/chat/completions")
+            val url = URL(BuildConfig.SECONDARY_AI_CHAT_URL)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json; utf-8")
-            connection.setRequestProperty("Authorization", "Bearer ${com.example.chatapp.util.ApiKeyProvider.vsegptApiKey}")
+            connection.setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.secondaryAiApiKey}")
             connection.doOutput = true
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
 
             val jsonInput = JSONObject().apply {
-                put("model", "openai/gpt-5.4-nano")
+                put("model", BuildConfig.SECONDARY_AI_TITLE_MODEL)
                 put("stream", false)
                 put("max_tokens", 40)
                 put("temperature", 0.7)
