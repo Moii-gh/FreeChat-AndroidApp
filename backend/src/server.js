@@ -5,7 +5,11 @@ const { createTelegramBotService } = require("./utils/telegramBotService");
 
 const telegramConfig = {
   isConfigured: Boolean(env.telegramBotToken && env.telegramBotUsername),
-  botUsername: env.telegramBotUsername
+  botToken: env.telegramBotToken,
+  botUsername: env.telegramBotUsername,
+  loginClientId: env.telegramLoginClientId,
+  publicBaseUrl: env.telegramWidgetPublicBaseUrl,
+  widgetMaxAgeSeconds: env.telegramWidgetMaxAgeSeconds
 };
 
 const app = createApp({ telegramConfig });

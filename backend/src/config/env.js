@@ -16,7 +16,10 @@ const env = {
   smtpUser: process.env.SMTP_USER || "",
   smtpPass: process.env.SMTP_PASS || "",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
-  telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || ""
+  telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || "",
+  telegramWidgetPublicBaseUrl: process.env.TELEGRAM_WIDGET_PUBLIC_BASE_URL || "",
+  telegramWidgetMaxAgeSeconds: Number(process.env.TELEGRAM_WIDGET_MAX_AGE_SECONDS || 86400),
+  telegramLoginClientId: process.env.TELEGRAM_LOGIN_CLIENT_ID || ""
 };
 
 module.exports = { env };

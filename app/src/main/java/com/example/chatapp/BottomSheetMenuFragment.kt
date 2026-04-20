@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.example.chatapp.util.setHapticClickListener
 
 class BottomSheetMenuFragment : BottomSheetDialogFragment() {
     private var cameraImageUri: Uri? = null
@@ -80,7 +81,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
         view.findViewById<android.widget.TextView>(R.id.tvOptStudyTitle)?.text = LocaleHelper.getString(context, "button_stud_ and_training")
         view.findViewById<android.widget.TextView>(R.id.tvOptStudyDesc)?.text = LocaleHelper.getString(context, "button_stud_ and_training_description")
 
-        view.findViewById<View>(R.id.btnCamera).setOnClickListener {
+        view.findViewById<View>(R.id.btnCamera).setHapticClickListener {
             val context = requireContext()
             val file = java.io.File(context.cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
             val uri = androidx.core.content.FileProvider.getUriForFile(
@@ -92,15 +93,15 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             takePictureLauncher.launch(uri)
         }
 
-        view.findViewById<View>(R.id.btnPhoto).setOnClickListener {
+        view.findViewById<View>(R.id.btnPhoto).setHapticClickListener {
             imagePickerLauncher.launch("image/*")
         }
 
-        view.findViewById<View>(R.id.btnFiles).setOnClickListener {
+        view.findViewById<View>(R.id.btnFiles).setHapticClickListener {
             filePickerLauncher.launch("*/*")
         }
 
-        view.findViewById<View>(R.id.optCreateImage).setOnClickListener {
+        view.findViewById<View>(R.id.optCreateImage).setHapticClickListener {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_create_image"),
                 R.drawable.ic_palette,
@@ -111,7 +112,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             dismiss()
         }
 
-        view.findViewById<View>(R.id.optSearch).setOnClickListener {
+        view.findViewById<View>(R.id.optSearch).setHapticClickListener {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_search"),
                 R.drawable.ic_globe_new,
@@ -122,7 +123,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             dismiss()
         }
 
-        view.findViewById<View>(R.id.optShopping).setOnClickListener {
+        view.findViewById<View>(R.id.optShopping).setHapticClickListener {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_purchase_research"),
                 R.drawable.ic_shopping_new,
@@ -133,7 +134,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             dismiss()
         }
 
-        view.findViewById<View>(R.id.optStudy).setOnClickListener {
+        view.findViewById<View>(R.id.optStudy).setHapticClickListener {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_stud_ and_training"),
                 R.drawable.ic_book_new,

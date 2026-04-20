@@ -1,6 +1,8 @@
 const bcrypt = require("bcrypt");
 const crypto = require("node:crypto");
 const { createJwtToken } = require("../utils/createJwtToken");
+const { verifyTelegramIdToken } = require("../utils/telegramIdTokenVerifier");
+const { verifyTelegramWidgetAuth } = require("../utils/telegramWidgetVerifier");
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const PURPOSES = {
@@ -14,6 +16,28 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
     if (!telegramConfig.isConfigured || !telegramConfig.botUsername) {
       res.status(503).json({
         message: "Telegram-бот пока не настроен"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const ensureTelegramWidgetConfigured = (res) => {
+    if (!telegramConfig.isConfigured || !telegramConfig.botUsername || !telegramConfig.botToken) {
+      res.status(503).json({
+        message: "Telegram Login Widget пока не настроен"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const ensureTelegramNativeConfigured = (res) => {
+    if (!telegramConfig.loginClientId) {
+      res.status(503).json({
+        message: "Telegram Native Login не настроен"
       });
       return false;
     }
@@ -35,6 +59,165 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
     new Date(challenge.expires_at).getTime() <= Date.now();
 
   const generateStartToken = () => crypto.randomBytes(24).toString("hex");
+
+  const escapeHtml = (value) =>
+    String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const safeJson = (value) =>
+    JSON.stringify(value).replace(/</g, "\\u003c");
+
+  const getRequestBaseUrl = (req) => {
+    if (telegramConfig.publicBaseUrl) {
+      return telegramConfig.publicBaseUrl.replace(/\/+$/, "");
+    }
+
+    const proto = req.get("x-forwarded-proto") || req.protocol;
+    const host = req.get("x-forwarded-host") || req.get("host");
+    return `${proto}://${host}`;
+  };
+
+  const buildWidgetCallbackUrl = (req) =>
+    `${getRequestBaseUrl(req)}/api/telegram-auth/widget-callback`;
+
+  const buildWidgetHtml = (req) => {
+    const botUsername = escapeHtml(telegramConfig.botUsername);
+    const callbackUrl = escapeHtml(buildWidgetCallbackUrl(req));
+
+    return `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Telegram Login</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #101010;
+      color: #f5f5f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(100% - 32px, 360px);
+      text-align: center;
+    }
+    .hint {
+      margin: 0 0 22px;
+      color: rgba(245, 245, 245, .72);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="hint">Войдите через официальный Telegram Login Widget.</p>
+    <script>
+      function notifyAndroid(method, payload) {
+        if (window.AndroidTelegramAuth && typeof window.AndroidTelegramAuth[method] === "function") {
+          window.AndroidTelegramAuth[method](payload);
+        }
+      }
+
+      window.onTelegramAuth = function(user) {
+        notifyAndroid("onTelegramAuth", JSON.stringify(user || {}));
+      };
+
+      window.onTelegramAuthError = function(message) {
+        notifyAndroid("onTelegramAuthError", message || "Не удалось загрузить Telegram Login Widget");
+      };
+    </script>
+    <script async src="https://telegram.org/js/telegram-widget.js?22"
+      data-telegram-login="${botUsername}"
+      data-size="large"
+      data-userpic="true"
+      data-radius="8"
+      data-request-access="write"
+      data-auth-url="${callbackUrl}"
+      onerror="onTelegramAuthError('Не удалось загрузить Telegram Login Widget')"></script>
+    <noscript>Включите JavaScript, чтобы войти через Telegram.</noscript>
+  </main>
+</body>
+</html>`;
+  };
+
+  const buildWidgetCallbackHtml = (authData) => `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Telegram Login</title>
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #101010;
+      color: #f5f5f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main>Completing Telegram login...</main>
+  <script>
+    const payload = ${safeJson(authData)};
+    if (window.AndroidTelegramAuth && typeof window.AndroidTelegramAuth.onTelegramAuth === "function") {
+      window.AndroidTelegramAuth.onTelegramAuth(JSON.stringify(payload));
+    } else {
+      document.querySelector("main").textContent = "Return to the app to finish login.";
+    }
+  </script>
+</body>
+</html>`;
+
+  const fullNameFromTelegram = ({ first_name: firstName, last_name: lastName, username }) => {
+    const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+    if (fullName) {
+      return fullName;
+    }
+
+    return username ? `@${username}` : `Telegram ${Date.now()}`;
+  };
+
+  const toWidgetProfile = (authData) => ({
+    fullName: fullNameFromTelegram(authData),
+    telegramUserId: authData.id,
+    telegramUsername: authData.username || null,
+    telegramFirstName: authData.first_name || null,
+    telegramLastName: authData.last_name || null,
+    telegramPhotoUrl: authData.photo_url || null
+  });
+
+  const toNativeProfile = (claims) => ({
+    fullName: claims.name || claims.preferred_username || `Telegram ${claims.sub}`,
+    telegramUserId: claims.id || claims.sub,
+    telegramUsername: claims.preferred_username || null,
+    telegramFirstName: claims.name || null,
+    telegramLastName: null,
+    telegramPhotoUrl: claims.picture || null
+  });
+
+  const upsertTelegramUser = async (profile) => {
+    const existingUser = await userModel.findByTelegramUserId(profile.telegramUserId);
+    const user = existingUser
+      ? await userModel.updateTelegramWidgetProfile(existingUser.id, profile)
+      : await userModel.createTelegramWidgetUser(profile);
+
+    return { user, existingUser };
+  };
 
   const loadActiveChallenge = async (challengeId, res) => {
     const challenge = await challengeModel.findById(challengeId);
@@ -86,6 +269,108 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
   };
 
   return {
+    widgetPage: async (req, res, next) => {
+      try {
+        if (!ensureTelegramWidgetConfigured(res)) {
+          return;
+        }
+
+        res
+          .status(200)
+          .type("html")
+          .send(buildWidgetHtml(req));
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    widgetCallback: async (req, res, next) => {
+      try {
+        const authData = {
+          id: req.query.id,
+          first_name: req.query.first_name,
+          last_name: req.query.last_name,
+          username: req.query.username,
+          photo_url: req.query.photo_url,
+          auth_date: req.query.auth_date,
+          hash: req.query.hash
+        };
+
+        res
+          .status(200)
+          .type("html")
+          .send(buildWidgetCallbackHtml(authData));
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    completeWidgetLogin: async (req, res, next) => {
+      try {
+        if (!ensureTelegramWidgetConfigured(res)) {
+          return;
+        }
+
+        const authData = req.validatedBody;
+        const verification = verifyTelegramWidgetAuth(authData, {
+          botToken: telegramConfig.botToken,
+          maxAgeSeconds: telegramConfig.widgetMaxAgeSeconds
+        });
+
+        if (!verification.ok) {
+          return res.status(401).json({
+            message: "Не удалось проверить данные Telegram"
+          });
+        }
+
+        const profile = toWidgetProfile(authData);
+        const { user, existingUser } = await upsertTelegramUser(profile);
+
+        return res.status(existingUser ? 200 : 201).json({
+          message: existingUser ? "Вход через Telegram выполнен" : "Аккаунт создан через Telegram",
+          token: createJwtToken(user),
+          user: userModel.toPublicUser(user)
+        });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    completeNativeLogin: async (req, res, next) => {
+      try {
+        if (!ensureTelegramNativeConfigured(res)) {
+          return;
+        }
+
+        const claims = await verifyTelegramIdToken(req.validatedBody.idToken, {
+          clientId: telegramConfig.loginClientId,
+          fetchImpl: telegramConfig.fetchImpl || global.fetch,
+          jwks: telegramConfig.jwks || null
+        });
+        const profile = toNativeProfile(claims);
+        const { user, existingUser } = await upsertTelegramUser(profile);
+
+        return res.status(existingUser ? 200 : 201).json({
+          message: existingUser ? "Вход через Telegram выполнен" : "Аккаунт создан через Telegram",
+          token: createJwtToken(user),
+          user: userModel.toPublicUser(user)
+        });
+      } catch (error) {
+        if (
+          error.message?.includes("Telegram ID token") ||
+          error.message?.includes("Invalid JWT") ||
+          error.message?.includes("Unsupported Telegram") ||
+          error.message?.includes("Telegram signing key")
+        ) {
+          return res.status(401).json({
+            message: "Не удалось проверить Telegram ID token"
+          });
+        }
+
+        return next(error);
+      }
+    },
+
     beginRegistration: async (_req, res, next) => {
       try {
         if (!ensureTelegramConfigured(res)) {
@@ -209,6 +494,12 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
         if (!user) {
           return res.status(404).json({
             message: "Аккаунт для этого Telegram не найден"
+          });
+        }
+
+        if (!user.password_hash) {
+          return res.status(409).json({
+            message: "Войдите через Telegram Login Widget"
           });
         }
 

@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -42,7 +44,6 @@ android {
         )
         buildConfigField("String", "PUBLIC_INFO_URL", (envVars["PUBLIC_INFO_URL"] ?: "").toBuildConfigString())
         buildConfigField("String", "SUPPORT_URL", (envVars["SUPPORT_URL"] ?: "").toBuildConfigString())
-
         buildConfigField(
             "String",
             "PRIMARY_AI_STREAM_URL_TEMPLATE",
@@ -63,11 +64,15 @@ android {
             "SECONDARY_AI_IMAGE_URL",
             (envVars["SECONDARY_AI_IMAGE_URL"] ?: "").toBuildConfigString()
         )
-
         buildConfigField(
             "String",
             "PRIMARY_AI_TEXT_MODEL",
             (envVars["PRIMARY_AI_TEXT_MODEL"] ?: "").toBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "PRIMARY_AI_VISION_MODEL",
+            (envVars["PRIMARY_AI_VISION_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
@@ -109,6 +114,31 @@ android {
             "SECONDARY_AI_AUDIT_MODEL",
             (envVars["SECONDARY_AI_AUDIT_MODEL"] ?: "").toBuildConfigString()
         )
+        val telegramLoginClientId = envVars["TELEGRAM_LOGIN_CLIENT_ID"] ?: ""
+        val telegramLoginRedirectUri = envVars["TELEGRAM_LOGIN_REDIRECT_URI"]
+            ?: if (telegramLoginClientId.isNotBlank()) {
+                "https://app${telegramLoginClientId}-login.tg.dev/tglogin"
+            } else {
+                "https://app0-login.tg.dev/tglogin"
+            }
+        val telegramLoginScopes = envVars["TELEGRAM_LOGIN_SCOPES"] ?: "profile"
+        val telegramLoginRedirectHost = runCatching {
+            URI(telegramLoginRedirectUri).host
+        }.getOrNull().orEmpty()
+
+        buildConfigField("String", "TELEGRAM_LOGIN_CLIENT_ID", telegramLoginClientId.toBuildConfigString())
+        buildConfigField("String", "TELEGRAM_LOGIN_REDIRECT_URI", telegramLoginRedirectUri.toBuildConfigString())
+        buildConfigField("String", "TELEGRAM_LOGIN_SCOPES", telegramLoginScopes.toBuildConfigString())
+        manifestPlaceholders["telegramLoginRedirectScheme"] = runCatching {
+            URI(telegramLoginRedirectUri).scheme
+        }.getOrNull().orEmpty().ifBlank { "https" }
+        manifestPlaceholders["telegramLoginRedirectHost"] = telegramLoginRedirectHost.ifBlank {
+            "app0-login.tg.dev"
+        }
+        manifestPlaceholders["telegramLoginRedirectPath"] = runCatching {
+            URI(telegramLoginRedirectUri).path
+        }.getOrNull().orEmpty().ifBlank { "/tglogin" }
+
     }
 
     buildTypes {
@@ -174,6 +204,7 @@ dependencies {
 
     implementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation("androidx.activity:activity-ktx:1.9.2")
+    implementation("androidx.browser:browser:1.8.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")

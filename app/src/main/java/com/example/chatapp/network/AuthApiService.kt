@@ -9,6 +9,8 @@ import com.example.chatapp.network.dto.TelegramCompleteMigrationRequest
 import com.example.chatapp.network.dto.TelegramCompleteRegistrationRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
+import com.example.chatapp.network.dto.TelegramNativeLoginRequest
+import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header
@@ -44,6 +46,16 @@ interface AuthApiService {
     @POST("telegram-auth/complete-migration")
     suspend fun completeTelegramMigration(
         @Body request: TelegramCompleteMigrationRequest
+    ): Response<AuthResponse>
+
+    @POST("telegram-auth/widget-login")
+    suspend fun completeTelegramWidgetLogin(
+        @Body request: TelegramWidgetLoginRequest
+    ): Response<AuthResponse>
+
+    @POST("telegram-auth/native-login")
+    suspend fun completeTelegramNativeLogin(
+        @Body request: TelegramNativeLoginRequest
     ): Response<AuthResponse>
 
     @POST("change-password")

@@ -3,9 +3,22 @@ function errorHandler(error, req, res, next) {
     return next(error);
   }
 
-  return res.status(500).json({
-    message: error.message || "Внутренняя ошибка сервера"
-  });
+  if (error?.type === "entity.parse.failed") {
+    return res.status(400).json({
+      message: "Некорректный JSON в теле запроса"
+    });
+  }
+
+  const status =
+    Number.isInteger(error?.statusCode) ? error.statusCode :
+    Number.isInteger(error?.status) ? error.status :
+    500;
+  const message =
+    status >= 500
+      ? "Внутренняя ошибка сервера"
+      : error?.message || "Не удалось обработать запрос";
+
+  return res.status(status).json({ message });
 }
 
 module.exports = { errorHandler };

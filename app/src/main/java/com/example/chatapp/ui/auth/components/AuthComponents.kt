@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -320,6 +321,52 @@ fun PrimaryActionButton(
                 color = AppBlack
             )
         } else {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+            )
+        }
+    }
+}
+
+@Composable
+fun TelegramLoginButton(
+    text: String,
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    testTag: String? = null
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        shape = AuthPillShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = AppTextPrimary,
+            contentColor = AppBlack,
+            disabledContainerColor = AppButtonDisabled,
+            disabledContentColor = AppTextSecondary
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = AppBlack
+            )
+        } else {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_telegram_outline),
+                contentDescription = null,
+                tint = AppBlack,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)

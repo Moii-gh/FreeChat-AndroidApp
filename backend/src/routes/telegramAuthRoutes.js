@@ -8,7 +8,9 @@ const {
   telegramCompleteRegistrationSchema,
   telegramCompleteLoginSchema,
   telegramBeginMigrationSchema,
-  telegramCompleteMigrationSchema
+  telegramCompleteMigrationSchema,
+  telegramWidgetAuthSchema,
+  telegramNativeLoginSchema
 } = require("../schemas/authSchemas");
 
 function createTelegramAuthRouter({
@@ -38,6 +40,10 @@ function createTelegramAuthRouter({
     );
   }
 
+  router.get("/widget", controller.widgetPage);
+  router.get("/widget-callback", controller.widgetCallback);
+  router.post("/widget-login", validate(telegramWidgetAuthSchema), controller.completeWidgetLogin);
+  router.post("/native-login", validate(telegramNativeLoginSchema), controller.completeNativeLogin);
   router.post("/begin-registration", validate(emptyBodySchema), controller.beginRegistration);
   router.post("/begin-login", validate(emptyBodySchema), controller.beginLogin);
   router.post("/verify-code", validate(telegramVerifyCodeSchema), controller.verifyCode);

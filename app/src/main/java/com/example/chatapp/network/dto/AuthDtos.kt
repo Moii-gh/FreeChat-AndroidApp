@@ -1,5 +1,7 @@
 package com.example.chatapp.network.dto
 
+import com.google.gson.annotations.SerializedName
+
 data class RegisterRequest(
     val email: String,
     val password: String,
@@ -69,13 +71,35 @@ data class TelegramCompleteMigrationRequest(
     val challengeId: String
 )
 
+data class TelegramWidgetLoginRequest(
+    val id: String,
+    @SerializedName("first_name")
+    val firstName: String,
+    @SerializedName("last_name")
+    val lastName: String? = null,
+    val username: String? = null,
+    @SerializedName("photo_url")
+    val photoUrl: String? = null,
+    @SerializedName("auth_date")
+    val authDate: Long,
+    val hash: String
+)
+
+data class TelegramNativeLoginRequest(
+    val idToken: String
+)
+
 data class ApiUser(
     val id: String,
     val email: String?,
     val fullName: String,
-    val birthDate: String,
+    val birthDate: String?,
     val isVerified: Boolean,
+    val telegramId: String? = null,
     val telegramUsername: String? = null,
+    val telegramFirstName: String? = null,
+    val telegramLastName: String? = null,
+    val telegramPhotoUrl: String? = null,
     val authProvider: String? = null
 )
 

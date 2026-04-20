@@ -1,60 +1,59 @@
-﻿TID;TEXT
-welcome_question;Хрю хрю?
-button_create_image;Хрююю
-button_help_me_write;Хрю хрююю
-button_create_idea;Хрююю
-button_write_code;Хрр хрююю
-main_panel_input;Хрююю
-button_camera;Хвииии
-button_photo;Хрии
-button_files;Хрюююю
-button_create_image;Хвииииии
-button_create_image_description;Хрю хрю хрю
-button_Search_the_web;Фр фр
-button_Search_the_web_description;"""поросячiй вiзг""…."
-button _purchase_research;хвии хвии
-button _purchase_research_description;Фр фр фр
-button_stud_ and_training;Хвии хрю
-button_stud_ and_training_description;Хрю хви
-panel_create_image;Хрвиии
-main_panel_input_create_image;Фррр хви
-panel_search;Хрюююююююю
-main_panel_input_panel_search;Хрюююю
-panel_purchase_research;Хвииииии
-main_panel_input_purchase_research;Хвииииии хрюююю
-panel_stud_ and_training;Хвиии хрюю хвиии
-main_panel_stud_ and_training;Фррр хвиии
-button_new_chat;Хви хви хвии
-button_telegram_bot;Telegram-хрю
-history_lable_today;Фр
-history_lable_in_the_last_7_days;Фррррррр
-history_lable_previously;Фррр
+TID;TEXT
+welcome_question;Чим можу допомогти?
+button_create_image;Створити зображення
+button_help_me_write;Допоможи мені написати
+button_create_idea;Придумати ідею
+button_write_code;Написати код
+main_panel_input;Поставте запитання
+button_camera;Камера
+button_photo;Фото
+button_files;Файли
+button_create_image_description;Створити будь-яке зображення
+button_Search_the_web;Пошук в мережі
+button_Search_the_web_description;Шукати нову інформацію в режимі реального часу
+button _purchase_research;Дослідження покупок
+button _purchase_research_description;Отримати детальний гід по покупкам
+button_stud_ and_training;Навчання
+button_stud_ and_training_description;Вивчіть нову концепцію
+panel_create_image;Зображення
+main_panel_input_create_image;Створити зображення
+panel_search;Пошук
+main_panel_input_panel_search;Пошук в мережі
+panel_purchase_research;Дослідження покупок
+main_panel_input_purchase_research;Пошук покупок
+panel_stud_ and_training;Навчання
+main_panel_stud_ and_training;Навчання
+button_new_chat;Новий чат
+button_telegram_bot;Telegram-бот
+history_lable_today;Сьогодні
+history_lable_in_the_last_7_days;За останні 7 днів
+history_lable_previously;Раніше
 user_subscription;Free
-interlineation;FreeChat хлопiц удалiй, поросячiй вiзг горi
-profile_and_settings;Хвиии
-button_edit_profile;Фррр
-setting;Хр хр хр фр
-button_personalization;Хррррр хвииии
+interlineation;FreeChat намагається, але може помилятися
+profile_and_settings;Профіль та налаштування
+button_edit_profile;Редагувати профіль
+setting;Налаштування
+button_personalization;Персоналізація
 button_apps;Режим роботи ШІ
-button_language;Хрюююю
-button_security;Хви хрю хрю
-button_Information_about;Хрююю фр 
-button_report_a_problem;"""сотрястi воздiх"""
+button_language;Мова
+button_security;Безпека
+button_Information_about;Відомості про
+button_report_a_problem;Повідомити про проблему
 app_version;FreeChat Abdroid <version>
 user_email;<mail>
 user_input;<user_input>
 chat_ai_output;<chat_ai_output>
 add_input_photo;<add_input_photo>
 add_input_files;<add_input_files>
-panel_edit_name;Хрррюю
+panel_edit_name;Ім'я
 input_edit_name;<input_edit_name>
-panel_edit_emeil;Фррр
+panel_edit_emeil;Пошта
 input_edit_email;<input_edit_email>
-lable_personalization;Хрююююю хввв
-lable_personalization_instructions;Хрююююююююююююю
+lable_personalization;Персоналізація
+lable_personalization_instructions;Користувацькі інструкції
 input_personalization_instructions;<input_personalization_instructions>
-lable_language;Хрюмова
-lable_select_language;Хррррррр
+lable_language;Мова
+lable_select_language;Вибрати мову
 button_select_language_russian;Русский
 button_select_language_english;English
 button_select_language_ukrainian;Українська
@@ -64,99 +63,109 @@ button_select_language_old_russian;Руснацькый
 button_select_language_pirate_speak;Pirate Speak
 button_select_language_hindi;हिन्दी (Hindi)
 button_select_language_georgian;ქართული (Georgian)
-lable_security;Хви хрю хрю
-lable_your_password;Хря хря
+lable_security;Безпека
+lable_your_password;Ваш пароль
 input_password;<input_password>
-button_show_password;Хррр хрю
-button_hide_password;Хвии хрю
-button_change_password;Хвии хвии хрю
+button_show_password;Показати пароль
+button_hide_password;Сховати пароль
+button_change_password;Змінити пароль
 lable_apps;Режим роботи ШІ
-button_lable_search_for_apps;Фррррр фррр фррррр
+button_lable_search_for_apps;Пошук додатків
 input_search_for_apps;<input_search_for_apps>
-button_lable_all_apps;Хррррр хвииии
+button_lable_all_apps;Усі додатки
 button_mycalculator;MyCalculator
 app_mycalculator_description;Калькулятор Романихи Цветковой
 main_lable_mycalculator;MyCalculator
-button_install_app;Хррррр хвииии фрррр
+button_install_app;Встановити
 in_app_mycalculator_description;Калькулятор Романихи Цветковой
-app_description;Хвиии хрюююююююююююю
+app_description;Опис
 app_description_2;MyCalculator
 rating_app;1,1
-total_rating_app;203,9 тыс хлопцiв
-total_install_app;40 млн + потужнiв
-install_app_description;Хвииии
+total_rating_app;203,9 тис. оцінок
+total_install_app;40 млн +
+install_app_description;Завантажень
 total_weight_app;30.1 MB
-weight_app_deacription;Хрююю хвви фрр
-button_write_a_review;Хрююю фрррр хвии хррр
-toast_no_limits;Хрю хрю хрю фрррр.
-toast_anonymous_chat;Хрююю хвии
-speech_speak_now;Хрю хрю...
-speech_listening;Хвиии...
-speech_error_audio;Хрю фрр
-speech_error_client;Хрю хвии
-speech_error_permission;Хрю хрю хрю
-speech_error_network;Фрр фрр
-speech_error_no_match;Хрю хвии фрр
-speech_error_busy;Хвии хвии
-speech_error_server;Фрр хрю
-speech_error_timeout;Хвиииии
-speech_error_generic;Хрю фрр хвии
-toast_chat_deleted;Хрю хвии фрр
-dialog_confirm;Хрююю
-dialog_delete_all_history;Хрю хрю хрю хрю хрю?
-button_delete;Хрююю
-toast_all_history_deleted;Хрю хрю хрю фрр
-button_cancel;Фрррр
-section_pinned;Хвиии хрююю
-no_chat_history;Хрю хрю фрр хвии
-no_search_results;Фрр хрю хвии
-menu_rename;Хрююю фрр
-menu_unpin_chat;Хвии хрю фрр
-menu_pin_chat;Хвии хрю хрююю
-toast_chat_not_saved;Хрю фрр хвии
-label_untitled;Хрю хрю
-dialog_rename_hint;Хрююю хвии
+weight_app_deacription;Розмір
+button_write_a_review;Написати відгук
+toast_no_limits;У цьому режимі немає лімітів.
+toast_anonymous_chat;Анонімний чат (Не зберігається в історії)
+speech_speak_now;Говоріть...
+speech_listening;Слухаю...
+speech_error_audio;Помилка звуку
+speech_error_client;Помилка клієнта
+speech_error_permission;Немає дозволів
+speech_error_network;Помилка мережі
+speech_error_no_match;Розпізнати не вдалося
+speech_error_busy;Сервіс зайнятий
+speech_error_server;Помилка сервера
+speech_error_timeout;Таймаут
+speech_error_generic;Помилка розпізнавання
+toast_chat_deleted;Чат видалено
+dialog_confirm;Підтвердження
+dialog_delete_all_history;Видалити ВСЮ історію чатів?
+button_delete;Видалити
+toast_all_history_deleted;Вся історія очищена
+button_cancel;Відміна
+section_pinned;Закріплені
+no_chat_history;Немає історії
+no_search_results;Нічого не знайдено
+menu_rename;Перейменувати
+menu_unpin_chat;Відкріпити
+menu_pin_chat;Закріпити
+toast_chat_not_saved;Чат не збережено
+label_untitled;Без назви
+dialog_rename_hint;Нова назва
 button_ok;ОК
-toast_load_error;Хрю фрр
-toast_chat_empty;Хрю хвии
-export_sender_you;Хрю
-export_sender_bot;Фрр
-toast_doc_saved;Хрююю фрр хвии
-toast_doc_error;Хрю фрр хвии хрююю
-toast_limits_exhausted;Хрю хрю хрю! Хвии +5 фрррр.
-toast_error;Хрю
-toast_open_attachment_error;Фрр хрю хвии
-image_creating;Хрююю хвии фрр...
-image_ready;Хрююю хвии!
-code_copy;Хрююю
-code_copied;Хрю!
-toast_liked;Хвии!
-toast_disliked;Фрр
-toast_copied;Хрю!
-menu_regenerate;Хрююю фрр хвии
-toast_image_copied;Хрююю хрю!
-toast_image_copy_error;Фрр хрю хвии
-toast_share_error;Фрр хрю
-toast_reward;Хрю +5 хвии!
-toast_ad_loading;Хрююю фрр хвии хрю...
-ai_thinking;Хрююююю...
-label_file_analysis;Хрю фрр хвии
-label_new_chat;Хви хви хвии
-toast_logout;Хрю хвии фрр
-toast_profile_saved;Хрююю хвии!
-toast_name_empty;Хрю фрр хвии
-toast_changes_saved;Хрю хвии!
-dialog_new_password_hint;Хрю хря
-dialog_change_password;Хвии хря
-button_save;Хвии
-toast_password_changed;Хря хрю!
-toast_password_empty;Хря фрр хрю
-toast_instructions_saved;Хрююю хвии!
-share_image;Хрююю фрр
-share;Фрррр
+toast_load_error;Помилка завантаження
+toast_chat_empty;Чат пустий
+export_sender_you;Ви
+export_sender_bot;Бот
+toast_doc_saved;Документ збережений
+toast_doc_error;Помилка документу
+toast_limits_exhausted;Ліміти запитів вичерпані!
+toast_error;Помилка
+toast_open_attachment_error;Не вдалося відкрити
+image_creating;Створюється...
+image_ready;Зображення готове
+code_copy;Копіювати
+code_copied;Скопійовано!
+toast_liked;Сподобалося!
+toast_disliked;Не сподобалось
+toast_copied;Скопійовано
+menu_regenerate;Перегенерувати
+toast_image_copied;Скопійовано
+toast_image_copy_error;Помилка копіювання
+toast_share_error;Помилка
+toast_reward;Ви отримали +5 безкоштовних запитів!
+toast_ad_loading;Реклама ще завантажується, зачекайте кілька секунд...
+ai_thinking;Думаю...
+label_file_analysis;Аналіз файлу
+label_new_chat;Новий чат
+toast_logout;Ви вийшли з профілю
+toast_profile_saved;Зміни збережені
+toast_name_empty;Введіть ім'я
+toast_changes_saved;Зміни збережені
+dialog_new_password_hint;Новий пароль
+dialog_change_password;Зміна паролю
+button_save;Зберегти
+toast_password_changed;Пароль змінено
+toast_password_empty;Уведіть пароль
+toast_instructions_saved;Інструкції збережено
+share_image;Поділитися зображенням
+share;Поділитися
 ai_mode_plus_title;Розширений режим
 ai_mode_plus_desc;Використовується розширений набір моделей і можливостей
-ai_mode_free_title;Фрр хрю (хрю хрю)
+ai_mode_free_title;Безкоштовний режим (з лімітами)
 ai_mode_free_desc;Використовується базовий набір моделей. Усі поточні ліміти зберігаються
-ai_mode_auto_title;Хрююю фрр
-ai_mode_auto_desc;Хрю хрю хвии фрр хрю хрю хвии хрююю
+ai_mode_auto_title;Автоматичний режим
+ai_mode_auto_desc;Система динамічно обирає найкращу модель залежно від завдання та відповіді
+toast_reward_updated;Додано 5 запитів
+toast_incognito_info;Інкогніто-чат не зберігається в історії
+ai_switching_fallback;Перемикаємось на резервну модель…
+ai_error_retry;Не вдалося отримати відповідь. Спробуйте ще раз.
+action_create_image;Створити зображення
+hint_create_image;Опишіть зображення, яке хочете створити
+prompt_idea_prefix;Придумай кілька ідей
+button_more;Більше
+anonymous_mode_title;Режим інкогніто
+anonymous_mode_desc;Ваш чат не буде збережено на пристрої.\nПісля закриття вкладки всі повідомлення зникнуть безслідно.

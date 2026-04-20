@@ -57,14 +57,15 @@ object AiApiService {
 
             val contents = JSONArray()
             messagesToKeep.forEach { msg ->
-                val role = if (msg.getString("role") == "assistant") "model" else "user"
+                val role = if (msg.optString("role") == "assistant") "model" else "user"
+                val messageText = buildMessageText(msg)
                 contents.put(
                     JSONObject().apply {
                         put("role", role)
                         put("parts", JSONArray().apply {
-                            put(JSONObject().apply { put("text", msg.getString("content")) })
+                            put(JSONObject().apply { put("text", messageText) })
                             if (msg.has("base64")) {
-                                val mimeType = msg.optString("mimeType", "image/jpeg")
+                                val mimeType = normalizedMimeType(msg)
                                 put(JSONObject().apply {
                                     put("inline_data", JSONObject().apply {
                                         put("mime_type", mimeType)
@@ -106,19 +107,20 @@ object AiApiService {
                 }
 
                 messagesToKeep.forEach { msg ->
-                    if (msg.has("base64")) {
+                    val messageText = buildMessageText(msg)
+                    val mimeType = normalizedMimeType(msg)
+                    if (msg.has("base64") && isImageMimeType(mimeType)) {
                         messages.put(
                             JSONObject().apply {
-                                put("role", msg.getString("role"))
+                                put("role", msg.optString("role", "user"))
                                 put("content", JSONArray().apply {
                                     put(JSONObject().apply {
                                         put("type", "text")
-                                        put("text", msg.getString("content"))
+                                        put("text", messageText)
                                     })
                                     put(JSONObject().apply {
                                         put("type", "image_url")
                                         put("image_url", JSONObject().apply {
-                                            val mimeType = msg.optString("mimeType", "image/jpeg")
                                             put("url", "data:$mimeType;base64," + msg.getString("base64"))
                                         })
                                     })
@@ -127,8 +129,8 @@ object AiApiService {
                         )
                     } else {
                         messages.put(JSONObject().apply {
-                            put("role", msg.getString("role"))
-                            put("content", msg.getString("content"))
+                            put("role", msg.optString("role", "user"))
+                            put("content", messageText)
                         })
                     }
                 }
@@ -137,6 +139,39 @@ object AiApiService {
             }
         }.toString()
     }
+
+    private fun buildMessageText(msg: JSONObject): String {
+        val content = msg.optString("content", "")
+        val fileName = msg.optString("fileName", "")
+        val mimeType = msg.optString("mimeType", "")
+        val fileText = msg.optString("fileText", "")
+
+        if (fileName.isBlank() && mimeType.isBlank() && fileText.isBlank()) {
+            return content
+        }
+
+        return buildString {
+            append(content)
+            if (isNotBlank()) append("\n\n")
+            append("Attached file")
+            if (fileName.isNotBlank()) append(": ").append(fileName)
+            if (mimeType.isNotBlank()) append("\nMIME type: ").append(mimeType)
+            if (fileText.isNotBlank()) {
+                append("\n\nFile content:\n")
+                append(fileText)
+            } else if (msg.has("base64") && !isImageMimeType(mimeType)) {
+                append("\n\nThe file is attached as inline binary data.")
+            }
+        }
+    }
+
+    private fun normalizedMimeType(msg: JSONObject): String {
+        val rawMimeType = msg.optString("mimeType", "image/jpeg")
+        return rawMimeType.ifBlank { "image/jpeg" }
+    }
+
+    private fun isImageMimeType(mimeType: String): Boolean =
+        mimeType.startsWith("image/", ignoreCase = true)
 
     suspend fun fetchStreamingResponse(
         target: AiTarget,

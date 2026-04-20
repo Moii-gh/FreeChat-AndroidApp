@@ -10,11 +10,10 @@ import com.example.chatapp.navigation.AuthRoutes
 import com.example.chatapp.network.dto.ApiUser
 import com.example.chatapp.network.dto.AuthResponse
 import com.example.chatapp.network.dto.TelegramAuthBeginResponse
-import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
-import com.example.chatapp.network.dto.TelegramCompleteLoginRequest
-import com.example.chatapp.network.dto.TelegramCompleteMigrationRequest
 import com.example.chatapp.network.dto.TelegramCompleteRegistrationRequest
+import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
+import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,12 +25,9 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-
 enum class TelegramFlowMode {
     REGISTER,
-    LOGIN,
-    MIGRATE
+    WIDGET
 }
 
 data class BirthDateDraft(
@@ -56,8 +52,6 @@ data class AuthUiState(
     val birthDate: LocalDate? = null,
     val birthDateDraft: BirthDateDraft = BirthDateDraft.default(),
     val password: String = "",
-    val legacyEmail: String = "",
-    val legacyPassword: String = "",
     val telegramCode: String = "",
     val telegramChallengeId: String? = null,
     val telegramBotUrl: String? = null,
@@ -81,12 +75,6 @@ data class AuthUiState(
     val isPasswordValid: Boolean
         get() = password.length >= 6
 
-    val isLegacyEmailValid: Boolean
-        get() = EMAIL_REGEX.matches(legacyEmail.trim())
-
-    val isLegacyPasswordValid: Boolean
-        get() = legacyPassword.length >= 6
-
     val isTelegramCodeValid: Boolean
         get() = telegramCode.length == 6
 
@@ -96,17 +84,12 @@ data class AuthUiState(
     val canVerifyTelegramCode: Boolean
         get() = !telegramChallengeId.isNullOrBlank() && isTelegramCodeValid && !isVerifyingTelegramCode
 
-    val canSubmitMigration: Boolean
-        get() = isLegacyEmailValid && isLegacyPasswordValid && !isLoading
-
     val canSubmitPasswordStep: Boolean
         get() = when (telegramFlowMode) {
             TelegramFlowMode.REGISTER -> {
                 isTelegramCodeVerified && isFullNameValid && isBirthDateValid && isPasswordValid
             }
-
-            TelegramFlowMode.LOGIN -> isTelegramCodeVerified && isPasswordValid
-            TelegramFlowMode.MIGRATE -> false
+            TelegramFlowMode.WIDGET -> false
         }
 }
 
@@ -114,6 +97,11 @@ sealed interface AuthEvent {
     data class ShowMessage(val message: String) : AuthEvent
     data class Navigate(val route: String) : AuthEvent
     data class OpenTelegram(val url: String) : AuthEvent
+    data class OpenTelegramNativeLogin(
+        val clientId: String,
+        val redirectUri: String,
+        val scopes: List<String>
+    ) : AuthEvent
 }
 
 class AuthViewModel(
@@ -140,24 +128,6 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 password = value,
-                errorMessage = null
-            )
-        }
-    }
-
-    fun onLegacyEmailChanged(value: String) {
-        _uiState.update {
-            it.copy(
-                legacyEmail = value.trim(),
-                errorMessage = null
-            )
-        }
-    }
-
-    fun onLegacyPasswordChanged(value: String) {
-        _uiState.update {
-            it.copy(
-                legacyPassword = value,
                 errorMessage = null
             )
         }
@@ -223,25 +193,32 @@ class AuthViewModel(
         }
     }
 
-    fun beginTelegramLogin() {
-        launchTelegramFlow(TelegramFlowMode.LOGIN) {
-            repository.beginTelegramLogin()
+    fun beginTelegramWidgetLogin(
+        clientId: String,
+        redirectUri: String,
+        scopes: List<String>
+    ) {
+        if (clientId.isBlank() || redirectUri.isBlank()) {
+            setError("Telegram Login не настроен. Укажите TELEGRAM_LOGIN_CLIENT_ID и TELEGRAM_LOGIN_REDIRECT_URI.")
+            return
         }
-    }
 
-    fun beginTelegramMigration() {
-        val state = _uiState.value
-        when {
-            !state.isLegacyEmailValid -> setError("Введите корректный email")
-            !state.isLegacyPasswordValid -> setError("Введите пароль не короче 6 символов")
-            else -> launchTelegramFlow(TelegramFlowMode.MIGRATE) {
-                repository.beginTelegramMigration(
-                    TelegramBeginMigrationRequest(
-                        email = state.legacyEmail.trim(),
-                        password = state.legacyPassword
-                    )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    telegramFlowMode = TelegramFlowMode.WIDGET,
+                    isLoading = true,
+                    errorMessage = null,
+                    infoMessage = "Открываем Telegram..."
                 )
             }
+            _events.emit(
+                AuthEvent.OpenTelegramNativeLogin(
+                    clientId = clientId,
+                    redirectUri = redirectUri,
+                    scopes = scopes
+                )
+            )
         }
     }
 
@@ -300,13 +277,7 @@ class AuthViewModel(
                                     _events.emit(AuthEvent.Navigate(AuthRoutes.ABOUT_YOU))
                                 }
 
-                                TelegramFlowMode.LOGIN -> {
-                                    _events.emit(AuthEvent.Navigate(AuthRoutes.PASSWORD_STEP))
-                                }
-
-                                TelegramFlowMode.MIGRATE -> {
-                                    completeVerifiedMigration(challengeId)
-                                }
+                                TelegramFlowMode.WIDGET -> Unit
                             }
                         }
 
@@ -327,8 +298,83 @@ class AuthViewModel(
     fun submitPasswordStep() {
         when (_uiState.value.telegramFlowMode) {
             TelegramFlowMode.REGISTER -> completeTelegramRegistration()
-            TelegramFlowMode.LOGIN -> completeTelegramLogin()
-            TelegramFlowMode.MIGRATE -> Unit
+            TelegramFlowMode.WIDGET -> Unit
+        }
+    }
+
+    fun completeTelegramWidgetLogin(request: TelegramWidgetLoginRequest) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    telegramFlowMode = TelegramFlowMode.WIDGET,
+                    isLoading = true,
+                    errorMessage = null,
+                    infoMessage = "Проверяем данные Telegram..."
+                )
+            }
+
+            when (val result = repository.completeTelegramWidgetLogin(request)) {
+                is NetworkResult.Success -> handleAuthenticatedSuccess(result.data)
+                is NetworkResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun completeTelegramNativeLogin(idToken: String) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    telegramFlowMode = TelegramFlowMode.WIDGET,
+                    isLoading = true,
+                    errorMessage = null,
+                    infoMessage = "Проверяем Telegram ID token..."
+                )
+            }
+
+            when (
+                val result = repository.completeTelegramNativeLogin(
+                    TelegramNativeLoginRequest(idToken = idToken)
+                )
+            ) {
+                is NetworkResult.Success -> handleAuthenticatedSuccess(result.data)
+                is NetworkResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun onTelegramWidgetError(message: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = message,
+                infoMessage = null
+            )
+        }
+    }
+
+    fun onTelegramWidgetCanceled() {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = null,
+                infoMessage = "Вход через Telegram отменён"
+            )
         }
     }
 
@@ -449,73 +495,6 @@ class AuthViewModel(
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    private fun completeTelegramLogin() {
-        val state = _uiState.value
-        val challengeId = state.telegramChallengeId
-
-        when {
-            challengeId.isNullOrBlank() -> setError("Начните вход заново")
-            !state.isTelegramCodeVerified -> setError("Сначала подтвердите код из Telegram")
-            !state.isPasswordValid -> setError("Введите пароль не короче 6 символов")
-            else -> {
-                viewModelScope.launch {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = true,
-                            errorMessage = null,
-                            infoMessage = null
-                        )
-                    }
-
-                    when (
-                        val result = repository.completeTelegramLogin(
-                            TelegramCompleteLoginRequest(
-                                challengeId = challengeId,
-                                password = state.password
-                            )
-                        )
-                    ) {
-                        is NetworkResult.Success -> handleAuthenticatedSuccess(result.data)
-                        is NetworkResult.Error -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = result.fieldErrors["password"] ?: result.message
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun completeVerifiedMigration(challengeId: String) {
-        _uiState.update {
-            it.copy(
-                isLoading = true,
-                errorMessage = null,
-                infoMessage = null
-            )
-        }
-
-        when (
-            val result = repository.completeTelegramMigration(
-                TelegramCompleteMigrationRequest(challengeId = challengeId)
-            )
-        ) {
-            is NetworkResult.Success -> handleAuthenticatedSuccess(result.data)
-            is NetworkResult.Error -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.message
-                    )
                 }
             }
         }

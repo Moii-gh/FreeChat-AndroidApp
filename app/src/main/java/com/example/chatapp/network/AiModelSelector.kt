@@ -18,34 +18,45 @@ object AiModelSelector {
         currentMode: String?,
         aiMode: String,
         hasVision: Boolean,
-        forceFallbackRoute: Boolean
+        forceFallbackRoute: Boolean,
+        hasFileAttachment: Boolean = false
     ): AiTarget {
         val isImageGeneration = currentMode == "create_image"
         val requiresSecondaryRoute = currentMode == "search" || currentMode == "shopping"
+        val hasAttachment = hasVision || hasFileAttachment
 
         var selectedRoute = "primary"
         var selectedModel = ""
 
         if (requiresSecondaryRoute) {
             selectedRoute = "secondary"
-            selectedModel = BuildConfig.SECONDARY_AI_SEARCH_MODEL
+            selectedModel = if (hasVision && BuildConfig.SECONDARY_AI_VISION_MODEL.isNotBlank()) {
+                BuildConfig.SECONDARY_AI_VISION_MODEL
+            } else {
+                BuildConfig.SECONDARY_AI_SEARCH_MODEL
+            }
         } else {
             when (aiMode) {
                 "plus" -> {
-                    selectedRoute = "secondary"
-                    selectedModel = when {
-                        isImageGeneration -> BuildConfig.SECONDARY_AI_IMAGE_MODEL
-                        hasVision -> BuildConfig.SECONDARY_AI_VISION_MODEL
-                        else -> BuildConfig.SECONDARY_AI_TEXT_MODEL
+                    if (hasVision && BuildConfig.SECONDARY_AI_VISION_MODEL.isBlank()) {
+                        selectedRoute = "primary"
+                        selectedModel = primaryAttachmentModel()
+                    } else {
+                        selectedRoute = "secondary"
+                        selectedModel = when {
+                            isImageGeneration -> BuildConfig.SECONDARY_AI_IMAGE_MODEL
+                            hasVision -> BuildConfig.SECONDARY_AI_VISION_MODEL
+                            else -> BuildConfig.SECONDARY_AI_TEXT_MODEL
+                        }
                     }
                 }
 
                 "free" -> {
                     selectedRoute = "primary"
-                    selectedModel = if (isImageGeneration) {
-                        BuildConfig.PRIMARY_AI_IMAGE_MODEL
-                    } else {
-                        BuildConfig.PRIMARY_AI_TEXT_MODEL
+                    selectedModel = when {
+                        isImageGeneration -> BuildConfig.PRIMARY_AI_IMAGE_MODEL
+                        hasAttachment -> primaryAttachmentModel()
+                        else -> BuildConfig.PRIMARY_AI_TEXT_MODEL
                     }
                 }
 
@@ -54,7 +65,8 @@ object AiModelSelector {
                         selectedRoute = "secondary"
                         selectedModel = when {
                             isImageGeneration -> BuildConfig.SECONDARY_AI_IMAGE_MODEL
-                            hasVision -> BuildConfig.SECONDARY_AI_VISION_MODEL
+                            hasVision && BuildConfig.SECONDARY_AI_VISION_MODEL.isNotBlank() ->
+                                BuildConfig.SECONDARY_AI_VISION_MODEL
                             else -> BuildConfig.SECONDARY_AI_TEXT_MODEL
                         }
                     } else {
@@ -64,9 +76,14 @@ object AiModelSelector {
                                 selectedModel = BuildConfig.SECONDARY_AI_IMAGE_MODEL
                             }
 
-                            hasVision -> {
+                            hasVision && isSecondaryVisionConfigured() -> {
                                 selectedRoute = "secondary"
                                 selectedModel = BuildConfig.SECONDARY_AI_VISION_MODEL
+                            }
+
+                            hasAttachment -> {
+                                selectedRoute = "primary"
+                                selectedModel = primaryAttachmentModel()
                             }
 
                             else -> {
@@ -79,18 +96,24 @@ object AiModelSelector {
 
                 else -> {
                     selectedRoute = "primary"
-                    selectedModel = BuildConfig.PRIMARY_AI_TEXT_MODEL
+                    selectedModel = if (hasAttachment) {
+                        primaryAttachmentModel()
+                    } else {
+                        BuildConfig.PRIMARY_AI_TEXT_MODEL
+                    }
                 }
             }
         }
 
-        val usesNativeProtocol = selectedRoute == "primary" && !isImageGeneration
         val apiUrl = when {
             isImageGeneration && selectedRoute == "primary" -> BuildConfig.PRIMARY_AI_IMAGE_URL
             isImageGeneration && selectedRoute == "secondary" -> BuildConfig.SECONDARY_AI_IMAGE_URL
             selectedRoute == "secondary" -> BuildConfig.SECONDARY_AI_CHAT_URL
             else -> buildPrimaryStreamUrl(selectedModel)
         }
+        val usesNativeProtocol = selectedRoute == "primary" &&
+            !isImageGeneration &&
+            isNativeProtocolUrl(apiUrl)
 
         return AiTarget(
             route = selectedRoute,
@@ -115,5 +138,20 @@ object AiModelSelector {
                 ApiKeyProvider.primaryAiApiKey
             )
         }.getOrElse { template }
+    }
+
+    private fun primaryAttachmentModel(): String =
+        BuildConfig.PRIMARY_AI_VISION_MODEL.ifBlank { BuildConfig.PRIMARY_AI_TEXT_MODEL }
+
+    private fun isSecondaryVisionConfigured(): Boolean =
+        BuildConfig.SECONDARY_AI_CHAT_URL.isNotBlank() &&
+            BuildConfig.SECONDARY_AI_VISION_MODEL.isNotBlank() &&
+            ApiKeyProvider.secondaryAiApiKey.isNotBlank()
+
+    private fun isNativeProtocolUrl(apiUrl: String): Boolean {
+        val normalized = apiUrl.lowercase(Locale.US)
+        return normalized.contains("generativelanguage.googleapis.com") ||
+            normalized.contains(":streamgeneratecontent") ||
+            normalized.contains(":generatecontent")
     }
 }

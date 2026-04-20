@@ -1,4 +1,4 @@
-﻿TID;TEXT
+TID;TEXT
 welcome_question;What can I help you with?
 button_create_image;Create image
 button_help_me_write;Help me write
@@ -160,3 +160,13 @@ ai_mode_free_title;Free mode (with limits)
 ai_mode_free_desc;Uses the basic model tier. All current limits are preserved
 ai_mode_auto_title;Automatic mode
 ai_mode_auto_desc;The system dynamically selects the best model based on the task and response
+toast_reward_updated;Added 5 limits
+toast_incognito_info;Anonymous chat is not saved in history
+ai_switching_fallback;Switching to fallback model...
+ai_error_retry;Failed to get response. Please try again.
+action_create_image;Create image
+hint_create_image;Describe the image you want to create
+prompt_idea_prefix;Brainstorm some ideas
+button_more;More
+anonymous_mode_title;Incognito mode
+anonymous_mode_desc;Your chat will not be saved on the device.\nAfter closing the tab, all messages will disappear without a trace.

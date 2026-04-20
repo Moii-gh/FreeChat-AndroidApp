@@ -16,3 +16,6 @@ local.properties
 backend/node_modules
 .env
 backend/.env
+*.log
+backend-deploy.tar.gz
+codex_askpass.cmd

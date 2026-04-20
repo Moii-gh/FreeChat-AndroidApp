@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
@@ -35,12 +36,27 @@ import com.example.chatapp.viewmodel.ChatViewModel
 import com.example.chatapp.ads.RewardedAdManager
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import com.example.chatapp.util.setHapticClickListener
+import com.example.chatapp.util.OnSwipeTouchListener
 
 class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private enum class QuickSuggestionCategory {
         IMAGE,
         IDEA
+    }
+
+    private data class AttachmentPayload(
+        val fileUri: String,
+        val mimeType: String,
+        val fileName: String?,
+        val base64Data: String?,
+        val extractedText: String?
+    )
+
+    private companion object {
+        const val MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
+        const val MAX_EXTRACTED_TEXT_CHARS = 120_000
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -76,6 +92,16 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupPreview()
         setupAds()
         updateLimitsCount(chatViewModel.checkAndResetDailyLimits())
+
+        val swipeListener = object : OnSwipeTouchListener(this) {
+            override fun onSwipeRight() {
+                binding.drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
+        binding.messagesScrollView.setOnTouchListener(swipeListener)
+        binding.messagesContainer.setOnTouchListener(swipeListener)
+        binding.welcomeScreen.setOnTouchListener(swipeListener)
+
         showWelcomeState()
         loadChats()
     }
@@ -84,6 +110,30 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         super.onResume()
         drawerManager.updateUserProfile()
         updateLimitsCount(chatViewModel.checkAndResetDailyLimits())
+        applyTranslations()
+    }
+
+    private fun applyTranslations() {
+        binding.tvWelcomeTitle.text = LocaleHelper.getString(this, "welcome_question")
+        binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
+        binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
+        binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
+        binding.tvAnonymousTitle.text = LocaleHelper.getString(this, "anonymous_mode_title")
+        binding.tvAnonymousDesc.text = LocaleHelper.getString(this, "anonymous_mode_desc")
+
+        // Drawer texts
+        findViewById<android.widget.TextView>(R.id.tvDrawerNewChat)?.text = LocaleHelper.getString(this, "button_new_chat")
+        findViewById<android.widget.EditText>(R.id.etDrawerSearch)?.hint = LocaleHelper.getString(this, "panel_search")
+        drawerManager.populateChats(chatViewModel.cachedChats) // Automatically re-renders chat titles correctly
+
+        // Also restore the correct hint based on the current mode
+        when (chatViewModel.currentMode) {
+            "create_image" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_create_image")
+            "search" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_panel_search")
+            "shopping" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_purchase_research")
+            "study" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_stud_ and_training")
+            else -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
+        }
     }
 
     override fun onDestroy() {
@@ -132,9 +182,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         updateSendState()
     }
 
-    private fun imagePromptPrefix(): String = "Создай изображение"
+    private fun imagePromptPrefix(): String = LocaleHelper.getString(this, "action_create_image")
 
-    private fun ideaPromptPrefix(): String = "Придумай несколько идей"
+    private fun ideaPromptPrefix(): String = LocaleHelper.getString(this, "prompt_idea_prefix")
 
     private fun quickSuggestionsFor(category: QuickSuggestionCategory): List<String> = when (category) {
         QuickSuggestionCategory.IMAGE -> listOf(
@@ -154,9 +204,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun activateImageSuggestions() {
         setInputContext(
-            title = "Создать изображение",
+            title = LocaleHelper.getString(this, "action_create_image"),
             iconRes = R.drawable.ic_palette,
-            hint = "Опишите изображение, которое хотите создать",
+            hint = LocaleHelper.getString(this, "hint_create_image"),
             mode = "create_image"
         )
         updateInputText(imagePromptPrefix(), keepSuggestions = true)
@@ -277,9 +327,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             QuickSuggestionCategory.IMAGE -> {
                 if (chatViewModel.currentMode != "create_image") {
                     setInputContext(
-                        title = "Создать изображение",
+                        title = LocaleHelper.getString(this, "action_create_image"),
                         iconRes = R.drawable.ic_palette,
-                        hint = "Опишите изображение, которое хотите создать",
+                        hint = LocaleHelper.getString(this, "hint_create_image"),
                         mode = "create_image"
                     )
                 }
@@ -344,19 +394,19 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupTopBar() {
-        binding.btnMenu.setOnClickListener {
+        binding.btnMenu.setHapticClickListener {
             binding.drawerLayout.openDrawer(GravityCompat.START)
         }
-        binding.btnNewChat.setOnClickListener {
+        binding.btnNewChat.setHapticClickListener {
             startFreshChat()
         }
-        binding.btnMore.setOnClickListener {
+        binding.btnMore.setHapticClickListener {
             showCurrentChatMenu()
         }
-        binding.btnChat.setOnClickListener {
+        binding.btnChat.setHapticClickListener {
             startAnonymousChat()
         }
-        binding.btnAddLimits.setOnClickListener {
+        binding.btnAddLimits.setHapticClickListener {
             rewardedAdManager.show()
         }
     }
@@ -429,27 +479,27 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 false
             }
         }
-        binding.btnSend.setOnClickListener {
+        binding.btnSend.setHapticClickListener {
             sendMessage()
         }
-        binding.btnPlus.setOnClickListener {
+        binding.btnPlus.setHapticClickListener {
             BottomSheetMenuFragment().show(supportFragmentManager, "bottom_sheet_menu")
         }
-        binding.btnCloseChip.setOnClickListener {
+        binding.btnCloseChip.setHapticClickListener {
             clearInputContext()
         }
     }
 
     private fun setupWelcomeActions() {
-        binding.btnCreateImage.setOnClickListener {
+        binding.btnCreateImage.setHapticClickListener {
             activateImageSuggestions()
             binding.etInput.requestFocus()
         }
-        binding.btnIdea.setOnClickListener {
+        binding.btnIdea.setHapticClickListener {
             activateIdeaSuggestions()
             binding.etInput.requestFocus()
         }
-        binding.btnCenterMore.setOnClickListener {
+        binding.btnCenterMore.setHapticClickListener {
             BottomSheetMenuFragment().show(supportFragmentManager, "bottom_sheet_menu")
         }
     }
@@ -462,10 +512,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun setupAds() {
         rewardedAdManager = RewardedAdManager(this) {
-            // Callback вызывается после успешного просмотра рекламы
             val newValue = chatViewModel.addLimits(5)
             updateLimitsCount(newValue)
-            toast("Добавлено 5 запросов")
+            toast(LocaleHelper.getString(this, "toast_reward_updated"))
         }
         rewardedAdManager.initialize()
     }
@@ -476,6 +525,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.messagesScrollView.isGone = true
         binding.topRightMain.isVisible = true
         binding.topRightChat.isGone = true
+
+        binding.tvWelcomeTitle.text = LocaleHelper.getString(this, "welcome_question")
+        binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
+        binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
+        binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
+        binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
     }
 
     private fun showAnonymousWelcomeState() {
@@ -484,6 +539,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.messagesScrollView.isGone = true
         binding.topRightMain.isVisible = true
         binding.topRightChat.isGone = true
+
+        binding.tvAnonymousTitle.text = LocaleHelper.getString(this, "anonymous_mode_title")
+        binding.tvAnonymousDesc.text = LocaleHelper.getString(this, "anonymous_mode_desc")
+        binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
     }
 
     private fun showMessagesState() {
@@ -512,7 +571,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         startFreshChat()
         chatViewModel.isAnonymousChat = true
         showAnonymousWelcomeState()
-        toast("Инкогнито-чат не сохраняется в истории")
+        toast(LocaleHelper.getString(this, "toast_incognito_info"))
     }
 
     private fun loadChats() {
@@ -599,17 +658,19 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val previewUri = currentPreviewUri
         if (text.isBlank() && previewUri == null) return
 
-        if (!chatViewModel.consumeLimit()) {
-            toast("Лимит запросов исчерпан")
+        val attachmentPayload = try {
+            buildAttachmentPayload(previewUri)
+        } catch (e: IllegalArgumentException) {
+            toast(e.message ?: "Could not read attachment")
             return
         }
 
-        val mimeType = previewUri?.let { contentResolver.getType(it) }
-        val base64Data = if (mimeType?.startsWith("image/") == true) {
-            encodeUriToBase64(previewUri)
-        } else {
-            null
+        if (!chatViewModel.consumeLimit()) {
+            toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
+            return
         }
+
+        val mimeType = attachmentPayload?.mimeType
 
         isSending = true
         hideQuickSuggestions()
@@ -645,13 +706,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         chatViewModel.addToChatHistoryAndSend(
             content = text,
-            base64Data = base64Data,
-            fileUri = previewUri?.toString(),
+            base64Data = attachmentPayload?.base64Data,
+            fileUri = attachmentPayload?.fileUri,
             mimeType = mimeType,
+            fileName = attachmentPayload?.fileName,
+            fileText = attachmentPayload?.extractedText,
             onAssistantResponse = {},
             onFallbackRequired = {
                 runOnUiThread {
-                    wrapper.updateContent("Переключаемся на резервную модель…", animate = false)
+                    wrapper.updateContent(LocaleHelper.getString(this@FreeChatActivity, "ai_switching_fallback"), animate = false)
                 }
                 retryWithFallback(wrapper)
             },
@@ -700,7 +763,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     isSending = false
                     updateSendState()
-                    wrapper.updateContent("Не удалось получить ответ. Попробуйте ещё раз.", animate = false)
+                    wrapper.updateContent(LocaleHelper.getString(this@FreeChatActivity, "ai_error_retry"), animate = false)
                 }
             },
             onError = { error ->
@@ -818,6 +881,131 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 Base64.encodeToString(inputStream.readBytes(), Base64.NO_WRAP)
             }
         }.getOrNull()
+    }
+
+    private fun buildAttachmentPayload(uri: Uri?): AttachmentPayload? {
+        if (uri == null) return null
+
+        val fileName = com.example.chatapp.util.FileUtils.getFileName(this, uri)
+            .takeIf { it.isNotBlank() }
+        val mimeType = resolveMimeType(uri, fileName)
+        val bytes = readAttachmentBytes(uri)
+        val isImage = mimeType.startsWith("image/", ignoreCase = true)
+        val extractedText = if (!isImage && isTextLikeAttachment(mimeType, fileName)) {
+            decodeAttachmentText(bytes)
+        } else {
+            null
+        }
+        val base64Data = if (isImage || extractedText == null) {
+            Base64.encodeToString(bytes, Base64.NO_WRAP)
+        } else {
+            null
+        }
+
+        return AttachmentPayload(
+            fileUri = uri.toString(),
+            mimeType = mimeType,
+            fileName = fileName,
+            base64Data = base64Data,
+            extractedText = extractedText
+        )
+    }
+
+    private fun resolveMimeType(uri: Uri, fileName: String?): String {
+        return contentResolver.getType(uri)
+            ?.takeIf { it.isNotBlank() }
+            ?: fileName?.let { java.net.URLConnection.guessContentTypeFromName(it) }
+            ?: "application/octet-stream"
+    }
+
+    private fun readAttachmentBytes(uri: Uri): ByteArray {
+        val declaredSize = queryAttachmentSize(uri)
+        if (declaredSize != null && declaredSize > MAX_ATTACHMENT_BYTES) {
+            throw IllegalArgumentException("Attachment is too large to analyze")
+        }
+
+        val output = java.io.ByteArrayOutputStream()
+        contentResolver.openInputStream(uri)?.use { inputStream ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var totalBytes = 0
+            while (true) {
+                val read = inputStream.read(buffer)
+                if (read == -1) break
+                totalBytes += read
+                if (totalBytes > MAX_ATTACHMENT_BYTES) {
+                    throw IllegalArgumentException("Attachment is too large to analyze")
+                }
+                output.write(buffer, 0, read)
+            }
+        } ?: throw IllegalArgumentException("Could not read attachment")
+
+        return output.toByteArray()
+    }
+
+    private fun queryAttachmentSize(uri: Uri): Long? {
+        return runCatching {
+            contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                val index = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (index == -1 || cursor.isNull(index)) null else cursor.getLong(index)
+            }
+        }.getOrNull()
+    }
+
+    private fun isTextLikeAttachment(mimeType: String, fileName: String?): Boolean {
+        if (mimeType.startsWith("text/", ignoreCase = true)) return true
+        val normalizedMime = mimeType.lowercase()
+        if (normalizedMime in setOf(
+                "application/json",
+                "application/xml",
+                "application/javascript",
+                "application/x-javascript",
+                "application/csv",
+                "application/sql",
+                "application/rtf",
+                "application/yaml",
+                "application/x-yaml"
+            )
+        ) {
+            return true
+        }
+
+        val extension = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
+        return extension in setOf(
+            "txt",
+            "md",
+            "markdown",
+            "csv",
+            "tsv",
+            "json",
+            "xml",
+            "html",
+            "htm",
+            "css",
+            "js",
+            "kt",
+            "java",
+            "py",
+            "c",
+            "cpp",
+            "h",
+            "sql",
+            "log",
+            "yaml",
+            "yml",
+            "rtf"
+        )
+    }
+
+    private fun decodeAttachmentText(bytes: ByteArray): String {
+        val text = bytes.toString(Charsets.UTF_8)
+            .replace("\u0000", "")
+            .trim()
+        return if (text.length > MAX_EXTRACTED_TEXT_CHARS) {
+            text.take(MAX_EXTRACTED_TEXT_CHARS) + "\n\n[File content truncated]"
+        } else {
+            text
+        }
     }
 
     private fun toast(message: String) {

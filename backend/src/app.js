@@ -16,7 +16,11 @@ function createApp(options = {}) {
   const rateLimitEnabled = options.rateLimitEnabled === true;
   const telegramConfig = options.telegramConfig || {
     isConfigured: Boolean(env.telegramBotToken && env.telegramBotUsername),
-    botUsername: env.telegramBotUsername
+    botToken: env.telegramBotToken,
+    botUsername: env.telegramBotUsername,
+    loginClientId: env.telegramLoginClientId,
+    publicBaseUrl: env.telegramWidgetPublicBaseUrl,
+    widgetMaxAgeSeconds: env.telegramWidgetMaxAgeSeconds
   };
 
   app.use(express.json());

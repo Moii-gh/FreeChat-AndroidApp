@@ -28,7 +28,6 @@ import com.example.chatapp.ui.auth.theme.AppSurfaceElevated
 import com.example.chatapp.ui.auth.theme.AppTextMuted
 import com.example.chatapp.ui.auth.theme.AppTextPrimary
 import com.example.chatapp.viewmodel.AuthUiState
-import com.example.chatapp.viewmodel.TelegramFlowMode
 
 @Composable
 fun PasswordStepScreen(
@@ -38,16 +37,8 @@ fun PasswordStepScreen(
     onContinue: () -> Unit,
     onBack: () -> Unit
 ) {
-    val title = if (state.telegramFlowMode == TelegramFlowMode.LOGIN) {
-        "Введите пароль"
-    } else {
-        "Создайте пароль"
-    }
-    val subtitle = if (state.telegramFlowMode == TelegramFlowMode.LOGIN) {
-        "Telegram уже подтверждён. Осталось ввести пароль от вашего аккаунта FreeChat."
-    } else {
-        "Telegram подтверждён. Теперь задайте пароль, чтобы завершить создание аккаунта."
-    }
+    val title = "Создайте пароль"
+    val subtitle = "Telegram подтверждён. Теперь задайте пароль, чтобы завершить создание аккаунта."
 
     AuthScreenLayout(
         title = title,
@@ -86,7 +77,7 @@ fun PasswordStepScreen(
         )
         Spacer(modifier = Modifier.height(20.dp))
         PrimaryActionButton(
-            text = if (state.telegramFlowMode == TelegramFlowMode.LOGIN) "Войти" else "Создать аккаунт",
+            text = "Создать аккаунт",
             enabled = state.canSubmitPasswordStep,
             loading = state.isLoading,
             onClick = onContinue,

@@ -1,4 +1,4 @@
-﻿TID;TEXT
+TID;TEXT
 welcome_question;Чем могу помочь?
 button_create_image;Создать изображение
 button_help_me_write;Помоги мне написать
@@ -160,3 +160,13 @@ ai_mode_free_title;Бесплатный режим (с лимитами)
 ai_mode_free_desc;Используется базовый набор моделей. Сохраняются все текущие лимиты
 ai_mode_auto_title;Автоматический режим
 ai_mode_auto_desc;Система динамически выбирает лучшую модель в зависимости от задачи и ответа
+toast_reward_updated;Добавлено 5 запросов
+toast_incognito_info;Инкогнито-чат не сохраняется в истории
+ai_switching_fallback;Переключаемся на резервную модель…
+ai_error_retry;Не удалось получить ответ. Попробуйте еще раз.
+action_create_image;Создать изображение
+hint_create_image;Опишите изображение, которое хотите создать
+prompt_idea_prefix;Придумай несколько идей
+button_more;Больше
+anonymous_mode_title;Режим инкогнито
+anonymous_mode_desc;Ваш чат не будет сохранен на устройстве.\nПосле закрытия вкладки все сообщения исчезнут без следа.

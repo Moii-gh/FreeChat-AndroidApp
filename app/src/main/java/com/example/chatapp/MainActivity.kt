@@ -7,12 +7,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.data.AuthRepository
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.navigation.AuthNavGraph
 import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.telegram.TelegramNativeLoginClient
 import com.example.chatapp.ui.auth.theme.ChatAppTheme
 import com.example.chatapp.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -44,6 +47,14 @@ class MainActivity : ComponentActivity() {
                 AuthNavGraph(viewModel = authViewModel)
             }
         }
+
+        handleTelegramLoginRedirect(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleTelegramLoginRedirect(intent)
     }
 
     fun setInputContext(
@@ -55,4 +66,30 @@ class MainActivity : ComponentActivity() {
     ) = Unit
 
     fun showFilePreview(fileUri: Uri) = Unit
+
+    private fun handleTelegramLoginRedirect(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (!TelegramNativeLoginClient.isTelegramLoginRedirect(
+                uri = uri,
+                redirectUri = BuildConfig.TELEGRAM_LOGIN_REDIRECT_URI
+            )
+        ) {
+            return
+        }
+
+        lifecycleScope.launch {
+            TelegramNativeLoginClient.handleLoginResponse(
+                context = this@MainActivity,
+                uri = uri,
+                clientId = BuildConfig.TELEGRAM_LOGIN_CLIENT_ID,
+                redirectUri = BuildConfig.TELEGRAM_LOGIN_REDIRECT_URI
+            ).onSuccess { idToken ->
+                authViewModel.completeTelegramNativeLogin(idToken)
+            }.onFailure { error ->
+                authViewModel.onTelegramWidgetError(
+                    error.message ?: "Telegram Login не завершён"
+                )
+            }
+        }
+    }
 }

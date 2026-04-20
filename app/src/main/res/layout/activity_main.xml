@@ -262,6 +262,7 @@
                 android:layout_marginBottom="16dp"/>
 
             <TextView
+                android:id="@+id/tvAnonymousTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Режим инкогнито"
@@ -271,6 +272,7 @@
                 android:layout_marginBottom="16dp"/>
 
             <TextView
+                android:id="@+id/tvAnonymousDesc"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Ваш чат не будет сохранен на устройстве.\nПосле закрытия вкладки все сообщения исчезнут без следа."

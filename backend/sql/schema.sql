@@ -3,17 +3,26 @@ create extension if not exists pgcrypto;
 create table if not exists users (
     id uuid primary key default gen_random_uuid(),
     email text unique,
-    password_hash text not null,
+    password_hash text,
     full_name text not null,
-    birth_date date not null,
+    birth_date date,
     is_verified boolean not null default false,
     verification_code varchar(6),
     telegram_user_id bigint unique,
     telegram_chat_id bigint unique,
     telegram_username text,
+    telegram_first_name text,
+    telegram_last_name text,
+    telegram_photo_url text,
     auth_provider text not null default 'legacy_email',
     created_at timestamptz not null default now()
 );
+
+alter table if exists users alter column password_hash drop not null;
+alter table if exists users alter column birth_date drop not null;
+alter table if exists users add column if not exists telegram_first_name text;
+alter table if exists users add column if not exists telegram_last_name text;
+alter table if exists users add column if not exists telegram_photo_url text;
 
 create table if not exists telegram_auth_challenges (
     id uuid primary key default gen_random_uuid(),

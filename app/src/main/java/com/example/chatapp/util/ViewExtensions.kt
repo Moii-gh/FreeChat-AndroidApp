@@ -53,3 +53,56 @@ fun View.startPulse() {
 fun View.stopPulse() {
     this.clearAnimation()
 }
+
+fun View.setHapticClickListener(action: (View) -> Unit) {
+    this.setOnClickListener {
+        it.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
+        action(it)
+    }
+}
+
+open class OnSwipeTouchListener(context: android.content.Context) : View.OnTouchListener {
+    private val gestureDetector = android.view.GestureDetector(context, GestureListener())
+
+    override fun onTouch(v: View, event: android.view.MotionEvent): Boolean {
+        return gestureDetector.onTouchEvent(event)
+    }
+
+    private inner class GestureListener : android.view.GestureDetector.SimpleOnGestureListener() {
+        private val swipeThreshold = 100
+        private val swipeVelocityThreshold = 100
+
+        override fun onDown(e: android.view.MotionEvent): Boolean {
+            return false
+        }
+
+        override fun onFling(
+            e1: android.view.MotionEvent?,
+            e2: android.view.MotionEvent,
+            velocityX: Float,
+            velocityY: Float
+        ): Boolean {
+            if (e1 == null) return false
+            try {
+                val diffY = e2.y - e1.y
+                val diffX = e2.x - e1.x
+                if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
+                    if (kotlin.math.abs(diffX) > swipeThreshold && kotlin.math.abs(velocityX) > swipeVelocityThreshold) {
+                        if (diffX > 0) {
+                            onSwipeRight()
+                        } else {
+                            onSwipeLeft()
+                        }
+                        return true
+                    }
+                }
+            } catch (exception: Exception) {
+                exception.printStackTrace()
+            }
+            return false
+        }
+    }
+
+    open fun onSwipeRight() {}
+    open fun onSwipeLeft() {}
+}

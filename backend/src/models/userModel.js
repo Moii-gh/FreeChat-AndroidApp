@@ -11,6 +11,9 @@ const USER_COLUMNS = `
   telegram_user_id,
   telegram_chat_id,
   telegram_username,
+  telegram_first_name,
+  telegram_last_name,
+  telegram_photo_url,
   auth_provider,
   created_at
 `;
@@ -22,7 +25,11 @@ function toPublicUser(row) {
     fullName: row.full_name,
     birthDate: row.birth_date,
     isVerified: row.is_verified,
+    telegramId: row.telegram_user_id ? String(row.telegram_user_id) : null,
     telegramUsername: row.telegram_username ?? null,
+    telegramFirstName: row.telegram_first_name ?? null,
+    telegramLastName: row.telegram_last_name ?? null,
+    telegramPhotoUrl: row.telegram_photo_url ?? null,
     authProvider: row.auth_provider
   };
 }
@@ -115,6 +122,71 @@ async function createTelegramUser({
   return result.rows[0];
 }
 
+async function createTelegramWidgetUser({
+  fullName,
+  telegramUserId,
+  telegramUsername,
+  telegramFirstName,
+  telegramLastName,
+  telegramPhotoUrl
+}) {
+  const result = await pool.query(
+    `insert into users (
+      email,
+      password_hash,
+      full_name,
+      birth_date,
+      is_verified,
+      verification_code,
+      telegram_user_id,
+      telegram_chat_id,
+      telegram_username,
+      telegram_first_name,
+      telegram_last_name,
+      telegram_photo_url,
+      auth_provider
+    )
+    values (null, null, $1, null, true, null, $2, null, $3, $4, $5, $6, 'telegram')
+    returning ${USER_COLUMNS}`,
+    [
+      fullName,
+      String(telegramUserId),
+      telegramUsername || null,
+      telegramFirstName || null,
+      telegramLastName || null,
+      telegramPhotoUrl || null
+    ]
+  );
+
+  return result.rows[0];
+}
+
+async function updateTelegramWidgetProfile(
+  userId,
+  { telegramUsername, telegramFirstName, telegramLastName, telegramPhotoUrl }
+) {
+  const result = await pool.query(
+    `update users
+     set telegram_username = $2,
+         telegram_first_name = $3,
+         telegram_last_name = $4,
+         telegram_photo_url = $5,
+         auth_provider = 'telegram',
+         is_verified = true
+     where id = $1
+     returning ${USER_COLUMNS}`,
+    [
+      userId,
+      telegramUsername || null,
+      telegramFirstName || null,
+      telegramLastName || null,
+      telegramPhotoUrl || null
+    ]
+  );
+
+  return result.rows[0];
+}
+
 async function updateUnverifiedUser(userId, { passwordHash, fullName, birthDate, verificationCode }) {
   const result = await pool.query(
     `update users
@@ -200,6 +272,8 @@ module.exports = {
   findByTelegramUserId,
   createUser,
   createTelegramUser,
+  createTelegramWidgetUser,
+  updateTelegramWidgetProfile,
   updateUnverifiedUser,
   updateVerificationCode,
   verifyUser,

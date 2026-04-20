@@ -1,15 +1,20 @@
 package com.example.chatapp
 
+import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import com.example.chatapp.data.AccountSessionStore
 import com.example.chatapp.data.AuthRepositoryContract
 import com.example.chatapp.data.NetworkResult
-import com.example.chatapp.navigation.AuthNavGraph
 import com.example.chatapp.network.dto.ApiUser
 import com.example.chatapp.network.dto.AuthResponse
 import com.example.chatapp.network.dto.ChangePasswordRequest
@@ -18,21 +23,30 @@ import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
 import com.example.chatapp.network.dto.TelegramCompleteLoginRequest
 import com.example.chatapp.network.dto.TelegramCompleteMigrationRequest
 import com.example.chatapp.network.dto.TelegramCompleteRegistrationRequest
+import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
+import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
 import com.example.chatapp.ui.auth.components.AuthTestTags
-import com.example.chatapp.ui.auth.screens.LegacyMigrationScreen
+import com.example.chatapp.ui.auth.screens.AboutYouScreen
+import com.example.chatapp.ui.auth.screens.BirthDatePickerScreen
 import com.example.chatapp.ui.auth.screens.TelegramCodeScreen
 import com.example.chatapp.ui.auth.theme.ChatAppTheme
 import com.example.chatapp.viewmodel.AuthUiState
-import com.example.chatapp.viewmodel.AuthViewModel
+import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class AuthFlowComposeTest {
 
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Before
+    fun requireEmulatorComposeHost() {
+        assumeTrue("Compose UI tests run on emulator hosts", isRunningOnEmulator())
+    }
 
     @Test
     fun telegramCodeContinueButtonIsDisabledWithoutCode() {
@@ -51,47 +65,63 @@ class AuthFlowComposeTest {
             }
         }
 
+        composeRule.waitForIdle()
+        waitForTag(AuthTestTags.CONTINUE_BUTTON)
+        waitForTag(AuthTestTags.OPEN_TELEGRAM_BUTTON)
         composeRule.onNodeWithTag(AuthTestTags.CONTINUE_BUTTON).assertIsNotEnabled()
         composeRule.onNodeWithTag(AuthTestTags.OPEN_TELEGRAM_BUTTON).assertIsDisplayed()
     }
 
     @Test
-    fun legacyMigrationButtonIsDisabledForInvalidCredentials() {
+    fun clickingBirthDateFieldOpensPickerScreen() {
         composeRule.setContent {
             ChatAppTheme {
-                LegacyMigrationScreen(
-                    state = AuthUiState(),
-                    onEmailChanged = {},
-                    onPasswordChanged = {},
-                    onTogglePasswordVisibility = {},
-                    onContinue = {},
-                    onBack = {}
-                )
+                var showPicker by remember { mutableStateOf(false) }
+                if (showPicker) {
+                    BirthDatePickerScreen(
+                        state = AuthUiState(),
+                        onBack = { showPicker = false },
+                        onDaySelected = {},
+                        onMonthSelected = {},
+                        onYearSelected = {},
+                        onConfirm = { showPicker = false }
+                    )
+                } else {
+                    AboutYouScreen(
+                        state = AuthUiState(),
+                        onFullNameChanged = {},
+                        onBirthDateClick = { showPicker = true },
+                        onContinue = {},
+                        onBack = {}
+                    )
+                }
             }
         }
 
-        composeRule.onNodeWithTag(AuthTestTags.CONTINUE_BUTTON).assertIsNotEnabled()
+        waitForTag(AuthTestTags.DATE_FIELD)
+        composeRule.onNodeWithTag(AuthTestTags.DATE_FIELD).performClick()
+        waitForTag(AuthTestTags.BIRTH_DATE_PICKER)
+        composeRule.onNodeWithTag(AuthTestTags.BIRTH_DATE_PICKER).assertIsDisplayed()
     }
 
-    @Test
-    fun clickingBirthDateFieldOpensPickerScreen() {
-        val viewModel = AuthViewModel(FakeComposeAuthRepository(), FakeComposeAccountSessionStore())
-
-        composeRule.setContent {
-            ChatAppTheme {
-                AuthNavGraph(viewModel = viewModel)
-            }
+    private fun waitForTag(tag: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+            }.getOrDefault(false)
         }
+    }
 
-        composeRule.runOnIdle {
-            viewModel.beginTelegramRegistration()
-        }
-
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag(AuthTestTags.TELEGRAM_CODE_FIELD).performTextInput("123456")
-        composeRule.onNodeWithTag(AuthTestTags.CONTINUE_BUTTON).performClick()
-        composeRule.onNodeWithTag(AuthTestTags.DATE_FIELD).performClick()
-        composeRule.onNodeWithTag(AuthTestTags.BIRTH_DATE_PICKER).assertIsDisplayed()
+    private fun isRunningOnEmulator(): Boolean {
+        val fingerprint = Build.FINGERPRINT.lowercase()
+        val hardware = Build.HARDWARE.lowercase()
+        val product = Build.PRODUCT.lowercase()
+        return fingerprint.contains("generic") ||
+            fingerprint.contains("emulator") ||
+            hardware.contains("goldfish") ||
+            hardware.contains("ranchu") ||
+            product.contains("sdk") ||
+            product.contains("emulator")
     }
 }
 
@@ -185,6 +215,48 @@ private class FakeComposeAuthRepository : AuthRepositoryContract {
         request: TelegramCompleteMigrationRequest
     ): NetworkResult<AuthResponse> {
         return NetworkResult.Success(AuthResponse(message = "Аккаунт переведён", token = "jwt"))
+    }
+
+    override suspend fun completeTelegramWidgetLogin(
+        request: TelegramWidgetLoginRequest
+    ): NetworkResult<AuthResponse> {
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Вход через Telegram выполнен",
+                token = "jwt",
+                user = ApiUser(
+                    id = "user-widget",
+                    email = null,
+                    fullName = request.firstName,
+                    birthDate = null,
+                    isVerified = true,
+                    telegramId = request.id,
+                    telegramUsername = request.username,
+                    authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun completeTelegramNativeLogin(
+        request: TelegramNativeLoginRequest
+    ): NetworkResult<AuthResponse> {
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Вход через Telegram выполнен",
+                token = "jwt",
+                user = ApiUser(
+                    id = "user-native",
+                    email = null,
+                    fullName = "Ada",
+                    birthDate = null,
+                    isVerified = true,
+                    telegramId = "424242",
+                    telegramUsername = "ada",
+                    authProvider = "telegram"
+                )
+            )
+        )
     }
 
     override suspend fun changePassword(

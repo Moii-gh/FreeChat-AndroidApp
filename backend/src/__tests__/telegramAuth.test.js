@@ -1,9 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const bcrypt = require("bcrypt");
+const crypto = require("node:crypto");
 const request = require("supertest");
 const { createApp } = require("../app");
 const { createTelegramBotService } = require("../utils/telegramBotService");
+const { signTelegramWidgetData } = require("../utils/telegramWidgetVerifier");
 
 function createFakeUserModel() {
   const users = new Map();
@@ -17,7 +19,11 @@ function createFakeUserModel() {
     fullName: user.full_name,
     birthDate: user.birth_date,
     isVerified: user.is_verified,
+    telegramId: user.telegram_user_id ? String(user.telegram_user_id) : null,
     telegramUsername: user.telegram_username ?? null,
+    telegramFirstName: user.telegram_first_name ?? null,
+    telegramLastName: user.telegram_last_name ?? null,
+    telegramPhotoUrl: user.telegram_photo_url ?? null,
     authProvider: user.auth_provider
   });
 
@@ -51,10 +57,56 @@ function createFakeUserModel() {
         telegram_user_id: String(telegramUserId),
         telegram_chat_id: String(telegramChatId),
         telegram_username: telegramUsername || null,
+        telegram_first_name: null,
+        telegram_last_name: null,
+        telegram_photo_url: null,
         auth_provider: "telegram",
         created_at: new Date().toISOString()
       };
       users.set(user.id, user);
+      return user;
+    },
+    async createTelegramWidgetUser({
+      fullName,
+      telegramUserId,
+      telegramUsername,
+      telegramFirstName,
+      telegramLastName,
+      telegramPhotoUrl
+    }) {
+      const user = {
+        id: `user-${idCounter++}`,
+        email: null,
+        password_hash: null,
+        full_name: fullName,
+        birth_date: null,
+        is_verified: true,
+        verification_code: null,
+        telegram_user_id: String(telegramUserId),
+        telegram_chat_id: null,
+        telegram_username: telegramUsername || null,
+        telegram_first_name: telegramFirstName || null,
+        telegram_last_name: telegramLastName || null,
+        telegram_photo_url: telegramPhotoUrl || null,
+        auth_provider: "telegram",
+        created_at: new Date().toISOString()
+      };
+      users.set(user.id, user);
+      return user;
+    },
+    async updateTelegramWidgetProfile(userId, {
+      telegramUsername,
+      telegramFirstName,
+      telegramLastName,
+      telegramPhotoUrl
+    }) {
+      const user = users.get(userId);
+      user.telegram_username = telegramUsername || null;
+      user.telegram_first_name = telegramFirstName || null;
+      user.telegram_last_name = telegramLastName || null;
+      user.telegram_photo_url = telegramPhotoUrl || null;
+      user.auth_provider = "telegram";
+      user.is_verified = true;
       return user;
     },
     async attachTelegramIdentity(userId, { telegramUserId, telegramChatId, telegramUsername, authProvider }) {
@@ -153,6 +205,76 @@ function createFakeFetch() {
   return { fetchImpl, calls };
 }
 
+function createSignedWidgetPayload(overrides = {}, botToken = "123456:secret") {
+  const payload = {
+    id: "424242",
+    first_name: "Ada",
+    last_name: "Lovelace",
+    username: "ada",
+    photo_url: "https://t.me/i/userpic/320/ada.jpg",
+    auth_date: Math.floor(Date.now() / 1000),
+    ...overrides
+  };
+
+  return {
+    ...payload,
+    hash: signTelegramWidgetData(payload, botToken)
+  };
+}
+
+function base64UrlJson(value) {
+  return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
+function createSignedIdToken({
+  clientId = "123456",
+  claims = {},
+  keyPair = null,
+  kid = "test-key"
+} = {}) {
+  const resolvedKeyPair = keyPair || crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048
+  });
+  const header = {
+    alg: "RS256",
+    typ: "JWT",
+    kid
+  };
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: "https://oauth.telegram.org",
+    aud: clientId,
+    sub: "424242",
+    id: 424242,
+    name: "Ada Lovelace",
+    preferred_username: "ada",
+    picture: "https://cdn.telegram.test/ada.jpg",
+    iat: nowSeconds,
+    exp: nowSeconds + 3600,
+    ...claims
+  };
+  const signingInput = `${base64UrlJson(header)}.${base64UrlJson(payload)}`;
+  const signature = crypto.sign(
+    "RSA-SHA256",
+    Buffer.from(signingInput),
+    resolvedKeyPair.privateKey
+  ).toString("base64url");
+
+  return {
+    idToken: `${signingInput}.${signature}`,
+    jwks: {
+      keys: [
+        {
+          ...resolvedKeyPair.publicKey.export({ format: "jwk" }),
+          kid,
+          alg: "RS256",
+          kty: "RSA"
+        }
+      ]
+    }
+  };
+}
+
 test("POST /api/telegram-auth/begin-registration creates challenge and bot url", async () => {
   const userModel = createFakeUserModel();
   const challengeModel = createFakeChallengeModel();
@@ -172,6 +294,185 @@ test("POST /api/telegram-auth/begin-registration creates challenge and bot url",
   assert.equal(response.status, 200);
   assert.match(response.body.challengeId, /^00000000-0000-4000-8000-/);
   assert.match(response.body.botUrl, /^https:\/\/t\.me\/sample_app_test_bot\?start=/);
+});
+
+test("GET /api/telegram-auth/widget renders redirect callback url", async () => {
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botToken: "123456:secret",
+      botUsername: "sample_app_test_bot",
+      publicBaseUrl: "https://auth.example.com",
+      widgetMaxAgeSeconds: 86400
+    }
+  });
+
+  const response = await request(app)
+    .get("/api/telegram-auth/widget");
+
+  assert.equal(response.status, 200);
+  assert.match(response.text, /data-telegram-login="sample_app_test_bot"/);
+  assert.match(response.text, /data-auth-url="https:\/\/auth\.example\.com\/api\/telegram-auth\/widget-callback"/);
+});
+
+test("GET /api/telegram-auth/widget-callback forwards query payload to Android bridge", async () => {
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botToken: "123456:secret",
+      botUsername: "sample_app_test_bot",
+      widgetMaxAgeSeconds: 86400
+    }
+  });
+
+  const response = await request(app)
+    .get("/api/telegram-auth/widget-callback")
+    .query({
+      id: "424242",
+      first_name: "Ada",
+      username: "ada",
+      auth_date: "1776686400",
+      hash: "a".repeat(64)
+    });
+
+  assert.equal(response.status, 200);
+  assert.match(response.text, /AndroidTelegramAuth\.onTelegramAuth/);
+  assert.match(response.text, /"first_name":"Ada"/);
+});
+
+test("POST /api/telegram-auth/widget-login verifies hash and creates telegram user", async () => {
+  const botToken = "123456:secret";
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botToken,
+      botUsername: "sample_app_test_bot",
+      widgetMaxAgeSeconds: 86400
+    }
+  });
+
+  const response = await request(app)
+    .post("/api/telegram-auth/widget-login")
+    .send(createSignedWidgetPayload({}, botToken));
+
+  assert.equal(response.status, 201);
+  assert.equal(response.body.user.fullName, "Ada Lovelace");
+  assert.equal(response.body.user.telegramId, "424242");
+  assert.equal(response.body.user.telegramUsername, "ada");
+  assert.equal(response.body.user.telegramPhotoUrl, "https://t.me/i/userpic/320/ada.jpg");
+  assert.equal(response.body.user.authProvider, "telegram");
+  assert.ok(response.body.token);
+});
+
+test("POST /api/telegram-auth/widget-login rejects invalid hash", async () => {
+  const botToken = "123456:secret";
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botToken,
+      botUsername: "sample_app_test_bot",
+      widgetMaxAgeSeconds: 86400
+    }
+  });
+
+  const response = await request(app)
+    .post("/api/telegram-auth/widget-login")
+    .send({
+      ...createSignedWidgetPayload({}, botToken),
+      hash: "0".repeat(64)
+    });
+
+  assert.equal(response.status, 401);
+});
+
+test("POST /api/telegram-auth/widget-login rejects stale auth data", async () => {
+  const botToken = "123456:secret";
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botToken,
+      botUsername: "sample_app_test_bot",
+      widgetMaxAgeSeconds: 60
+    }
+  });
+
+  const response = await request(app)
+    .post("/api/telegram-auth/widget-login")
+    .send(createSignedWidgetPayload({
+      auth_date: Math.floor(Date.now() / 1000) - 120
+    }, botToken));
+
+  assert.equal(response.status, 401);
+});
+
+test("POST /api/telegram-auth/native-login verifies Telegram ID token and creates user", async () => {
+  const clientId = "123456";
+  const { idToken, jwks } = createSignedIdToken({ clientId });
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botUsername: "sample_app_test_bot",
+      loginClientId: clientId,
+      jwks
+    }
+  });
+
+  const response = await request(app)
+    .post("/api/telegram-auth/native-login")
+    .send({ idToken });
+
+  assert.equal(response.status, 201);
+  assert.equal(response.body.user.fullName, "Ada Lovelace");
+  assert.equal(response.body.user.telegramId, "424242");
+  assert.equal(response.body.user.telegramUsername, "ada");
+  assert.equal(response.body.user.telegramPhotoUrl, "https://cdn.telegram.test/ada.jpg");
+  assert.ok(response.body.token);
+});
+
+test("POST /api/telegram-auth/native-login rejects invalid audience", async () => {
+  const { idToken, jwks } = createSignedIdToken({ clientId: "wrong-client" });
+  const userModel = createFakeUserModel();
+  const challengeModel = createFakeChallengeModel();
+  const app = createApp({
+    userModel,
+    telegramChallengeModel: challengeModel,
+    telegramConfig: {
+      isConfigured: true,
+      botUsername: "sample_app_test_bot",
+      loginClientId: "123456",
+      jwks
+    }
+  });
+
+  const response = await request(app)
+    .post("/api/telegram-auth/native-login")
+    .send({ idToken });
+
+  assert.equal(response.status, 401);
 });
 
 test("telegram bot /start generates code and links telegram identity", async () => {

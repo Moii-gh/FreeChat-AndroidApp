@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.example.chatapp.util.setHapticClickListener
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -44,10 +45,10 @@ class SettingsActivity : AppCompatActivity() {
 
         updateProfileUi()
 
-        findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
-        findViewById<View>(R.id.flAvatar).setOnClickListener { pickImage.launch("image/*") }
+        findViewById<View>(R.id.btnBack).setHapticClickListener { finish() }
+        findViewById<View>(R.id.flAvatar).setHapticClickListener { pickImage.launch("image/*") }
 
-        findViewById<View>(R.id.btnLogout).setOnClickListener {
+        findViewById<View>(R.id.btnLogout).setHapticClickListener {
             sessionStore.clearSession()
             Toast.makeText(this, LocaleHelper.getString(this, "toast_logout"), Toast.LENGTH_SHORT).show()
             startActivity(
@@ -58,29 +59,29 @@ class SettingsActivity : AppCompatActivity() {
             finish()
         }
 
-        findViewById<View>(R.id.btnEditProfile).setOnClickListener { showEditProfileDialog() }
+        findViewById<View>(R.id.btnEditProfile).setHapticClickListener { showEditProfileDialog() }
 
-        findViewById<View>(R.id.itemPersonalization).setOnClickListener {
+        findViewById<View>(R.id.itemPersonalization).setHapticClickListener {
             startActivity(Intent(this, PersonalizationActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemApps).setOnClickListener {
+        findViewById<View>(R.id.itemApps).setHapticClickListener {
             startActivity(Intent(this, AiModeActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemLanguage).setOnClickListener {
+        findViewById<View>(R.id.itemLanguage).setHapticClickListener {
             startActivity(Intent(this, LanguageActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemSecurity).setOnClickListener {
+        findViewById<View>(R.id.itemSecurity).setHapticClickListener {
             startActivity(Intent(this, SecurityActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemAbout).setOnClickListener {
+        findViewById<View>(R.id.itemAbout).setHapticClickListener {
             openExternalLink(BuildConfig.PUBLIC_INFO_URL)
         }
 
-        findViewById<View>(R.id.itemReport).setOnClickListener {
+        findViewById<View>(R.id.itemReport).setHapticClickListener {
             openExternalLink(BuildConfig.SUPPORT_URL)
         }
     }
@@ -164,7 +165,7 @@ class SettingsActivity : AppCompatActivity() {
         view.findViewById<TextView>(R.id.tvLabelDialogEmail)?.text = LocaleHelper.getString(this, "lable_email")
         view.findViewById<TextView>(R.id.btnSaveProfile)?.text = LocaleHelper.getString(this, "button_save")
 
-        view.findViewById<View>(R.id.dialogAvatarContainer).setOnClickListener {
+        view.findViewById<View>(R.id.dialogAvatarContainer).setHapticClickListener {
             pickImage.launch("image/*")
         }
 
@@ -179,11 +180,11 @@ class SettingsActivity : AppCompatActivity() {
         etEmail.alpha = 0.7f
         updateProfileUi()
 
-        view.findViewById<View>(R.id.btnSaveProfile).setOnClickListener {
+        view.findViewById<View>(R.id.btnSaveProfile).setHapticClickListener {
             val newName = etName.text.toString().trim()
             if (newName.isEmpty()) {
                 Toast.makeText(this, LocaleHelper.getString(this, "toast_name_empty"), Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                return@setHapticClickListener
             }
 
             accountSettings.saveDisplayName(newName)

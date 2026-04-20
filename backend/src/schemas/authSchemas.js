@@ -64,6 +64,25 @@ const telegramCompleteMigrationSchema = z.object({
   challengeId: challengeIdSchema
 });
 
+const telegramIdSchema = z.union([z.string(), z.number()]).transform((value) => String(value));
+const telegramOptionalString = z.string().trim().min(1).max(2048).optional();
+
+const telegramWidgetAuthSchema = z.object({
+  id: telegramIdSchema.refine((value) => /^\d+$/.test(value), "Некорректный Telegram id"),
+  first_name: z.string().trim().min(1, "Telegram не вернул имя").max(256),
+  last_name: telegramOptionalString,
+  username: telegramOptionalString,
+  photo_url: z.string().trim().url("Некорректный URL фото").max(2048).optional(),
+  auth_date: z.union([z.string(), z.number()])
+    .transform((value) => Number(value))
+    .refine(Number.isInteger, "Некорректная дата авторизации"),
+  hash: z.string().regex(/^[a-f0-9]{64}$/i, "Некорректная подпись Telegram")
+}).strict();
+
+const telegramNativeLoginSchema = z.object({
+  idToken: z.string().min(1, "Telegram ID token отсутствует")
+}).strict();
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -76,5 +95,7 @@ module.exports = {
   telegramCompleteRegistrationSchema,
   telegramCompleteLoginSchema,
   telegramBeginMigrationSchema,
-  telegramCompleteMigrationSchema
+  telegramCompleteMigrationSchema,
+  telegramWidgetAuthSchema,
+  telegramNativeLoginSchema
 };

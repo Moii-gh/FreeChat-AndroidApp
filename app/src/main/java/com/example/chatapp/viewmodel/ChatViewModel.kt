@@ -187,6 +187,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         base64Data: String?,
         fileUri: String?,
         mimeType: String?,
+        fileName: String?,
+        fileText: String?,
         onAssistantResponse: (String) -> Unit,
         onFallbackRequired: () -> Unit,
         onError: (String) -> Unit,
@@ -199,6 +201,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             if (base64Data != null) put("base64", base64Data)
             if (fileUri != null) put("imageUri", fileUri)
             if (mimeType != null) put("mimeType", mimeType)
+            if (fileName != null) put("fileName", fileName)
+            if (fileText != null) put("fileText", fileText)
         }
         chatHistory.add(userMessage)
 
@@ -245,10 +249,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val aiMode = accountSettings.getAiMode()
         val customInstructions = accountSettings.getUserInstructions()
 
-        val hasVision = messagesToKeep.any { it.has("base64") }
+        val hasVision = messagesToKeep.any {
+            it.has("base64") && it.optString("mimeType").startsWith("image/", ignoreCase = true)
+        }
+        val hasFileAttachment = messagesToKeep.any {
+            it.has("fileText") ||
+                (it.has("base64") && !it.optString("mimeType").startsWith("image/", ignoreCase = true))
+        }
 
         val target = AiModelSelector.selectTarget(
-            effectiveMode, aiMode, hasVision, forceFallbackRoute
+            currentMode = effectiveMode,
+            aiMode = aiMode,
+            hasVision = hasVision,
+            forceFallbackRoute = forceFallbackRoute,
+            hasFileAttachment = hasFileAttachment
         )
 
         viewModelScope.launch {

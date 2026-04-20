@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,16 +25,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.chatapp.BuildConfig
 import com.example.chatapp.FreeChatActivity
+import com.example.chatapp.telegram.TelegramNativeLoginClient
 import com.example.chatapp.ui.auth.screens.AboutYouScreen
 import com.example.chatapp.ui.auth.screens.AuthWelcomeScreen
 import com.example.chatapp.ui.auth.screens.BirthDatePickerScreen
-import com.example.chatapp.ui.auth.screens.LegacyMigrationScreen
 import com.example.chatapp.ui.auth.screens.PasswordStepScreen
 import com.example.chatapp.ui.auth.screens.TelegramCodeScreen
+import com.example.chatapp.ui.auth.screens.TelegramLoginWidgetScreen
 import com.example.chatapp.ui.auth.theme.AppBlack
 import com.example.chatapp.viewmodel.AuthEvent
 import com.example.chatapp.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun AuthNavGraph(
@@ -42,6 +46,7 @@ fun AuthNavGraph(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -60,7 +65,9 @@ fun AuthNavGraph(
                 }
 
                 is AuthEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    snackbarScope.launch {
+                        snackbarHostState.showSnackbar(event.message)
+                    }
                 }
 
                 is AuthEvent.OpenTelegram -> {
@@ -83,6 +90,19 @@ fun AuthNavGraph(
                         }
                     }
                 }
+
+                is AuthEvent.OpenTelegramNativeLogin -> {
+                    TelegramNativeLoginClient.startLogin(
+                        context = context,
+                        clientId = event.clientId,
+                        redirectUri = event.redirectUri,
+                        scopes = event.scopes
+                    ).onFailure { error ->
+                        viewModel.onTelegramWidgetError(
+                            error.message ?: "Не удалось открыть Telegram Login"
+                        )
+                    }
+                }
             }
         }
     }
@@ -99,31 +119,30 @@ fun AuthNavGraph(
             authComposable(AuthRoutes.WELCOME) {
                 AuthWelcomeScreen(
                     state = state,
-                    onContinueWithTelegram = viewModel::beginTelegramRegistration,
-                    onLoginClick = viewModel::beginTelegramLogin,
-                    onLegacyAccountClick = {
-                        viewModel.clearTransientMessage()
-                        navController.navigate(AuthRoutes.LEGACY_MIGRATION)
+                    onContinueWithTelegram = {
+                        viewModel.beginTelegramWidgetLogin(
+                            clientId = BuildConfig.TELEGRAM_LOGIN_CLIENT_ID,
+                            redirectUri = BuildConfig.TELEGRAM_LOGIN_REDIRECT_URI,
+                            scopes = parseTelegramLoginScopes(BuildConfig.TELEGRAM_LOGIN_SCOPES)
+                        )
                     }
                 )
             }
 
-            authComposable(AuthRoutes.LEGACY_MIGRATION) {
-                LegacyMigrationScreen(
+            authComposable(AuthRoutes.TELEGRAM_WIDGET) {
+                TelegramLoginWidgetScreen(
                     state = state,
-                    onEmailChanged = {
-                        viewModel.clearTransientMessage()
-                        viewModel.onLegacyEmailChanged(it)
-                    },
-                    onPasswordChanged = {
-                        viewModel.clearTransientMessage()
-                        viewModel.onLegacyPasswordChanged(it)
-                    },
-                    onTogglePasswordVisibility = viewModel::togglePasswordVisibility,
-                    onContinue = viewModel::beginTelegramMigration,
-                    onBack = { navController.popBackStack() }
+                    widgetUrl = buildTelegramWidgetUrl(BuildConfig.APP_API_BASE_URL),
+                    onAuthData = viewModel::completeTelegramWidgetLogin,
+                    onError = viewModel::onTelegramWidgetError,
+                    onBack = {
+                        viewModel.onTelegramWidgetCanceled()
+                        navController.popBackStack()
+                    }
                 )
             }
+
+
 
             authComposable(AuthRoutes.TELEGRAM_CODE) {
                 TelegramCodeScreen(
@@ -218,3 +237,13 @@ private fun NavGraphBuilder.authComposable(
         content()
     }
 }
+
+private fun buildTelegramWidgetUrl(apiBaseUrl: String): String {
+    val normalizedBaseUrl = if (apiBaseUrl.endsWith("/")) apiBaseUrl else "$apiBaseUrl/"
+    return "${normalizedBaseUrl}telegram-auth/widget"
+}
+
+private fun parseTelegramLoginScopes(raw: String): List<String> =
+    raw.split(",", " ")
+        .map(String::trim)
+        .filter(String::isNotEmpty)

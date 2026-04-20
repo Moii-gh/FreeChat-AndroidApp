@@ -28,11 +28,8 @@ fun TelegramCodeScreen(
         TelegramFlowMode.REGISTER ->
             "Мы открыли Telegram-бота. Отправьте /start и введите код из чата, чтобы продолжить регистрацию."
 
-        TelegramFlowMode.LOGIN ->
-            "Подтвердите Telegram в боте FreeChat, затем введите код из сообщения."
-
-        TelegramFlowMode.MIGRATE ->
-            "Подтвердите Telegram, чтобы привязать его к вашему старому аккаунту."
+        TelegramFlowMode.WIDGET ->
+            "Подтвердите вход в Telegram Login Widget."
     }
 
     AuthScreenLayout(

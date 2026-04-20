@@ -295,3 +295,17 @@ test("auth routes do not return 429 by default after many requests", async () =>
 
   assert.equal(lastResponse.status, 200);
 });
+
+test("POST /api/check-email returns 400 for malformed JSON instead of 500", async () => {
+  const userModel = createFakeUserModel();
+  const emailService = createFakeEmailService();
+  const app = createApp({ userModel, emailService, rateLimitEnabled: false });
+
+  const response = await request(app)
+    .post("/api/check-email")
+    .set("Content-Type", "application/json")
+    .send('{"email":"broken@example.com"');
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.message, "Некорректный JSON в теле запроса");
+});

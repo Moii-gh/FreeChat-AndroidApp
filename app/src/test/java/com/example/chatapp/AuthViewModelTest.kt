@@ -11,8 +11,10 @@ import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
 import com.example.chatapp.network.dto.TelegramCompleteLoginRequest
 import com.example.chatapp.network.dto.TelegramCompleteMigrationRequest
 import com.example.chatapp.network.dto.TelegramCompleteRegistrationRequest
+import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
+import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
 import com.example.chatapp.viewmodel.AuthViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,12 +57,11 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `legacy email regex handles valid and invalid addresses`() {
-        viewModel.onLegacyEmailChanged("wrong")
-        assertFalse(viewModel.uiState.value.isLegacyEmailValid)
+    fun `telegram code accepts only first six digits`() {
+        viewModel.onTelegramCodeChanged("12a34567")
 
-        viewModel.onLegacyEmailChanged("hello@example.com")
-        assertTrue(viewModel.uiState.value.isLegacyEmailValid)
+        assertEquals("123456", viewModel.uiState.value.telegramCode)
+        assertTrue(viewModel.uiState.value.isTelegramCodeValid)
     }
 
     @Test
@@ -127,25 +128,38 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `migration flow auto completes after verified telegram code`() = runTest(dispatcher) {
-        viewModel.onLegacyEmailChanged("legacy@example.com")
-        viewModel.onLegacyPasswordChanged("123456")
+    fun `telegram widget login authenticates without code or password`() = runTest(dispatcher) {
+        val request = TelegramWidgetLoginRequest(
+            id = "424242",
+            firstName = "Ada",
+            lastName = "Lovelace",
+            username = "ada",
+            photoUrl = "https://t.me/i/userpic/320/ada.jpg",
+            authDate = 1776686400,
+            hash = "a".repeat(64)
+        )
 
-        viewModel.beginTelegramMigration()
+        viewModel.completeTelegramWidgetLogin(request)
         runCurrent()
         assertTrue(viewModel.uiState.value.isLoading)
         advanceUntilIdle()
 
-        assertEquals("challenge-migrate", viewModel.uiState.value.telegramChallengeId)
+        assertEquals("jwt-token", viewModel.uiState.value.authToken)
+        assertEquals("Ada Lovelace", accountStore.lastUser?.fullName)
+        assertEquals("424242", accountStore.lastUser?.telegramId)
+        assertNotNull(repository.lastWidgetLoginRequest)
+    }
 
-        viewModel.onTelegramCodeChanged("123456")
-        viewModel.verifyTelegramCode()
+    @Test
+    fun `telegram native login authenticates with id token`() = runTest(dispatcher) {
+        viewModel.completeTelegramNativeLogin("telegram-id-token")
         runCurrent()
-        assertTrue(viewModel.uiState.value.isVerifyingTelegramCode)
+        assertTrue(viewModel.uiState.value.isLoading)
         advanceUntilIdle()
 
         assertEquals("jwt-token", viewModel.uiState.value.authToken)
-        assertNotNull(repository.lastCompleteMigrationRequest)
+        assertEquals("424242", accountStore.lastUser?.telegramId)
+        assertNotNull(repository.lastNativeLoginRequest)
     }
 }
 
@@ -183,6 +197,8 @@ private class FakeAuthRepository : AuthRepositoryContract {
     )
     var lastCompleteRegistrationRequest: TelegramCompleteRegistrationRequest? = null
     var lastCompleteMigrationRequest: TelegramCompleteMigrationRequest? = null
+    var lastWidgetLoginRequest: TelegramWidgetLoginRequest? = null
+    var lastNativeLoginRequest: TelegramNativeLoginRequest? = null
 
     override suspend fun beginTelegramRegistration(): NetworkResult<TelegramAuthBeginResponse> {
         delay(25)
@@ -267,6 +283,57 @@ private class FakeAuthRepository : AuthRepositoryContract {
                     birthDate = "1990-01-01",
                     isVerified = true,
                     telegramUsername = "legacy_user",
+                    authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun completeTelegramWidgetLogin(
+        request: TelegramWidgetLoginRequest
+    ): NetworkResult<AuthResponse> {
+        lastWidgetLoginRequest = request
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Вход через Telegram выполнен",
+                token = "jwt-token",
+                user = ApiUser(
+                    id = "user-widget",
+                    email = null,
+                    fullName = "${request.firstName} ${request.lastName}".trim(),
+                    birthDate = null,
+                    isVerified = true,
+                    telegramId = request.id,
+                    telegramUsername = request.username,
+                    telegramFirstName = request.firstName,
+                    telegramLastName = request.lastName,
+                    telegramPhotoUrl = request.photoUrl,
+                    authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun completeTelegramNativeLogin(
+        request: TelegramNativeLoginRequest
+    ): NetworkResult<AuthResponse> {
+        lastNativeLoginRequest = request
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Вход через Telegram выполнен",
+                token = "jwt-token",
+                user = ApiUser(
+                    id = "user-native",
+                    email = null,
+                    fullName = "Ada Lovelace",
+                    birthDate = null,
+                    isVerified = true,
+                    telegramId = "424242",
+                    telegramUsername = "ada",
+                    telegramFirstName = "Ada Lovelace",
+                    telegramPhotoUrl = "https://cdn.telegram.test/ada.jpg",
                     authProvider = "telegram"
                 )
             )
