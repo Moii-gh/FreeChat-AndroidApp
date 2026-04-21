@@ -23,7 +23,8 @@ object AiApiService {
     fun buildSystemPrompt(
         currentMode: String?,
         customInstructions: String,
-        chatContextSummary: String
+        chatContextSummary: String,
+        filesContext: String = ""
     ): String? {
         val baseSystemPrompt = when (currentMode) {
             "shopping" -> "Ты помощник по покупкам. Ищи в интернете только товары, предоставляя варианты с ценами и возможными местами приобретения."
@@ -35,6 +36,9 @@ object AiApiService {
         if (baseSystemPrompt != null) parts.add(baseSystemPrompt)
         if (customInstructions.isNotEmpty()) {
             parts.add("Пользовательские инструкции (строго следуй им):\n$customInstructions")
+        }
+        if (filesContext.isNotEmpty()) {
+            parts.add("Полное содержимое прикреплённых файлов (ты знаешь их полностью, используй эти данные для ответов):\n$filesContext")
         }
         if (chatContextSummary.isNotEmpty()) {
             parts.add("Краткая выжимка предыдущего разговора (важно для контекста):\n$chatContextSummary")
@@ -115,14 +119,15 @@ object AiApiService {
         return buildString {
             append(content)
             if (isNotBlank()) append("\n\n")
-            append("Attached file")
+            append("Прикреплённый файл")
             if (fileName.isNotBlank()) append(": ").append(fileName)
-            if (mimeType.isNotBlank()) append("\nMIME type: ").append(mimeType)
+            if (mimeType.isNotBlank()) append("\nТип: ").append(mimeType)
             if (fileText.isNotBlank()) {
-                append("\n\nFile content:\n")
+                append("\n\n===== ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА =====\n")
                 append(fileText)
+                append("\n===== КОНЕЦ ФАЙЛА =====")
             } else if (msg.has("base64") && !isImageMimeType(mimeType)) {
-                append("\n\nThe file is attached as inline binary data.")
+                append("\n\n(Бинарный файл — текстовое содержимое недоступно)")
             }
         }
     }
@@ -141,6 +146,7 @@ object AiApiService {
         currentMode: String?,
         customInstructions: String,
         chatContextSummary: String,
+        filesContext: String = "",
         callback: StreamCallback
     ) {
         withContext(Dispatchers.IO) {
@@ -152,7 +158,7 @@ object AiApiService {
             }
 
             try {
-                val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary)
+                val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary, filesContext)
                 val jsonInput = buildRequestBody(target, messagesToKeep, systemPrompt)
 
                 val connection = (URL(target.apiUrl).openConnection() as HttpURLConnection).apply {
@@ -262,16 +268,28 @@ object AiApiService {
                     doOutput = true
                 }
 
-                val promptText =
-                    "Сделай краткую выжимку важных фактов из этой части переписки (сохрани ключевые детали):\n" +
-                        messagesToSummarize.joinToString("\n") {
-                            it.getString("role") + ": " + it.getString("content")
+                val promptText = buildString {
+                    append("Сделай краткую выжимку важных фактов из этой части переписки (сохрани ключевые детали, включая имена файлов и их содержимое):\n")
+                    for (msg in messagesToSummarize) {
+                        val role = msg.getString("role")
+                        val content = msg.getString("content")
+                        append("$role: $content\n")
+                        val fileName = msg.optString("fileName", "")
+                        val fileText = msg.optString("fileText", "")
+                        if (fileName.isNotBlank()) {
+                            append("[Прикреплён файл: $fileName]\n")
                         }
+                        if (fileText.isNotBlank()) {
+                            val preview = if (fileText.length > 2000) fileText.take(2000) + "..." else fileText
+                            append("[Содержимое файла:\n$preview]\n")
+                        }
+                    }
+                }
 
                 val jsonInput = JSONObject().apply {
                     put("model", BuildConfig.AI_SUMMARY_MODEL)
                     put("stream", false)
-                    put("max_tokens", 300)
+                    put("max_tokens", 600)
                     put("messages", JSONArray().apply {
                         put(JSONObject().apply {
                             put("role", "system")

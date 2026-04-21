@@ -43,12 +43,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     var currentMode: String? = null
     var selectedFileUri: Uri? = null
 
+    /** Накопленная информация о всех файлах, прикреплённых за сессию чата */
+    private val attachedFilesRegistry = mutableListOf<String>()
+
     // Кэш чатов для бокового меню
     var cachedChats: List<ChatEntity> = emptyList()
         private set
 
     /** Количество сообщений, храним в скользящем окне для контекста */
-    private val CONTEXT_WINDOW_SIZE = 4
+    private val CONTEXT_WINDOW_SIZE = 20
 
     // ──────── CRUD операции с чатами ────────
 
@@ -204,6 +207,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
         chatHistory.add(userMessage)
 
+        // Регистрируем файл, чтобы модель всегда помнила его содержимое
+        if (fileName != null || fileText != null) {
+            registerAttachedFile(fileName, mimeType, fileText)
+        }
+
         // Сохраняем сразу, если чат уже существует
         currentChatId?.let {
             viewModelScope.launch {
@@ -243,6 +251,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val customInstructions = accountSettings.getUserInstructions()
+        val filesContext = buildFilesContext()
 
         val hasVision = messagesToKeep.any {
             it.has("base64") && it.optString("mimeType").startsWith("image/", ignoreCase = true)
@@ -265,6 +274,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 currentMode = effectiveMode,
                 customInstructions = customInstructions,
                 chatContextSummary = chatContextSummary,
+                filesContext = filesContext,
                 callback = object : AiApiService.StreamCallback {
                     override fun onChunk(accumulatedText: String) {
                         onChunk(accumulatedText)
@@ -398,5 +408,36 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         isAnonymousChat = false
         currentMode = null
         selectedFileUri = null
+        attachedFilesRegistry.clear()
+    }
+
+    // ──────── Реестр прикреплённых файлов ────────
+
+    /**
+     * Регистрирует файл в реестре, чтобы модель сохраняла знание
+     * о его содержимом даже после выхода сообщения из контекстного окна.
+     */
+    private fun registerAttachedFile(fileName: String?, mimeType: String?, fileText: String?) {
+        val entry = buildString {
+            append("--- Файл")
+            if (!fileName.isNullOrBlank()) append(": $fileName")
+            if (!mimeType.isNullOrBlank()) append(" ($mimeType)")
+            append(" ---")
+            if (!fileText.isNullOrBlank()) {
+                append("\n")
+                // Сохраняем полное содержимое файла
+                append(fileText)
+            }
+        }
+        attachedFilesRegistry.add(entry)
+    }
+
+    /**
+     * Строит блок контекста с содержимым всех прикреплённых файлов
+     * для включения в системный промпт.
+     */
+    private fun buildFilesContext(): String {
+        if (attachedFilesRegistry.isEmpty()) return ""
+        return attachedFilesRegistry.joinToString("\n\n")
     }
 }

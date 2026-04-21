@@ -876,11 +876,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val mimeType = resolveMimeType(uri, fileName)
         val bytes = readAttachmentBytes(uri)
         val isImage = mimeType.startsWith("image/", ignoreCase = true)
-        val extractedText = if (!isImage && isTextLikeAttachment(mimeType, fileName)) {
-            decodeAttachmentText(bytes)
+
+        val extractedText = if (!isImage) {
+            extractTextFromFile(bytes, mimeType, fileName)
         } else {
             null
         }
+
         val base64Data = if (isImage || extractedText == null) {
             Base64.encodeToString(bytes, Base64.NO_WRAP)
         } else {
@@ -894,6 +896,108 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             base64Data = base64Data,
             extractedText = extractedText
         )
+    }
+
+    /**
+     * Извлекает текстовое содержимое файла.
+     * Поддерживает: текстовые файлы, DOCX, а также эвристику для неизвестных форматов.
+     */
+    private fun extractTextFromFile(bytes: ByteArray, mimeType: String, fileName: String?): String? {
+        val extension = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
+
+        // 1. DOCX — ZIP-архив с XML внутри
+        if (isDocxFile(mimeType, extension)) {
+            val docxText = extractDocxText(bytes)
+            if (!docxText.isNullOrBlank()) return truncateText(docxText)
+        }
+
+        // 2. Явно текстовые файлы по MIME/расширению
+        if (isTextLikeAttachment(mimeType, fileName)) {
+            return decodeAttachmentText(bytes)
+        }
+
+        // 3. Эвристика: пробуем декодировать как UTF-8 и проверяем читаемость
+        val heuristicText = tryDecodeAsText(bytes)
+        if (heuristicText != null) return truncateText(heuristicText)
+
+        return null
+    }
+
+    private fun isDocxFile(mimeType: String, extension: String): Boolean {
+        return extension == "docx" ||
+            mimeType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ignoreCase = true)
+    }
+
+    /**
+     * Извлекает текст из DOCX (ZIP → word/document.xml → strip XML tags).
+     */
+    private fun extractDocxText(bytes: ByteArray): String? {
+        return runCatching {
+            val zipInput = java.util.zip.ZipInputStream(java.io.ByteArrayInputStream(bytes))
+            var entry = zipInput.nextEntry
+            var documentXml: String? = null
+            while (entry != null) {
+                if (entry.name == "word/document.xml") {
+                    documentXml = zipInput.bufferedReader(Charsets.UTF_8).readText()
+                    break
+                }
+                zipInput.closeEntry()
+                entry = zipInput.nextEntry
+            }
+            zipInput.close()
+
+            if (documentXml == null) return@runCatching null
+
+            // Заменяем теги абзацев/переносов на переводы строк
+            val withBreaks = documentXml
+                .replace(Regex("<w:p[\\s>]"), "\n")
+                .replace(Regex("<w:br[^>]*>"), "\n")
+                .replace(Regex("<w:tab[^>]*>"), "\t")
+
+            // Убираем все XML-теги
+            val text = withBreaks.replace(Regex("<[^>]+>"), "")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&apos;", "'")
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .joinToString("\n")
+
+            text.ifBlank { null }
+        }.getOrNull()
+    }
+
+    /**
+     * Эвристика: пробуем прочитать байты как UTF-8.
+     * Если большинство символов печатаемые — считаем файл текстовым.
+     */
+    private fun tryDecodeAsText(bytes: ByteArray): String? {
+        if (bytes.isEmpty()) return null
+        // Проверяем первые 8KB для скорости
+        val sampleSize = minOf(bytes.size, 8192)
+        val sample = bytes.copyOf(sampleSize)
+        val text = sample.toString(Charsets.UTF_8)
+
+        var printable = 0
+        var nonPrintable = 0
+        for (ch in text) {
+            if (ch.isLetterOrDigit() || ch.isWhitespace() || ch in "!@#\$%^&*()_+-=[]{}|;':\",./<>?`~\\") {
+                printable++
+            } else if (ch.code < 32 && ch != '\n' && ch != '\r' && ch != '\t') {
+                nonPrintable++
+            }
+        }
+        // Если меньше 5% непечатных — считаем текстом
+        val total = printable + nonPrintable
+        if (total == 0) return null
+        val ratio = nonPrintable.toFloat() / total
+        if (ratio > 0.05f) return null
+
+        // Всё ОК — декодируем полный файл
+        return decodeAttachmentText(bytes)
     }
 
     private fun resolveMimeType(uri: Uri, fileName: String?): String {
@@ -945,11 +1049,21 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 "application/xml",
                 "application/javascript",
                 "application/x-javascript",
+                "application/typescript",
                 "application/csv",
                 "application/sql",
                 "application/rtf",
                 "application/yaml",
-                "application/x-yaml"
+                "application/x-yaml",
+                "application/x-sh",
+                "application/x-httpd-php",
+                "application/graphql",
+                "application/ld+json",
+                "application/x-latex",
+                "application/x-tex",
+                "application/toml",
+                "application/x-toml",
+                "application/x-properties"
             )
         ) {
             return true
@@ -957,28 +1071,28 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         val extension = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
         return extension in setOf(
-            "txt",
-            "md",
-            "markdown",
-            "csv",
-            "tsv",
-            "json",
-            "xml",
-            "html",
-            "htm",
-            "css",
-            "js",
-            "kt",
-            "java",
-            "py",
-            "c",
-            "cpp",
-            "h",
-            "sql",
-            "log",
-            "yaml",
-            "yml",
-            "rtf"
+            // Текстовые
+            "txt", "md", "markdown", "csv", "tsv", "log", "rtf",
+            // Web
+            "json", "xml", "html", "htm", "css", "js", "jsx", "ts", "tsx",
+            "svg", "graphql", "gql",
+            // JVM
+            "kt", "kts", "java", "gradle", "groovy", "scala",
+            // Скриптовые
+            "py", "rb", "php", "pl", "pm", "lua", "r",
+            // Системные
+            "c", "cpp", "h", "hpp", "cs", "swift", "go", "rs", "dart",
+            // Shell / config
+            "sh", "bash", "zsh", "bat", "cmd", "ps1", "psm1",
+            "env", "ini", "cfg", "conf", "properties", "toml",
+            "yaml", "yml", "dockerfile",
+            // SQL / Data
+            "sql", "proto", "graphql",
+            // Разметка / документация
+            "tex", "latex", "rst", "adoc", "org",
+            // Прочие
+            "diff", "patch", "gitignore", "editorconfig",
+            "makefile", "cmake", "tf", "tfvars", "hcl"
         )
     }
 
@@ -986,8 +1100,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val text = bytes.toString(Charsets.UTF_8)
             .replace("\u0000", "")
             .trim()
+        return truncateText(text)
+    }
+
+    private fun truncateText(text: String): String {
         return if (text.length > MAX_EXTRACTED_TEXT_CHARS) {
-            text.take(MAX_EXTRACTED_TEXT_CHARS) + "\n\n[File content truncated]"
+            text.take(MAX_EXTRACTED_TEXT_CHARS) + "\n\n[Содержимое файла обрезано]"
         } else {
             text
         }
