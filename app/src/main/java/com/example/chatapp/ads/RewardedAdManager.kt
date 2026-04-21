@@ -28,7 +28,7 @@ class RewardedAdManager(
 
     companion object {
         private const val TAG = "RewardedAdManager"
-        private const val AD_UNIT_ID = "R-M-19145287-1"
+        private const val AD_UNIT_ID = "R-M-19145287-2"
     }
 
     /** Инициализация загрузчика рекламы */
