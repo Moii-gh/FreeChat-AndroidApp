@@ -26,7 +26,7 @@ class RewardedAdManager(
     private var isLoading = false
 
     companion object {
-        private const val AD_UNIT_ID = "R-M-19101069-1"
+        private const val AD_UNIT_ID = "R-M-19145287-1"
     }
 
     /** Инициализация загрузчика рекламы */
