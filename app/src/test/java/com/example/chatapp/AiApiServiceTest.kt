@@ -57,8 +57,8 @@ class AiApiServiceTest {
         val content = body.getJSONArray("messages")
             .getJSONObject(0)
             .getString("content")
-        assertTrue(content.contains("Attached file: notes.txt"))
-        assertTrue(content.contains("File content:"))
+        assertTrue(content.contains("notes.txt"))
+        assertTrue(content.contains("text/plain"))
         assertTrue(content.contains("alpha\nbeta"))
         assertFalse(content.contains("base64"))
     }

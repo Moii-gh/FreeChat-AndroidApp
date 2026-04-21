@@ -188,7 +188,7 @@ dependencies {
     implementation("com.google.mlkit:text-recognition:16.0.0")
     implementation("io.noties.markwon:core:4.6.2")
     implementation("io.coil-kt:coil:2.7.0")
-    implementation("com.yandex.android:mobileads:7.7.0")
+    implementation("com.yandex.android:mobileads:7.18.5")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")

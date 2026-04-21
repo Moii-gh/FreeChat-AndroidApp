@@ -137,6 +137,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun onDestroy() {
+        if (::rewardedAdManager.isInitialized) {
+            rewardedAdManager.destroy()
+        }
         speechRecognizerManager.destroy()
         super.onDestroy()
     }

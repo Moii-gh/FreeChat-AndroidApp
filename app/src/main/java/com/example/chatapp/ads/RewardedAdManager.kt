@@ -3,6 +3,7 @@ package com.example.chatapp.ads
 import android.app.Activity
 import android.widget.Toast
 import com.example.chatapp.LocaleHelper
+import com.yandex.mobile.ads.common.AdError
 import com.yandex.mobile.ads.common.AdRequestConfiguration
 import com.yandex.mobile.ads.common.AdRequestError
 import com.yandex.mobile.ads.common.ImpressionData
@@ -22,6 +23,7 @@ class RewardedAdManager(
 ) {
     private var rewardedAd: RewardedAd? = null
     private var rewardedAdLoader: RewardedAdLoader? = null
+    private var isLoading = false
 
     companion object {
         private const val AD_UNIT_ID = "R-M-19101069-1"
@@ -29,22 +31,32 @@ class RewardedAdManager(
 
     /** Инициализация загрузчика рекламы */
     fun initialize() {
-        rewardedAdLoader = RewardedAdLoader(activity)
-        rewardedAdLoader?.setAdLoadListener(object : RewardedAdLoadListener {
-            override fun onAdLoaded(ad: RewardedAd) {
-                rewardedAd = ad
+        if (rewardedAdLoader == null) {
+            rewardedAdLoader = RewardedAdLoader(activity).apply {
+                setAdLoadListener(object : RewardedAdLoadListener {
+                    override fun onAdLoaded(ad: RewardedAd) {
+                        isLoading = false
+                        rewardedAd = ad
+                    }
+
+                    override fun onAdFailedToLoad(error: AdRequestError) {
+                        isLoading = false
+                        // Тихо игнорируем — реклама необязательна
+                    }
+                })
             }
-            override fun onAdFailedToLoad(error: AdRequestError) {
-                // Тихо игнорируем — реклама необязательна
-            }
-        })
+        }
         loadAd()
     }
 
     /** Загрузка следующей рекламы (вызывается при инициализации и после показа) */
     private fun loadAd() {
+        val loader = rewardedAdLoader ?: return
+        if (isLoading || rewardedAd != null) return
+
+        isLoading = true
         val config = AdRequestConfiguration.Builder(AD_UNIT_ID).build()
-        rewardedAdLoader?.loadAd(config)
+        loader.loadAd(config)
     }
 
     /** Показ рекламного видео. Если не загружено — показывает toast */
@@ -52,11 +64,17 @@ class RewardedAdManager(
         rewardedAd?.apply {
             setAdEventListener(object : RewardedAdEventListener {
                 override fun onAdShown() {}
-                override fun onAdFailedToShow(error: com.yandex.mobile.ads.common.AdError) {}
+
+                override fun onAdFailedToShow(error: AdError) {
+                    destroyRewardedAd()
+                    loadAd()
+                }
+
                 override fun onAdDismissed() {
-                    rewardedAd = null
+                    destroyRewardedAd()
                     loadAd() // Предзагружаем следующую рекламу
                 }
+
                 override fun onAdClicked() {}
                 override fun onAdImpression(data: ImpressionData?) {}
                 override fun onRewarded(reward: Reward) {
@@ -68,5 +86,17 @@ class RewardedAdManager(
             Toast.makeText(activity, LocaleHelper.getString(activity, "toast_ad_loading"), Toast.LENGTH_SHORT).show()
             loadAd()
         }
+    }
+
+    fun destroy() {
+        rewardedAdLoader?.setAdLoadListener(null)
+        rewardedAdLoader = null
+        isLoading = false
+        destroyRewardedAd()
+    }
+
+    private fun destroyRewardedAd() {
+        rewardedAd?.setAdEventListener(null)
+        rewardedAd = null
     }
 }
