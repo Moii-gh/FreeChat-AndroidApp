@@ -1,6 +1,7 @@
 package com.example.chatapp.ads
 
 import android.app.Activity
+import android.util.Log
 import android.widget.Toast
 import com.example.chatapp.LocaleHelper
 import com.yandex.mobile.ads.common.AdError
@@ -26,6 +27,7 @@ class RewardedAdManager(
     private var isLoading = false
 
     companion object {
+        private const val TAG = "RewardedAdManager"
         private const val AD_UNIT_ID = "R-M-19145287-1"
     }
 
@@ -37,10 +39,16 @@ class RewardedAdManager(
                     override fun onAdLoaded(ad: RewardedAd) {
                         isLoading = false
                         rewardedAd = ad
+                        Log.d(TAG, "Rewarded ad loaded: adUnitId=$AD_UNIT_ID")
                     }
 
                     override fun onAdFailedToLoad(error: AdRequestError) {
                         isLoading = false
+                        Log.w(
+                            TAG,
+                            "Rewarded ad failed to load: code=${error.code}, " +
+                                "description=${error.description}, adUnitId=${error.adUnitId}"
+                        )
                         // Тихо игнорируем — реклама необязательна
                     }
                 })
@@ -66,6 +74,7 @@ class RewardedAdManager(
                 override fun onAdShown() {}
 
                 override fun onAdFailedToShow(error: AdError) {
+                    Log.w(TAG, "Rewarded ad failed to show: description=${error.description}")
                     destroyRewardedAd()
                     loadAd()
                 }
@@ -83,6 +92,7 @@ class RewardedAdManager(
             })
             show(activity)
         } ?: run {
+            Log.d(TAG, "Rewarded ad is not ready yet: isLoading=$isLoading, adUnitId=$AD_UNIT_ID")
             Toast.makeText(activity, LocaleHelper.getString(activity, "toast_ad_loading"), Toast.LENGTH_SHORT).show()
             loadAd()
         }
