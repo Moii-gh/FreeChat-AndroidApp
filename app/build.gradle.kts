@@ -35,8 +35,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "PRIMARY_AI_API_KEY", (envVars["PRIMARY_AI_API_KEY"] ?: "").toBuildConfigString())
-        buildConfigField("String", "SECONDARY_AI_API_KEY", (envVars["SECONDARY_AI_API_KEY"] ?: "").toBuildConfigString())
+        buildConfigField("String", "AI_API_KEY", (envVars["AI_API_KEY"] ?: "").toBuildConfigString())
         buildConfigField(
             "String",
             "APP_API_BASE_URL",
@@ -46,73 +45,48 @@ android {
         buildConfigField("String", "SUPPORT_URL", (envVars["SUPPORT_URL"] ?: "").toBuildConfigString())
         buildConfigField(
             "String",
-            "PRIMARY_AI_STREAM_URL_TEMPLATE",
-            (envVars["PRIMARY_AI_STREAM_URL_TEMPLATE"] ?: "").toBuildConfigString()
+            "AI_CHAT_URL",
+            (envVars["AI_CHAT_URL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "PRIMARY_AI_IMAGE_URL",
-            (envVars["PRIMARY_AI_IMAGE_URL"] ?: "").toBuildConfigString()
+            "AI_IMAGE_URL",
+            (envVars["AI_IMAGE_URL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "SECONDARY_AI_CHAT_URL",
-            (envVars["SECONDARY_AI_CHAT_URL"] ?: "").toBuildConfigString()
+            "AI_TEXT_MODEL",
+            (envVars["AI_TEXT_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "SECONDARY_AI_IMAGE_URL",
-            (envVars["SECONDARY_AI_IMAGE_URL"] ?: "").toBuildConfigString()
+            "AI_VISION_MODEL",
+            (envVars["AI_VISION_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "PRIMARY_AI_TEXT_MODEL",
-            (envVars["PRIMARY_AI_TEXT_MODEL"] ?: "").toBuildConfigString()
+            "AI_IMAGE_MODEL",
+            (envVars["AI_IMAGE_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "PRIMARY_AI_VISION_MODEL",
-            (envVars["PRIMARY_AI_VISION_MODEL"] ?: "").toBuildConfigString()
+            "AI_SEARCH_MODEL",
+            (envVars["AI_SEARCH_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "PRIMARY_AI_IMAGE_MODEL",
-            (envVars["PRIMARY_AI_IMAGE_MODEL"] ?: "").toBuildConfigString()
+            "AI_TITLE_MODEL",
+            (envVars["AI_TITLE_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "SECONDARY_AI_TEXT_MODEL",
-            (envVars["SECONDARY_AI_TEXT_MODEL"] ?: "").toBuildConfigString()
+            "AI_SUMMARY_MODEL",
+            (envVars["AI_SUMMARY_MODEL"] ?: "").toBuildConfigString()
         )
         buildConfigField(
             "String",
-            "SECONDARY_AI_VISION_MODEL",
-            (envVars["SECONDARY_AI_VISION_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "SECONDARY_AI_IMAGE_MODEL",
-            (envVars["SECONDARY_AI_IMAGE_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "SECONDARY_AI_SEARCH_MODEL",
-            (envVars["SECONDARY_AI_SEARCH_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "SECONDARY_AI_TITLE_MODEL",
-            (envVars["SECONDARY_AI_TITLE_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "SECONDARY_AI_SUMMARY_MODEL",
-            (envVars["SECONDARY_AI_SUMMARY_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "SECONDARY_AI_AUDIT_MODEL",
-            (envVars["SECONDARY_AI_AUDIT_MODEL"] ?: "").toBuildConfigString()
+            "AI_AUDIT_MODEL",
+            (envVars["AI_AUDIT_MODEL"] ?: "").toBuildConfigString()
         )
         val telegramLoginClientId = envVars["TELEGRAM_LOGIN_CLIENT_ID"] ?: ""
         val telegramLoginRedirectUri = envVars["TELEGRAM_LOGIN_REDIRECT_URI"]

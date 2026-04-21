@@ -8,9 +8,6 @@ import com.example.chatapp.BuildConfig
  */
 object ApiKeyProvider {
 
-    val primaryAiApiKey: String
-        get() = BuildConfig.PRIMARY_AI_API_KEY
-
-    val secondaryAiApiKey: String
-        get() = BuildConfig.SECONDARY_AI_API_KEY
+    val aiApiKey: String
+        get() = BuildConfig.AI_API_KEY
 }

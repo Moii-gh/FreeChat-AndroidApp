@@ -200,7 +200,7 @@ class AccountScopedSettings(
     }
 
     private fun normalizeAiMode(value: String): String = when (value) {
-        "plus", "free", "auto" -> value
+        "plus", "auto" -> value
         else -> "plus"
     }
 }

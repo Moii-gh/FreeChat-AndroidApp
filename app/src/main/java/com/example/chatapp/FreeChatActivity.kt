@@ -711,13 +711,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             mimeType = mimeType,
             fileName = attachmentPayload?.fileName,
             fileText = attachmentPayload?.extractedText,
-            onAssistantResponse = {},
-            onFallbackRequired = {
-                runOnUiThread {
-                    wrapper.updateContent(LocaleHelper.getString(this@FreeChatActivity, "ai_switching_fallback"), animate = false)
-                }
-                retryWithFallback(wrapper)
-            },
             onError = { error ->
                 runOnUiThread {
                     isSending = false
@@ -741,7 +734,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         )
     }
 
-    private fun retryWithFallback(
+    private fun retryWithCurrentProvider(
         wrapper: AssistantMessageWrapper,
         modeOverride: String? = null,
         useModeOverride: Boolean = false
@@ -759,13 +752,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     refreshChats()
                 }
             },
-            onFallbackRequired = {
-                runOnUiThread {
-                    isSending = false
-                    updateSendState()
-                    wrapper.updateContent(LocaleHelper.getString(this@FreeChatActivity, "ai_error_retry"), animate = false)
-                }
-            },
             onError = { error ->
                 runOnUiThread {
                     isSending = false
@@ -774,7 +760,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     toast(error)
                 }
             },
-            forceFallbackRoute = true,
             modeOverride = modeOverride,
             useModeOverride = useModeOverride
         )
@@ -824,7 +809,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isImageMode = isImageRequest
         )
         currentAssistantMessage = freshWrapper
-        retryWithFallback(
+        retryWithCurrentProvider(
             wrapper = freshWrapper,
             modeOverride = if (isImageRequest) "create_image" else null,
             useModeOverride = true

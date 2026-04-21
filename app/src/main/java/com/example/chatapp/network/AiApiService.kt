@@ -18,7 +18,6 @@ object AiApiService {
         fun onChunk(accumulatedText: String)
         fun onComplete(fullText: String)
         fun onError(errorMessage: String)
-        fun onFallbackRequired()
     }
 
     fun buildSystemPrompt(
@@ -44,44 +43,7 @@ object AiApiService {
         return if (parts.isNotEmpty()) parts.joinToString("\n\n") else null
     }
 
-    fun buildNativeRequestBody(
-        messagesToKeep: List<JSONObject>,
-        systemPrompt: String?
-    ): String {
-        return JSONObject().apply {
-            if (systemPrompt != null) {
-                put("system_instruction", JSONObject().apply {
-                    put("parts", JSONArray().put(JSONObject().apply { put("text", systemPrompt) }))
-                })
-            }
-
-            val contents = JSONArray()
-            messagesToKeep.forEach { msg ->
-                val role = if (msg.optString("role") == "assistant") "model" else "user"
-                val messageText = buildMessageText(msg)
-                contents.put(
-                    JSONObject().apply {
-                        put("role", role)
-                        put("parts", JSONArray().apply {
-                            put(JSONObject().apply { put("text", messageText) })
-                            if (msg.has("base64")) {
-                                val mimeType = normalizedMimeType(msg)
-                                put(JSONObject().apply {
-                                    put("inline_data", JSONObject().apply {
-                                        put("mime_type", mimeType)
-                                        put("data", msg.getString("base64"))
-                                    })
-                                })
-                            }
-                        })
-                    }
-                )
-            }
-            put("contents", contents)
-        }.toString()
-    }
-
-    fun buildCompatibleRequestBody(
+    fun buildRequestBody(
         target: AiTarget,
         messagesToKeep: List<JSONObject>,
         systemPrompt: String?
@@ -179,8 +141,6 @@ object AiApiService {
         currentMode: String?,
         customInstructions: String,
         chatContextSummary: String,
-        aiMode: String,
-        forceFallbackRoute: Boolean,
         callback: StreamCallback
     ) {
         withContext(Dispatchers.IO) {
@@ -193,18 +153,12 @@ object AiApiService {
 
             try {
                 val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary)
-                val jsonInput = if (target.usesNativeProtocol) {
-                    buildNativeRequestBody(messagesToKeep, systemPrompt)
-                } else {
-                    buildCompatibleRequestBody(target, messagesToKeep, systemPrompt)
-                }
+                val jsonInput = buildRequestBody(target, messagesToKeep, systemPrompt)
 
                 val connection = (URL(target.apiUrl).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     setRequestProperty("Content-Type", "application/json; utf-8")
-                    if (!target.usesNativeProtocol) {
-                        setRequestProperty("Authorization", "Bearer ${resolvedApiKey(target.route)}")
-                    }
+                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.aiApiKey}")
                     doOutput = true
                 }
 
@@ -238,30 +192,17 @@ object AiApiService {
 
                                 try {
                                     val json = JSONObject(data)
-                                    val chunk = if (target.usesNativeProtocol) {
-                                        if (json.has("candidates")) {
-                                            json.getJSONArray("candidates")
-                                                .getJSONObject(0)
-                                                .getJSONObject("content")
-                                                .getJSONArray("parts")
-                                                .getJSONObject(0)
-                                                .optString("text", "")
+                                    val chunk = if (json.has("choices")) {
+                                        val choices = json.getJSONArray("choices")
+                                        if (choices.length() > 0) {
+                                            choices.getJSONObject(0)
+                                                .getJSONObject("delta")
+                                                .optString("content", "")
                                         } else {
                                             ""
                                         }
                                     } else {
-                                        if (json.has("choices")) {
-                                            val choices = json.getJSONArray("choices")
-                                            if (choices.length() > 0) {
-                                                choices.getJSONObject(0)
-                                                    .getJSONObject("delta")
-                                                    .optString("content", "")
-                                            } else {
-                                                ""
-                                            }
-                                        } else {
-                                            ""
-                                        }
+                                        ""
                                     }
 
                                     if (chunk.isNotEmpty()) {
@@ -276,21 +217,25 @@ object AiApiService {
                         }
                     }
 
-                    if (aiMode == "auto" && !forceFallbackRoute && target.route == "primary") {
-                        val isLimit = verifyResponseIsLimitError(finalReply)
-                        if (isLimit) {
-                            withContext(Dispatchers.Main) {
-                                callback.onFallbackRequired()
-                            }
-                            return@withContext
-                        }
-                    }
-
                     withContext(Dispatchers.Main) {
                         callback.onComplete(finalReply)
                     }
                 } else {
-                    handleHttpError(connection, aiMode, forceFallbackRoute, target, callback)
+                    val errorBody = try {
+                        connection.errorStream?.bufferedReader()?.readText() ?: ""
+                    } catch (_: Exception) {
+                        ""
+                    }
+
+                    val errorMessage = try {
+                        JSONObject(errorBody).getJSONObject("error").getString("message")
+                    } catch (_: Exception) {
+                        "Код ${connection.responseCode}"
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        callback.onError("Ошибка: $errorMessage")
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -300,115 +245,20 @@ object AiApiService {
         }
     }
 
-    private suspend fun handleHttpError(
-        connection: HttpURLConnection,
-        aiMode: String,
-        forceFallbackRoute: Boolean,
-        target: AiTarget,
-        callback: StreamCallback
-    ) {
-        val errorBody = try {
-            connection.errorStream?.bufferedReader()?.readText() ?: ""
-        } catch (_: Exception) {
-            ""
-        }
-
-        val isLimitHttp = connection.responseCode == 429 ||
-            errorBody.contains("quota", true) ||
-            errorBody.contains("resource has been exhausted", true)
-
-        if (aiMode == "auto" && !forceFallbackRoute && (isLimitHttp || target.route == "primary")) {
-            withContext(Dispatchers.Main) {
-                callback.onFallbackRequired()
-            }
-            return
-        }
-
-        val errorMessage = try {
-            JSONObject(errorBody).getJSONObject("error").getString("message")
-        } catch (_: Exception) {
-            "Код ${connection.responseCode}"
-        }
-
-        withContext(Dispatchers.Main) {
-            callback.onError("Ошибка: $errorMessage")
-        }
-    }
-
-    suspend fun verifyResponseIsLimitError(responseText: String): Boolean {
-        if (responseText.isEmpty() || responseText.length < 10) return false
-        if (BuildConfig.SECONDARY_AI_CHAT_URL.isBlank() ||
-            BuildConfig.SECONDARY_AI_AUDIT_MODEL.isBlank() ||
-            ApiKeyProvider.secondaryAiApiKey.isBlank()
-        ) {
-            return false
-        }
-
-        return withContext(Dispatchers.IO) {
-            try {
-                val connection = (URL(BuildConfig.SECONDARY_AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    setRequestProperty("Content-Type", "application/json; utf-8")
-                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.secondaryAiApiKey}")
-                    doOutput = true
-                }
-
-                val jsonInput = JSONObject().apply {
-                    put("model", BuildConfig.SECONDARY_AI_AUDIT_MODEL)
-                    put("messages", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system")
-                            put(
-                                "content",
-                                "Проанализируй следующий ответ ИИ. Содержит ли он сообщение об исчерпании лимитов, квоты или ошибке сервиса? Ответь строго YES или NO."
-                            )
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user")
-                            put("content", responseText)
-                        })
-                    })
-                    put("stream", false)
-                }.toString()
-
-                OutputStreamWriter(connection.outputStream).use {
-                    it.write(jsonInput)
-                    it.flush()
-                }
-
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = BufferedReader(
-                        InputStreamReader(connection.inputStream, "utf-8")
-                    ).readText()
-                    val answer = JSONObject(response)
-                        .getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content")
-
-                    return@withContext answer.trim().contains("YES", ignoreCase = true)
-                }
-            } catch (_: Exception) {
-            }
-
-            false
-        }
-    }
-
     suspend fun summarizeMessages(messagesToSummarize: List<JSONObject>): String? {
-        if (BuildConfig.SECONDARY_AI_CHAT_URL.isBlank() ||
-            BuildConfig.SECONDARY_AI_SUMMARY_MODEL.isBlank() ||
-            ApiKeyProvider.secondaryAiApiKey.isBlank()
+        if (BuildConfig.AI_CHAT_URL.isBlank() ||
+            BuildConfig.AI_SUMMARY_MODEL.isBlank() ||
+            ApiKeyProvider.aiApiKey.isBlank()
         ) {
             return null
         }
 
         return withContext(Dispatchers.IO) {
             try {
-                val connection = (URL(BuildConfig.SECONDARY_AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
+                val connection = (URL(BuildConfig.AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     setRequestProperty("Content-Type", "application/json; utf-8")
-                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.secondaryAiApiKey}")
+                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.aiApiKey}")
                     doOutput = true
                 }
 
@@ -419,7 +269,7 @@ object AiApiService {
                         }
 
                 val jsonInput = JSONObject().apply {
-                    put("model", BuildConfig.SECONDARY_AI_SUMMARY_MODEL)
+                    put("model", BuildConfig.AI_SUMMARY_MODEL)
                     put("stream", false)
                     put("max_tokens", 300)
                     put("messages", JSONArray().apply {
@@ -458,17 +308,8 @@ object AiApiService {
     }
 
     private fun isTargetConfigured(target: AiTarget): Boolean {
-        if (target.apiUrl.isBlank() || target.model.isBlank()) {
-            return false
-        }
-
-        return target.usesNativeProtocol || resolvedApiKey(target.route).isNotBlank()
+        return target.apiUrl.isNotBlank() &&
+            target.model.isNotBlank() &&
+            ApiKeyProvider.aiApiKey.isNotBlank()
     }
-
-    private fun resolvedApiKey(route: String): String =
-        if (route == "secondary") {
-            ApiKeyProvider.secondaryAiApiKey
-        } else {
-            ApiKeyProvider.primaryAiApiKey
-        }
 }

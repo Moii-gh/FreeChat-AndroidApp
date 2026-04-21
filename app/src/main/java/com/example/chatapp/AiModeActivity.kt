@@ -40,11 +40,6 @@ class AiModeActivity : AppCompatActivity() {
                 desc = LocaleHelper.getString(this, "ai_mode_plus_desc")
             ),
             ModeItem(
-                id = "free",
-                title = LocaleHelper.getString(this, "ai_mode_free_title"),
-                desc = LocaleHelper.getString(this, "ai_mode_free_desc")
-            ),
-            ModeItem(
                 id = "auto",
                 title = LocaleHelper.getString(this, "ai_mode_auto_title"),
                 desc = LocaleHelper.getString(this, "ai_mode_auto_desc")

@@ -107,25 +107,25 @@ class ChatRepository(context: Context) {
     suspend fun generateChatTitle(
         firstUserMessage: String
     ): String? = withContext(Dispatchers.IO) {
-        if (BuildConfig.SECONDARY_AI_CHAT_URL.isBlank() ||
-            BuildConfig.SECONDARY_AI_TITLE_MODEL.isBlank() ||
-            ApiKeyProvider.secondaryAiApiKey.isBlank()
+        if (BuildConfig.AI_CHAT_URL.isBlank() ||
+            BuildConfig.AI_TITLE_MODEL.isBlank() ||
+            ApiKeyProvider.aiApiKey.isBlank()
         ) {
             return@withContext null
         }
 
         try {
-            val url = URL(BuildConfig.SECONDARY_AI_CHAT_URL)
+            val url = URL(BuildConfig.AI_CHAT_URL)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json; utf-8")
-            connection.setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.secondaryAiApiKey}")
+            connection.setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.aiApiKey}")
             connection.doOutput = true
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
 
             val jsonInput = JSONObject().apply {
-                put("model", BuildConfig.SECONDARY_AI_TITLE_MODEL)
+                put("model", BuildConfig.AI_TITLE_MODEL)
                 put("stream", false)
                 put("max_tokens", 40)
                 put("temperature", 0.7)

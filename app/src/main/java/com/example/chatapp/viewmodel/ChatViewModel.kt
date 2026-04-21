@@ -189,8 +189,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         mimeType: String?,
         fileName: String?,
         fileText: String?,
-        onAssistantResponse: (String) -> Unit,
-        onFallbackRequired: () -> Unit,
         onError: (String) -> Unit,
         onChunk: (String) -> Unit,
         onStreamComplete: () -> Unit
@@ -213,7 +211,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        fetchAiResponse(onChunk, onStreamComplete, onFallbackRequired, onError)
+        fetchAiResponse(onChunk, onStreamComplete, onError)
     }
 
     /**
@@ -223,9 +221,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun fetchAiResponse(
         onChunk: (String) -> Unit,
         onComplete: () -> Unit,
-        onFallbackRequired: () -> Unit,
         onError: (String) -> Unit,
-        forceFallbackRoute: Boolean = false,
         modeOverride: String? = null,
         useModeOverride: Boolean = false
     ) {
@@ -246,7 +242,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             launchSummarization(messagesToSummarize)
         }
 
-        val aiMode = accountSettings.getAiMode()
         val customInstructions = accountSettings.getUserInstructions()
 
         val hasVision = messagesToKeep.any {
@@ -259,9 +254,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         val target = AiModelSelector.selectTarget(
             currentMode = effectiveMode,
-            aiMode = aiMode,
             hasVision = hasVision,
-            forceFallbackRoute = forceFallbackRoute,
             hasFileAttachment = hasFileAttachment
         )
 
@@ -272,8 +265,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 currentMode = effectiveMode,
                 customInstructions = customInstructions,
                 chatContextSummary = chatContextSummary,
-                aiMode = aiMode,
-                forceFallbackRoute = forceFallbackRoute,
                 callback = object : AiApiService.StreamCallback {
                     override fun onChunk(accumulatedText: String) {
                         onChunk(accumulatedText)
@@ -291,10 +282,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                     override fun onError(errorMessage: String) {
                         onError(errorMessage)
-                    }
-
-                    override fun onFallbackRequired() {
-                        onFallbackRequired()
                     }
                 }
             )
