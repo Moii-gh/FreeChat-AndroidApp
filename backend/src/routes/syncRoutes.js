@@ -1,15 +1,14 @@
 const express = require("express");
-const { authenticate } = require("../middleware/authenticate");
 const { syncData } = require("../controllers/syncController");
+const { validate } = require("../middleware/validate");
+const { syncPayloadSchema } = require("../schemas/syncSchemas");
 
-function createSyncRouter() {
+function createSyncRouter({ authenticate }) {
   const router = express.Router();
-  
-  // All sync routes require authentication.
+
   router.use(authenticate);
-  
-  router.post("/", syncData);
-  
+  router.post("/", validate(syncPayloadSchema), syncData);
+
   return router;
 }
 

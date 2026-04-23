@@ -53,7 +53,7 @@ function normalizePrice() {
   return Number(env.proSubscriptionPriceRub || 100).toFixed(2);
 }
 
-async function createInitialSubscriptionPayment({ userId, planCode }) {
+async function createInitialSubscriptionPayment({ userId, planCode, idempotenceKey = crypto.randomUUID() }) {
   const body = {
     amount: {
       value: normalizePrice(),
@@ -76,11 +76,16 @@ async function createInitialSubscriptionPayment({ userId, planCode }) {
   return request("/payments", {
     method: "POST",
     body,
-    idempotenceKey: crypto.randomUUID()
+    idempotenceKey
   });
 }
 
-async function createRenewalPayment({ userId, planCode, paymentMethodId }) {
+async function createRenewalPayment({
+  userId,
+  planCode,
+  paymentMethodId,
+  idempotenceKey = crypto.randomUUID()
+}) {
   const body = {
     amount: {
       value: normalizePrice(),
@@ -99,7 +104,7 @@ async function createRenewalPayment({ userId, planCode, paymentMethodId }) {
   return request("/payments", {
     method: "POST",
     body,
-    idempotenceKey: crypto.randomUUID()
+    idempotenceKey
   });
 }
 

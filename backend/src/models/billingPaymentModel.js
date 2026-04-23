@@ -1,5 +1,20 @@
 const { pool } = require("../config/db");
 
+function getExecutor(executor) {
+  return executor || pool;
+}
+
+async function findByProviderPaymentId(providerPaymentId, executor) {
+  const result = await getExecutor(executor).query(
+    `select *
+     from billing_payments
+     where provider_payment_id = $1`,
+    [providerPaymentId]
+  );
+
+  return result.rows[0] || null;
+}
+
 async function upsertPayment({
   userId,
   provider = "yookassa",
@@ -10,8 +25,8 @@ async function upsertPayment({
   status,
   paymentMethodId = null,
   rawPayload = null
-}) {
-  const result = await pool.query(
+}, executor) {
+  const result = await getExecutor(executor).query(
     `insert into billing_payments (
        user_id,
        provider,
@@ -53,5 +68,6 @@ async function upsertPayment({
 }
 
 module.exports = {
+  findByProviderPaymentId,
   upsertPayment
 };

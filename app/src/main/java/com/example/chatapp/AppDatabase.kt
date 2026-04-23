@@ -8,7 +8,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [ChatEntity::class, MessageEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -26,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "chat_database"
                 )
                 .addMigrations(MIGRATION_1_3, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_5_6)
                 .build()
                 INSTANCE = instance
                 instance
@@ -90,6 +91,12 @@ abstract class AppDatabase : RoomDatabase() {
                         database.execSQL("UPDATE messages SET syncId = '$uuid' WHERE id = $id")
                     }
                 }
+            }
+        }
+
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.addColumnIfMissing("chats", "isDeleted", "INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

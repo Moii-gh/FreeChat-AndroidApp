@@ -3,13 +3,13 @@ package com.example.chatapp.network
 import com.example.chatapp.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
 
 object AiApiService {
 
@@ -19,6 +19,8 @@ object AiApiService {
         fun onError(errorMessage: String)
     }
 
+    private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+
     fun buildSystemPrompt(
         currentMode: String?,
         customInstructions: String,
@@ -26,21 +28,21 @@ object AiApiService {
         filesContext: String = ""
     ): String? {
         val baseSystemPrompt = when (currentMode) {
-            "shopping" -> "РўС‹ РїРѕРјРѕС‰РЅРёРє РїРѕ РїРѕРєСѓРїРєР°Рј. РС‰Рё РІ РёРЅС‚РµСЂРЅРµС‚Рµ С‚РѕР»СЊРєРѕ С‚РѕРІР°СЂС‹, РїСЂРµРґРѕСЃС‚Р°РІР»СЏСЏ РІР°СЂРёР°РЅС‚С‹ СЃ С†РµРЅР°РјРё Рё РІРѕР·РјРѕР¶РЅС‹РјРё РјРµСЃС‚Р°РјРё РїСЂРёРѕР±СЂРµС‚РµРЅРёСЏ."
-            "study" -> "РўС‹ СѓС‡РёС‚РµР»СЊ. РћС‚РІРµС‡Р°Р№ РєР°Рє РѕРїС‹С‚РЅС‹Р№ РїСЂРµРїРѕРґР°РІР°С‚РµР»СЊ, РѕР±СЉСЏСЃРЅСЏР№ РїРѕРґСЂРѕР±РЅРѕ, РїСЂРёРІРѕРґРё РЅР°РіР»СЏРґРЅС‹Рµ РїСЂРёРјРµСЂС‹ Рё Р·Р°РґР°РІР°Р№ РІРѕРїСЂРѕСЃС‹ РґР»СЏ РїСЂРѕРІРµСЂРєРё РїРѕРЅРёРјР°РЅРёСЏ."
+            "shopping" -> "Ты помощник по покупкам. Ищи варианты, сравнивай характеристики и отмечай реальные ограничения."
+            "study" -> "Ты учебный помощник. Объясняй пошагово, проверяй понимание и помогай закрепить материал."
             else -> null
         }
 
         val parts = mutableListOf<String>()
         if (baseSystemPrompt != null) parts.add(baseSystemPrompt)
         if (customInstructions.isNotEmpty()) {
-            parts.add("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ РёРЅСЃС‚СЂСѓРєС†РёРё (СЃС‚СЂРѕРіРѕ СЃР»РµРґСѓР№ РёРј):\n$customInstructions")
+            parts.add("Инструкции пользователя:\n$customInstructions")
         }
         if (filesContext.isNotEmpty()) {
-            parts.add("РџРѕР»РЅРѕРµ СЃРѕРґРµСЂР¶РёРјРѕРµ РїСЂРёРєСЂРµРїР»С‘РЅРЅС‹С… С„Р°Р№Р»РѕРІ (С‚С‹ Р·РЅР°РµС€СЊ РёС… РїРѕР»РЅРѕСЃС‚СЊСЋ, РёСЃРїРѕР»СЊР·СѓР№ СЌС‚Рё РґР°РЅРЅС‹Рµ РґР»СЏ РѕС‚РІРµС‚РѕРІ):\n$filesContext")
+            parts.add("Краткие выдержки из ранее прикреплённых файлов:\n$filesContext")
         }
         if (chatContextSummary.isNotEmpty()) {
-            parts.add("РљСЂР°С‚РєР°СЏ РІС‹Р¶РёРјРєР° РїСЂРµРґС‹РґСѓС‰РµРіРѕ СЂР°Р·РіРѕРІРѕСЂР° (РІР°Р¶РЅРѕ РґР»СЏ РєРѕРЅС‚РµРєСЃС‚Р°):\n$chatContextSummary")
+            parts.add("Сжатый контекст предыдущего диалога:\n$chatContextSummary")
         }
 
         return if (parts.isNotEmpty()) parts.joinToString("\n\n") else null
@@ -107,24 +109,23 @@ object AiApiService {
         val content = msg.optString("content", "")
         val fileName = msg.optString("fileName", "")
         val mimeType = msg.optString("mimeType", "")
-        val fileText = msg.optString("fileText", "")
+        val fileContext = msg.optString("fileContext", "")
 
-        if (fileName.isBlank() && mimeType.isBlank() && fileText.isBlank()) {
+        if (fileName.isBlank() && mimeType.isBlank() && fileContext.isBlank()) {
             return content
         }
 
         return buildString {
             append(content)
             if (isNotBlank()) append("\n\n")
-            append("РџСЂРёРєСЂРµРїР»С‘РЅРЅС‹Р№ С„Р°Р№Р»")
+            append("Прикреплённый файл")
             if (fileName.isNotBlank()) append(": ").append(fileName)
-            if (mimeType.isNotBlank()) append("\nРўРёРї: ").append(mimeType)
-            if (fileText.isNotBlank()) {
-                append("\n\n===== РџРћР›РќРћР• РЎРћР”Р•Р Р–РРњРћР• Р¤РђР™Р›Рђ =====\n")
-                append(fileText)
-                append("\n===== РљРћРќР•Р¦ Р¤РђР™Р›Рђ =====")
+            if (mimeType.isNotBlank()) append("\nMIME: ").append(mimeType)
+            if (fileContext.isNotBlank()) {
+                append("\n\nКраткая выдержка:\n")
+                append(fileContext)
             } else if (msg.has("base64") && !isImageMimeType(mimeType)) {
-                append("\n\n(Р‘РёРЅР°СЂРЅС‹Р№ С„Р°Р№Р» вЂ” С‚РµРєСЃС‚РѕРІРѕРµ СЃРѕРґРµСЂР¶РёРјРѕРµ РЅРµРґРѕСЃС‚СѓРїРЅРѕ)")
+                append("\n\n(Бинарный файл без текстовой выдержки)")
             }
         }
     }
@@ -149,7 +150,7 @@ object AiApiService {
         withContext(Dispatchers.IO) {
             if (authToken.isBlank()) {
                 withContext(Dispatchers.Main) {
-                    callback.onError("РўСЂРµР±СѓРµС‚СЃСЏ Р°РІС‚РѕСЂРёР·Р°С†РёСЏ")
+                    callback.onError("Session expired. Sign in again.")
                 }
                 return@withContext
             }
@@ -163,26 +164,21 @@ object AiApiService {
                     put("request", JSONObject(jsonInput))
                 }.toString()
 
-                val connection = (URL("${BuildConfig.APP_API_BASE_URL}ai/chat").openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                    setRequestProperty("Authorization", "Bearer $authToken")
-                    doOutput = true
-                }
+                val request = buildJsonRequest(path = "ai/chat", payload = payload)
 
-                OutputStreamWriter(connection.outputStream).use {
-                    it.write(payload)
-                    it.flush()
-                }
+                NetworkModule.createAiHttpClient(authToken).newCall(request).execute().use { response ->
+                    val responseBody = response.body
+                    if (!response.isSuccessful || responseBody == null) {
+                        withContext(Dispatchers.Main) {
+                            callback.onError(parseErrorMessage(response.code, responseBody?.string().orEmpty()))
+                        }
+                        return@use
+                    }
 
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     var finalReply = ""
 
                     if (isImageGeneration) {
-                        val response = BufferedReader(
-                            InputStreamReader(connection.inputStream, "utf-8")
-                        ).readText()
-                        val b64 = JSONObject(response)
+                        val b64 = JSONObject(responseBody.string())
                             .getJSONArray("data")
                             .getJSONObject(0)
                             .getString("b64_json")
@@ -191,35 +187,34 @@ object AiApiService {
                             callback.onChunk(finalReply)
                         }
                     } else {
-                        val reader = BufferedReader(InputStreamReader(connection.inputStream, "utf-8"))
-                        var line: String?
-                        while (reader.readLine().also { line = it } != null) {
-                            if (line!!.startsWith("data:")) {
-                                val data = line!!.substring(5).trim()
-                                if (data == "[DONE]" || data.isEmpty()) continue
+                        BufferedReader(InputStreamReader(responseBody.byteStream(), Charsets.UTF_8)).use { reader ->
+                            while (true) {
+                                val line = reader.readLine() ?: break
+                                if (!line.startsWith("data:")) {
+                                    continue
+                                }
 
-                                try {
+                                val data = line.removePrefix("data:").trim()
+                                if (data.isEmpty() || data == "[DONE]") {
+                                    continue
+                                }
+
+                                runCatching {
                                     val json = JSONObject(data)
-                                    val chunk = if (json.has("choices")) {
-                                        val choices = json.getJSONArray("choices")
-                                        if (choices.length() > 0) {
-                                            choices.getJSONObject(0)
-                                                .getJSONObject("delta")
-                                                .optString("content", "")
-                                        } else {
-                                            ""
-                                        }
+                                    val choices = json.optJSONArray("choices")
+                                    if (choices != null && choices.length() > 0) {
+                                        choices.getJSONObject(0)
+                                            .optJSONObject("delta")
+                                            ?.optString("content", "")
+                                            .orEmpty()
                                     } else {
                                         ""
                                     }
-
-                                    if (chunk.isNotEmpty()) {
-                                        finalReply += chunk
-                                        withContext(Dispatchers.Main) {
-                                            callback.onChunk(finalReply)
-                                        }
+                                }.getOrDefault("").takeIf { it.isNotEmpty() }?.let { chunk ->
+                                    finalReply += chunk
+                                    withContext(Dispatchers.Main) {
+                                        callback.onChunk(finalReply)
                                     }
-                                } catch (_: Exception) {
                                 }
                             }
                         }
@@ -228,34 +223,29 @@ object AiApiService {
                     withContext(Dispatchers.Main) {
                         callback.onComplete(finalReply)
                     }
-                } else {
-                    val errorBody = try {
-                        connection.errorStream?.bufferedReader()?.readText() ?: ""
-                    } catch (_: Exception) {
-                        ""
-                    }
-
-                    val errorMessage = try {
-                        val json = JSONObject(errorBody)
-                        when {
-                            json.has("error") -> json.getJSONObject("error").optString("message")
-                            json.has("message") -> json.optString("message")
-                            else -> ""
-                        }
-                    } catch (_: Exception) {
-                        "РљРѕРґ ${connection.responseCode}"
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        callback.onError("РћС€РёР±РєР°: $errorMessage")
-                    }
                 }
-            } catch (e: Exception) {
+            } catch (error: Exception) {
                 withContext(Dispatchers.Main) {
-                    callback.onError("РћС€РёР±РєР° СЃРµС‚Рё: ${e.message}")
+                    callback.onError("Network error: ${error.message}")
                 }
             }
         }
+    }
+
+    suspend fun generateTitle(
+        authToken: String,
+        firstUserMessage: String
+    ): String? {
+        return executeContentRequest(
+            authToken = authToken,
+            path = "ai/title",
+            payload = JSONObject().apply {
+                put("firstUserMessage", firstUserMessage)
+            }.toString()
+        )?.trim()
+            ?.removeSurrounding("\"")
+            ?.removeSuffix(".")
+            ?.takeIf { it.isNotBlank() && it.length <= 60 }
     }
 
     suspend fun summarizeMessages(
@@ -266,53 +256,70 @@ object AiApiService {
             return null
         }
 
-        return withContext(Dispatchers.IO) {
-            try {
-                val connection = (URL("${BuildConfig.APP_API_BASE_URL}ai/summary").openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                    setRequestProperty("Authorization", "Bearer $authToken")
-                    doOutput = true
+        val promptText = buildString {
+            append("Сделай краткую сводку важных фактов из этой части переписки:\n")
+            for (msg in messagesToSummarize) {
+                append(msg.getString("role")).append(": ").append(msg.getString("content")).append("\n")
+                val fileName = msg.optString("fileName", "")
+                val fileContext = msg.optString("fileContext", "")
+                if (fileName.isNotBlank()) {
+                    append("[Файл: ").append(fileName).append("]\n")
                 }
-
-                val promptText = buildString {
-                    append("РЎРґРµР»Р°Р№ РєСЂР°С‚РєСѓСЋ РІС‹Р¶РёРјРєСѓ РІР°Р¶РЅС‹С… С„Р°РєС‚РѕРІ РёР· СЌС‚РѕР№ С‡Р°СЃС‚Рё РїРµСЂРµРїРёСЃРєРё (СЃРѕС…СЂР°РЅРё РєР»СЋС‡РµРІС‹Рµ РґРµС‚Р°Р»Рё, РІРєР»СЋС‡Р°СЏ РёРјРµРЅР° С„Р°Р№Р»РѕРІ Рё РёС… СЃРѕРґРµСЂР¶РёРјРѕРµ):\n")
-                    for (msg in messagesToSummarize) {
-                        val role = msg.getString("role")
-                        val content = msg.getString("content")
-                        append("$role: $content\n")
-                        val fileName = msg.optString("fileName", "")
-                        val fileText = msg.optString("fileText", "")
-                        if (fileName.isNotBlank()) {
-                            append("[РџСЂРёРєСЂРµРїР»С‘РЅ С„Р°Р№Р»: $fileName]\n")
-                        }
-                        if (fileText.isNotBlank()) {
-                            val preview = if (fileText.length > 2000) fileText.take(2000) + "..." else fileText
-                            append("[РЎРѕРґРµСЂР¶РёРјРѕРµ С„Р°Р№Р»Р°:\n$preview]\n")
-                        }
-                    }
+                if (fileContext.isNotBlank()) {
+                    append("[Выдержка из файла:\n").append(fileContext).append("]\n")
                 }
-
-                val jsonInput = JSONObject().apply {
-                    put("promptText", promptText)
-                }.toString()
-
-                OutputStreamWriter(connection.outputStream).use {
-                    it.write(jsonInput)
-                    it.flush()
-                }
-
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = BufferedReader(
-                        InputStreamReader(connection.inputStream, "utf-8")
-                    ).readText()
-                    JSONObject(response).optString("content", null)
-                } else {
-                    null
-                }
-            } catch (_: Exception) {
-                null
             }
+        }
+
+        return executeContentRequest(
+            authToken = authToken,
+            path = "ai/summary",
+            payload = JSONObject().apply {
+                put("promptText", promptText)
+            }.toString()
+        )
+    }
+
+    private suspend fun executeContentRequest(
+        authToken: String,
+        path: String,
+        payload: String
+    ): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = buildJsonRequest(path, payload)
+            NetworkModule.createAiHttpClient(authToken).newCall(request).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                if (!response.isSuccessful) {
+                    return@use null
+                }
+
+                JSONObject(body).optString("content", null)
+            }
+        }.getOrNull()
+    }
+
+    private fun buildJsonRequest(path: String, payload: String): Request {
+        val url = "${NetworkModule.normalizedBaseUrl(BuildConfig.APP_API_BASE_URL)}${path.removePrefix("/")}"
+        return Request.Builder()
+            .url(url)
+            .header("Content-Type", "application/json; charset=utf-8")
+            .post(payload.toRequestBody(jsonMediaType))
+            .build()
+    }
+
+    private fun parseErrorMessage(statusCode: Int, body: String): String {
+        val parsedMessage = runCatching {
+            val json = JSONObject(body)
+            when {
+                json.has("error") -> json.getJSONObject("error").optString("message")
+                json.has("message") -> json.optString("message")
+                else -> ""
+            }
+        }.getOrDefault("")
+
+        return when {
+            parsedMessage.isNotBlank() -> parsedMessage
+            else -> "Request failed: HTTP $statusCode"
         }
     }
 }

@@ -1,7 +1,11 @@
 const { pool } = require("../config/db");
 
-async function findByUserId(userId) {
-  const result = await pool.query(
+function getExecutor(executor) {
+  return executor || pool;
+}
+
+async function findByUserId(userId, executor) {
+  const result = await getExecutor(executor).query(
     `select *
      from subscriptions
      where user_id = $1`,
@@ -11,8 +15,23 @@ async function findByUserId(userId) {
   return result.rows[0] || null;
 }
 
-async function upsertPendingSubscription({ userId, planCode, status = "pending", lastPaymentId = null }) {
-  const result = await pool.query(
+async function findByUserIdForUpdate(userId, executor) {
+  const result = await getExecutor(executor).query(
+    `select *
+     from subscriptions
+     where user_id = $1
+     for update`,
+    [userId]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function upsertPendingSubscription(
+  { userId, planCode, status = "pending", lastPaymentId = null },
+  executor
+) {
+  const result = await getExecutor(executor).query(
     `insert into subscriptions (
        user_id,
        plan_code,
@@ -42,8 +61,10 @@ async function activateSubscription({
   lastPaymentId,
   cancelAtPeriodEnd = false,
   status = "active"
-}) {
-  const result = await pool.query(
+},
+executor
+) {
+  const result = await getExecutor(executor).query(
     `insert into subscriptions (
        user_id,
        plan_code,
@@ -81,8 +102,8 @@ async function activateSubscription({
   return result.rows[0] || null;
 }
 
-async function updateStatus(userId, status) {
-  const result = await pool.query(
+async function updateStatus(userId, status, executor) {
+  const result = await getExecutor(executor).query(
     `update subscriptions
      set status = $2,
          updated_at = now()
@@ -94,8 +115,8 @@ async function updateStatus(userId, status) {
   return result.rows[0] || null;
 }
 
-async function setCancelAtPeriodEnd(userId, cancelAtPeriodEnd) {
-  const result = await pool.query(
+async function setCancelAtPeriodEnd(userId, cancelAtPeriodEnd, executor) {
+  const result = await getExecutor(executor).query(
     `update subscriptions
      set cancel_at_period_end = $2,
          status = case
@@ -112,8 +133,8 @@ async function setCancelAtPeriodEnd(userId, cancelAtPeriodEnd) {
   return result.rows[0] || null;
 }
 
-async function markExpired(userId) {
-  const result = await pool.query(
+async function markExpired(userId, executor) {
+  const result = await getExecutor(executor).query(
     `update subscriptions
      set status = 'expired',
          updated_at = now()
@@ -125,8 +146,8 @@ async function markExpired(userId) {
   return result.rows[0] || null;
 }
 
-async function findDueForRenewal(limit = 20) {
-  const result = await pool.query(
+async function claimDueRenewal(executor) {
+  const result = await getExecutor(executor).query(
     `select *
      from subscriptions
      where status in ('active', 'past_due')
@@ -135,19 +156,20 @@ async function findDueForRenewal(limit = 20) {
        and current_period_end is not null
        and current_period_end <= now()
      order by current_period_end asc
-     limit $1`,
-    [limit]
+     limit 1
+     for update skip locked`
   );
 
-  return result.rows;
+  return result.rows[0] || null;
 }
 
 module.exports = {
   findByUserId,
+  findByUserIdForUpdate,
   upsertPendingSubscription,
   activateSubscription,
   updateStatus,
   setCancelAtPeriodEnd,
   markExpired,
-  findDueForRenewal
+  claimDueRenewal
 };

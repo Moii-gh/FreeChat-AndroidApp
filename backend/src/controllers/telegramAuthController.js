@@ -11,7 +11,11 @@ const PURPOSES = {
   MIGRATE: "migrate"
 };
 
-function createTelegramAuthController({ userModel, challengeModel, telegramConfig }) {
+function hashNonce(value) {
+  return crypto.createHash("sha256").update(String(value)).digest("hex");
+}
+
+function createTelegramAuthController({ userModel, challengeModel, authNonceModel, telegramConfig }) {
   const ensureTelegramConfigured = (res) => {
     if (!telegramConfig.isConfigured || !telegramConfig.botUsername) {
       res.status(503).json({
@@ -72,13 +76,18 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
     JSON.stringify(value).replace(/</g, "\\u003c");
 
   const getRequestBaseUrl = (req) => {
-    if (telegramConfig.publicBaseUrl) {
-      return telegramConfig.publicBaseUrl.replace(/\/+$/, "");
+    const candidateBaseUrl = telegramConfig.publicBaseUrl
+      ? telegramConfig.publicBaseUrl.replace(/\/+$/, "")
+      : `${req.get("x-forwarded-proto") || req.protocol}://${req.get("x-forwarded-host") || req.get("host")}`;
+
+    const parsed = new URL(candidateBaseUrl);
+    if (parsed.protocol !== "https:") {
+      const error = new Error("Telegram Login Widget requires HTTPS");
+      error.statusCode = 503;
+      throw error;
     }
 
-    const proto = req.get("x-forwarded-proto") || req.protocol;
-    const host = req.get("x-forwarded-host") || req.get("host");
-    return `${proto}://${host}`;
+    return parsed.origin;
   };
 
   const buildWidgetCallbackUrl = (req) =>
@@ -323,6 +332,20 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
           });
         }
 
+        const widgetNonceAccepted = await authNonceModel.consumeNonce({
+          kind: "telegram_widget",
+          nonceHash: hashNonce(`${authData.id}:${authData.auth_date}:${authData.hash}`),
+          expiresAt: new Date(
+            (Number(authData.auth_date) + telegramConfig.widgetMaxAgeSeconds) * 1000
+          ).toISOString()
+        });
+
+        if (!widgetNonceAccepted) {
+          return res.status(409).json({
+            message: "Эти данные Telegram уже были использованы"
+          });
+        }
+
         const profile = toWidgetProfile(authData);
         const { user, existingUser } = await upsertTelegramUser(profile);
 
@@ -347,6 +370,18 @@ function createTelegramAuthController({ userModel, challengeModel, telegramConfi
           fetchImpl: telegramConfig.fetchImpl || global.fetch,
           jwks: telegramConfig.jwks || null
         });
+        const nativeNonceAccepted = await authNonceModel.consumeNonce({
+          kind: "telegram_native_id_token",
+          nonceHash: hashNonce(req.validatedBody.idToken),
+          expiresAt: new Date(Number(claims.exp) * 1000).toISOString()
+        });
+
+        if (!nativeNonceAccepted) {
+          return res.status(409).json({
+            message: "Этот Telegram login token уже был использован"
+          });
+        }
+
         const profile = toNativeProfile(claims);
         const { user, existingUser } = await upsertTelegramUser(profile);
 

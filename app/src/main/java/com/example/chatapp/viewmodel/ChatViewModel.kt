@@ -9,13 +9,14 @@ import com.example.chatapp.ChatEntity
 import com.example.chatapp.ChatRepository
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.data.AccountScopedSettings
+import com.example.chatapp.data.AuthRepository
+import com.example.chatapp.data.NetworkResult
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
+import com.example.chatapp.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * ViewModel для главного экрана чата.
@@ -29,10 +30,20 @@ import java.util.*
  */
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
+    data class DailyQuotaSnapshot(
+        val isUnlimited: Boolean,
+        val remainingRequests: Int?,
+        val dailyRequestLimit: Int?,
+        val resetsAt: String?
+    )
+
     private val repository = ChatRepository(application)
     private val syncRepository = com.example.chatapp.SyncRepository(application)
     private val accountSettings = AccountScopedSettings(application)
     private val sessionStore = SharedPrefsAccountSessionStore(application)
+    private val authRepository = AuthRepository(
+        service = NetworkModule.createAuthApiService(com.example.chatapp.BuildConfig.APP_API_BASE_URL)
+    )
 
     // ──────── Состояние текущего чата ────────
     val chatHistory = mutableListOf<JSONObject>()
@@ -192,7 +203,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         fileUri: String?,
         mimeType: String?,
         fileName: String?,
-        fileText: String?,
+        fileContext: String?,
         onError: (String) -> Unit,
         onChunk: (String) -> Unit,
         onStreamComplete: () -> Unit
@@ -204,13 +215,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             if (fileUri != null) put("imageUri", fileUri)
             if (mimeType != null) put("mimeType", mimeType)
             if (fileName != null) put("fileName", fileName)
-            if (fileText != null) put("fileText", fileText)
+            if (fileContext != null) put("fileContext", fileContext)
         }
         chatHistory.add(userMessage)
 
         // Регистрируем файл, чтобы модель всегда помнила его содержимое
-        if (fileName != null || fileText != null) {
-            registerAttachedFile(fileName, mimeType, fileText)
+        if (fileName != null || fileContext != null) {
+            registerAttachedFile(fileName, mimeType, fileContext)
         }
 
         // Сохраняем сразу, если чат уже существует
@@ -356,40 +367,53 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     // ──────── Лимиты запросов ────────
 
-    fun checkAndResetDailyLimits(): Int {
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val lastDate = accountSettings.getLastResetDate()
-
-        var currentLeft = accountSettings.getRequestsLeft()
-
-        if (lastDate != today) {
-            currentLeft = nextDayRequestsLeft(currentLeft)
-            accountSettings.saveLastResetDate(today)
-            accountSettings.saveRequestsLeft(currentLeft)
+    fun refreshDailyQuota(onUpdated: (DailyQuotaSnapshot) -> Unit = {}) {
+        val token = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (token.isBlank()) {
+            onUpdated(readDailyQuotaSnapshot())
+            return
         }
-        return currentLeft
+
+        viewModelScope.launch {
+            when (val result = authRepository.getBillingStatus(token)) {
+                is NetworkResult.Success -> sessionStore.saveBillingStatus(result.data)
+                is NetworkResult.Error -> Unit
+            }
+            onUpdated(readDailyQuotaSnapshot())
+        }
     }
 
     /** Расходует 1 запрос из лимита. Возвращает false если лимит исчерпан. */
     fun consumeLimit(): Boolean {
-        var current = accountSettings.getRequestsLeft()
+        val snapshot = readDailyQuotaSnapshot()
+        if (snapshot.isUnlimited) {
+            return true
+        }
+
+        val current = snapshot.remainingRequests ?: return true
         if (current <= 0) return false
-        current -= 1
-        accountSettings.saveRequestsLeft(current)
+        sessionStore.saveRemainingDailyRequests(current - 1)
         return true
     }
 
     /** Текущее количество оставшихся запросов */
-    fun getRemainingLimits(): Int {
-        return accountSettings.getRequestsLeft()
+    fun getRemainingLimitsLabel(): String {
+        val snapshot = readDailyQuotaSnapshot()
+        return when {
+            snapshot.isUnlimited -> "∞"
+            snapshot.remainingRequests != null -> snapshot.remainingRequests.toString()
+            else -> "?"
+        }
     }
 
     /** Добавляет запросы (награда за просмотр рекламы) */
-    fun addLimits(amount: Int): Int {
-        var current = accountSettings.getRequestsLeft()
-        current += amount
-        accountSettings.saveRequestsLeft(current)
-        return current
+    private fun readDailyQuotaSnapshot(): DailyQuotaSnapshot {
+        return DailyQuotaSnapshot(
+            isUnlimited = sessionStore.isCurrentUserPro(),
+            remainingRequests = sessionStore.getRemainingDailyRequests(),
+            dailyRequestLimit = sessionStore.getDailyRequestLimit(),
+            resetsAt = sessionStore.getDailyQuotaResetsAt()
+        )
     }
 
     // ──────── Сброс чата ────────
@@ -412,16 +436,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
      * Регистрирует файл в реестре, чтобы модель сохраняла знание
      * о его содержимом даже после выхода сообщения из контекстного окна.
      */
-    private fun registerAttachedFile(fileName: String?, mimeType: String?, fileText: String?) {
+    private fun registerAttachedFile(fileName: String?, mimeType: String?, fileContext: String?) {
         val entry = buildString {
             append("--- Файл")
             if (!fileName.isNullOrBlank()) append(": $fileName")
             if (!mimeType.isNullOrBlank()) append(" ($mimeType)")
             append(" ---")
-            if (!fileText.isNullOrBlank()) {
+            if (!fileContext.isNullOrBlank()) {
                 append("\n")
                 // Сохраняем полное содержимое файла
-                append(fileText)
+                append(fileContext)
             }
         }
         attachedFilesRegistry.add(entry)

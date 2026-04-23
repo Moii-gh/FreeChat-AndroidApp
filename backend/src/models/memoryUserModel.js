@@ -52,7 +52,15 @@ async function findByTelegramUserId(telegramUserId) {
   return users.find((user) => user.telegram_user_id === String(telegramUserId)) || null;
 }
 
-async function createUser({ email, passwordHash, fullName, birthDate, verificationCode }) {
+async function createUser({
+  email,
+  passwordHash,
+  fullName,
+  birthDate,
+  verificationCodeHash,
+  verificationCodeExpiresAt,
+  verificationCodeSentAt
+}) {
   const user = {
     id: crypto.randomUUID(),
     email: normalizeEmail(email),
@@ -60,7 +68,10 @@ async function createUser({ email, passwordHash, fullName, birthDate, verificati
     full_name: fullName,
     birth_date: birthDate,
     is_verified: false,
-    verification_code: verificationCode,
+    verification_code_hash: verificationCodeHash || null,
+    verification_code_expires_at: verificationCodeExpiresAt || null,
+    verification_code_sent_at: verificationCodeSentAt || null,
+    verification_attempt_count: 0,
     telegram_user_id: null,
     telegram_chat_id: null,
     telegram_username: null,
@@ -71,6 +82,7 @@ async function createUser({ email, passwordHash, fullName, birthDate, verificati
     plan_code: "free",
     subscription_status: "inactive",
     plan_expires_at: null,
+    token_invalid_before: null,
     created_at: nowIso()
   };
   users.push(user);
@@ -92,7 +104,10 @@ async function createTelegramUser({
     full_name: fullName,
     birth_date: birthDate,
     is_verified: true,
-    verification_code: null,
+    verification_code_hash: null,
+    verification_code_expires_at: null,
+    verification_code_sent_at: null,
+    verification_attempt_count: 0,
     telegram_user_id: String(telegramUserId),
     telegram_chat_id: String(telegramChatId),
     telegram_username: telegramUsername || null,
@@ -103,6 +118,7 @@ async function createTelegramUser({
     plan_code: "free",
     subscription_status: "inactive",
     plan_expires_at: null,
+    token_invalid_before: null,
     created_at: nowIso()
   };
   users.push(user);
@@ -124,7 +140,10 @@ async function createTelegramWidgetUser({
     full_name: fullName,
     birth_date: null,
     is_verified: true,
-    verification_code: null,
+    verification_code_hash: null,
+    verification_code_expires_at: null,
+    verification_code_sent_at: null,
+    verification_attempt_count: 0,
     telegram_user_id: String(telegramUserId),
     telegram_chat_id: null,
     telegram_username: telegramUsername || null,
@@ -135,6 +154,7 @@ async function createTelegramWidgetUser({
     plan_code: "free",
     subscription_status: "inactive",
     plan_expires_at: null,
+    token_invalid_before: null,
     created_at: nowIso()
   };
   users.push(user);
@@ -159,7 +179,17 @@ async function updateTelegramWidgetProfile(
   return user;
 }
 
-async function updateUnverifiedUser(userId, { passwordHash, fullName, birthDate, verificationCode }) {
+async function updateUnverifiedUser(
+  userId,
+  {
+    passwordHash,
+    fullName,
+    birthDate,
+    verificationCodeHash,
+    verificationCodeExpiresAt,
+    verificationCodeSentAt
+  }
+) {
   const user = await findById(userId);
   if (!user) {
     return null;
@@ -168,18 +198,37 @@ async function updateUnverifiedUser(userId, { passwordHash, fullName, birthDate,
   user.password_hash = passwordHash;
   user.full_name = fullName;
   user.birth_date = birthDate;
-  user.verification_code = verificationCode;
+  user.verification_code_hash = verificationCodeHash || null;
+  user.verification_code_expires_at = verificationCodeExpiresAt || null;
+  user.verification_code_sent_at = verificationCodeSentAt || null;
+  user.verification_attempt_count = 0;
   user.is_verified = false;
   return user;
 }
 
-async function updateVerificationCode(userId, verificationCode) {
+async function updateVerificationChallenge(
+  userId,
+  { verificationCodeHash, verificationCodeExpiresAt, verificationCodeSentAt }
+) {
   const user = await findById(userId);
   if (!user) {
     return null;
   }
 
-  user.verification_code = verificationCode;
+  user.verification_code_hash = verificationCodeHash || null;
+  user.verification_code_expires_at = verificationCodeExpiresAt || null;
+  user.verification_code_sent_at = verificationCodeSentAt || null;
+  user.verification_attempt_count = 0;
+  return user;
+}
+
+async function incrementVerificationAttempts(userId) {
+  const user = await findById(userId);
+  if (!user) {
+    return null;
+  }
+
+  user.verification_attempt_count = Number(user.verification_attempt_count || 0) + 1;
   return user;
 }
 
@@ -190,7 +239,10 @@ async function verifyUser(userId) {
   }
 
   user.is_verified = true;
-  user.verification_code = null;
+  user.verification_code_hash = null;
+  user.verification_code_expires_at = null;
+  user.verification_code_sent_at = null;
+  user.verification_attempt_count = 0;
   return user;
 }
 
@@ -218,6 +270,7 @@ async function updatePassword(userId, passwordHash) {
   }
 
   user.password_hash = passwordHash;
+  user.token_invalid_before = nowIso();
   return user;
 }
 
@@ -243,7 +296,8 @@ module.exports = {
   createTelegramWidgetUser,
   updateTelegramWidgetProfile,
   updateUnverifiedUser,
-  updateVerificationCode,
+  updateVerificationChallenge,
+  incrementVerificationAttempts,
   verifyUser,
   attachTelegramIdentity,
   updatePassword,

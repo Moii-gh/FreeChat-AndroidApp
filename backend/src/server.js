@@ -1,5 +1,5 @@
 const { createApp } = require("./app");
-const { env } = require("./config/env");
+const { env, assertServerRuntimeConfig } = require("./config/env");
 const { userModel, telegramChallengeModel } = require("./modelRegistry");
 const { createTelegramBotService } = require("./utils/telegramBotService");
 
@@ -17,6 +17,8 @@ const telegramBotService = createTelegramBotService({
   userModel,
   challengeModel: telegramChallengeModel
 });
+
+assertServerRuntimeConfig();
 
 app.listen(env.port, () => {
   console.log(`Auth backend listening on port ${env.port}`);

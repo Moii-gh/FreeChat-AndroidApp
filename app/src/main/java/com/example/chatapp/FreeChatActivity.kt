@@ -33,7 +33,6 @@ import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.DrawerManager
 import com.example.chatapp.ui.PopupMenuHelper
 import com.example.chatapp.viewmodel.ChatViewModel
-import com.example.chatapp.ads.RewardedAdManager
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import com.example.chatapp.util.setHapticClickListener
@@ -51,12 +50,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val mimeType: String,
         val fileName: String?,
         val base64Data: String?,
-        val extractedText: String?
+        val attachmentContext: String?
     )
 
     private companion object {
         const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
         const val MAX_EXTRACTED_TEXT_CHARS = 120_000
+        const val MAX_ATTACHMENT_CONTEXT_CHARS = 4_000
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -66,7 +66,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var popupMenuHelper: PopupMenuHelper
     private lateinit var messageRenderer: ChatMessageRenderer
     private lateinit var speechRecognizerManager: SpeechRecognizerManager
-    private lateinit var rewardedAdManager: RewardedAdManager
 
     private var currentPreviewUri: Uri? = null
     private var currentAssistantMessage: AssistantMessageWrapper? = null
@@ -91,7 +90,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupWelcomeActions()
         setupPreview()
         setupAds()
-        updateLimitsCount(chatViewModel.checkAndResetDailyLimits())
+        refreshDailyQuotaUi()
 
         val swipeListener = object : OnSwipeTouchListener(this) {
             override fun onSwipeRight() {
@@ -109,7 +108,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     override fun onResume() {
         super.onResume()
         drawerManager.updateUserProfile()
-        updateLimitsCount(chatViewModel.checkAndResetDailyLimits())
+        refreshDailyQuotaUi()
         applyTranslations()
     }
 
@@ -137,9 +136,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun onDestroy() {
-        if (::rewardedAdManager.isInitialized) {
-            rewardedAdManager.destroy()
-        }
         speechRecognizerManager.destroy()
         super.onDestroy()
     }
@@ -409,9 +405,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnChat.setHapticClickListener {
             startAnonymousChat()
         }
-        binding.btnAddLimits.setHapticClickListener {
-            rewardedAdManager.show()
-        }
+        binding.btnAddLimits.setHapticClickListener {}
     }
 
     private fun setupDrawer() {
@@ -514,12 +508,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupAds() {
-        rewardedAdManager = RewardedAdManager(this) {
-            val newValue = chatViewModel.addLimits(5)
-            updateLimitsCount(newValue)
-            toast(LocaleHelper.getString(this, "toast_reward_updated"))
-        }
-        rewardedAdManager.initialize()
+        binding.btnAddLimits.isGone = true
     }
 
     private fun showWelcomeState() {
@@ -669,6 +658,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
 
         if (!chatViewModel.consumeLimit()) {
+            refreshDailyQuotaUi()
             toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
             return
         }
@@ -678,7 +668,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         isSending = true
         hideQuickSuggestions()
         showMessagesState()
-        updateLimitsCount(chatViewModel.getRemainingLimits())
+        updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
 
         when {
             previewUri == null -> messageRenderer.addUserMessage(text)
@@ -713,12 +703,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             fileUri = attachmentPayload?.fileUri,
             mimeType = mimeType,
             fileName = attachmentPayload?.fileName,
-            fileText = attachmentPayload?.extractedText,
+            fileContext = attachmentPayload?.attachmentContext,
             onError = { error ->
                 runOnUiThread {
                     isSending = false
                     updateSendState()
                     wrapper.updateContent(error, animate = false)
+                    refreshDailyQuotaUi()
                     toast(error)
                 }
             },
@@ -858,17 +849,16 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
     }
 
-    private fun updateLimitsCount(value: Int) {
-        binding.tvLimitsCount.text = value.toString()
+    private fun updateLimitsCount(value: String) {
+        binding.tvLimitsCount.text = value
     }
 
-    private fun encodeUriToBase64(uri: Uri?): String? {
-        if (uri == null) return null
-        return runCatching {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                Base64.encodeToString(inputStream.readBytes(), Base64.NO_WRAP)
+    private fun refreshDailyQuotaUi() {
+        chatViewModel.refreshDailyQuota {
+            runOnUiThread {
+                updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
             }
-        }.getOrNull()
+        }
     }
 
     private fun buildAttachmentPayload(uri: Uri?): AttachmentPayload? {
@@ -886,7 +876,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             null
         }
 
-        val base64Data = if (isImage || extractedText == null) {
+        val attachmentContext = if (extractedText != null) {
+            buildAttachmentContext(fileName, mimeType, extractedText)
+        } else {
+            null
+        }
+
+        val base64Data = if (isImage || attachmentContext == null) {
             Base64.encodeToString(bytes, Base64.NO_WRAP)
         } else {
             null
@@ -897,8 +893,25 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             mimeType = mimeType,
             fileName = fileName,
             base64Data = base64Data,
-            extractedText = extractedText
+            attachmentContext = attachmentContext
         )
+    }
+
+    private fun buildAttachmentContext(
+        fileName: String?,
+        mimeType: String,
+        extractedText: String
+    ): String {
+        val preview = extractedText.trim().take(MAX_ATTACHMENT_CONTEXT_CHARS)
+        return buildString {
+            append("File summary")
+            if (!fileName.isNullOrBlank()) append(": ").append(fileName)
+            append("\nMIME: ").append(mimeType)
+            append("\nPreview:\n").append(preview)
+            if (extractedText.length > preview.length) {
+                append("\n\n[Context truncated for privacy and token safety]")
+            }
+        }
     }
 
     /**

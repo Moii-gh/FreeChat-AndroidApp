@@ -77,6 +77,8 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        intent?.data = null
+
         lifecycleScope.launch {
             TelegramNativeLoginClient.handleLoginResponse(
                 context = this@MainActivity,

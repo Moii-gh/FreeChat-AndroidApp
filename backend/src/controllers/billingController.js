@@ -1,7 +1,7 @@
 const { createBillingService } = require("../services/billingService");
 
-function createBillingController({ userModel }) {
-  const billingService = createBillingService({ userModel });
+function createBillingController({ userModel, aiUsageModel }) {
+  const billingService = createBillingService({ userModel, aiUsageModel });
 
   return {
     status: async (req, res, next) => {
@@ -33,11 +33,8 @@ function createBillingController({ userModel }) {
 
     webhook: async (req, res, next) => {
       try {
-        const result = await billingService.handleWebhook(req.body);
-        return res.status(200).json({
-          ok: true,
-          result
-        });
+        await billingService.handleWebhook(req.body, req);
+        return res.status(204).send();
       } catch (error) {
         return next(error);
       }

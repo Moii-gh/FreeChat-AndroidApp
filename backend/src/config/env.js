@@ -22,11 +22,12 @@ const env = {
   isTest:
     process.env.NODE_ENV === "test" ||
     process.argv.includes("--test") ||
-    process.env.VITEST === "true",
+    process.env.VITEST === "true" ||
+    Boolean(process.env.NODE_TEST_CONTEXT),
   port: Number(process.env.PORT || 4000),
   jsonBodyLimit: process.env.JSON_BODY_LIMIT || "10mb",
   databaseUrl: process.env.DATABASE_URL || "",
-  jwtSecret: process.env.JWT_SECRET || "change-me",
+  jwtSecret: process.env.JWT_SECRET || "",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   verificationCodeSecret: process.env.VERIFICATION_CODE_SECRET || "",
   verificationCodeTtlMinutes: asNumber(process.env.VERIFICATION_CODE_TTL_MINUTES, 10),
@@ -44,10 +45,8 @@ const env = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
   telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME || "",
   telegramWidgetPublicBaseUrl: process.env.TELEGRAM_WIDGET_PUBLIC_BASE_URL || "",
-  telegramWidgetMaxAgeSeconds: Number(process.env.TELEGRAM_WIDGET_MAX_AGE_SECONDS || 86400),
+  telegramWidgetMaxAgeSeconds: Number(process.env.TELEGRAM_WIDGET_MAX_AGE_SECONDS || 300),
   telegramLoginClientId: process.env.TELEGRAM_LOGIN_CLIENT_ID || "",
-  telegramNativeStateSecret: process.env.TELEGRAM_NATIVE_STATE_SECRET || "",
-  telegramNativeStateTtlSeconds: asNumber(process.env.TELEGRAM_NATIVE_STATE_TTL_SECONDS, 300),
   aiApiKey: process.env.AI_API_KEY || "",
   aiChatUrl: process.env.AI_CHAT_URL || "",
   aiImageUrl: process.env.AI_IMAGE_URL || "",
@@ -74,6 +73,12 @@ const env = {
   proSubscriptionPeriodDays: Number(process.env.PRO_SUBSCRIPTION_PERIOD_DAYS || 30)
 };
 
+if (env.isTest) {
+  env.jwtSecret = env.jwtSecret || "test-jwt-secret";
+  env.verificationCodeSecret =
+    env.verificationCodeSecret || "test-verification-code-secret";
+}
+
 function assertRequiredSecret(name, value) {
   if (!value || value === "change-me") {
     throw new Error(`${name} must be configured with a non-default secret`);
@@ -91,7 +96,6 @@ function assertServerRuntimeConfig() {
 
   assertRequiredSecret("JWT_SECRET", env.jwtSecret);
   assertRequiredSecret("VERIFICATION_CODE_SECRET", env.verificationCodeSecret);
-  assertRequiredSecret("TELEGRAM_NATIVE_STATE_SECRET", env.telegramNativeStateSecret);
 }
 
 module.exports = { env, assertServerRuntimeConfig };

@@ -2,10 +2,56 @@ package com.example.chatapp.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.example.chatapp.network.dto.ApiUser
+import com.example.chatapp.network.dto.BillingStatusResponse
+
+private const val LEGACY_PREFS_NAME = "settings_prefs"
+private const val SECURE_PREFS_NAME = "secure_settings_prefs"
+private const val KEY_SECURE_PREFS_MIGRATED = "__secure_prefs_migrated"
+
+private fun createSecurePreferences(
+    context: Context,
+    securePrefsName: String = SECURE_PREFS_NAME,
+    legacyPrefsName: String = LEGACY_PREFS_NAME
+): SharedPreferences {
+    val appContext = context.applicationContext
+    val masterKey = MasterKey.Builder(appContext)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
+    val securePrefs = EncryptedSharedPreferences.create(
+        appContext,
+        securePrefsName,
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
+    if (!securePrefs.getBoolean(KEY_SECURE_PREFS_MIGRATED, false)) {
+        val legacyPrefs = appContext.getSharedPreferences(legacyPrefsName, Context.MODE_PRIVATE)
+        val editor = securePrefs.edit()
+        legacyPrefs.all.forEach { (key, value) ->
+            when (value) {
+                is String -> editor.putString(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Boolean -> editor.putBoolean(key, value)
+            }
+        }
+        editor.putBoolean(KEY_SECURE_PREFS_MIGRATED, true).apply()
+        if (legacyPrefs.all.isNotEmpty()) {
+            legacyPrefs.edit().clear().apply()
+        }
+    }
+
+    return securePrefs
+}
 
 interface AccountSessionStore {
     fun saveAuthenticatedUser(user: ApiUser?, token: String?)
+    fun saveBillingStatus(status: BillingStatusResponse)
     fun isSignedIn(): Boolean
     fun clearSession()
     fun getAuthToken(): String?
@@ -15,14 +61,17 @@ interface AccountSessionStore {
     fun getCurrentPlanCode(): String?
     fun getCurrentPlanExpiresAt(): String?
     fun isCurrentUserPro(): Boolean
+    fun getDailyRequestLimit(): Int?
+    fun getRemainingDailyRequests(): Int?
+    fun getDailyQuotaResetsAt(): String?
+    fun saveRemainingDailyRequests(value: Int?)
 }
 
 class SharedPrefsAccountSessionStore(
     context: Context
 ) : AccountSessionStore {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = createSecurePreferences(context)
 
     override fun saveAuthenticatedUser(user: ApiUser?, token: String?) {
         val currentEmail = prefs.getString(KEY_USER_EMAIL, null)
@@ -54,6 +103,18 @@ class SharedPrefsAccountSessionStore(
         }
     }
 
+    override fun saveBillingStatus(status: BillingStatusResponse) {
+        prefs.edit().apply {
+            putString(KEY_PLAN_CODE, status.planCode)
+            putString(KEY_PLAN_EXPIRES_AT, status.planExpiresAt)
+            putBoolean(KEY_IS_PRO, status.isPro)
+            putString(KEY_SUBSCRIPTION_STATUS, status.subscriptionStatus)
+            putNullableInt(KEY_DAILY_REQUEST_LIMIT, status.dailyRequestLimit)
+            putNullableInt(KEY_REMAINING_DAILY_REQUESTS, status.remainingDailyRequests)
+            putNullableString(KEY_DAILY_QUOTA_RESETS_AT, status.dailyQuotaResetsAt)
+        }.apply()
+    }
+
     override fun isSignedIn(): Boolean {
         return !getAuthToken().isNullOrBlank() &&
             (!getCurrentUserId().isNullOrBlank() || !getCurrentUserEmail().isNullOrBlank())
@@ -72,6 +133,9 @@ class SharedPrefsAccountSessionStore(
             remove(KEY_PLAN_EXPIRES_AT)
             remove(KEY_IS_PRO)
             remove(KEY_SUBSCRIPTION_STATUS)
+            remove(KEY_DAILY_REQUEST_LIMIT)
+            remove(KEY_REMAINING_DAILY_REQUESTS)
+            remove(KEY_DAILY_QUOTA_RESETS_AT)
         }.apply()
     }
 
@@ -89,8 +153,20 @@ class SharedPrefsAccountSessionStore(
 
     override fun isCurrentUserPro(): Boolean = prefs.getBoolean(KEY_IS_PRO, false)
 
+    override fun getDailyRequestLimit(): Int? =
+        if (prefs.contains(KEY_DAILY_REQUEST_LIMIT)) prefs.getInt(KEY_DAILY_REQUEST_LIMIT, 0) else null
+
+    override fun getRemainingDailyRequests(): Int? =
+        if (prefs.contains(KEY_REMAINING_DAILY_REQUESTS)) prefs.getInt(KEY_REMAINING_DAILY_REQUESTS, 0) else null
+
+    override fun getDailyQuotaResetsAt(): String? = prefs.getString(KEY_DAILY_QUOTA_RESETS_AT, null)
+
+    override fun saveRemainingDailyRequests(value: Int?) {
+        prefs.edit().putNullableInt(KEY_REMAINING_DAILY_REQUESTS, value).apply()
+    }
+
     companion object {
-        const val PREFS_NAME = "settings_prefs"
+        const val PREFS_NAME = SECURE_PREFS_NAME
         const val KEY_AUTH_TOKEN = "auth_token"
         const val KEY_USER_ID = "user_id"
         const val KEY_USER_NAME = "user_name"
@@ -102,6 +178,9 @@ class SharedPrefsAccountSessionStore(
         const val KEY_PLAN_EXPIRES_AT = "plan_expires_at"
         const val KEY_IS_PRO = "is_pro"
         const val KEY_SUBSCRIPTION_STATUS = "subscription_status"
+        const val KEY_DAILY_REQUEST_LIMIT = "daily_request_limit"
+        const val KEY_REMAINING_DAILY_REQUESTS = "remaining_daily_requests"
+        const val KEY_DAILY_QUOTA_RESETS_AT = "daily_quota_resets_at"
     }
 }
 
@@ -113,15 +192,11 @@ class AccountScopedSettings(
         migrateLegacyDataIfNeeded()
     }
 
-    constructor(context: Context) : this(
-        context.getSharedPreferences(SharedPrefsAccountSessionStore.PREFS_NAME, Context.MODE_PRIVATE)
-    )
+    constructor(context: Context) : this(createSecurePreferences(context))
 
     fun migrateLegacyDataIfNeeded() {
         migrateString("avatar_uri")
         migrateString("user_instructions")
-        migrateString("ai_mode")
-        migrateString("last_reset_date")
         migrateInt("requests_left")
         migrateString("profile_name")
     }
@@ -148,37 +223,12 @@ class AccountScopedSettings(
         prefs.edit().putString(scopedKey("profile_name"), value).apply()
     }
 
-    fun getAiMode(defaultValue: String = "auto"): String {
-        val storedValue = prefs.getString(scopedKey("ai_mode"), defaultValue) ?: defaultValue
-        return normalizeAiMode(storedValue)
-    }
-
-    fun saveAiMode(value: String) {
-        prefs.edit().putString(scopedKey("ai_mode"), normalizeAiMode(value)).apply()
-    }
-
     fun getUserInstructions(): String {
         return prefs.getString(scopedKey("user_instructions"), "") ?: ""
     }
 
     fun saveUserInstructions(value: String) {
         prefs.edit().putString(scopedKey("user_instructions"), value).apply()
-    }
-
-    fun getRequestsLeft(defaultValue: Int = 20): Int {
-        return prefs.getInt(scopedKey("requests_left"), defaultValue)
-    }
-
-    fun saveRequestsLeft(value: Int) {
-        prefs.edit().putInt(scopedKey("requests_left"), value).apply()
-    }
-
-    fun getLastResetDate(): String {
-        return prefs.getString(scopedKey("last_reset_date"), "") ?: ""
-    }
-
-    fun saveLastResetDate(value: String) {
-        prefs.edit().putString(scopedKey("last_reset_date"), value).apply()
     }
 
     fun currentAccountKey(): String {
@@ -219,9 +269,12 @@ class AccountScopedSettings(
             .remove(legacyKey)
             .apply()
     }
+}
 
-    private fun normalizeAiMode(value: String): String = when (value) {
-        "plus", "auto" -> value
-        else -> "plus"
-    }
+private fun SharedPreferences.Editor.putNullableInt(key: String, value: Int?): SharedPreferences.Editor {
+    return if (value == null) remove(key) else putInt(key, value)
+}
+
+private fun SharedPreferences.Editor.putNullableString(key: String, value: String?): SharedPreferences.Editor {
+    return if (value.isNullOrBlank()) remove(key) else putString(key, value)
 }

@@ -7,6 +7,8 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -19,8 +21,10 @@ import java.security.SecureRandom
 
 object TelegramNativeLoginClient {
     private const val OAUTH_BASE_URL = "https://oauth.telegram.org"
-    private const val PREFS_NAME = "telegram_native_login"
+    private const val PREFS_NAME = "telegram_native_login_secure"
     private const val KEY_CODE_VERIFIER = "code_verifier"
+    private const val KEY_OAUTH_STATE = "oauth_state"
+    private const val KEY_ID_TOKEN_NONCE = "id_token_nonce"
 
     suspend fun startLogin(
         context: Context,
@@ -34,16 +38,18 @@ object TelegramNativeLoginClient {
 
         return runCatching {
             val verifier = generateCodeVerifier()
-            saveCodeVerifier(context, verifier)
+            val state = generateCodeVerifier()
+            val nonce = generateCodeVerifier()
+            savePendingLogin(context, verifier, state, nonce)
             val challenge = generateCodeChallenge(verifier)
 
-            // Same flow as Telegram's Android SDK: try Telegram app through /crossapp first,
-            // then fall back to the OIDC authorization endpoint in a Custom Tab.
             val inAppUrl = fetchInAppUrl(
                 clientId = clientId,
                 redirectUri = redirectUri,
                 codeChallenge = challenge,
-                scopes = scopes
+                scopes = scopes,
+                state = state,
+                nonce = nonce
             ).getOrNull()
 
             val openedInTelegram = inAppUrl != null &&
@@ -55,11 +61,13 @@ object TelegramNativeLoginClient {
                     clientId = clientId,
                     redirectUri = redirectUri,
                     codeChallenge = challenge,
-                    scopes = scopes
+                    scopes = scopes,
+                    state = state,
+                    nonce = nonce
                 )
             }
         }.onFailure {
-            clearCodeVerifier(context)
+            clearPendingLogin(context)
         }
     }
 
@@ -71,7 +79,7 @@ object TelegramNativeLoginClient {
     ): Result<String> {
         uri.getQueryParameter("error")?.let { error ->
             val description = uri.getQueryParameter("error_description") ?: error
-            clearCodeVerifier(context)
+            clearPendingLogin(context)
             return Result.failure(IllegalStateException(description))
         }
 
@@ -80,9 +88,18 @@ object TelegramNativeLoginClient {
             return Result.failure(IllegalStateException("Telegram не вернул authorization code"))
         }
 
-        val verifier = loadCodeVerifier(context)
-        if (verifier.isNullOrBlank()) {
+        val state = uri.getQueryParameter("state")
+        val verifier = loadSecureValue(context, KEY_CODE_VERIFIER)
+        val expectedState = loadSecureValue(context, KEY_OAUTH_STATE)
+        val expectedNonce = loadSecureValue(context, KEY_ID_TOKEN_NONCE)
+
+        if (verifier.isNullOrBlank() || expectedNonce.isNullOrBlank()) {
             return Result.failure(IllegalStateException("Сессия Telegram Login истекла. Попробуйте ещё раз."))
+        }
+
+        if (state != null && state != expectedState) {
+            clearPendingLogin(context)
+            return Result.failure(IllegalStateException("Telegram login state mismatch. Expected: $expectedState, Got: $state"))
         }
 
         return exchangeCode(
@@ -90,10 +107,11 @@ object TelegramNativeLoginClient {
             clientId = clientId,
             redirectUri = redirectUri,
             codeVerifier = verifier
-        ).also {
-            if (it.isSuccess) {
-                clearCodeVerifier(context)
-            }
+        ).mapCatching { idToken ->
+            verifyIdTokenNonce(idToken, expectedNonce)
+            idToken
+        }.also {
+            clearPendingLogin(context)
         }
     }
 
@@ -112,7 +130,9 @@ object TelegramNativeLoginClient {
         clientId: String,
         redirectUri: String,
         codeChallenge: String,
-        scopes: List<String>
+        scopes: List<String>,
+        state: String,
+        nonce: String
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val url = Uri.parse("$OAUTH_BASE_URL/crossapp").buildUpon()
@@ -123,6 +143,8 @@ object TelegramNativeLoginClient {
                 .appendQueryParameter("android_sdk", "1")
                 .appendQueryParameter("code_challenge", codeChallenge)
                 .appendQueryParameter("code_challenge_method", "S256")
+                .appendQueryParameter("state", state)
+                .appendQueryParameter("nonce", nonce)
                 .build()
                 .toString()
 
@@ -155,7 +177,9 @@ object TelegramNativeLoginClient {
         clientId: String,
         redirectUri: String,
         codeChallenge: String,
-        scopes: List<String>
+        scopes: List<String>,
+        state: String,
+        nonce: String
     ) {
         val authUri = Uri.parse("$OAUTH_BASE_URL/auth").buildUpon()
             .appendQueryParameter("client_id", clientId)
@@ -164,6 +188,8 @@ object TelegramNativeLoginClient {
             .appendQueryParameter("redirect_uri", redirectUri)
             .appendQueryParameter("code_challenge", codeChallenge)
             .appendQueryParameter("code_challenge_method", "S256")
+            .appendQueryParameter("state", state)
+            .appendQueryParameter("nonce", nonce)
             .build()
 
         CustomTabsIntent.Builder()
@@ -217,6 +243,24 @@ object TelegramNativeLoginClient {
         }
     }
 
+    private fun verifyIdTokenNonce(idToken: String, expectedNonce: String) {
+        val parts = idToken.split(".")
+        if (parts.size != 3) {
+            throw IllegalStateException("Telegram returned malformed ID token")
+        }
+
+        val payloadJson = JSONObject(
+            String(
+                Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+                Charsets.UTF_8
+            )
+        )
+        val actualNonce = payloadJson.optString("nonce")
+        if (actualNonce.isBlank() || actualNonce != expectedNonce) {
+            throw IllegalStateException("Telegram ID token nonce mismatch")
+        }
+    }
+
     private fun readResponseBody(connection: HttpURLConnection): String {
         val stream = if (connection.responseCode in 200..299) {
             connection.inputStream
@@ -253,23 +297,34 @@ object TelegramNativeLoginClient {
 
     private fun urlEncode(value: String): String = URLEncoder.encode(value, "UTF-8")
 
-    private fun saveCodeVerifier(context: Context, verifier: String) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
+    private fun savePendingLogin(context: Context, verifier: String, state: String, nonce: String) {
+        securePrefs(context).edit()
             .putString(KEY_CODE_VERIFIER, verifier)
+            .putString(KEY_OAUTH_STATE, state)
+            .putString(KEY_ID_TOKEN_NONCE, nonce)
             .apply()
     }
 
-    private fun loadCodeVerifier(context: Context): String? =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_CODE_VERIFIER, null)
+    private fun loadSecureValue(context: Context, key: String): String? =
+        securePrefs(context).getString(key, null)
 
-    private fun clearCodeVerifier(context: Context) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
+    private fun clearPendingLogin(context: Context) {
+        securePrefs(context).edit()
             .remove(KEY_CODE_VERIFIER)
+            .remove(KEY_OAUTH_STATE)
+            .remove(KEY_ID_TOKEN_NONCE)
             .apply()
     }
+
+    private fun securePrefs(context: Context) = EncryptedSharedPreferences.create(
+        context.applicationContext,
+        PREFS_NAME,
+        MasterKey.Builder(context.applicationContext)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build(),
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
 
     private fun tryOpenIntent(context: Context, intent: Intent): Boolean {
         return try {

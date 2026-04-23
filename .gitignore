@@ -9,6 +9,8 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/app/build
+/backend/build
 /captures
 .externalNativeBuild
 .cxx
@@ -18,4 +20,8 @@ backend/node_modules
 backend/.env
 *.log
 backend-deploy.tar.gz
+*.apk
+*.aab
+*.jks
+*.keystore
 codex_askpass.cmd

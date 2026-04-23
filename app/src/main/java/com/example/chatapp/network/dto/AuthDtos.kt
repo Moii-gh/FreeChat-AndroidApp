@@ -121,7 +121,10 @@ data class BillingStatusResponse(
     val cancelAtPeriodEnd: Boolean = false,
     val hasPaymentMethod: Boolean = false,
     val priceRub: Int = 100,
-    val isPro: Boolean = false
+    val isPro: Boolean = false,
+    val dailyRequestLimit: Int? = null,
+    val remainingDailyRequests: Int? = null,
+    val dailyQuotaResetsAt: String? = null
 )
 
 data class BillingCheckoutResponse(
@@ -132,9 +135,7 @@ data class BillingCheckoutResponse(
 
 data class CheckEmailResponse(
     val message: String,
-    val exists: Boolean,
-    val isVerified: Boolean,
-    val user: ApiUser? = null
+    val canProceedWithEmail: Boolean
 )
 
 data class ApiErrorResponse(

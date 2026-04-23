@@ -1,4 +1,5 @@
 import java.net.URI
+import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
@@ -22,6 +23,12 @@ if (envFile.exists()) {
 fun String.toBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
+fun isHttpsUrl(value: String): Boolean = runCatching {
+    URI(value).scheme.equals("https", ignoreCase = true)
+}.getOrDefault(false)
+
+val configuredApiBaseUrl = envVars["APP_API_BASE_URL"] ?: "https://api.example.com/api/"
+
 android {
     namespace = "com.example.chatapp"
     compileSdk = 34
@@ -38,7 +45,7 @@ android {
         buildConfigField(
             "String",
             "APP_API_BASE_URL",
-            (envVars["APP_API_BASE_URL"] ?: "http://10.0.2.2:4000/api/").toBuildConfigString()
+            configuredApiBaseUrl.toBuildConfigString()
         )
         buildConfigField("String", "PUBLIC_INFO_URL", (envVars["PUBLIC_INFO_URL"] ?: "").toBuildConfigString())
         buildConfigField("String", "SUPPORT_URL", (envVars["SUPPORT_URL"] ?: "").toBuildConfigString())
@@ -70,7 +77,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", "true")
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
         release {
+            // if (!isHttpsUrl(configuredApiBaseUrl)) {
+            //     throw GradleException("Release builds require HTTPS APP_API_BASE_URL")
+            // }
+
+            buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", "true")
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -126,6 +143,7 @@ dependencies {
     implementation("androidx.room:room-runtime:2.7.1")
     implementation("androidx.room:room-ktx:2.7.1")
     kapt("androidx.room:room-compiler:2.7.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")

@@ -24,7 +24,7 @@ class SyncRepository(context: Context) {
             val syncApi = NetworkModule.createSyncApiService(baseUrl, token)
 
             // Gather local state
-            val localChats = dao.getAllChatsSync(ownerKey)
+            val localChats = dao.getAllChatsForSync(ownerKey)
             val chatsPayload = localChats.map {
                 SyncChatDto(
                     id = it.id,
@@ -33,12 +33,15 @@ class SyncRepository(context: Context) {
                     isPinned = it.isPinned,
                     lastUpdated = it.lastUpdated,
                     summary = it.summary,
-                    isDeleted = false
+                    isDeleted = it.isDeleted
                 )
             }
 
             val messagesPayload = mutableListOf<SyncMessageDto>()
             for (chat in localChats) {
+                if (chat.isDeleted) {
+                    continue
+                }
                 val msgs = dao.getMessagesByChatIdSync(chat.id)
                 messagesPayload.addAll(msgs.map {
                     SyncMessageDto(
@@ -60,7 +63,7 @@ class SyncRepository(context: Context) {
 
                 // Upsert remote data to local DB
                 for (remoteChat in remoteData.chats) {
-                    val localChat = dao.getChatById(remoteChat.id, ownerKey)
+                    val localChat = dao.getChatByIdForSync(remoteChat.id, ownerKey)
                     if (localChat == null) {
                         dao.insertChat(
                             ChatEntity(
@@ -70,7 +73,8 @@ class SyncRepository(context: Context) {
                                 timestamp = remoteChat.timestamp,
                                 isPinned = remoteChat.isPinned,
                                 lastUpdated = remoteChat.lastUpdated,
-                                summary = remoteChat.summary
+                                summary = remoteChat.summary,
+                                isDeleted = remoteChat.isDeleted
                             )
                         )
                     } else {
@@ -79,12 +83,18 @@ class SyncRepository(context: Context) {
                             dao.updateChat(
                                 localChat.copy(
                                     title = remoteChat.title,
+                                    timestamp = remoteChat.timestamp,
                                     isPinned = remoteChat.isPinned,
                                     lastUpdated = remoteChat.lastUpdated,
-                                    summary = remoteChat.summary
+                                    summary = remoteChat.summary,
+                                    isDeleted = remoteChat.isDeleted
                                 )
                             )
                         }
+                    }
+
+                    if (remoteChat.isDeleted) {
+                        dao.deleteMessagesByChatId(remoteChat.id)
                     }
                 }
 

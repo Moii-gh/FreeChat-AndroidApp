@@ -1,5 +1,5 @@
 const { env } = require("../config/env");
-const { generateVerificationCode } = require("./generateVerificationCode");
+const { generateVerificationCode } = require("./verificationCode");
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
 

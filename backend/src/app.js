@@ -2,7 +2,8 @@ const express = require("express");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
 const { normalizeJsonContentType } = require("./middleware/normalizeJsonContentType");
-const { userModel, telegramChallengeModel } = require("./modelRegistry");
+const { createAuthenticate } = require("./middleware/authenticate");
+const { userModel, telegramChallengeModel, authNonceModel, aiUsageModel } = require("./modelRegistry");
 const emailService = require("./utils/emailTransport");
 const { createAuthRouter } = require("./routes/authRoutes");
 const { createTelegramAuthRouter } = require("./routes/telegramAuthRoutes");
@@ -15,8 +16,11 @@ function createApp(options = {}) {
   const resolvedUserModel = options.userModel || userModel;
   const resolvedTelegramChallengeModel =
     options.telegramChallengeModel || telegramChallengeModel;
+  const resolvedAuthNonceModel = options.authNonceModel || authNonceModel;
+  const resolvedAiUsageModel = options.aiUsageModel || aiUsageModel;
   const resolvedEmailService = options.emailService || emailService;
-  const rateLimitEnabled = options.rateLimitEnabled === true;
+  const rateLimitEnabled = options.rateLimitEnabled !== false;
+  const authenticate = createAuthenticate({ userModel: resolvedUserModel });
   const telegramConfig = options.telegramConfig || {
     isConfigured: Boolean(env.telegramBotToken && env.telegramBotUsername),
     botToken: env.telegramBotToken,
@@ -38,6 +42,7 @@ function createApp(options = {}) {
     createAuthRouter({
       userModel: resolvedUserModel,
       emailService: resolvedEmailService,
+      authenticate,
       rateLimitEnabled
     })
   );
@@ -47,24 +52,29 @@ function createApp(options = {}) {
     createTelegramAuthRouter({
       userModel: resolvedUserModel,
       challengeModel: resolvedTelegramChallengeModel,
+      authNonceModel: resolvedAuthNonceModel,
       telegramConfig,
       rateLimitEnabled
     })
   );
 
-  app.use("/api/sync", createSyncRouter());
+  app.use("/api/sync", createSyncRouter({ authenticate }));
 
   app.use(
     "/api/billing",
     createBillingRouter({
-      userModel: resolvedUserModel
+      userModel: resolvedUserModel,
+      aiUsageModel: resolvedAiUsageModel,
+      authenticate
     })
   );
 
   app.use(
     "/api/ai",
     createAiRouter({
-      userModel: resolvedUserModel
+      userModel: resolvedUserModel,
+      aiUsageModel: resolvedAiUsageModel,
+      authenticate
     })
   );
 

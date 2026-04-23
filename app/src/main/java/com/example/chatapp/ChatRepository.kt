@@ -3,15 +3,11 @@ package com.example.chatapp
 import android.content.Context
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
+import com.example.chatapp.network.AiApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
 
 class ChatRepository(context: Context) {
@@ -50,7 +46,9 @@ class ChatRepository(context: Context) {
     }
 
     suspend fun deleteChat(chatId: String) {
-        dao.deleteChatWithMessages(chatId)
+        val now = System.currentTimeMillis()
+        dao.markChatDeleted(chatId, now)
+        dao.deleteMessagesByChatId(chatId)
     }
 
     suspend fun togglePinChat(chatId: String, pinned: Boolean) {
@@ -58,7 +56,10 @@ class ChatRepository(context: Context) {
     }
 
     suspend fun deleteAllChats() {
-        dao.deleteEverything(currentOwnerKey())
+        val ownerKey = currentOwnerKey()
+        val now = System.currentTimeMillis()
+        dao.markAllChatsDeleted(ownerKey, now)
+        dao.deleteAllMessagesByOwnerKey(ownerKey)
     }
 
     fun getMessagesFlow(chatId: String): Flow<List<MessageEntity>> =
@@ -110,44 +111,7 @@ class ChatRepository(context: Context) {
             return@withContext null
         }
 
-        try {
-            val connection = (URL("${BuildConfig.APP_API_BASE_URL}ai/title").openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"
-                setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                setRequestProperty("Authorization", "Bearer $authToken")
-                doOutput = true
-                connectTimeout = 15000
-                readTimeout = 15000
-            }
-
-            val jsonInput = JSONObject().apply {
-                put("firstUserMessage", firstUserMessage)
-            }.toString()
-
-            OutputStreamWriter(connection.outputStream).use {
-                it.write(jsonInput)
-                it.flush()
-            }
-
-            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val response = BufferedReader(
-                    InputStreamReader(connection.inputStream, "utf-8")
-                ).readText()
-
-                val title = JSONObject(response)
-                    .optString("content", "")
-                    .trim()
-                    .removeSurrounding("\"")
-                    .removeSuffix(".")
-
-                if (title.isNotBlank() && title.length <= 60) title else null
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        AiApiService.generateTitle(authToken, firstUserMessage)
     }
 
     suspend fun getChatHistoryAsJson(chatId: String): List<JSONObject> {

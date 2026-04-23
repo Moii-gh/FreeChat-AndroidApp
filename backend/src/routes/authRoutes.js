@@ -1,7 +1,6 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { createAuthController } = require("../controllers/authController");
-const { authenticate } = require("../middleware/authenticate");
 const { validate } = require("../middleware/validate");
 const {
   registerSchema,
@@ -12,7 +11,12 @@ const {
   changePasswordSchema
 } = require("../schemas/authSchemas");
 
-function createAuthRouter({ userModel, emailService, rateLimitEnabled = false }) {
+function createAuthRouter({
+  userModel,
+  emailService,
+  authenticate,
+  rateLimitEnabled = true
+}) {
   const router = express.Router();
   const controller = createAuthController({ userModel, emailService });
 
@@ -20,7 +24,7 @@ function createAuthRouter({ userModel, emailService, rateLimitEnabled = false })
     router.use(
       rateLimit({
         windowMs: 15 * 60 * 1000,
-        limit: 10,
+        limit: 20,
         standardHeaders: true,
         legacyHeaders: false,
         message: {

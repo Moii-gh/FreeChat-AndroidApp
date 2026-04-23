@@ -22,6 +22,12 @@ interface ChatDao {
     @Query("UPDATE chats SET summary = :summary WHERE id = :chatId")
     suspend fun updateChatSummary(chatId: String, summary: String)
 
+    @Query("UPDATE chats SET isDeleted = 1, lastUpdated = :timestamp WHERE id = :chatId")
+    suspend fun markChatDeleted(chatId: String, timestamp: Long)
+
+    @Query("UPDATE chats SET isDeleted = 1, lastUpdated = :timestamp WHERE ownerKey = :ownerKey")
+    suspend fun markAllChatsDeleted(ownerKey: String, timestamp: Long)
+
     @Delete
     suspend fun deleteChat(chat: ChatEntity)
 
@@ -31,14 +37,20 @@ interface ChatDao {
     @Query("UPDATE chats SET isPinned = :pinned WHERE id = :chatId")
     suspend fun updateChatPinned(chatId: String, pinned: Boolean)
 
-    @Query("SELECT * FROM chats WHERE ownerKey = :ownerKey ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM chats WHERE ownerKey = :ownerKey AND isDeleted = 0 ORDER BY lastUpdated DESC")
     fun getAllChats(ownerKey: String): Flow<List<ChatEntity>>
 
-    @Query("SELECT * FROM chats WHERE ownerKey = :ownerKey ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM chats WHERE ownerKey = :ownerKey AND isDeleted = 0 ORDER BY lastUpdated DESC")
     suspend fun getAllChatsSync(ownerKey: String): List<ChatEntity>
 
-    @Query("SELECT * FROM chats WHERE id = :chatId AND ownerKey = :ownerKey")
+    @Query("SELECT * FROM chats WHERE ownerKey = :ownerKey ORDER BY lastUpdated DESC")
+    suspend fun getAllChatsForSync(ownerKey: String): List<ChatEntity>
+
+    @Query("SELECT * FROM chats WHERE id = :chatId AND ownerKey = :ownerKey AND isDeleted = 0")
     suspend fun getChatById(chatId: String, ownerKey: String): ChatEntity?
+
+    @Query("SELECT * FROM chats WHERE id = :chatId AND ownerKey = :ownerKey")
+    suspend fun getChatByIdForSync(chatId: String, ownerKey: String): ChatEntity?
 
     @Query("DELETE FROM chats WHERE ownerKey = :ownerKey")
     suspend fun deleteAllChats(ownerKey: String)

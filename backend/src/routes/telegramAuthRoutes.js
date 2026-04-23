@@ -16,13 +16,15 @@ const {
 function createTelegramAuthRouter({
   userModel,
   challengeModel,
+  authNonceModel,
   telegramConfig,
-  rateLimitEnabled = false
+  rateLimitEnabled = true
 }) {
   const router = express.Router();
   const controller = createTelegramAuthController({
     userModel,
     challengeModel,
+    authNonceModel,
     telegramConfig
   });
 
@@ -30,7 +32,7 @@ function createTelegramAuthRouter({
     router.use(
       rateLimit({
         windowMs: 15 * 60 * 1000,
-        limit: 10,
+        limit: 20,
         standardHeaders: true,
         legacyHeaders: false,
         message: {

@@ -81,6 +81,7 @@ class BillingActivity : AppCompatActivity() {
             when (val result = authRepository.getBillingStatus(token)) {
                 is NetworkResult.Success -> {
                     currentStatus = result.data
+                    sessionStore.saveBillingStatus(result.data)
                     refreshProfile(token)
                     renderStatus(result.data)
                 }

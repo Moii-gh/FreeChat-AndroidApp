@@ -7,7 +7,10 @@ create table if not exists users (
     full_name text not null,
     birth_date date,
     is_verified boolean not null default false,
-    verification_code varchar(6),
+    verification_code_hash text,
+    verification_code_expires_at timestamptz,
+    verification_code_sent_at timestamptz,
+    verification_attempt_count integer not null default 0,
     telegram_user_id bigint unique,
     telegram_chat_id bigint unique,
     telegram_username text,
@@ -18,17 +21,24 @@ create table if not exists users (
     plan_code text not null default 'free',
     subscription_status text not null default 'inactive',
     plan_expires_at timestamptz,
+    token_invalid_before timestamptz,
     created_at timestamptz not null default now()
 );
 
 alter table if exists users alter column password_hash drop not null;
 alter table if exists users alter column birth_date drop not null;
+alter table if exists users drop column if exists verification_code;
+alter table if exists users add column if not exists verification_code_hash text;
+alter table if exists users add column if not exists verification_code_expires_at timestamptz;
+alter table if exists users add column if not exists verification_code_sent_at timestamptz;
+alter table if exists users add column if not exists verification_attempt_count integer not null default 0;
 alter table if exists users add column if not exists telegram_first_name text;
 alter table if exists users add column if not exists telegram_last_name text;
 alter table if exists users add column if not exists telegram_photo_url text;
 alter table if exists users add column if not exists plan_code text not null default 'free';
 alter table if exists users add column if not exists subscription_status text not null default 'inactive';
 alter table if exists users add column if not exists plan_expires_at timestamptz;
+alter table if exists users add column if not exists token_invalid_before timestamptz;
 
 create table if not exists telegram_auth_challenges (
     id uuid primary key default gen_random_uuid(),
@@ -55,6 +65,23 @@ create table if not exists chats (
     summary text not null default '',
     is_deleted boolean not null default false,
     created_at timestamptz not null default now()
+);
+
+create table if not exists auth_nonces (
+    kind text not null,
+    nonce_hash text not null,
+    expires_at timestamptz not null,
+    consumed_at timestamptz not null default now(),
+    primary key (kind, nonce_hash)
+);
+
+create table if not exists ai_daily_usage (
+    user_id uuid not null references users(id) on delete cascade,
+    usage_date date not null,
+    request_count integer not null default 0,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    primary key (user_id, usage_date)
 );
 
 create table if not exists messages (

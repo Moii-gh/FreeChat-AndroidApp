@@ -1,10 +1,9 @@
 const express = require("express");
-const { authenticate } = require("../middleware/authenticate");
 const { createBillingController } = require("../controllers/billingController");
 
-function createBillingRouter({ userModel }) {
+function createBillingRouter({ userModel, aiUsageModel, authenticate }) {
   const router = express.Router();
-  const controller = createBillingController({ userModel });
+  const controller = createBillingController({ userModel, aiUsageModel });
 
   router.post("/webhook/yookassa", controller.webhook);
 

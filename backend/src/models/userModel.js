@@ -7,7 +7,10 @@ const USER_COLUMNS = `
   full_name,
   birth_date,
   is_verified,
-  verification_code,
+  verification_code_hash,
+  verification_code_expires_at,
+  verification_code_sent_at,
+  verification_attempt_count,
   telegram_user_id,
   telegram_chat_id,
   telegram_username,
@@ -18,8 +21,13 @@ const USER_COLUMNS = `
   plan_code,
   subscription_status,
   plan_expires_at,
+  token_invalid_before,
   created_at
 `;
+
+function getExecutor(executor) {
+  return executor || pool;
+}
 
 function toPublicUser(row) {
   return {
@@ -46,12 +54,12 @@ function toPublicUser(row) {
   };
 }
 
-async function findByEmail(email) {
+async function findByEmail(email, executor) {
   if (!email) {
     return null;
   }
 
-  const result = await pool.query(
+  const result = await getExecutor(executor).query(
     `select ${USER_COLUMNS}
      from users
      where email = $1`,
@@ -61,8 +69,8 @@ async function findByEmail(email) {
   return result.rows[0] || null;
 }
 
-async function findById(userId) {
-  const result = await pool.query(
+async function findById(userId, executor) {
+  const result = await getExecutor(executor).query(
     `select ${USER_COLUMNS}
      from users
      where id = $1`,
@@ -72,12 +80,12 @@ async function findById(userId) {
   return result.rows[0] || null;
 }
 
-async function findByTelegramUserId(telegramUserId) {
+async function findByTelegramUserId(telegramUserId, executor) {
   if (!telegramUserId) {
     return null;
   }
 
-  const result = await pool.query(
+  const result = await getExecutor(executor).query(
     `select ${USER_COLUMNS}
      from users
      where telegram_user_id = $1`,
@@ -87,33 +95,57 @@ async function findByTelegramUserId(telegramUserId) {
   return result.rows[0] || null;
 }
 
-async function createUser({ email, passwordHash, fullName, birthDate, verificationCode }) {
-  const result = await pool.query(
-    `insert into users (email, password_hash, full_name, birth_date, is_verified, verification_code)
-     values ($1, $2, $3, $4, false, $5)
+async function createUser(
+  { email, passwordHash, fullName, birthDate, verificationCodeHash, verificationCodeExpiresAt, verificationCodeSentAt },
+  executor
+) {
+  const result = await getExecutor(executor).query(
+    `insert into users (
+       email,
+       password_hash,
+       full_name,
+       birth_date,
+       is_verified,
+       verification_code_hash,
+       verification_code_expires_at,
+       verification_code_sent_at,
+       verification_attempt_count
+     )
+     values ($1, $2, $3, $4, false, $5, $6, $7, 0)
      returning ${USER_COLUMNS}`,
-    [email.toLowerCase(), passwordHash, fullName, birthDate, verificationCode]
+    [
+      email.toLowerCase(),
+      passwordHash,
+      fullName,
+      birthDate,
+      verificationCodeHash,
+      verificationCodeExpiresAt,
+      verificationCodeSentAt
+    ]
   );
 
   return result.rows[0];
 }
 
-async function createTelegramUser({
-  passwordHash,
-  fullName,
-  birthDate,
-  telegramUserId,
-  telegramChatId,
-  telegramUsername
-}) {
-  const result = await pool.query(
+async function createTelegramUser(
+  {
+    passwordHash,
+    fullName,
+    birthDate,
+    telegramUserId,
+    telegramChatId,
+    telegramUsername
+  },
+  executor
+) {
+  const result = await getExecutor(executor).query(
     `insert into users (
       email,
       password_hash,
       full_name,
       birth_date,
       is_verified,
-      verification_code,
+      verification_code_hash,
       telegram_user_id,
       telegram_chat_id,
       telegram_username,
@@ -134,22 +166,25 @@ async function createTelegramUser({
   return result.rows[0];
 }
 
-async function createTelegramWidgetUser({
-  fullName,
-  telegramUserId,
-  telegramUsername,
-  telegramFirstName,
-  telegramLastName,
-  telegramPhotoUrl
-}) {
-  const result = await pool.query(
+async function createTelegramWidgetUser(
+  {
+    fullName,
+    telegramUserId,
+    telegramUsername,
+    telegramFirstName,
+    telegramLastName,
+    telegramPhotoUrl
+  },
+  executor
+) {
+  const result = await getExecutor(executor).query(
     `insert into users (
       email,
       password_hash,
       full_name,
       birth_date,
       is_verified,
-      verification_code,
+      verification_code_hash,
       telegram_user_id,
       telegram_chat_id,
       telegram_username,
@@ -175,9 +210,10 @@ async function createTelegramWidgetUser({
 
 async function updateTelegramWidgetProfile(
   userId,
-  { telegramUsername, telegramFirstName, telegramLastName, telegramPhotoUrl }
+  { telegramUsername, telegramFirstName, telegramLastName, telegramPhotoUrl },
+  executor
 ) {
-  const result = await pool.query(
+  const result = await getExecutor(executor).query(
     `update users
      set telegram_username = $2,
          telegram_first_name = $3,
@@ -199,39 +235,83 @@ async function updateTelegramWidgetProfile(
   return result.rows[0];
 }
 
-async function updateUnverifiedUser(userId, { passwordHash, fullName, birthDate, verificationCode }) {
-  const result = await pool.query(
+async function updateUnverifiedUser(
+  userId,
+  {
+    passwordHash,
+    fullName,
+    birthDate,
+    verificationCodeHash,
+    verificationCodeExpiresAt,
+    verificationCodeSentAt
+  },
+  executor
+) {
+  const result = await getExecutor(executor).query(
     `update users
      set password_hash = $2,
          full_name = $3,
          birth_date = $4,
-         verification_code = $5,
+         verification_code_hash = $5,
+         verification_code_expires_at = $6,
+         verification_code_sent_at = $7,
+         verification_attempt_count = 0,
          is_verified = false
      where id = $1
      returning ${USER_COLUMNS}`,
-    [userId, passwordHash, fullName, birthDate, verificationCode]
+    [
+      userId,
+      passwordHash,
+      fullName,
+      birthDate,
+      verificationCodeHash,
+      verificationCodeExpiresAt,
+      verificationCodeSentAt
+    ]
   );
 
   return result.rows[0];
 }
 
-async function updateVerificationCode(userId, verificationCode) {
-  const result = await pool.query(
+async function updateVerificationChallenge(
+  userId,
+  { verificationCodeHash, verificationCodeExpiresAt, verificationCodeSentAt },
+  executor
+) {
+  const result = await getExecutor(executor).query(
     `update users
-     set verification_code = $2
+     set verification_code_hash = $2,
+         verification_code_expires_at = $3,
+         verification_code_sent_at = $4,
+         verification_attempt_count = 0
      where id = $1
      returning ${USER_COLUMNS}`,
-    [userId, verificationCode]
+    [userId, verificationCodeHash, verificationCodeExpiresAt, verificationCodeSentAt]
   );
 
   return result.rows[0];
 }
 
-async function verifyUser(userId) {
-  const result = await pool.query(
+async function incrementVerificationAttempts(userId, executor) {
+  const result = await getExecutor(executor).query(
+    `update users
+     set verification_attempt_count = verification_attempt_count + 1
+     where id = $1
+     returning ${USER_COLUMNS}`,
+    [userId]
+  );
+
+  return result.rows[0];
+}
+
+async function verifyUser(userId, executor) {
+  const result = await getExecutor(executor).query(
     `update users
      set is_verified = true,
-         verification_code = null
+         verification_code_hash = null,
+         verification_code_expires_at = null,
+         verification_code_sent_at = null,
+         verification_attempt_count = 0
      where id = $1
      returning ${USER_COLUMNS}`,
     [userId]
@@ -242,9 +322,10 @@ async function verifyUser(userId) {
 
 async function attachTelegramIdentity(
   userId,
-  { telegramUserId, telegramChatId, telegramUsername, authProvider = "telegram" }
+  { telegramUserId, telegramChatId, telegramUsername, authProvider = "telegram" },
+  executor
 ) {
-  const result = await pool.query(
+  const result = await getExecutor(executor).query(
     `update users
      set telegram_user_id = $2,
          telegram_chat_id = $3,
@@ -265,10 +346,11 @@ async function attachTelegramIdentity(
   return result.rows[0];
 }
 
-async function updatePassword(userId, passwordHash) {
-  const result = await pool.query(
+async function updatePassword(userId, passwordHash, executor) {
+  const result = await getExecutor(executor).query(
     `update users
-     set password_hash = $2
+     set password_hash = $2,
+         token_invalid_before = now()
      where id = $1
      returning ${USER_COLUMNS}`,
     [userId, passwordHash]
@@ -277,8 +359,12 @@ async function updatePassword(userId, passwordHash) {
   return result.rows[0];
 }
 
-async function updatePlanState(userId, { planCode, subscriptionStatus, planExpiresAt }) {
-  const result = await pool.query(
+async function updatePlanState(
+  userId,
+  { planCode, subscriptionStatus, planExpiresAt },
+  executor
+) {
+  const result = await getExecutor(executor).query(
     `update users
      set plan_code = $2,
          subscription_status = $3,
@@ -301,7 +387,8 @@ module.exports = {
   createTelegramWidgetUser,
   updateTelegramWidgetProfile,
   updateUnverifiedUser,
-  updateVerificationCode,
+  updateVerificationChallenge,
+  incrementVerificationAttempts,
   verifyUser,
   attachTelegramIdentity,
   updatePassword,

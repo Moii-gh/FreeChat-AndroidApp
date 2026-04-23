@@ -45,7 +45,7 @@ function assertConfigured(upstreamUrl, model, message) {
   }
 }
 
-async function proxyAiRequest({ user, currentMode, requestBody, res }) {
+async function proxyAiRequest({ user, currentMode, requestBody, res, onBeforeResponse }) {
   const selection = selectChatModel({
     user,
     currentMode,
@@ -68,6 +68,17 @@ async function proxyAiRequest({ user, currentMode, requestBody, res }) {
     body: JSON.stringify(upstreamRequestBody),
     signal: AbortSignal.timeout(env.aiTimeoutMs)
   });
+
+  if (onBeforeResponse) {
+    await onBeforeResponse({
+      upstreamResponse,
+      selection
+    });
+
+    if (res.headersSent) {
+      return;
+    }
+  }
 
   const contentType = upstreamResponse.headers.get("content-type") || "application/json; charset=utf-8";
   res.status(upstreamResponse.status);
