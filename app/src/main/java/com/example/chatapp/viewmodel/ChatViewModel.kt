@@ -9,8 +9,8 @@ import com.example.chatapp.ChatEntity
 import com.example.chatapp.ChatRepository
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.data.AccountScopedSettings
+import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
-import com.example.chatapp.network.AiModelSelector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -32,6 +32,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = ChatRepository(application)
     private val syncRepository = com.example.chatapp.SyncRepository(application)
     private val accountSettings = AccountScopedSettings(application)
+    private val sessionStore = SharedPrefsAccountSessionStore(application)
 
     // ──────── Состояние текущего чата ────────
     val chatHistory = mutableListOf<JSONObject>()
@@ -247,29 +248,23 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         // Фоновая суммаризация при необходимости
         if (messagesToSummarize.isNotEmpty() && currentChatId != null) {
-            launchSummarization(messagesToSummarize)
+            val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
+            if (authToken.isNotEmpty()) {
+                launchSummarization(authToken, messagesToSummarize)
+            }
         }
 
         val customInstructions = accountSettings.getUserInstructions()
         val filesContext = buildFilesContext()
-
-        val hasVision = messagesToKeep.any {
-            it.has("base64") && it.optString("mimeType").startsWith("image/", ignoreCase = true)
+        val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (authToken.isBlank()) {
+            onError("Session expired. Sign in again.")
+            return
         }
-        val hasFileAttachment = messagesToKeep.any {
-            it.has("fileText") ||
-                (it.has("base64") && !it.optString("mimeType").startsWith("image/", ignoreCase = true))
-        }
-
-        val target = AiModelSelector.selectTarget(
-            currentMode = effectiveMode,
-            hasVision = hasVision,
-            hasFileAttachment = hasFileAttachment
-        )
 
         viewModelScope.launch {
             AiApiService.fetchStreamingResponse(
-                target = target,
+                authToken = authToken,
                 messagesToKeep = messagesToKeep,
                 currentMode = effectiveMode,
                 customInstructions = customInstructions,
@@ -336,7 +331,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Фоновая суммаризация контекста через внешний AI-сервис */
-    private fun launchSummarization(messagesToSummarize: List<JSONObject>) {
+    private fun launchSummarization(authToken: String, messagesToSummarize: List<JSONObject>) {
         val hash = messagesToSummarize.hashCode().toString()
         val context = getApplication<Application>()
         val prefs = context.getSharedPreferences("summary_cache", Context.MODE_PRIVATE)
@@ -345,7 +340,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         if (hash != cachedHash) {
             viewModelScope.launch(Dispatchers.IO) {
-                val summaryReply = AiApiService.summarizeMessages(messagesToSummarize)
+                val summaryReply = AiApiService.summarizeMessages(authToken, messagesToSummarize)
                 if (summaryReply != null) {
                     val newSummary = if (chatContextSummary.isNotEmpty()) {
                         "$chatContextSummary\n$summaryReply"
@@ -368,7 +363,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         var currentLeft = accountSettings.getRequestsLeft()
 
         if (lastDate != today) {
-            currentLeft = 20
+            currentLeft = nextDayRequestsLeft(currentLeft)
             accountSettings.saveLastResetDate(today)
             accountSettings.saveRequestsLeft(currentLeft)
         }

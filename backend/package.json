@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "renewals": "node src/scripts/processRenewals.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

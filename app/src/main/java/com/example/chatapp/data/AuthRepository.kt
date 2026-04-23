@@ -3,6 +3,8 @@ package com.example.chatapp.data
 import com.example.chatapp.network.AuthApiService
 import com.example.chatapp.network.dto.ApiErrorResponse
 import com.example.chatapp.network.dto.AuthResponse
+import com.example.chatapp.network.dto.BillingCheckoutResponse
+import com.example.chatapp.network.dto.BillingStatusResponse
 import com.example.chatapp.network.dto.ChangePasswordRequest
 import com.example.chatapp.network.dto.TelegramAuthBeginResponse
 import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
@@ -52,6 +54,22 @@ interface AuthRepositoryContract {
         token: String,
         request: ChangePasswordRequest
     ): NetworkResult<AuthResponse>
+
+    suspend fun getProfile(
+        token: String
+    ): NetworkResult<AuthResponse>
+
+    suspend fun getBillingStatus(
+        token: String
+    ): NetworkResult<BillingStatusResponse>
+
+    suspend fun startBillingCheckout(
+        token: String
+    ): NetworkResult<BillingCheckoutResponse>
+
+    suspend fun cancelBillingSubscription(
+        token: String
+    ): NetworkResult<BillingStatusResponse>
 }
 
 class AuthRepository(
@@ -112,6 +130,30 @@ class AuthRepository(
         request: ChangePasswordRequest
     ): NetworkResult<AuthResponse> = handle {
         service.changePassword("Bearer $token", request)
+    }
+
+    override suspend fun getProfile(
+        token: String
+    ): NetworkResult<AuthResponse> = handle {
+        service.getProfile("Bearer $token")
+    }
+
+    override suspend fun getBillingStatus(
+        token: String
+    ): NetworkResult<BillingStatusResponse> = handle {
+        service.getBillingStatus("Bearer $token")
+    }
+
+    override suspend fun startBillingCheckout(
+        token: String
+    ): NetworkResult<BillingCheckoutResponse> = handle {
+        service.startBillingCheckout("Bearer $token")
+    }
+
+    override suspend fun cancelBillingSubscription(
+        token: String
+    ): NetworkResult<BillingStatusResponse> = handle {
+        service.cancelBillingSubscription("Bearer $token")
     }
 
     private suspend fun <T> handle(

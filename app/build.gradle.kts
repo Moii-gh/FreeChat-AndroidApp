@@ -35,7 +35,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "AI_API_KEY", (envVars["AI_API_KEY"] ?: "").toBuildConfigString())
         buildConfigField(
             "String",
             "APP_API_BASE_URL",
@@ -43,51 +42,6 @@ android {
         )
         buildConfigField("String", "PUBLIC_INFO_URL", (envVars["PUBLIC_INFO_URL"] ?: "").toBuildConfigString())
         buildConfigField("String", "SUPPORT_URL", (envVars["SUPPORT_URL"] ?: "").toBuildConfigString())
-        buildConfigField(
-            "String",
-            "AI_CHAT_URL",
-            (envVars["AI_CHAT_URL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_IMAGE_URL",
-            (envVars["AI_IMAGE_URL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_TEXT_MODEL",
-            (envVars["AI_TEXT_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_VISION_MODEL",
-            (envVars["AI_VISION_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_IMAGE_MODEL",
-            (envVars["AI_IMAGE_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_SEARCH_MODEL",
-            (envVars["AI_SEARCH_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_TITLE_MODEL",
-            (envVars["AI_TITLE_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_SUMMARY_MODEL",
-            (envVars["AI_SUMMARY_MODEL"] ?: "").toBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "AI_AUDIT_MODEL",
-            (envVars["AI_AUDIT_MODEL"] ?: "").toBuildConfigString()
-        )
         val telegramLoginClientId = envVars["TELEGRAM_LOGIN_CLIENT_ID"] ?: ""
         val telegramLoginRedirectUri = envVars["TELEGRAM_LOGIN_REDIRECT_URI"]
             ?: if (telegramLoginClientId.isNotBlank()) {

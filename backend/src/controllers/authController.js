@@ -216,6 +216,24 @@ function createAuthController({ userModel, emailService }) {
       } catch (error) {
         return next(error);
       }
+    },
+
+    me: async (req, res, next) => {
+      try {
+        const user = await userModel.findById(req.auth.sub);
+        if (!user) {
+          return res.status(404).json({
+            message: "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ"
+          });
+        }
+
+        return res.status(200).json({
+          message: "РџСЂРѕС„РёР»СЊ Р·Р°РіСЂСѓР¶РµРЅ",
+          user: userModel.toPublicUser(user)
+        });
+      } catch (error) {
+        return next(error);
+      }
     }
   };
 }

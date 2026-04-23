@@ -12,6 +12,9 @@ interface AccountSessionStore {
     fun getCurrentUserId(): String?
     fun getCurrentUserEmail(): String?
     fun getCurrentUserName(): String?
+    fun getCurrentPlanCode(): String?
+    fun getCurrentPlanExpiresAt(): String?
+    fun isCurrentUserPro(): Boolean
 }
 
 class SharedPrefsAccountSessionStore(
@@ -36,6 +39,10 @@ class SharedPrefsAccountSessionStore(
                 putString(KEY_USER_EMAIL, nextEmail)
                 putString(KEY_USER_BIRTH_DATE, it.birthDate)
                 putBoolean(KEY_IS_VERIFIED, it.isVerified)
+                putString(KEY_PLAN_CODE, it.planCode)
+                putString(KEY_PLAN_EXPIRES_AT, it.planExpiresAt)
+                putBoolean(KEY_IS_PRO, it.isPro)
+                putString(KEY_SUBSCRIPTION_STATUS, it.subscriptionStatus)
             }
         }.apply()
 
@@ -61,6 +68,10 @@ class SharedPrefsAccountSessionStore(
             remove(KEY_USER_BIRTH_DATE)
             remove(KEY_IS_VERIFIED)
             remove(KEY_USER_PASSWORD)
+            remove(KEY_PLAN_CODE)
+            remove(KEY_PLAN_EXPIRES_AT)
+            remove(KEY_IS_PRO)
+            remove(KEY_SUBSCRIPTION_STATUS)
         }.apply()
     }
 
@@ -72,6 +83,12 @@ class SharedPrefsAccountSessionStore(
 
     override fun getCurrentUserName(): String? = prefs.getString(KEY_USER_NAME, null)
 
+    override fun getCurrentPlanCode(): String? = prefs.getString(KEY_PLAN_CODE, null)
+
+    override fun getCurrentPlanExpiresAt(): String? = prefs.getString(KEY_PLAN_EXPIRES_AT, null)
+
+    override fun isCurrentUserPro(): Boolean = prefs.getBoolean(KEY_IS_PRO, false)
+
     companion object {
         const val PREFS_NAME = "settings_prefs"
         const val KEY_AUTH_TOKEN = "auth_token"
@@ -81,6 +98,10 @@ class SharedPrefsAccountSessionStore(
         const val KEY_USER_BIRTH_DATE = "user_birth_date"
         const val KEY_IS_VERIFIED = "is_verified"
         const val KEY_USER_PASSWORD = "user_password"
+        const val KEY_PLAN_CODE = "plan_code"
+        const val KEY_PLAN_EXPIRES_AT = "plan_expires_at"
+        const val KEY_IS_PRO = "is_pro"
+        const val KEY_SUBSCRIPTION_STATUS = "subscription_status"
     }
 }
 

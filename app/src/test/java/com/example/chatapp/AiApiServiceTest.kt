@@ -1,8 +1,6 @@
 package com.example.chatapp
 
 import com.example.chatapp.network.AiApiService
-import com.example.chatapp.network.AiTarget
-import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,7 +11,6 @@ class AiApiServiceTest {
 
     @Test
     fun `request includes image data url`() {
-        val target = chatTarget()
         val message = JSONObject().apply {
             put("role", "user")
             put("content", "What is in this photo?")
@@ -23,7 +20,11 @@ class AiApiServiceTest {
         }
 
         val body = JSONObject(
-            AiApiService.buildRequestBody(target, listOf(message), systemPrompt = null)
+            AiApiService.buildRequestBody(
+                isImageGeneration = false,
+                messagesToKeep = listOf(message),
+                systemPrompt = null
+            )
         )
 
         val content = body.getJSONArray("messages")
@@ -41,7 +42,6 @@ class AiApiServiceTest {
 
     @Test
     fun `request embeds extracted text file content`() {
-        val target = chatTarget()
         val message = JSONObject().apply {
             put("role", "user")
             put("content", "Summarize this file")
@@ -51,7 +51,11 @@ class AiApiServiceTest {
         }
 
         val body = JSONObject(
-            AiApiService.buildRequestBody(target, listOf(message), systemPrompt = null)
+            AiApiService.buildRequestBody(
+                isImageGeneration = false,
+                messagesToKeep = listOf(message),
+                systemPrompt = null
+            )
         )
 
         val content = body.getJSONArray("messages")
@@ -62,11 +66,4 @@ class AiApiServiceTest {
         assertTrue(content.contains("alpha\nbeta"))
         assertFalse(content.contains("base64"))
     }
-
-    private fun chatTarget(): AiTarget =
-        AiTarget(
-            model = "test-model",
-            apiUrl = "https://api.example.com/v1/chat/completions",
-            isImageGeneration = false
-        )
 }

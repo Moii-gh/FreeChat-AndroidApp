@@ -35,6 +35,7 @@ function createAuthRouter({ userModel, emailService, rateLimitEnabled = false })
   router.post("/login", validate(loginSchema), controller.login);
   router.post("/verify-email", validate(verifyEmailSchema), controller.verifyEmail);
   router.post("/resend-code", validate(resendCodeSchema), controller.resendCode);
+  router.get("/me", authenticate, controller.me);
   router.post(
     "/change-password",
     authenticate,

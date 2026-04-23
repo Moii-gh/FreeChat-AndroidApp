@@ -1,6 +1,8 @@
 package com.example.chatapp.network
 
 import com.example.chatapp.network.dto.AuthResponse
+import com.example.chatapp.network.dto.BillingCheckoutResponse
+import com.example.chatapp.network.dto.BillingStatusResponse
 import com.example.chatapp.network.dto.ChangePasswordRequest
 import com.example.chatapp.network.dto.TelegramAuthBeginResponse
 import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
@@ -13,6 +15,7 @@ import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 
@@ -63,4 +66,24 @@ interface AuthApiService {
         @Header("Authorization") authorization: String,
         @Body request: ChangePasswordRequest
     ): Response<AuthResponse>
+
+    @GET("me")
+    suspend fun getProfile(
+        @Header("Authorization") authorization: String
+    ): Response<AuthResponse>
+
+    @GET("billing/status")
+    suspend fun getBillingStatus(
+        @Header("Authorization") authorization: String
+    ): Response<BillingStatusResponse>
+
+    @POST("billing/checkout")
+    suspend fun startBillingCheckout(
+        @Header("Authorization") authorization: String
+    ): Response<BillingCheckoutResponse>
+
+    @POST("billing/cancel")
+    suspend fun cancelBillingSubscription(
+        @Header("Authorization") authorization: String
+    ): Response<BillingStatusResponse>
 }

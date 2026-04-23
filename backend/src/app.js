@@ -1,11 +1,14 @@
 const express = require("express");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
+const { normalizeJsonContentType } = require("./middleware/normalizeJsonContentType");
 const { userModel, telegramChallengeModel } = require("./modelRegistry");
 const emailService = require("./utils/emailTransport");
 const { createAuthRouter } = require("./routes/authRoutes");
 const { createTelegramAuthRouter } = require("./routes/telegramAuthRoutes");
 const { createSyncRouter } = require("./routes/syncRoutes");
+const { createBillingRouter } = require("./routes/billingRoutes");
+const { createAiRouter } = require("./routes/aiRoutes");
 
 function createApp(options = {}) {
   const app = express();
@@ -23,7 +26,8 @@ function createApp(options = {}) {
     widgetMaxAgeSeconds: env.telegramWidgetMaxAgeSeconds
   };
 
-  app.use(express.json());
+  app.use(normalizeJsonContentType);
+  app.use(express.json({ limit: env.jsonBodyLimit }));
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
@@ -49,6 +53,20 @@ function createApp(options = {}) {
   );
 
   app.use("/api/sync", createSyncRouter());
+
+  app.use(
+    "/api/billing",
+    createBillingRouter({
+      userModel: resolvedUserModel
+    })
+  );
+
+  app.use(
+    "/api/ai",
+    createAiRouter({
+      userModel: resolvedUserModel
+    })
+  );
 
   app.use((_req, res) => {
     res.status(404).json({

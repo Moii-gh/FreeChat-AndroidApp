@@ -100,13 +100,34 @@ data class ApiUser(
     val telegramFirstName: String? = null,
     val telegramLastName: String? = null,
     val telegramPhotoUrl: String? = null,
-    val authProvider: String? = null
+    val authProvider: String? = null,
+    val planCode: String? = null,
+    val subscriptionStatus: String? = null,
+    val planExpiresAt: String? = null,
+    val isPro: Boolean = false
 )
 
 data class AuthResponse(
     val message: String,
     val token: String? = null,
     val user: ApiUser? = null
+)
+
+data class BillingStatusResponse(
+    val planCode: String,
+    val subscriptionStatus: String,
+    val planExpiresAt: String? = null,
+    val currentPeriodEnd: String? = null,
+    val cancelAtPeriodEnd: Boolean = false,
+    val hasPaymentMethod: Boolean = false,
+    val priceRub: Int = 100,
+    val isPro: Boolean = false
+)
+
+data class BillingCheckoutResponse(
+    val paymentId: String,
+    val confirmationUrl: String?,
+    val status: String
 )
 
 data class CheckEmailResponse(

@@ -15,6 +15,9 @@ const USER_COLUMNS = `
   telegram_last_name,
   telegram_photo_url,
   auth_provider,
+  plan_code,
+  subscription_status,
+  plan_expires_at,
   created_at
 `;
 
@@ -30,7 +33,16 @@ function toPublicUser(row) {
     telegramFirstName: row.telegram_first_name ?? null,
     telegramLastName: row.telegram_last_name ?? null,
     telegramPhotoUrl: row.telegram_photo_url ?? null,
-    authProvider: row.auth_provider
+    authProvider: row.auth_provider,
+    planCode: row.plan_code ?? "free",
+    subscriptionStatus: row.subscription_status ?? "inactive",
+    planExpiresAt: row.plan_expires_at ?? null,
+    isPro: Boolean(
+      row.plan_code &&
+        row.plan_code !== "free" &&
+        row.plan_expires_at &&
+        new Date(row.plan_expires_at).getTime() > Date.now()
+    )
   };
 }
 
@@ -265,6 +277,20 @@ async function updatePassword(userId, passwordHash) {
   return result.rows[0];
 }
 
+async function updatePlanState(userId, { planCode, subscriptionStatus, planExpiresAt }) {
+  const result = await pool.query(
+    `update users
+     set plan_code = $2,
+         subscription_status = $3,
+         plan_expires_at = $4
+     where id = $1
+     returning ${USER_COLUMNS}`,
+    [userId, planCode, subscriptionStatus, planExpiresAt]
+  );
+
+  return result.rows[0];
+}
+
 module.exports = {
   toPublicUser,
   findById,
@@ -278,5 +304,6 @@ module.exports = {
   updateVerificationCode,
   verifyUser,
   attachTelegramIdentity,
-  updatePassword
+  updatePassword,
+  updatePlanState
 };

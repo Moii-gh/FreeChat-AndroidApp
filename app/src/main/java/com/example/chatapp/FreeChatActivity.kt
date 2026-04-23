@@ -55,7 +55,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     )
 
     private companion object {
-        const val MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
+        const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
         const val MAX_EXTRACTED_TEXT_CHARS = 120_000
     }
 

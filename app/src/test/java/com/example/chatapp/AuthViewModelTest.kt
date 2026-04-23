@@ -5,6 +5,8 @@ import com.example.chatapp.data.AuthRepositoryContract
 import com.example.chatapp.data.NetworkResult
 import com.example.chatapp.network.dto.ApiUser
 import com.example.chatapp.network.dto.AuthResponse
+import com.example.chatapp.network.dto.BillingCheckoutResponse
+import com.example.chatapp.network.dto.BillingStatusResponse
 import com.example.chatapp.network.dto.ChangePasswordRequest
 import com.example.chatapp.network.dto.TelegramAuthBeginResponse
 import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
@@ -102,7 +104,7 @@ class AuthViewModelTest {
 
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals("challenge-register", viewModel.uiState.value.telegramChallengeId)
-        assertEquals("Откройте Telegram и отправьте команду /start", viewModel.uiState.value.infoMessage)
+        assertEquals("Open Telegram and send /start", viewModel.uiState.value.infoMessage)
 
         viewModel.onTelegramCodeChanged("123456")
         viewModel.verifyTelegramCode()
@@ -166,7 +168,7 @@ class AuthViewModelTest {
 private class FakeAuthRepository : AuthRepositoryContract {
     var beginRegistrationResult: NetworkResult<TelegramAuthBeginResponse> = NetworkResult.Success(
         TelegramAuthBeginResponse(
-            message = "Откройте Telegram и отправьте команду /start",
+            message = "Open Telegram and send /start",
             challengeId = "challenge-register",
             botUrl = "https://t.me/sample_app_bot?start=register",
             expiresAt = "2026-04-16T12:00:00Z"
@@ -174,7 +176,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
     )
     var beginLoginResult: NetworkResult<TelegramAuthBeginResponse> = NetworkResult.Success(
         TelegramAuthBeginResponse(
-            message = "Откройте Telegram и отправьте команду /start",
+            message = "Open Telegram and send /start",
             challengeId = "challenge-login",
             botUrl = "https://t.me/sample_app_bot?start=login",
             expiresAt = "2026-04-16T12:00:00Z"
@@ -182,7 +184,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
     )
     var beginMigrationResult: NetworkResult<TelegramAuthBeginResponse> = NetworkResult.Success(
         TelegramAuthBeginResponse(
-            message = "Откройте Telegram и отправьте команду /start",
+            message = "Open Telegram and send /start",
             challengeId = "challenge-migrate",
             botUrl = "https://t.me/sample_app_bot?start=migrate",
             expiresAt = "2026-04-16T12:00:00Z"
@@ -190,7 +192,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
     )
     var verifyCodeResult: NetworkResult<TelegramVerifyCodeResponse> = NetworkResult.Success(
         TelegramVerifyCodeResponse(
-            message = "Код подтверждён",
+            message = "Code verified",
             verified = true,
             purpose = "register"
         )
@@ -224,7 +226,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         delay(25)
         return NetworkResult.Success(
             AuthResponse(
-                message = "Аккаунт создан",
+                message = "Account created",
                 token = "jwt-token",
                 user = ApiUser(
                     id = "user-1",
@@ -245,7 +247,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         delay(25)
         return NetworkResult.Success(
             AuthResponse(
-                message = "Вход выполнен",
+                message = "Logged in",
                 token = "jwt-token",
                 user = ApiUser(
                     id = "user-1",
@@ -274,7 +276,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         delay(25)
         return NetworkResult.Success(
             AuthResponse(
-                message = "Аккаунт переведён на Telegram",
+                message = "Account migrated",
                 token = "jwt-token",
                 user = ApiUser(
                     id = "user-legacy",
@@ -296,7 +298,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         delay(25)
         return NetworkResult.Success(
             AuthResponse(
-                message = "Вход через Telegram выполнен",
+                message = "Telegram widget login complete",
                 token = "jwt-token",
                 user = ApiUser(
                     id = "user-widget",
@@ -322,7 +324,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
         delay(25)
         return NetworkResult.Success(
             AuthResponse(
-                message = "Вход через Telegram выполнен",
+                message = "Telegram native login complete",
                 token = "jwt-token",
                 user = ApiUser(
                     id = "user-native",
@@ -345,7 +347,61 @@ private class FakeAuthRepository : AuthRepositoryContract {
         request: ChangePasswordRequest
     ): NetworkResult<AuthResponse> {
         delay(25)
-        return NetworkResult.Success(AuthResponse(message = "Пароль успешно изменён"))
+        return NetworkResult.Success(AuthResponse(message = "Password updated"))
+    }
+
+    override suspend fun getProfile(token: String): NetworkResult<AuthResponse> {
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "Profile loaded",
+                user = ApiUser(
+                    id = "user-1",
+                    email = "ada@example.com",
+                    fullName = "Ada Lovelace",
+                    birthDate = "1995-12-09",
+                    isVerified = true,
+                    planCode = "free",
+                    subscriptionStatus = "inactive",
+                    isPro = false
+                )
+            )
+        )
+    }
+
+    override suspend fun getBillingStatus(token: String): NetworkResult<BillingStatusResponse> {
+        delay(25)
+        return NetworkResult.Success(
+            BillingStatusResponse(
+                planCode = "free",
+                subscriptionStatus = "inactive",
+                priceRub = 100,
+                isPro = false
+            )
+        )
+    }
+
+    override suspend fun startBillingCheckout(token: String): NetworkResult<BillingCheckoutResponse> {
+        delay(25)
+        return NetworkResult.Success(
+            BillingCheckoutResponse(
+                paymentId = "payment-1",
+                confirmationUrl = "https://example.com/checkout",
+                status = "pending"
+            )
+        )
+    }
+
+    override suspend fun cancelBillingSubscription(token: String): NetworkResult<BillingStatusResponse> {
+        delay(25)
+        return NetworkResult.Success(
+            BillingStatusResponse(
+                planCode = "free",
+                subscriptionStatus = "canceled",
+                priceRub = 100,
+                isPro = false
+            )
+        )
     }
 }
 
@@ -369,4 +425,10 @@ private class FakeAccountSessionStore : AccountSessionStore {
     override fun getCurrentUserEmail(): String? = lastUser?.email
 
     override fun getCurrentUserName(): String? = lastUser?.fullName
+
+    override fun getCurrentPlanCode(): String? = lastUser?.planCode
+
+    override fun getCurrentPlanExpiresAt(): String? = lastUser?.planExpiresAt
+
+    override fun isCurrentUserPro(): Boolean = lastUser?.isPro == true
 }

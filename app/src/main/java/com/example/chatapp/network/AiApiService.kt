@@ -1,7 +1,6 @@
 package com.example.chatapp.network
 
 import com.example.chatapp.BuildConfig
-import com.example.chatapp.util.ApiKeyProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -27,41 +26,39 @@ object AiApiService {
         filesContext: String = ""
     ): String? {
         val baseSystemPrompt = when (currentMode) {
-            "shopping" -> "Ты помощник по покупкам. Ищи в интернете только товары, предоставляя варианты с ценами и возможными местами приобретения."
-            "study" -> "Ты учитель. Отвечай как опытный преподаватель, объясняй подробно, приводи наглядные примеры и задавай вопросы для проверки понимания."
+            "shopping" -> "РўС‹ РїРѕРјРѕС‰РЅРёРє РїРѕ РїРѕРєСѓРїРєР°Рј. РС‰Рё РІ РёРЅС‚РµСЂРЅРµС‚Рµ С‚РѕР»СЊРєРѕ С‚РѕРІР°СЂС‹, РїСЂРµРґРѕСЃС‚Р°РІР»СЏСЏ РІР°СЂРёР°РЅС‚С‹ СЃ С†РµРЅР°РјРё Рё РІРѕР·РјРѕР¶РЅС‹РјРё РјРµСЃС‚Р°РјРё РїСЂРёРѕР±СЂРµС‚РµРЅРёСЏ."
+            "study" -> "РўС‹ СѓС‡РёС‚РµР»СЊ. РћС‚РІРµС‡Р°Р№ РєР°Рє РѕРїС‹С‚РЅС‹Р№ РїСЂРµРїРѕРґР°РІР°С‚РµР»СЊ, РѕР±СЉСЏСЃРЅСЏР№ РїРѕРґСЂРѕР±РЅРѕ, РїСЂРёРІРѕРґРё РЅР°РіР»СЏРґРЅС‹Рµ РїСЂРёРјРµСЂС‹ Рё Р·Р°РґР°РІР°Р№ РІРѕРїСЂРѕСЃС‹ РґР»СЏ РїСЂРѕРІРµСЂРєРё РїРѕРЅРёРјР°РЅРёСЏ."
             else -> null
         }
 
         val parts = mutableListOf<String>()
         if (baseSystemPrompt != null) parts.add(baseSystemPrompt)
         if (customInstructions.isNotEmpty()) {
-            parts.add("Пользовательские инструкции (строго следуй им):\n$customInstructions")
+            parts.add("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ РёРЅСЃС‚СЂСѓРєС†РёРё (СЃС‚СЂРѕРіРѕ СЃР»РµРґСѓР№ РёРј):\n$customInstructions")
         }
         if (filesContext.isNotEmpty()) {
-            parts.add("Полное содержимое прикреплённых файлов (ты знаешь их полностью, используй эти данные для ответов):\n$filesContext")
+            parts.add("РџРѕР»РЅРѕРµ СЃРѕРґРµСЂР¶РёРјРѕРµ РїСЂРёРєСЂРµРїР»С‘РЅРЅС‹С… С„Р°Р№Р»РѕРІ (С‚С‹ Р·РЅР°РµС€СЊ РёС… РїРѕР»РЅРѕСЃС‚СЊСЋ, РёСЃРїРѕР»СЊР·СѓР№ СЌС‚Рё РґР°РЅРЅС‹Рµ РґР»СЏ РѕС‚РІРµС‚РѕРІ):\n$filesContext")
         }
         if (chatContextSummary.isNotEmpty()) {
-            parts.add("Краткая выжимка предыдущего разговора (важно для контекста):\n$chatContextSummary")
+            parts.add("РљСЂР°С‚РєР°СЏ РІС‹Р¶РёРјРєР° РїСЂРµРґС‹РґСѓС‰РµРіРѕ СЂР°Р·РіРѕРІРѕСЂР° (РІР°Р¶РЅРѕ РґР»СЏ РєРѕРЅС‚РµРєСЃС‚Р°):\n$chatContextSummary")
         }
 
         return if (parts.isNotEmpty()) parts.joinToString("\n\n") else null
     }
 
     fun buildRequestBody(
-        target: AiTarget,
+        isImageGeneration: Boolean,
         messagesToKeep: List<JSONObject>,
         systemPrompt: String?
     ): String {
         return JSONObject().apply {
-            if (target.isImageGeneration) {
-                put("model", target.model)
+            if (isImageGeneration) {
                 put("response_format", "b64_json")
                 val lastPrompt = messagesToKeep.lastOrNull {
                     it.getString("role") == "user"
                 }?.getString("content") ?: "Creative image"
                 put("prompt", lastPrompt)
             } else {
-                put("model", target.model)
                 put("stream", true)
 
                 val messages = JSONArray()
@@ -119,15 +116,15 @@ object AiApiService {
         return buildString {
             append(content)
             if (isNotBlank()) append("\n\n")
-            append("Прикреплённый файл")
+            append("РџСЂРёРєСЂРµРїР»С‘РЅРЅС‹Р№ С„Р°Р№Р»")
             if (fileName.isNotBlank()) append(": ").append(fileName)
-            if (mimeType.isNotBlank()) append("\nТип: ").append(mimeType)
+            if (mimeType.isNotBlank()) append("\nРўРёРї: ").append(mimeType)
             if (fileText.isNotBlank()) {
-                append("\n\n===== ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА =====\n")
+                append("\n\n===== РџРћР›РќРћР• РЎРћР”Р•Р Р–РРњРћР• Р¤РђР™Р›Рђ =====\n")
                 append(fileText)
-                append("\n===== КОНЕЦ ФАЙЛА =====")
+                append("\n===== РљРћРќР•Р¦ Р¤РђР™Р›Рђ =====")
             } else if (msg.has("base64") && !isImageMimeType(mimeType)) {
-                append("\n\n(Бинарный файл — текстовое содержимое недоступно)")
+                append("\n\n(Р‘РёРЅР°СЂРЅС‹Р№ С„Р°Р№Р» вЂ” С‚РµРєСЃС‚РѕРІРѕРµ СЃРѕРґРµСЂР¶РёРјРѕРµ РЅРµРґРѕСЃС‚СѓРїРЅРѕ)")
             }
         }
     }
@@ -141,7 +138,7 @@ object AiApiService {
         mimeType.startsWith("image/", ignoreCase = true)
 
     suspend fun fetchStreamingResponse(
-        target: AiTarget,
+        authToken: String,
         messagesToKeep: List<JSONObject>,
         currentMode: String?,
         customInstructions: String,
@@ -150,33 +147,38 @@ object AiApiService {
         callback: StreamCallback
     ) {
         withContext(Dispatchers.IO) {
-            if (!isTargetConfigured(target)) {
+            if (authToken.isBlank()) {
                 withContext(Dispatchers.Main) {
-                    callback.onError("AI сервис не настроен")
+                    callback.onError("РўСЂРµР±СѓРµС‚СЃСЏ Р°РІС‚РѕСЂРёР·Р°С†РёСЏ")
                 }
                 return@withContext
             }
 
             try {
+                val isImageGeneration = currentMode == "create_image"
                 val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary, filesContext)
-                val jsonInput = buildRequestBody(target, messagesToKeep, systemPrompt)
+                val jsonInput = buildRequestBody(isImageGeneration, messagesToKeep, systemPrompt)
+                val payload = JSONObject().apply {
+                    put("currentMode", currentMode)
+                    put("request", JSONObject(jsonInput))
+                }.toString()
 
-                val connection = (URL(target.apiUrl).openConnection() as HttpURLConnection).apply {
+                val connection = (URL("${BuildConfig.APP_API_BASE_URL}ai/chat").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    setRequestProperty("Content-Type", "application/json; utf-8")
-                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.aiApiKey}")
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Authorization", "Bearer $authToken")
                     doOutput = true
                 }
 
                 OutputStreamWriter(connection.outputStream).use {
-                    it.write(jsonInput)
+                    it.write(payload)
                     it.flush()
                 }
 
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     var finalReply = ""
 
-                    if (target.isImageGeneration) {
+                    if (isImageGeneration) {
                         val response = BufferedReader(
                             InputStreamReader(connection.inputStream, "utf-8")
                         ).readText()
@@ -234,42 +236,47 @@ object AiApiService {
                     }
 
                     val errorMessage = try {
-                        JSONObject(errorBody).getJSONObject("error").getString("message")
+                        val json = JSONObject(errorBody)
+                        when {
+                            json.has("error") -> json.getJSONObject("error").optString("message")
+                            json.has("message") -> json.optString("message")
+                            else -> ""
+                        }
                     } catch (_: Exception) {
-                        "Код ${connection.responseCode}"
+                        "РљРѕРґ ${connection.responseCode}"
                     }
 
                     withContext(Dispatchers.Main) {
-                        callback.onError("Ошибка: $errorMessage")
+                        callback.onError("РћС€РёР±РєР°: $errorMessage")
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    callback.onError("Ошибка сети: ${e.message}")
+                    callback.onError("РћС€РёР±РєР° СЃРµС‚Рё: ${e.message}")
                 }
             }
         }
     }
 
-    suspend fun summarizeMessages(messagesToSummarize: List<JSONObject>): String? {
-        if (BuildConfig.AI_CHAT_URL.isBlank() ||
-            BuildConfig.AI_SUMMARY_MODEL.isBlank() ||
-            ApiKeyProvider.aiApiKey.isBlank()
-        ) {
+    suspend fun summarizeMessages(
+        authToken: String,
+        messagesToSummarize: List<JSONObject>
+    ): String? {
+        if (authToken.isBlank()) {
             return null
         }
 
         return withContext(Dispatchers.IO) {
             try {
-                val connection = (URL(BuildConfig.AI_CHAT_URL).openConnection() as HttpURLConnection).apply {
+                val connection = (URL("${BuildConfig.APP_API_BASE_URL}ai/summary").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    setRequestProperty("Content-Type", "application/json; utf-8")
-                    setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.aiApiKey}")
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Authorization", "Bearer $authToken")
                     doOutput = true
                 }
 
                 val promptText = buildString {
-                    append("Сделай краткую выжимку важных фактов из этой части переписки (сохрани ключевые детали, включая имена файлов и их содержимое):\n")
+                    append("РЎРґРµР»Р°Р№ РєСЂР°С‚РєСѓСЋ РІС‹Р¶РёРјРєСѓ РІР°Р¶РЅС‹С… С„Р°РєС‚РѕРІ РёР· СЌС‚РѕР№ С‡Р°СЃС‚Рё РїРµСЂРµРїРёСЃРєРё (СЃРѕС…СЂР°РЅРё РєР»СЋС‡РµРІС‹Рµ РґРµС‚Р°Р»Рё, РІРєР»СЋС‡Р°СЏ РёРјРµРЅР° С„Р°Р№Р»РѕРІ Рё РёС… СЃРѕРґРµСЂР¶РёРјРѕРµ):\n")
                     for (msg in messagesToSummarize) {
                         val role = msg.getString("role")
                         val content = msg.getString("content")
@@ -277,29 +284,17 @@ object AiApiService {
                         val fileName = msg.optString("fileName", "")
                         val fileText = msg.optString("fileText", "")
                         if (fileName.isNotBlank()) {
-                            append("[Прикреплён файл: $fileName]\n")
+                            append("[РџСЂРёРєСЂРµРїР»С‘РЅ С„Р°Р№Р»: $fileName]\n")
                         }
                         if (fileText.isNotBlank()) {
                             val preview = if (fileText.length > 2000) fileText.take(2000) + "..." else fileText
-                            append("[Содержимое файла:\n$preview]\n")
+                            append("[РЎРѕРґРµСЂР¶РёРјРѕРµ С„Р°Р№Р»Р°:\n$preview]\n")
                         }
                     }
                 }
 
                 val jsonInput = JSONObject().apply {
-                    put("model", BuildConfig.AI_SUMMARY_MODEL)
-                    put("stream", false)
-                    put("max_tokens", 600)
-                    put("messages", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system")
-                            put("content", "Обнови информацию.")
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user")
-                            put("content", promptText)
-                        })
-                    })
+                    put("promptText", promptText)
                 }.toString()
 
                 OutputStreamWriter(connection.outputStream).use {
@@ -311,11 +306,7 @@ object AiApiService {
                     val response = BufferedReader(
                         InputStreamReader(connection.inputStream, "utf-8")
                     ).readText()
-                    JSONObject(response)
-                        .getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content")
+                    JSONObject(response).optString("content", null)
                 } else {
                     null
                 }
@@ -323,11 +314,5 @@ object AiApiService {
                 null
             }
         }
-    }
-
-    private fun isTargetConfigured(target: AiTarget): Boolean {
-        return target.apiUrl.isNotBlank() &&
-            target.model.isNotBlank() &&
-            ApiKeyProvider.aiApiKey.isNotBlank()
     }
 }

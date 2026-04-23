@@ -1,13 +1,11 @@
 package com.example.chatapp
 
 import android.content.Context
-import com.example.chatapp.util.ApiKeyProvider
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -107,39 +105,23 @@ class ChatRepository(context: Context) {
     suspend fun generateChatTitle(
         firstUserMessage: String
     ): String? = withContext(Dispatchers.IO) {
-        if (BuildConfig.AI_CHAT_URL.isBlank() ||
-            BuildConfig.AI_TITLE_MODEL.isBlank() ||
-            ApiKeyProvider.aiApiKey.isBlank()
-        ) {
+        val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (authToken.isBlank()) {
             return@withContext null
         }
 
         try {
-            val url = URL(BuildConfig.AI_CHAT_URL)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "POST"
-            connection.setRequestProperty("Content-Type", "application/json; utf-8")
-            connection.setRequestProperty("Authorization", "Bearer ${ApiKeyProvider.aiApiKey}")
-            connection.doOutput = true
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
+            val connection = (URL("${BuildConfig.APP_API_BASE_URL}ai/title").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                setRequestProperty("Authorization", "Bearer $authToken")
+                doOutput = true
+                connectTimeout = 15000
+                readTimeout = 15000
+            }
 
             val jsonInput = JSONObject().apply {
-                put("model", BuildConfig.AI_TITLE_MODEL)
-                put("stream", false)
-                put("max_tokens", 40)
-                put("temperature", 0.7)
-                val messages = JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("role", "system")
-                        put("content", "Ты — помощник, который генерирует короткие заголовки для чатов. Сгенерируй ОДИН короткий заголовок (не более 5 слов) на русском языке, который описывает тему сообщения. Отвечай ТОЛЬКО заголовком, без кавычек, без пояснений, без точки в конце.")
-                    })
-                    put(JSONObject().apply {
-                        put("role", "user")
-                        put("content", firstUserMessage)
-                    })
-                }
-                put("messages", messages)
+                put("firstUserMessage", firstUserMessage)
             }.toString()
 
             OutputStreamWriter(connection.outputStream).use {
@@ -153,10 +135,7 @@ class ChatRepository(context: Context) {
                 ).readText()
 
                 val title = JSONObject(response)
-                    .getJSONArray("choices")
-                    .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content")
+                    .optString("content", "")
                     .trim()
                     .removeSurrounding("\"")
                     .removeSuffix(".")
