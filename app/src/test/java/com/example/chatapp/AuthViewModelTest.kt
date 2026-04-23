@@ -431,4 +431,14 @@ private class FakeAccountSessionStore : AccountSessionStore {
     override fun getCurrentPlanExpiresAt(): String? = lastUser?.planExpiresAt
 
     override fun isCurrentUserPro(): Boolean = lastUser?.isPro == true
+
+    override fun saveBillingStatus(status: BillingStatusResponse) = Unit
+
+    override fun getDailyRequestLimit(): Int? = null
+
+    override fun getRemainingDailyRequests(): Int? = null
+
+    override fun getDailyQuotaResetsAt(): String? = null
+
+    override fun saveRemainingDailyRequests(value: Int?) = Unit
 }
