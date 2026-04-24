@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.util.FileUtils
-import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.bounce
 import com.example.chatapp.util.dpToPx
 import com.example.chatapp.util.slideAndFadeIn
@@ -26,13 +25,14 @@ class ChatMessageRenderer(
     private val messagesContainer: LinearLayout,
     private val messagesScrollView: ScrollView,
     private val popupMenuHelper: PopupMenuHelper,
-    private val onRegenerate: (AssistantMessageWrapper) -> Unit
+    private val onRegenerate: (AssistantMessageWrapper) -> Unit,
+    private val onUserMessageLongClick: (View, String, Int) -> Unit
 ) {
 
     // ──────── Сообщения пользователя ────────
 
     /** Добавляет текстовое сообщение пользователя */
-    fun addUserMessage(message: String) {
+    fun addUserMessage(message: String, historyIndex: Int) {
         val tv = TextView(context).apply {
             text = message
             setTextColor(ContextCompat.getColor(context, android.R.color.white))
@@ -41,6 +41,7 @@ class ChatMessageRenderer(
             setPadding(32, 20, 32, 20)
             maxWidth = (context.resources.displayMetrics.widthPixels * 0.75).toInt()
         }
+        attachUserMessageLongClick(tv, message, historyIndex)
         messagesContainer.addView(
             tv,
             LinearLayout.LayoutParams(
@@ -55,7 +56,7 @@ class ChatMessageRenderer(
     }
 
     /** Добавляет сообщение пользователя с картинкой */
-    fun addUserMessageWithImage(message: String, imageUri: Uri) {
+    fun addUserMessageWithImage(message: String, imageUri: Uri, historyIndex: Int) {
         val density = context.resources.displayMetrics.density
         val sizePx = (80 * density).toInt()
         val imageView = ImageView(context).apply {
@@ -68,6 +69,7 @@ class ChatMessageRenderer(
                 Toast.makeText(context, LocaleHelper.getString(context, "toast_error"), Toast.LENGTH_SHORT).show()
             }
         }
+        attachUserMessageLongClick(imageView, message, historyIndex)
         messagesContainer.addView(
             imageView,
             LinearLayout.LayoutParams(sizePx, sizePx).apply {
@@ -79,12 +81,12 @@ class ChatMessageRenderer(
         imageView.setOnClickListener { FileUtils.openUri(context, imageUri) }
 
         if (message.isNotEmpty()) {
-            addUserMessage(message)
+            addUserMessage(message, historyIndex)
         }
     }
 
     /** Добавляет сообщение пользователя с файлом */
-    fun addUserMessageWithFile(message: String, fileUri: Uri) {
+    fun addUserMessageWithFile(message: String, fileUri: Uri, historyIndex: Int) {
         val density = context.resources.displayMetrics.density
         val fileContainer = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -122,6 +124,7 @@ class ChatMessageRenderer(
         fileContainer.addView(fileIcon)
         fileContainer.addView(tvFileName)
         fileContainer.addView(caretTv)
+        attachUserMessageLongClick(fileContainer, message, historyIndex)
         messagesContainer.addView(
             fileContainer,
             LinearLayout.LayoutParams((260 * density).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -133,7 +136,7 @@ class ChatMessageRenderer(
         fileContainer.setOnClickListener { FileUtils.openUri(context, fileUri) }
 
         if (message.isNotEmpty()) {
-            addUserMessage(message)
+            addUserMessage(message, historyIndex)
         }
     }
 
@@ -141,7 +144,7 @@ class ChatMessageRenderer(
      * Восстановленное сообщение из БД: определяет тип вложения,
      * проверяет доступность URI, при необходимости показывает заглушку.
      */
-    fun renderRestoredUserMessage(content: String, imageUrl: String?) {
+    fun renderRestoredUserMessage(content: String, imageUrl: String?, historyIndex: Int) {
         var isUriReadable = false
         var isImageUri = false
         var safeUri: Uri? = null
@@ -162,22 +165,28 @@ class ChatMessageRenderer(
 
         if (isUriReadable && safeUri != null) {
             if (isImageUri) {
-                addUserMessageWithImage(baseText, safeUri)
+                addUserMessageWithImage(baseText, safeUri, historyIndex)
             } else {
-                addUserMessageWithFile(baseText, safeUri)
+                addUserMessageWithFile(baseText, safeUri, historyIndex)
             }
         } else if (imageUrl != null) {
             val isPhoto = content.contains("[Извлеченный текст из фото]") || imageUrl.contains("image")
             val title = LocaleHelper.getString(context, "label_file_analysis")
             val icon = if (isPhoto) R.drawable.ic_camera else R.drawable.ic_file_new
-            addUserMessageSimulatedAttachment(baseText, title, icon, imageUrl)
+            addUserMessageSimulatedAttachment(baseText, title, icon, imageUrl, historyIndex)
         } else {
-            addUserMessage(content)
+            addUserMessage(content, historyIndex)
         }
     }
 
     /** Заглушка вложения (URI мёртв, но мы знаем что файл был) */
-    private fun addUserMessageSimulatedAttachment(message: String, title: String, iconRes: Int, imageUrl: String?) {
+    private fun addUserMessageSimulatedAttachment(
+        message: String,
+        title: String,
+        iconRes: Int,
+        imageUrl: String?,
+        historyIndex: Int
+    ) {
         val density = context.resources.displayMetrics.density
         val fileContainer = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -206,6 +215,7 @@ class ChatMessageRenderer(
         fileContainer.addView(fileIcon)
         fileContainer.addView(tvFileName)
         if (imageUrl != null) fileContainer.tag = imageUrl
+        attachUserMessageLongClick(fileContainer, message, historyIndex)
 
         messagesContainer.addView(
             fileContainer,
@@ -222,7 +232,16 @@ class ChatMessageRenderer(
         }
 
         if (message.isNotEmpty() && message != "[Пустое сообщение]" && message != "[Файл/Изображение без текста]") {
-            addUserMessage(message)
+            addUserMessage(message, historyIndex)
+        }
+    }
+
+    private fun attachUserMessageLongClick(view: View, message: String, historyIndex: Int) {
+        view.setTag(R.id.user_message_history_index, historyIndex)
+        view.isLongClickable = true
+        view.setOnLongClickListener {
+            onUserMessageLongClick(view, message, historyIndex)
+            true
         }
     }
 

@@ -32,6 +32,7 @@ import com.example.chatapp.ui.AssistantMessageWrapper
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.DrawerManager
 import com.example.chatapp.ui.PopupMenuHelper
+import com.example.chatapp.util.FileUtils
 import com.example.chatapp.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -72,6 +73,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var isSending = false
     private var activeSuggestionCategory: QuickSuggestionCategory? = null
     private var suppressSuggestionUpdates = false
+    private var handledShareToken: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -103,6 +105,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         showWelcomeState()
         loadChats()
+        handleSharedChatIntent(intent)
     }
 
     override fun onResume() {
@@ -364,6 +367,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     refreshChats()
                 }
             },
+            onShare = { chat ->
+                shareChat(chat)
+            },
+            onRevokeShares = { chat ->
+                revokeChatShareLinks(chat)
+            },
             onDelete = { chat ->
                 chatViewModel.deleteChat(chat.id) {
                     if (chatViewModel.currentChatId == chat.id) {
@@ -372,7 +381,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     refreshChats()
                 }
             },
-            onRegenerate = ::regenerateAssistantResponse
+            onRegenerate = ::regenerateAssistantResponse,
+            onEditUserMessage = { historyIndex, newText ->
+                editUserMessage(historyIndex, newText)
+            }
         )
 
         messageRenderer = ChatMessageRenderer(
@@ -380,7 +392,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             messagesContainer = binding.messagesContainer,
             messagesScrollView = binding.messagesScrollView,
             popupMenuHelper = popupMenuHelper,
-            onRegenerate = ::regenerateAssistantResponse
+            onRegenerate = ::regenerateAssistantResponse,
+            onUserMessageLongClick = { anchor, message, historyIndex ->
+                popupMenuHelper.showUserMessageOptionsMenu(anchor, message, historyIndex)
+            }
         )
 
         speechRecognizerManager = SpeechRecognizerManager(
@@ -477,7 +492,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
         }
         binding.btnSend.setHapticClickListener {
-            sendMessage()
+            if (isSending) {
+                stopGeneration()
+            } else {
+                sendMessage()
+            }
         }
         binding.btnPlus.setHapticClickListener {
             BottomSheetMenuFragment().show(supportFragmentManager, "bottom_sheet_menu")
@@ -611,6 +630,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
             binding.messagesContainer.removeAllViews()
             messages.forEach { message ->
+                val historyIndex = chatViewModel.chatHistory.size
                 chatViewModel.chatHistory.add(
                     JSONObject().apply {
                         put("role", message.role)
@@ -620,7 +640,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 )
 
                 if (message.role == "user") {
-                    messageRenderer.renderRestoredUserMessage(message.content, message.imageUrl)
+                    messageRenderer.renderRestoredUserMessage(message.content, message.imageUrl, historyIndex)
                 } else {
                     messageRenderer.addAssistantMessage(
                         text = message.content,
@@ -641,6 +661,67 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (!::drawerManager.isInitialized) return
         val query = findViewById<EditText>(R.id.etDrawerSearch)?.text?.toString().orEmpty()
         filterChats(query)
+    }
+
+    private fun shareChat(chat: ChatEntity) {
+        chatViewModel.createShareLink(chat.id) { result ->
+            runOnUiThread {
+                result.onSuccess { share ->
+                    toast(LocaleHelper.getString(this, "toast_share_link_created"))
+                    FileUtils.shareText(this, share.shareUrl)
+                }.onFailure { error ->
+                    toast(userFacingError(error, "toast_share_error"))
+                }
+            }
+        }
+    }
+
+    private fun revokeChatShareLinks(chat: ChatEntity) {
+        chatViewModel.revokeShareLinks(chat.id) { result ->
+            runOnUiThread {
+                result.onSuccess { revoke ->
+                    val key = if (revoke.revoked) {
+                        "toast_share_links_revoked"
+                    } else {
+                        "toast_share_links_not_found"
+                    }
+                    toast(LocaleHelper.getString(this, key))
+                }.onFailure { error ->
+                    toast(userFacingError(error, "toast_share_revoke_error"))
+                }
+            }
+        }
+    }
+
+    private fun handleSharedChatIntent(intent: Intent?) {
+        val token = ChatShareDeepLink.extractToken(intent?.data) ?: return
+        if (handledShareToken == token) return
+        handledShareToken = token
+        intent?.data = null
+
+        toast(LocaleHelper.getString(this, "toast_share_importing"))
+        chatViewModel.importSharedChat(token) { result ->
+            runOnUiThread {
+                result.onSuccess { chatId ->
+                    openChat(chatId)
+                    refreshChats()
+                    toast(LocaleHelper.getString(this, "toast_share_imported"))
+                }.onFailure { error ->
+                    toast(userFacingError(error, "toast_share_import_error"))
+                }
+            }
+        }
+    }
+
+    private fun userFacingError(error: Throwable, fallbackKey: String): String {
+        val raw = error.message.orEmpty()
+        val parsedMessage = runCatching {
+            JSONObject(raw).optString("message")
+        }.getOrNull()
+
+        return parsedMessage?.takeIf { it.isNotBlank() }
+            ?: raw.takeIf { it.isNotBlank() && it.length <= 160 }
+            ?: LocaleHelper.getString(this, fallbackKey)
     }
 
     private fun sendMessage() {
@@ -664,6 +745,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
 
         val mimeType = attachmentPayload?.mimeType
+        val userHistoryIndex = chatViewModel.chatHistory.size
 
         isSending = true
         hideQuickSuggestions()
@@ -671,9 +753,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
 
         when {
-            previewUri == null -> messageRenderer.addUserMessage(text)
-            mimeType?.startsWith("image/") == true -> messageRenderer.addUserMessageWithImage(text, previewUri)
-            else -> messageRenderer.addUserMessageWithFile(text, previewUri)
+            previewUri == null -> messageRenderer.addUserMessage(text, userHistoryIndex)
+            mimeType?.startsWith("image/") == true -> messageRenderer.addUserMessageWithImage(text, previewUri, userHistoryIndex)
+            else -> messageRenderer.addUserMessageWithFile(text, previewUri, userHistoryIndex)
         }
 
         if (chatViewModel.isFirstMessage) {
@@ -704,6 +786,112 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             mimeType = mimeType,
             fileName = attachmentPayload?.fileName,
             fileContext = attachmentPayload?.attachmentContext,
+            onError = { error ->
+                runOnUiThread {
+                    isSending = false
+                    updateSendState()
+                    wrapper.updateContent(error, animate = false)
+                    refreshDailyQuotaUi()
+                    toast(error)
+                }
+            },
+            onChunk = { chunk ->
+                runOnUiThread {
+                    wrapper.updateContent(chunk, animate = false)
+                }
+            },
+            onStreamComplete = {
+                runOnUiThread {
+                    isSending = false
+                    updateSendState()
+                    refreshChats()
+                }
+            }
+        )
+    }
+
+    private fun stopGeneration() {
+        if (!isSending) return
+
+        chatViewModel.cancelActiveResponse()
+        isSending = false
+        updateSendState()
+
+        val wrapper = currentAssistantMessage ?: return
+        val thinkingText = LocaleHelper.getString(this, "ai_thinking")
+        if (wrapper.rawText.isBlank() || wrapper.rawText == thinkingText) {
+            binding.messagesContainer.removeView(wrapper.container)
+            currentAssistantMessage = null
+        }
+    }
+
+    private fun editUserMessage(historyIndex: Int, newText: String) {
+        if (isSending || newText.isBlank()) return
+        if (historyIndex !in 0 until chatViewModel.chatHistory.size) return
+        if (!chatViewModel.consumeLimit()) {
+            refreshDailyQuotaUi()
+            toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
+            return
+        }
+
+        removeViewsFromUserMessage(historyIndex)
+        chatViewModel.truncateHistoryFrom(historyIndex) {
+            runOnUiThread {
+                submitEditedUserMessage(historyIndex, newText)
+            }
+        }
+    }
+
+    private fun removeViewsFromUserMessage(historyIndex: Int) {
+        var firstViewIndex = -1
+        for (i in 0 until binding.messagesContainer.childCount) {
+            val child = binding.messagesContainer.getChildAt(i)
+            if (child.getTag(R.id.user_message_history_index) == historyIndex) {
+                firstViewIndex = i
+                break
+            }
+        }
+        if (firstViewIndex < 0) return
+
+        for (i in binding.messagesContainer.childCount - 1 downTo firstViewIndex) {
+            binding.messagesContainer.removeViewAt(i)
+        }
+    }
+
+    private fun submitEditedUserMessage(historyIndex: Int, text: String) {
+        isSending = true
+        hideQuickSuggestions()
+        showMessagesState()
+        updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
+
+        messageRenderer.addUserMessage(text, historyIndex)
+
+        if (historyIndex == 0) {
+            chatViewModel.currentChatTitle = text.take(60)
+            chatViewModel.isFirstMessage = false
+            chatViewModel.currentChatId?.let { chatId ->
+                chatViewModel.renameChat(chatId, chatViewModel.currentChatTitle) {
+                    refreshChats()
+                }
+            }
+        }
+
+        val isImageRequest = chatViewModel.currentMode == "create_image"
+        val wrapper = messageRenderer.addAssistantMessage(
+            text = if (isImageRequest) "" else LocaleHelper.getString(this, "ai_thinking"),
+            animate = false,
+            isImageMode = isImageRequest
+        )
+        currentAssistantMessage = wrapper
+        updateSendState()
+
+        chatViewModel.addToChatHistoryAndSend(
+            content = text,
+            base64Data = null,
+            fileUri = null,
+            mimeType = null,
+            fileName = null,
+            fileContext = null,
             onError = { error ->
                 runOnUiThread {
                     isSending = false
@@ -838,13 +1026,19 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun updateSendState() {
         val hasInput = binding.etInput.text?.isNotBlank() == true || currentPreviewUri != null
-        binding.btnSend.isEnabled = hasInput && !isSending
-        
-        if (binding.btnSend.isEnabled) {
+        binding.btnSend.isEnabled = isSending || hasInput
+
+        if (isSending) {
             binding.btnSend.setBackgroundResource(R.drawable.circle_solid_white_bg)
+            binding.btnSend.setImageResource(R.drawable.ic_stop_square)
+            binding.btnSend.setColorFilter(android.graphics.Color.BLACK)
+        } else if (binding.btnSend.isEnabled) {
+            binding.btnSend.setBackgroundResource(R.drawable.circle_solid_white_bg)
+            binding.btnSend.setImageResource(R.drawable.ic_send_arrow_up)
             binding.btnSend.setColorFilter(android.graphics.Color.BLACK)
         } else {
             binding.btnSend.setBackgroundResource(R.drawable.circle_solid_grey_bg)
+            binding.btnSend.setImageResource(R.drawable.ic_send_arrow_up)
             binding.btnSend.setColorFilter(android.graphics.Color.parseColor("#8E8E93"))
         }
     }

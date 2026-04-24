@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.example.chatapp.ChatEntity
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.dpToPx
 
 /**
@@ -25,8 +26,11 @@ class PopupMenuHelper(
     private val activity: Activity,
     private val onRename: (ChatEntity, String) -> Unit,
     private val onTogglePin: (ChatEntity) -> Unit,
+    private val onShare: (ChatEntity) -> Unit,
+    private val onRevokeShares: (ChatEntity) -> Unit,
     private val onDelete: (ChatEntity) -> Unit,
-    private val onRegenerate: ((AssistantMessageWrapper) -> Unit)? = null
+    private val onRegenerate: ((AssistantMessageWrapper) -> Unit)? = null,
+    private val onEditUserMessage: ((Int, String) -> Unit)? = null
 ) {
     private val standardMenuWidth by lazy { 258.dpToPx() }
 
@@ -119,6 +123,16 @@ class PopupMenuHelper(
             onTogglePin(chat)
         })
 
+        menuLayout.addView(createPopupMenuItem(R.drawable.ic_share, LocaleHelper.getString(activity, "share"), Color.WHITE) {
+            dialog.dismiss()
+            onShare(chat)
+        })
+
+        menuLayout.addView(createPopupMenuItem(R.drawable.ic_external_link, LocaleHelper.getString(activity, "menu_revoke_share_links"), Color.WHITE) {
+            dialog.dismiss()
+            onRevokeShares(chat)
+        })
+
         menuLayout.addView(createMenuDivider())
 
         menuLayout.addView(createPopupMenuItem(R.drawable.ic_delete, LocaleHelper.getString(activity, "button_delete"), Color.parseColor("#FF453A")) {
@@ -192,8 +206,7 @@ class PopupMenuHelper(
         }
 
         // Заголовок
-        val safeTitle = chat.title ?: LocaleHelper.getString(activity, "label_untitled")
-        val displayTitle = if (safeTitle.length > 25) safeTitle.substring(0, 25) + "..." else safeTitle
+        val displayTitle = if (chat.title.length > 25) chat.title.substring(0, 25) + "..." else chat.title
         popupView.addView(TextView(activity).apply {
             text = displayTitle
             setTextColor(Color.parseColor("#8E8E93"))
@@ -216,6 +229,16 @@ class PopupMenuHelper(
         popupView.addView(createPopupMenuItem(R.drawable.ic_pin, pinText, Color.WHITE) {
             popupWindow.dismiss()
             onTogglePin(chat)
+        })
+
+        popupView.addView(createPopupMenuItem(R.drawable.ic_share, LocaleHelper.getString(activity, "share"), Color.WHITE) {
+            popupWindow.dismiss()
+            onShare(chat)
+        })
+
+        popupView.addView(createPopupMenuItem(R.drawable.ic_external_link, LocaleHelper.getString(activity, "menu_revoke_share_links"), Color.WHITE) {
+            popupWindow.dismiss()
+            onRevokeShares(chat)
         })
 
         popupView.addView(createMenuDivider())
@@ -285,8 +308,66 @@ class PopupMenuHelper(
             .start()
     }
 
+    fun showUserMessageOptionsMenu(anchorView: View, message: String, historyIndex: Int) {
+        val userMenuWidth = 272.dpToPx()
+        val popupView = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_bg)
+            elevation = 24f
+            setPadding(8.dpToPx(), 10.dpToPx(), 8.dpToPx(), 10.dpToPx())
+        }
+
+        val popupWindow = PopupWindow(
+            popupView,
+            userMenuWidth,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            elevation = 24f
+            isOutsideTouchable = true
+        }
+
+        popupView.addView(createPopupMenuItem(R.drawable.ic_pen, LocaleHelper.getString(activity, "menu_edit_message"), Color.WHITE) {
+            popupWindow.dismiss()
+            showEditUserMessageDialog(message) { newText ->
+                onEditUserMessage?.invoke(historyIndex, newText)
+            }
+        })
+
+        popupView.addView(createPopupMenuItem(R.drawable.ic_copy, LocaleHelper.getString(activity, "menu_copy_text"), Color.WHITE) {
+            popupWindow.dismiss()
+            FileUtils.copyToClipboard(activity, message)
+        })
+
+        popupView.addView(createPopupMenuItem(R.drawable.ic_share, LocaleHelper.getString(activity, "share"), Color.WHITE) {
+            popupWindow.dismiss()
+            FileUtils.shareText(activity, message)
+        })
+
+        popupView.alpha = 0f
+        popupView.scaleX = 0.92f
+        popupView.scaleY = 0.92f
+
+        val location = IntArray(2)
+        anchorView.getLocationOnScreen(location)
+        val screenWidth = activity.resources.displayMetrics.widthPixels
+        val screenHeight = activity.resources.displayMetrics.heightPixels
+        val preferredX = location[0] + anchorView.width - userMenuWidth
+        val x = preferredX.coerceIn(12.dpToPx(), screenWidth - userMenuWidth - 12.dpToPx())
+        val y = (location[1] + anchorView.height + 6.dpToPx()).coerceAtMost(screenHeight - 180.dpToPx())
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y)
+
+        popupView.animate()
+            .alpha(1f).scaleX(1f).scaleY(1f)
+            .setDuration(180)
+            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
+            .start()
+    }
+
     /** Создаёт один пункт popup-меню */
-    fun createPopupMenuItem(
+    private fun createPopupMenuItem(
         iconRes: Int,
         text: String,
         tintColor: Int,
@@ -325,7 +406,42 @@ class PopupMenuHelper(
     }
 
     /** Диалог переименования чата */
-    fun showRenameDialog(chat: ChatEntity) {
+    private fun showRenameDialog(chat: ChatEntity) {
+        showTextInputDialog(
+            initialText = chat.title,
+            hintText = LocaleHelper.getString(activity, "dialog_rename_hint"),
+            widthFraction = 0.82f,
+            configureInput = {
+                setSingleLine()
+                gravity = Gravity.CENTER
+                selectAll()
+            },
+            onConfirmed = { newTitle -> onRename(chat, newTitle) }
+        )
+    }
+
+    private fun showEditUserMessageDialog(originalText: String, onEdited: (String) -> Unit) {
+        showTextInputDialog(
+            initialText = originalText,
+            hintText = LocaleHelper.getString(activity, "menu_edit_message"),
+            widthFraction = 0.92f,
+            configureInput = {
+                minLines = 3
+                maxLines = 8
+                gravity = Gravity.TOP or Gravity.START
+                setSelection(text?.length ?: 0)
+            },
+            onConfirmed = onEdited
+        )
+    }
+
+    private fun showTextInputDialog(
+        initialText: String,
+        hintText: String,
+        widthFraction: Float,
+        configureInput: EditText.() -> Unit,
+        onConfirmed: (String) -> Unit
+    ) {
         val dialogView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(activity, R.drawable.dialog_bg)
@@ -333,20 +449,18 @@ class PopupMenuHelper(
         }
 
         val input = EditText(activity).apply {
-            setText(chat.title)
+            setText(initialText)
             setTextColor(Color.WHITE)
             textSize = 15f
             setHintTextColor(Color.parseColor("#636366"))
-            hint = LocaleHelper.getString(activity, "dialog_rename_hint")
+            hint = hintText
             background = ContextCompat.getDrawable(activity, R.drawable.dialog_input_bg)
             setPadding(16.dpToPx(), 14.dpToPx(), 16.dpToPx(), 14.dpToPx())
-            setSingleLine()
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-            selectAll()
-            gravity = Gravity.CENTER
+            configureInput()
         }
         dialogView.addView(input)
 
@@ -393,9 +507,9 @@ class PopupMenuHelper(
             isClickable = true
             isFocusable = true
             setOnClickListener {
-                val newTitle = input.text.toString().trim()
-                if (newTitle.isNotEmpty()) {
-                    onRename(chat, newTitle)
+                val newText = input.text?.toString()?.trim().orEmpty()
+                if (newText.isNotEmpty()) {
+                    onConfirmed(newText)
                 }
                 dialog.dismiss()
             }
@@ -406,7 +520,7 @@ class PopupMenuHelper(
         dialog.show()
 
         dialog.window?.setLayout(
-            (activity.resources.displayMetrics.widthPixels * 0.82).toInt(),
+            (activity.resources.displayMetrics.widthPixels * widthFraction).toInt(),
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
 

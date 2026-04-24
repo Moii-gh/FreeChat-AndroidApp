@@ -1,7 +1,11 @@
 package com.example.chatapp.network
 
 import com.example.chatapp.BuildConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
@@ -109,7 +113,7 @@ object AiApiService {
         val content = msg.optString("content", "")
         val fileName = msg.optString("fileName", "")
         val mimeType = msg.optString("mimeType", "")
-        val fileContext = msg.optString("fileContext", "")
+        val fileContext = msg.optString("fileContext").ifBlank { msg.optString("fileText") }
 
         if (fileName.isBlank() && mimeType.isBlank() && fileContext.isBlank()) {
             return content
@@ -156,6 +160,7 @@ object AiApiService {
             }
 
             try {
+                val coroutineContext = currentCoroutineContext()
                 val isImageGeneration = currentMode == "create_image"
                 val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary, filesContext)
                 val jsonInput = buildRequestBody(isImageGeneration, messagesToKeep, systemPrompt)
@@ -165,66 +170,81 @@ object AiApiService {
                 }.toString()
 
                 val request = buildJsonRequest(path = "ai/chat", payload = payload)
-
-                NetworkModule.createAiHttpClient(authToken).newCall(request).execute().use { response ->
-                    val responseBody = response.body
-                    if (!response.isSuccessful || responseBody == null) {
-                        withContext(Dispatchers.Main) {
-                            callback.onError(parseErrorMessage(response.code, responseBody?.string().orEmpty()))
-                        }
-                        return@use
+                val call = NetworkModule.createAiHttpClient(authToken).newCall(request)
+                val cancellationHandle = coroutineContext[Job]?.invokeOnCompletion { cause ->
+                    if (cause is CancellationException) {
+                        call.cancel()
                     }
+                }
 
-                    var finalReply = ""
-
-                    if (isImageGeneration) {
-                        val b64 = JSONObject(responseBody.string())
-                            .getJSONArray("data")
-                            .getJSONObject(0)
-                            .getString("b64_json")
-                        finalReply = "![image](data:image/png;base64,$b64)"
-                        withContext(Dispatchers.Main) {
-                            callback.onChunk(finalReply)
+                try {
+                    call.execute().use { response ->
+                        val responseBody = response.body
+                        if (!response.isSuccessful || responseBody == null) {
+                            withContext(Dispatchers.Main) {
+                                callback.onError(parseErrorMessage(response.code, responseBody?.string().orEmpty()))
+                            }
+                            return@use
                         }
-                    } else {
-                        BufferedReader(InputStreamReader(responseBody.byteStream(), Charsets.UTF_8)).use { reader ->
-                            while (true) {
-                                val line = reader.readLine() ?: break
-                                if (!line.startsWith("data:")) {
-                                    continue
-                                }
 
-                                val data = line.removePrefix("data:").trim()
-                                if (data.isEmpty() || data == "[DONE]") {
-                                    continue
-                                }
+                        var finalReply = ""
 
-                                runCatching {
-                                    val json = JSONObject(data)
-                                    val choices = json.optJSONArray("choices")
-                                    if (choices != null && choices.length() > 0) {
-                                        choices.getJSONObject(0)
-                                            .optJSONObject("delta")
-                                            ?.optString("content", "")
-                                            .orEmpty()
-                                    } else {
-                                        ""
+                        if (isImageGeneration) {
+                            val b64 = JSONObject(responseBody.string())
+                                .getJSONArray("data")
+                                .getJSONObject(0)
+                                .getString("b64_json")
+                            finalReply = "![image](data:image/png;base64,$b64)"
+                            withContext(Dispatchers.Main) {
+                                callback.onChunk(finalReply)
+                            }
+                        } else {
+                            BufferedReader(InputStreamReader(responseBody.byteStream(), Charsets.UTF_8)).use { reader ->
+                                while (true) {
+                                    val line = reader.readLine() ?: break
+                                    if (!line.startsWith("data:")) {
+                                        continue
                                     }
-                                }.getOrDefault("").takeIf { it.isNotEmpty() }?.let { chunk ->
-                                    finalReply += chunk
-                                    withContext(Dispatchers.Main) {
-                                        callback.onChunk(finalReply)
+
+                                    val data = line.removePrefix("data:").trim()
+                                    if (data.isEmpty() || data == "[DONE]") {
+                                        continue
+                                    }
+
+                                    runCatching {
+                                        val json = JSONObject(data)
+                                        val choices = json.optJSONArray("choices")
+                                        if (choices != null && choices.length() > 0) {
+                                            choices.getJSONObject(0)
+                                                .optJSONObject("delta")
+                                                ?.optString("content", "")
+                                                .orEmpty()
+                                        } else {
+                                            ""
+                                        }
+                                    }.getOrDefault("").takeIf { it.isNotEmpty() }?.let { chunk ->
+                                        finalReply += chunk
+                                        withContext(Dispatchers.Main) {
+                                            callback.onChunk(finalReply)
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    withContext(Dispatchers.Main) {
-                        callback.onComplete(finalReply)
+                        withContext(Dispatchers.Main) {
+                            callback.onComplete(finalReply)
+                        }
                     }
+                } finally {
+                    cancellationHandle?.dispose()
                 }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
+                if (!currentCoroutineContext().isActive) {
+                    throw CancellationException("AI response was cancelled", error)
+                }
                 withContext(Dispatchers.Main) {
                     callback.onError("Network error: ${error.message}")
                 }
@@ -293,7 +313,7 @@ object AiApiService {
                     return@use null
                 }
 
-                JSONObject(body).optString("content", null)
+                JSONObject(body).optString("content").takeIf { it.isNotBlank() }
             }
         }.getOrNull()
     }

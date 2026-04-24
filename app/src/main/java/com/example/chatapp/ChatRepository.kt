@@ -4,10 +4,13 @@ import android.content.Context
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
+import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.network.dto.ChatShareMessageDto
+import com.example.chatapp.network.dto.CreateChatShareRequest
+import com.example.chatapp.network.dto.CreateChatShareResponse
+import com.example.chatapp.network.dto.RevokeChatShareResponse
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.util.UUID
 
 class ChatRepository(context: Context) {
@@ -16,8 +19,7 @@ class ChatRepository(context: Context) {
     private val dao = db.chatDao()
     private val sessionStore = SharedPrefsAccountSessionStore(context)
     private val scopedSettings = AccountScopedSettings(context)
-
-    fun getAllChatsFlow(): Flow<List<ChatEntity>> = dao.getAllChats(currentOwnerKey())
+    private val baseUrl = BuildConfig.APP_API_BASE_URL
 
     suspend fun getAllChats(): List<ChatEntity> = dao.getAllChatsSync(currentOwnerKey())
 
@@ -55,18 +57,95 @@ class ChatRepository(context: Context) {
         dao.updateChatPinned(chatId, pinned)
     }
 
-    suspend fun deleteAllChats() {
-        val ownerKey = currentOwnerKey()
-        val now = System.currentTimeMillis()
-        dao.markAllChatsDeleted(ownerKey, now)
-        dao.deleteAllMessagesByOwnerKey(ownerKey)
-    }
-
-    fun getMessagesFlow(chatId: String): Flow<List<MessageEntity>> =
-        dao.getMessagesByChatId(chatId)
-
     suspend fun getMessages(chatId: String): List<MessageEntity> =
         dao.getMessagesByChatIdSync(chatId)
+
+    suspend fun createShareLink(chatId: String): Result<CreateChatShareResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val token = requireAuthToken()
+            val chat = getChatById(chatId) ?: error("Chat not found")
+            val messages = getMessages(chatId)
+            if (messages.isEmpty()) {
+                error("Chat is empty")
+            }
+
+            val request = CreateChatShareRequest(
+                sourceChatId = chat.id,
+                title = chat.title.ifBlank { "Shared chat" },
+                summary = chat.summary,
+                messages = messages.map { message ->
+                    ChatShareMessageDto(
+                        role = message.role,
+                        content = message.content,
+                        timestamp = message.timestamp,
+                        imageUrl = message.imageUrl
+                    )
+                }
+            )
+
+            val response = NetworkModule.createChatShareApiService(baseUrl, token)
+                .createChatShare(request)
+            if (!response.isSuccessful) {
+                error(response.errorBody()?.string()?.takeIf { it.isNotBlank() } ?: "Share link creation failed")
+            }
+
+            response.body() ?: error("Empty share response")
+        }
+    }
+
+    suspend fun revokeShareLinks(chatId: String): Result<RevokeChatShareResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val token = requireAuthToken()
+            val response = NetworkModule.createChatShareApiService(baseUrl, token)
+                .revokeChatSharesForChat(chatId)
+            if (!response.isSuccessful) {
+                error(response.errorBody()?.string()?.takeIf { it.isNotBlank() } ?: "Share link revoke failed")
+            }
+
+            response.body() ?: error("Empty revoke response")
+        }
+    }
+
+    suspend fun importSharedChat(shareToken: String): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val response = NetworkModule.createChatShareApiService(baseUrl)
+                .getChatShare(shareToken)
+            if (!response.isSuccessful) {
+                error(response.errorBody()?.string()?.takeIf { it.isNotBlank() } ?: "Share link is unavailable")
+            }
+
+            val snapshot = response.body() ?: error("Empty share response")
+            if (snapshot.messages.isEmpty()) {
+                error("Shared chat is empty")
+            }
+
+            val now = System.currentTimeMillis()
+            val newChatId = UUID.randomUUID().toString()
+            dao.insertChat(
+                ChatEntity(
+                    id = newChatId,
+                    ownerKey = currentOwnerKey(),
+                    title = snapshot.title.ifBlank { "Shared chat" },
+                    timestamp = now,
+                    lastUpdated = now,
+                    summary = snapshot.summary
+                )
+            )
+            dao.insertMessages(
+                snapshot.messages.map { message ->
+                    MessageEntity(
+                        chatId = newChatId,
+                        role = message.role,
+                        content = message.content,
+                        timestamp = message.timestamp,
+                        imageUrl = message.imageUrl,
+                        syncId = UUID.randomUUID().toString()
+                    )
+                }
+            )
+            newChatId
+        }
+    }
 
     suspend fun addUserMessage(chatId: String, content: String, imageUrl: String? = null): Long {
         val msg = MessageEntity(
@@ -93,15 +172,9 @@ class ChatRepository(context: Context) {
         return id
     }
 
-    suspend fun deleteLastAssistantMessage(chatId: String) {
-        dao.deleteLastAssistantMessage(chatId)
-    }
-
     suspend fun deleteMessagesFromIndex(chatId: String, fromIndex: Int) {
         dao.deleteMessagesFromIndex(chatId, fromIndex)
     }
-
-    suspend fun getMessageCount(chatId: String): Int = dao.getMessageCount(chatId)
 
     suspend fun generateChatTitle(
         firstUserMessage: String
@@ -114,25 +187,16 @@ class ChatRepository(context: Context) {
         AiApiService.generateTitle(authToken, firstUserMessage)
     }
 
-    suspend fun getChatHistoryAsJson(chatId: String): List<JSONObject> {
-        return dao.getMessagesByChatIdSync(chatId).map { msg ->
-            JSONObject().apply {
-                put("role", msg.role)
-                put("content", msg.content)
-                if (msg.imageUrl != null) {
-                    put("fileUri", msg.imageUrl)
-                }
-            }
-        }
-    }
-
-    fun currentScopedSettings(): AccountScopedSettings = scopedSettings
-
     private fun currentOwnerKey(): String {
         return sessionStore.getCurrentUserId()?.takeIf { it.isNotBlank() }?.let { "user_$it" }
             ?: sessionStore.getCurrentUserEmail()?.takeIf { it.isNotBlank() }?.let {
                 "email_${it.lowercase().replace(Regex("[^a-z0-9]"), "_")}"
             }
             ?: scopedSettings.currentAccountKey()
+    }
+
+    private fun requireAuthToken(): String {
+        return sessionStore.getAuthToken()?.trim()?.takeIf { it.isNotBlank() }
+            ?: error("Session expired. Sign in again.")
     }
 }

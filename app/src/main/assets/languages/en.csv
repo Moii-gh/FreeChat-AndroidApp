@@ -154,6 +154,14 @@ toast_password_empty;Password cannot be empty
 toast_instructions_saved;Instructions saved
 share_image;Share image
 share;Share
+menu_revoke_share_links;Disable shared links
+toast_share_link_created;Share link created
+toast_share_links_revoked;Shared links disabled
+toast_share_links_not_found;No active shared links
+toast_share_revoke_error;Failed to disable shared links
+toast_share_importing;Opening shared chat...
+toast_share_imported;Shared chat copied
+toast_share_import_error;Failed to open shared chat
 ai_mode_plus_title;Extended mode
 ai_mode_plus_desc;Uses an expanded set of models and capabilities
 ai_mode_free_title;Free mode (with limits)

@@ -13,9 +13,18 @@ const authNonceModel = useMemoryModels
 const aiUsageModel = useMemoryModels
   ? require("./models/memoryAiUsageModel")
   : require("./models/aiUsageModel");
+const chatShareModel = useMemoryModels
+  ? require("./models/memoryChatShareModel")
+  : require("./models/chatShareModel");
 
 if (useMemoryModels && !env.isTest) {
   throw new Error("DATABASE_URL must be configured outside the automated test environment");
 }
 
-module.exports = { userModel, telegramChallengeModel, authNonceModel, aiUsageModel };
+module.exports = {
+  userModel,
+  telegramChallengeModel,
+  authNonceModel,
+  aiUsageModel,
+  chatShareModel
+};

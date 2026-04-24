@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         if (accountSessionStore.isSignedIn()) {
-            startActivity(Intent(this, FreeChatActivity::class.java))
+            openChatActivity(intent?.data)
             finish()
             return
         }
@@ -54,6 +54,11 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (accountSessionStore.isSignedIn() && ChatShareDeepLink.extractToken(intent.data) != null) {
+            openChatActivity(intent.data)
+            finish()
+            return
+        }
         handleTelegramLoginRedirect(intent)
     }
 
@@ -66,6 +71,23 @@ class MainActivity : ComponentActivity() {
     ) = Unit
 
     fun showFilePreview(fileUri: Uri) = Unit
+
+    fun buildPostAuthIntent(): Intent {
+        return Intent(this, FreeChatActivity::class.java).apply {
+            val shareUri = intent?.data?.takeIf { ChatShareDeepLink.extractToken(it) != null }
+            if (shareUri != null) {
+                data = shareUri
+            }
+        }
+    }
+
+    private fun openChatActivity(data: Uri?) {
+        startActivity(Intent(this, FreeChatActivity::class.java).apply {
+            if (ChatShareDeepLink.extractToken(data) != null) {
+                this.data = data
+            }
+        })
+    }
 
     private fun handleTelegramLoginRedirect(intent: Intent?) {
         val uri = intent?.data ?: return

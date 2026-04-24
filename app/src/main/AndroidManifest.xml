@@ -40,6 +40,27 @@
                     android:host="${telegramLoginRedirectHost}"
                     android:pathPrefix="${telegramLoginRedirectPath}" />
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="${chatShareScheme}"
+                    android:host="${chatShareHost}"
+                    android:pathPrefix="/share" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="freechat"
+                    android:host="share" />
+            </intent-filter>
         </activity>
 
         <activity

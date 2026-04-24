@@ -134,6 +134,8 @@ toast_liked;Понравилось!
 toast_disliked;Не понравилось
 toast_copied;Скопировано
 menu_regenerate;Перегенерировать
+menu_edit_message;Редактировать сообщение
+menu_copy_text;Скопировать текст
 toast_image_copied;Изображение скопировано
 toast_image_copy_error;Ошибка копирования изображения
 toast_share_error;Ошибка при попытке поделиться
@@ -154,6 +156,14 @@ toast_password_empty;Пароль не может быть пустым
 toast_instructions_saved;Инструкции сохранены
 share_image;Поделиться изображением
 share;Поделиться
+menu_revoke_share_links;Отключить ссылки
+toast_share_link_created;Ссылка на чат создана
+toast_share_links_revoked;Доступ по ссылкам отключен
+toast_share_links_not_found;Активных ссылок нет
+toast_share_revoke_error;Не удалось отключить ссылки
+toast_share_importing;Открываем чат по ссылке...
+toast_share_imported;Копия чата создана
+toast_share_import_error;Не удалось открыть чат по ссылке
 ai_mode_plus_title;Расширенный режим
 ai_mode_plus_desc;Используется расширенный набор моделей и возможностей
 ai_mode_free_title;Бесплатный режим (с лимитами)

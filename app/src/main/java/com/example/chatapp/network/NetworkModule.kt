@@ -47,6 +47,20 @@ object NetworkModule {
             .create(SyncApiService::class.java)
     }
 
+    fun createChatShareApiService(baseUrl: String, token: String? = null): ChatShareApiService {
+        val clientBuilder = baseClientBuilder(timeoutSeconds = 30)
+        if (!token.isNullOrBlank()) {
+            clientBuilder.addInterceptor(authorizationInterceptor(token))
+        }
+
+        return Retrofit.Builder()
+            .baseUrl(normalizedBaseUrl(baseUrl))
+            .client(clientBuilder.build())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ChatShareApiService::class.java)
+    }
+
     fun createAiHttpClient(token: String): OkHttpClient {
         return baseClientBuilder(timeoutSeconds = 120)
             .addInterceptor(authorizationInterceptor(token))

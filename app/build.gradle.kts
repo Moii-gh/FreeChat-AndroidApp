@@ -22,11 +22,29 @@ if (envFile.exists()) {
 fun String.toBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
-fun isHttpsUrl(value: String): Boolean = runCatching {
-    URI(value).scheme.equals("https", ignoreCase = true)
-}.getOrDefault(false)
-
 val configuredApiBaseUrl = envVars["APP_API_BASE_URL"] ?: "https://api.example.com/api/"
+
+fun derivePublicBaseUrl(apiBaseUrl: String): String {
+    return runCatching {
+        val uri = URI(apiBaseUrl)
+        val path = uri.path.orEmpty().trimEnd('/')
+        val publicPath = if (path.endsWith("/api")) path.removeSuffix("/api") else path
+        URI(
+            uri.scheme,
+            uri.userInfo,
+            uri.host,
+            uri.port,
+            publicPath.ifBlank { null },
+            null,
+            null
+        ).toString().trimEnd('/')
+    }.getOrElse {
+        "https://example.com"
+    }
+}
+
+val configuredChatSharePublicBaseUrl =
+    envVars["CHAT_SHARE_PUBLIC_BASE_URL"] ?: derivePublicBaseUrl(configuredApiBaseUrl)
 
 android {
     namespace = "com.example.chatapp"
@@ -48,6 +66,7 @@ android {
         )
         buildConfigField("String", "PUBLIC_INFO_URL", (envVars["PUBLIC_INFO_URL"] ?: "").toBuildConfigString())
         buildConfigField("String", "SUPPORT_URL", (envVars["SUPPORT_URL"] ?: "").toBuildConfigString())
+        buildConfigField("String", "CHAT_SHARE_PUBLIC_BASE_URL", configuredChatSharePublicBaseUrl.toBuildConfigString())
         val telegramLoginClientId = envVars["TELEGRAM_LOGIN_CLIENT_ID"] ?: ""
         val telegramLoginRedirectUri = envVars["TELEGRAM_LOGIN_REDIRECT_URI"]
             ?: if (telegramLoginClientId.isNotBlank()) {
@@ -72,6 +91,12 @@ android {
         manifestPlaceholders["telegramLoginRedirectPath"] = runCatching {
             URI(telegramLoginRedirectUri).path
         }.getOrNull().orEmpty().ifBlank { "/tglogin" }
+        manifestPlaceholders["chatShareScheme"] = runCatching {
+            URI(configuredChatSharePublicBaseUrl).scheme
+        }.getOrNull().orEmpty().ifBlank { "https" }
+        manifestPlaceholders["chatShareHost"] = runCatching {
+            URI(configuredChatSharePublicBaseUrl).host
+        }.getOrNull().orEmpty().ifBlank { "example.com" }
 
     }
 
@@ -81,10 +106,6 @@ android {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
         }
         release {
-            // if (!isHttpsUrl(configuredApiBaseUrl)) {
-            //     throw GradleException("Release builds require HTTPS APP_API_BASE_URL")
-            // }
-
             buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", "true")
             manifestPlaceholders["usesCleartextTraffic"] = "true"
             isMinifyEnabled = false

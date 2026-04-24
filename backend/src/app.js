@@ -3,13 +3,20 @@ const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
 const { normalizeJsonContentType } = require("./middleware/normalizeJsonContentType");
 const { createAuthenticate } = require("./middleware/authenticate");
-const { userModel, telegramChallengeModel, authNonceModel, aiUsageModel } = require("./modelRegistry");
+const {
+  userModel,
+  telegramChallengeModel,
+  authNonceModel,
+  aiUsageModel,
+  chatShareModel
+} = require("./modelRegistry");
 const emailService = require("./utils/emailTransport");
 const { createAuthRouter } = require("./routes/authRoutes");
 const { createTelegramAuthRouter } = require("./routes/telegramAuthRoutes");
 const { createSyncRouter } = require("./routes/syncRoutes");
 const { createBillingRouter } = require("./routes/billingRoutes");
 const { createAiRouter } = require("./routes/aiRoutes");
+const { createChatShareRouter, createPublicShareRouter } = require("./routes/chatShareRoutes");
 
 function createApp(options = {}) {
   const app = express();
@@ -18,6 +25,7 @@ function createApp(options = {}) {
     options.telegramChallengeModel || telegramChallengeModel;
   const resolvedAuthNonceModel = options.authNonceModel || authNonceModel;
   const resolvedAiUsageModel = options.aiUsageModel || aiUsageModel;
+  const resolvedChatShareModel = options.chatShareModel || chatShareModel;
   const resolvedEmailService = options.emailService || emailService;
   const rateLimitEnabled = options.rateLimitEnabled !== false;
   const authenticate = createAuthenticate({ userModel: resolvedUserModel });
@@ -59,6 +67,17 @@ function createApp(options = {}) {
   );
 
   app.use("/api/sync", createSyncRouter({ authenticate }));
+
+  app.use(
+    "/api/chat-shares",
+    createChatShareRouter({
+      authenticate,
+      chatShareModel: resolvedChatShareModel,
+      rateLimitEnabled
+    })
+  );
+
+  app.use("/share", createPublicShareRouter({ chatShareModel: resolvedChatShareModel }));
 
   app.use(
     "/api/billing",

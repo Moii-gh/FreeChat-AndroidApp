@@ -94,6 +94,26 @@ create table if not exists messages (
     created_at timestamptz not null default now()
 );
 
+create table if not exists chat_share_links (
+    id uuid primary key default gen_random_uuid(),
+    owner_user_id uuid not null references users(id) on delete cascade,
+    source_chat_id uuid not null,
+    token_hash text not null unique,
+    title text not null,
+    summary text not null default '',
+    snapshot_json jsonb not null,
+    expires_at timestamptz not null,
+    revoked_at timestamptz,
+    created_at timestamptz not null default now()
+);
+
+create index if not exists idx_chat_share_links_owner_source
+    on chat_share_links(owner_user_id, source_chat_id);
+
+create index if not exists idx_chat_share_links_active
+    on chat_share_links(token_hash, expires_at)
+    where revoked_at is null;
+
 create table if not exists subscriptions (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null unique references users(id) on delete cascade,

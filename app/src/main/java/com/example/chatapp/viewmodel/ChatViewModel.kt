@@ -14,7 +14,10 @@ import com.example.chatapp.data.NetworkResult
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
 import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.network.dto.CreateChatShareResponse
+import com.example.chatapp.network.dto.RevokeChatShareResponse
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -54,6 +57,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     var isAnonymousChat = false
     var currentMode: String? = null
     var selectedFileUri: Uri? = null
+    private var activeResponseJob: Job? = null
 
     /** Накопленная информация о всех файлах, прикреплённых за сессию чата */
     private val attachedFilesRegistry = mutableListOf<String>()
@@ -108,15 +112,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun deleteAllChats(onCleared: () -> Unit) {
-        viewModelScope.launch {
-            repository.deleteAllChats()
-            cachedChats = emptyList()
-            onCleared()
-            performSync()
-        }
-    }
-
     fun renameChat(chatId: String, newTitle: String, onRenamed: () -> Unit) {
         viewModelScope.launch {
             repository.updateChatTitle(chatId, newTitle)
@@ -140,28 +135,34 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun getMessages(chatId: String) = repository.getMessages(chatId)
 
-    // ──────── Сохранение сообщений в БД ────────
-
-    fun saveUserMessage(chatId: String, content: String, fileUri: String? = null) {
+    fun createShareLink(
+        chatId: String,
+        onResult: (Result<CreateChatShareResponse>) -> Unit
+    ) {
         viewModelScope.launch {
-            repository.addUserMessage(chatId, content, fileUri)
-            performSync()
+            onResult(repository.createShareLink(chatId))
         }
     }
 
-    fun saveAssistantMessage(chatId: String, content: String, onSaved: () -> Unit) {
+    fun revokeShareLinks(
+        chatId: String,
+        onResult: (Result<RevokeChatShareResponse>) -> Unit
+    ) {
         viewModelScope.launch {
-            repository.addAssistantMessage(chatId, content)
-            cachedChats = repository.getAllChats()
-            onSaved()
-            performSync()
+            onResult(repository.revokeShareLinks(chatId))
         }
     }
 
-    fun deleteLastAssistantMessage(chatId: String) {
+    fun importSharedChat(
+        token: String,
+        onResult: (Result<String>) -> Unit
+    ) {
         viewModelScope.launch {
-            repository.deleteLastAssistantMessage(chatId)
-            performSync()
+            val result = repository.importSharedChat(token)
+            if (result.isSuccess) {
+                cachedChats = repository.getAllChats()
+            }
+            onResult(result)
         }
     }
 
@@ -169,17 +170,21 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
      * Удаляет все сообщения из chatHistory начиная с позиции [fromIndex],
      * а также из БД (если чат уже сохранён).
      */
-    fun truncateHistoryFrom(fromIndex: Int) {
+    fun truncateHistoryFrom(fromIndex: Int, onTruncated: (() -> Unit)? = null) {
         // Удаляем из in-memory списка
         while (chatHistory.size > fromIndex) {
             chatHistory.removeAt(chatHistory.lastIndex)
         }
         // Удаляем из БД
-        currentChatId?.let { chatId ->
+        val chatId = currentChatId
+        if (chatId != null) {
             viewModelScope.launch {
                 repository.deleteMessagesFromIndex(chatId, fromIndex)
                 performSync()
+                onTruncated?.invoke()
             }
+        } else {
+            onTruncated?.invoke()
         }
     }
 
@@ -273,35 +278,48 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        viewModelScope.launch {
-            AiApiService.fetchStreamingResponse(
-                authToken = authToken,
-                messagesToKeep = messagesToKeep,
-                currentMode = effectiveMode,
-                customInstructions = customInstructions,
-                chatContextSummary = chatContextSummary,
-                filesContext = filesContext,
-                callback = object : AiApiService.StreamCallback {
-                    override fun onChunk(accumulatedText: String) {
-                        onChunk(accumulatedText)
-                    }
-
-                    override fun onComplete(fullText: String) {
-                        val assistantMessage = JSONObject().apply {
-                            put("role", "assistant")
-                            put("content", fullText)
+        activeResponseJob?.cancel()
+        val responseJob = viewModelScope.launch {
+            try {
+                AiApiService.fetchStreamingResponse(
+                    authToken = authToken,
+                    messagesToKeep = messagesToKeep,
+                    currentMode = effectiveMode,
+                    customInstructions = customInstructions,
+                    chatContextSummary = chatContextSummary,
+                    filesContext = filesContext,
+                    callback = object : AiApiService.StreamCallback {
+                        override fun onChunk(accumulatedText: String) {
+                            onChunk(accumulatedText)
                         }
-                        chatHistory.add(assistantMessage)
-                        saveCompletedResponse(fullText)
-                        onComplete()
-                    }
 
-                    override fun onError(errorMessage: String) {
-                        onError(errorMessage)
+                        override fun onComplete(fullText: String) {
+                            val assistantMessage = JSONObject().apply {
+                                put("role", "assistant")
+                                put("content", fullText)
+                            }
+                            chatHistory.add(assistantMessage)
+                            saveCompletedResponse(fullText)
+                            onComplete()
+                        }
+
+                        override fun onError(errorMessage: String) {
+                            onError(errorMessage)
+                        }
                     }
+                )
+            } finally {
+                if (activeResponseJob == coroutineContext[Job]) {
+                    activeResponseJob = null
                 }
-            )
+            }
         }
+        activeResponseJob = responseJob
+    }
+
+    fun cancelActiveResponse() {
+        activeResponseJob?.cancel()
+        activeResponseJob = null
     }
 
     /**
@@ -316,8 +334,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     for (msg in chatHistory) {
                         val role = msg.getString("role")
                         val content = msg.getString("content")
-                        val fileUriParams = msg.optString("imageUri", null)
-                            .takeIf { it?.isNotEmpty() == true }
+                        val fileUriParams = msg.optString("imageUri").takeIf { it.isNotEmpty() }
                         if (role == "user") {
                             repository.addUserMessage(chatId, content, fileUriParams)
                         } else if (role == "assistant") {
@@ -427,6 +444,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         isAnonymousChat = false
         currentMode = null
         selectedFileUri = null
+        cancelActiveResponse()
         attachedFilesRegistry.clear()
     }
 

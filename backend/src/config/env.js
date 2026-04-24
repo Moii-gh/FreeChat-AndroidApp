@@ -47,6 +47,8 @@ const env = {
   telegramWidgetPublicBaseUrl: process.env.TELEGRAM_WIDGET_PUBLIC_BASE_URL || "",
   telegramWidgetMaxAgeSeconds: Number(process.env.TELEGRAM_WIDGET_MAX_AGE_SECONDS || 300),
   telegramLoginClientId: process.env.TELEGRAM_LOGIN_CLIENT_ID || "",
+  chatSharePublicBaseUrl: process.env.CHAT_SHARE_PUBLIC_BASE_URL || "",
+  chatShareStoreUrl: process.env.CHAT_SHARE_STORE_URL || "",
   aiApiKey: process.env.AI_API_KEY || "",
   aiChatUrl: process.env.AI_CHAT_URL || "",
   aiImageUrl: process.env.AI_IMAGE_URL || "",

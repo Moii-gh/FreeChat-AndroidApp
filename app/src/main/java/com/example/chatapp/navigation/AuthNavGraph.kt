@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.chatapp.BuildConfig
 import com.example.chatapp.FreeChatActivity
+import com.example.chatapp.MainActivity
 import com.example.chatapp.telegram.TelegramNativeLoginClient
 import com.example.chatapp.ui.auth.screens.AboutYouScreen
 import com.example.chatapp.ui.auth.screens.AuthWelcomeScreen
@@ -55,7 +56,9 @@ fun AuthNavGraph(
             when (event) {
                 is AuthEvent.Navigate -> {
                     if (event.route == AuthRoutes.SIGNED_IN) {
-                        activity?.startActivity(Intent(activity, FreeChatActivity::class.java))
+                        val chatIntent = (activity as? MainActivity)?.buildPostAuthIntent()
+                            ?: Intent(activity, FreeChatActivity::class.java)
+                        activity?.startActivity(chatIntent)
                         activity?.finish()
                     } else {
                         navController.navigate(event.route) {
