@@ -6,6 +6,7 @@ import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.ChatShareMessageDto
+import com.example.chatapp.network.dto.ChatShareItemDto
 import com.example.chatapp.network.dto.CreateChatShareRequest
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
@@ -103,6 +104,32 @@ class ChatRepository(context: Context) {
             }
 
             response.body() ?: error("Empty revoke response")
+        }
+    }
+
+    suspend fun revokeShareLinkByToken(token: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        runCatching {
+            val authToken = requireAuthToken()
+            val response = NetworkModule.createChatShareApiService(baseUrl, authToken)
+                .revokeChatShare(token)
+            if (!response.isSuccessful) {
+                error(response.errorBody()?.string()?.takeIf { it.isNotBlank() } ?: "Share link revoke failed")
+            }
+
+            response.body()?.revoked ?: false
+        }
+    }
+
+    suspend fun getMySharedLinks(): Result<List<ChatShareItemDto>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val authToken = requireAuthToken()
+            val response = NetworkModule.createChatShareApiService(baseUrl, authToken)
+                .getMySharedLinks()
+            if (!response.isSuccessful) {
+                error(response.errorBody()?.string()?.takeIf { it.isNotBlank() } ?: "Failed to get shared links")
+            }
+
+            response.body() ?: emptyList()
         }
     }
 

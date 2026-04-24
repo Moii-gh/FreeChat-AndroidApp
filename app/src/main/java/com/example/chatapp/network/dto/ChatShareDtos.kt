@@ -37,6 +37,15 @@ data class ChatShareSnapshotResponse(
 )
 
 @Keep
+data class ChatShareItemDto(
+    val token: String,
+    val title: String,
+    val summary: String,
+    val createdAt: String?,
+    val expiresAt: String
+)
+
+@Keep
 data class RevokeChatShareResponse(
     val revoked: Boolean,
     val revokedCount: Int

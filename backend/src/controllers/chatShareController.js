@@ -79,7 +79,8 @@ function createChatShareController({ chatShareModel }) {
           title,
           summary: summary || "",
           createdAt: createdAt.toISOString(),
-          messages
+          messages,
+          token
         };
 
         await chatShareModel.createShare({
@@ -115,6 +116,31 @@ function createChatShareController({ chatShareModel }) {
         }
 
         return res.status(200).json(toSnapshotResponse(row, token));
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    listMyShares: async (req, res, next) => {
+      try {
+        const userId = req.user.id;
+        const shares = await chatShareModel.findAllActiveByOwnerId(userId);
+
+        const responseList = shares
+          .map(row => {
+            const snapshot = row.snapshot || {};
+            const rowToken = snapshot.token || "";
+            return {
+              token: rowToken,
+              title: snapshot.title || row.title,
+              summary: snapshot.summary || row.summary || "",
+              createdAt: snapshot.createdAt || row.createdAt,
+              expiresAt: row.expiresAt
+            };
+          })
+          .filter(item => item.token !== "");
+
+        return res.status(200).json(responseList);
       } catch (error) {
         return next(error);
       }

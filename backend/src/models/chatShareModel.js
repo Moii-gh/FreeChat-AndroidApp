@@ -57,6 +57,29 @@ async function findActiveByTokenHash(tokenHash, executor) {
   return result.rows[0] || null;
 }
 
+async function findAllActiveByOwnerId(ownerUserId, executor) {
+  const result = await getExecutor(executor).query(
+    `SELECT
+        id,
+        owner_user_id as "ownerUserId",
+        source_chat_id as "sourceChatId",
+        token_hash as "tokenHash",
+        title,
+        summary,
+        snapshot_json as snapshot,
+        created_at as "createdAt",
+        expires_at as "expiresAt"
+     FROM chat_share_links
+     WHERE owner_user_id = $1
+       AND revoked_at IS NULL
+       AND expires_at > now()
+     ORDER BY created_at DESC`,
+    [ownerUserId]
+  );
+
+  return result.rows;
+}
+
 async function revokeByTokenHash(ownerUserId, tokenHash, executor) {
   const result = await getExecutor(executor).query(
     `UPDATE chat_share_links
@@ -88,6 +111,7 @@ async function revokeBySourceChat(ownerUserId, sourceChatId, executor) {
 module.exports = {
   createShare,
   findActiveByTokenHash,
+  findAllActiveByOwnerId,
   revokeByTokenHash,
   revokeBySourceChat
 };

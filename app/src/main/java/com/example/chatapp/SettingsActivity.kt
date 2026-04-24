@@ -65,8 +65,8 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, PersonalizationActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemApps).setHapticClickListener {
-            startActivity(Intent(this, AiModeActivity::class.java))
+        findViewById<View>(R.id.itemLinks).setHapticClickListener {
+            startActivity(Intent(this, SharedLinksActivity::class.java))
         }
 
         findViewById<View>(R.id.itemLanguage).setHapticClickListener {
@@ -141,7 +141,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.btnEditProfile)?.text = LocaleHelper.getString(this, "button_edit_profile")
         findViewById<TextView>(R.id.tvSettingsHeader)?.text = LocaleHelper.getString(this, "setting")
         findViewById<TextView>(R.id.tvLabelPersonalization)?.text = LocaleHelper.getString(this, "button_personalization")
-        findViewById<TextView>(R.id.tvLabelApps)?.text = LocaleHelper.getString(this, "button_apps")
+        findViewById<TextView>(R.id.tvLabelLinks)?.text = "Отправленные чаты" // Replace localization if needed
         findViewById<TextView>(R.id.tvLabelLanguage)?.text = LocaleHelper.getString(this, "button_language")
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
         findViewById<TextView>(R.id.tvLabelSubscription)?.text = "Pro subscription"

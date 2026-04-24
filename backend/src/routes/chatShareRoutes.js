@@ -28,6 +28,7 @@ function createChatShareRouter({ authenticate, chatShareModel, rateLimitEnabled 
     controller.create
   );
 
+  router.get("/", controller.listMyShares);
   router.post("/", ...createMiddlewares);
   router.post("/chats/:chatId/revoke", controller.revokeChat);
   router.delete("/:token", controller.revokeToken);

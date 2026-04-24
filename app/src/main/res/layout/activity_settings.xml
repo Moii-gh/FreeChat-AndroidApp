@@ -197,9 +197,9 @@
                 android:textSize="16sp"/>
         </LinearLayout>
 
-        <!-- Приложения -->
+        <!-- Ссылки -->
         <LinearLayout
-            android:id="@+id/itemApps"
+            android:id="@+id/itemLinks"
             android:layout_width="match_parent"
             android:layout_height="58dp"
             android:orientation="horizontal"
@@ -212,15 +212,15 @@
             <ImageView
                 android:layout_width="26dp"
                 android:layout_height="26dp"
-                android:src="@drawable/ic_apps"
+                android:src="@drawable/ic_link"
                 app:tint="#FFFFFF"/>
 
             <TextView
-                android:id="@+id/tvLabelApps"
+                android:id="@+id/tvLabelLinks"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Приложения"
+                android:text="Отправленные чаты"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
         </LinearLayout>

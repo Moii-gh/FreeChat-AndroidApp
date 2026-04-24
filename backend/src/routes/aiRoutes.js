@@ -14,7 +14,7 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
     "/title",
     rateLimit({
       windowMs: 60 * 1000,
-      limit: 10,
+      limit: 30,
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -28,7 +28,7 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
     "/summary",
     rateLimit({
       windowMs: 60 * 1000,
-      limit: 10,
+      limit: 30,
       standardHeaders: true,
       legacyHeaders: false,
       message: {

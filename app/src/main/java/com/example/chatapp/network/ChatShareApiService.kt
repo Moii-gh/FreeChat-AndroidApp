@@ -1,5 +1,6 @@
 package com.example.chatapp.network
 
+import com.example.chatapp.network.dto.ChatShareItemDto
 import com.example.chatapp.network.dto.ChatShareSnapshotResponse
 import com.example.chatapp.network.dto.CreateChatShareRequest
 import com.example.chatapp.network.dto.CreateChatShareResponse
@@ -21,6 +22,9 @@ interface ChatShareApiService {
     suspend fun getChatShare(
         @Path("token") token: String
     ): Response<ChatShareSnapshotResponse>
+
+    @GET("chat-shares")
+    suspend fun getMySharedLinks(): Response<List<ChatShareItemDto>>
 
     @DELETE("chat-shares/{token}")
     suspend fun revokeChatShare(

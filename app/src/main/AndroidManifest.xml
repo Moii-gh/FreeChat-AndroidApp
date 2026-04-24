@@ -93,6 +93,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
+            android:name=".SharedLinksActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
             android:name=".BillingActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
