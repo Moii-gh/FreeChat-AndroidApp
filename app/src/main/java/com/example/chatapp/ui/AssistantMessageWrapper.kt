@@ -35,7 +35,7 @@ class AssistantMessageWrapper(
 
         fun extractImageUrl(text: String): String? {
             val matcher = IMAGE_MARKDOWN_PATTERN.matcher(text)
-            return if (matcher.find()) matcher.group(1) else null
+            return if (matcher.find()) matcher.group(1)?.trim() else null
         }
 
         fun containsImageReply(text: String): Boolean {
@@ -53,6 +53,7 @@ class AssistantMessageWrapper(
     var imageStatusText: TextView? = null
     var imageIcon: ImageView? = null
     var imageViewResult: ImageView? = null
+    var currentImageUrl: String? = null
 
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
@@ -161,6 +162,38 @@ class AssistantMessageWrapper(
         textShimmerAnimator = null
     }
 
+    private fun ensureImageContainer() {
+        if (imageContainer == null) {
+            val density = context.resources.displayMetrics.density
+            imageContainer = FrameLayout(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    (300 * density).toInt(), (300 * density).toInt()
+                ).apply {
+                    topMargin = (8 * density).toInt()
+                    bottomMargin = (8 * density).toInt()
+                }
+                background = ContextCompat.getDrawable(context, R.drawable.preview_background)
+                clipToOutline = true
+            }
+
+            shimmerBg = View(context).apply {
+                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                background = ContextCompat.getDrawable(context, R.drawable.bg_shimmer_image)
+                alpha = 0.5f
+            }
+            imageContainer?.addView(shimmerBg)
+
+            imageViewResult = ImageView(context).apply {
+                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                visibility = View.GONE
+            }
+            imageContainer?.addView(imageViewResult)
+
+            contentArea.addView(imageContainer)
+        }
+    }
+
     private fun ensureImageLoadingState(statusText: String? = null) {
         if (imageContainer == null) {
             showImageLoadingState()
@@ -184,54 +217,14 @@ class AssistantMessageWrapper(
     fun updateContent(reply: String, animate: Boolean = true) {
         rawText = reply
         val thinkingText = LocaleHelper.getString(context, "ai_thinking")
+        val isStatusMessage = reply == thinkingText || 
+                reply == "Поиск в сети..." || 
+                reply == "Генерация изображения..." || 
+                reply.startsWith("Использование инструмента")
 
-        // Обработка режима генерации изображений
-        if (isImageMode) {
-            val imageUrl = extractImageUrl(reply)
-
-            if (imageUrl?.startsWith("http") == true || imageUrl?.startsWith("data:image") == true) {
-                if (imageContainer == null) showImageLoadingState()
-                pulseAnimator?.cancel()
-                pulseAnimator = null
-                shimmerBg?.visibility = View.GONE
-
-                imageIcon?.setImageResource(R.drawable.ic_check)
-                imageStatusText?.text = LocaleHelper.getString(context, "image_ready")
-                imageViewResult?.visibility = View.VISIBLE
-
-                if (imageUrl.startsWith("data:image")) {
-                    try {
-                        val base64Data = imageUrl.substringAfter(",")
-                        val imageBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                        imageViewResult?.setImageBitmap(bitmap)
-                    } catch (e: Exception) { e.printStackTrace() }
-                } else {
-                    imageViewResult?.load(imageUrl) { crossfade(true) }
-                }
-
-                btnRow?.visibility = View.VISIBLE
-                return
-            }
-            ensureImageLoadingState(
-                statusText = if (reply == thinkingText) {
-                    LocaleHelper.getString(context, "image_creating")
-                } else {
-                    reply
-                }
-            )
+        // Обработка статусов
+        if (isStatusMessage) {
             btnRow?.visibility = View.GONE
-            return
-        }
-
-        // Обработка статуса "Думаю..."
-        if (reply != thinkingText) {
-            btnRow?.visibility = View.VISIBLE
-        } else {
-            btnRow?.visibility = View.GONE
-        }
-
-        if (reply == thinkingText) {
             if (contentArea.childCount == 0) {
                 val textView = TextView(context).apply {
                     setTextColor(Color.parseColor("#8E8E93"))
@@ -241,28 +234,44 @@ class AssistantMessageWrapper(
                 }
                 contentArea.addView(textView)
             }
-            val tv = contentArea.getChildAt(0) as TextView
-            if (tv.text != reply) {
+            val tv = contentArea.getChildAt(0) as? TextView
+            if (tv != null && tv.text != reply) {
                 tv.text = reply
                 applyTextShimmer(tv)
             }
             return
-        } else {
-            textShimmerAnimator?.cancel()
-            textShimmerAnimator = null
-            if (contentArea.childCount > 0) {
-                val tv = contentArea.getChildAt(0) as? TextView
-                if (tv?.paint?.shader != null || tv?.currentTextColor != ContextCompat.getColor(context, android.R.color.white)) {
-                    tv?.paint?.shader = null
-                    tv?.setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                    tv?.invalidate()
-                }
+        }
+
+        btnRow?.visibility = View.VISIBLE
+        textShimmerAnimator?.cancel()
+        textShimmerAnimator = null
+
+        // Удаляем статусную строку, если она была первой
+        if (contentArea.childCount > 0) {
+            val tv = contentArea.getChildAt(0) as? TextView
+            if (tv?.paint?.shader != null || tv?.currentTextColor != ContextCompat.getColor(context, android.R.color.white)) {
+                tv?.paint?.shader = null
+                tv?.setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                tv?.invalidate()
             }
         }
 
+        // Если есть картинка
+        val imageUrl = extractImageUrl(reply)
+        val hasImage = imageUrl?.startsWith("http") == true || imageUrl?.startsWith("data:image") == true
+        val cleanReply = if (hasImage) {
+            // Убираем маркдаун картинки из текста, чтобы не дублировать
+            reply.replace(Regex("!\\[.*?\\]\\(.*?\\)"), "").trim()
+        } else {
+            reply
+        }
+
         // Парсинг текста + кода: разбиваем по ``` разделителю
-        val parts = reply.split("```")
+        val parts = cleanReply.split("```")
         val markwon = io.noties.markwon.Markwon.create(context)
+
+        // Сколько блоков текста и кода мы собираемся показать
+        val textPartsCount = if (cleanReply.isEmpty()) 0 else parts.size
 
         for (i in parts.indices) {
             val part = parts[i]
@@ -314,9 +323,48 @@ class AssistantMessageWrapper(
             }
         }
 
-        // Удаляем лишние view
-        while (contentArea.childCount > parts.size) {
-            contentArea.removeViewAt(contentArea.childCount - 1)
+        // Удаляем лишние view, учитывая imageContainer если он добавлен в конец
+        val expectedViews = textPartsCount + if (hasImage) 1 else 0
+        while (contentArea.childCount > expectedViews) {
+            val view = contentArea.getChildAt(contentArea.childCount - 1)
+            if (view != imageContainer) {
+                contentArea.removeView(view)
+            } else if (!hasImage) {
+                contentArea.removeView(view)
+                imageContainer = null
+            } else {
+                break
+            }
+        }
+
+        if (hasImage && imageUrl != null) {
+            ensureImageContainer()
+            
+            pulseAnimator?.cancel()
+            pulseAnimator = null
+            shimmerBg?.visibility = View.GONE
+            imageViewResult?.visibility = View.VISIBLE
+
+            if (imageUrl.startsWith("data:image")) {
+                if (currentImageUrl != imageUrl) {
+                    currentImageUrl = imageUrl
+                    try {
+                        val base64Data = imageUrl.substringAfter(",")
+                        val imageBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        imageViewResult?.setImageBitmap(bitmap)
+                    } catch (e: Exception) { e.printStackTrace() }
+                }
+            } else {
+                if (currentImageUrl != imageUrl) {
+                    currentImageUrl = imageUrl
+                    imageViewResult?.load(imageUrl) { crossfade(true) }
+                }
+            }
+            
+            // Перемещаем imageContainer в конец
+            contentArea.removeView(imageContainer)
+            contentArea.addView(imageContainer)
         }
 
         // Умный автоскролл: не дёргаем, если пользователь листает вверх

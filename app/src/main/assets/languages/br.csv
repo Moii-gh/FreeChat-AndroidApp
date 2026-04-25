@@ -294,3 +294,16 @@ toast_share_links_revoked;Link condivisi disattivati
 toast_share_revoke_error;Disattivazione dei link non riuscita
 untitled_chat;Senza titolo
 welcome_question;Чым магу дапамагчы?
+
+ai_provider_title;AI Provider
+ai_provider_section;AI Provider
+ai_provider_vsegpt_title;VseGPT (server)
+ai_provider_vsegpt_desc;Requests go through our server. No API key needed.
+ai_provider_openai_title;OpenAI API
+ai_provider_openai_desc;Direct connection to OpenAI with tools. Requires your API key.
+ai_provider_api_key_section;API Key
+ai_provider_api_key_hint;Get your key at platform.openai.com/api-keys
+ai_provider_model_section;Model
+ai_provider_tools_info;🔍 Web Search  •  🎨 Image Generation  •  ✏️ Image Editing\nThe model automatically decides when to use tools.
+ai_provider_key_empty;Please enter your API key
+ai_provider_key_saved;API key saved

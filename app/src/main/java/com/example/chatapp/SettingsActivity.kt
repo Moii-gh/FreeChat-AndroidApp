@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.chatapp.data.AccountScopedSettings
+import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.example.chatapp.util.setHapticClickListener
@@ -21,6 +22,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
     private lateinit var accountSettings: AccountScopedSettings
+    private lateinit var aiProviderSettings: AiProviderSettings
 
     private val pickImage = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -42,6 +44,7 @@ class SettingsActivity : AppCompatActivity() {
         sessionStore = SharedPrefsAccountSessionStore(this)
         accountSettings = AccountScopedSettings(this)
         accountSettings.migrateLegacyDataIfNeeded()
+        aiProviderSettings = AiProviderSettings(accountSettings)
 
         updateProfileUi()
 
@@ -63,6 +66,10 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.itemPersonalization).setHapticClickListener {
             startActivity(Intent(this, PersonalizationActivity::class.java))
+        }
+
+        findViewById<View>(R.id.itemAiProvider).setHapticClickListener {
+            startActivity(Intent(this, AiProviderActivity::class.java))
         }
 
         findViewById<View>(R.id.itemLinks).setHapticClickListener {
@@ -146,6 +153,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvLabelLinks)?.text = LocaleHelper.getString(this, "settings_shared_links")
         findViewById<TextView>(R.id.tvLabelLanguage)?.text = LocaleHelper.getString(this, "button_language")
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
+        findViewById<TextView>(R.id.tvLabelAiProvider)?.text = LocaleHelper.getString(this, "ai_provider_title")
+        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
         findViewById<TextView>(R.id.tvLabelSubscription)?.text = LocaleHelper.getString(this, "settings_subscription")
         findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
         findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")

@@ -190,6 +190,47 @@
                 android:textSize="16sp"/>
         </LinearLayout>
 
+        <!-- AI Provider -->
+        <LinearLayout
+            android:id="@+id/itemAiProvider"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_brain"
+                app:tint="#FFFFFF"/>
+
+            <TextView
+                android:id="@+id/tvLabelAiProvider"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"/>
+
+            <TextView
+                android:id="@+id/tvAiProviderValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#8E8E93"
+                android:textSize="13sp"/>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_chevron_right"/>
+        </LinearLayout>
+
         <!-- Ссылки -->
         <LinearLayout
             android:id="@+id/itemLinks"

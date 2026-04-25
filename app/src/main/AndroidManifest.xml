@@ -88,6 +88,12 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
+            android:name=".AiProviderActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
             android:name=".SecurityActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"/>

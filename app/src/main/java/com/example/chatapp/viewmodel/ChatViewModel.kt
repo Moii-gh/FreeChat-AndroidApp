@@ -13,7 +13,10 @@ import com.example.chatapp.data.AuthRepository
 import com.example.chatapp.data.NetworkResult
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
+import com.example.chatapp.network.AiProvider
+import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.network.OpenAiDirectService
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +58,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         service = NetworkModule.createAuthApiService(com.example.chatapp.BuildConfig.APP_API_BASE_URL),
         localize = LocaleHelper.localizer(application)
     )
+    private val aiProviderSettings = AiProviderSettings(accountSettings)
 
     // ──────── Состояние текущего чата ────────
     val chatHistory = mutableListOf<JSONObject>()
@@ -280,16 +284,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         // Фоновая суммаризация при необходимости
         if (messagesToSummarize.isNotEmpty() && currentChatId != null) {
-            val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
-            if (authToken.isNotEmpty()) {
-                launchSummarization(authToken, messagesToSummarize)
+            val summAuthToken = sessionStore.getAuthToken()?.trim().orEmpty()
+            val canSummarize = summAuthToken.isNotEmpty() ||
+                (aiProviderSettings.getProvider() == AiProvider.OPENAI && aiProviderSettings.getOpenAiApiKey().isNotBlank())
+            if (canSummarize) {
+                launchSummarization(summAuthToken, messagesToSummarize)
             }
         }
 
         val customInstructions = accountSettings.getUserInstructions()
         val filesContext = buildFilesContext()
         val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
-        if (authToken.isBlank()) {
+        if (authToken.isBlank() && aiProviderSettings.getProvider() == AiProvider.VSEGPT) {
             onError(LocaleHelper.getString(getApplication(), "session_expired_sign_in"))
             return
         }
@@ -297,38 +303,56 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         activeResponseJob?.cancel()
         val responseJob = viewModelScope.launch {
             try {
-                AiApiService.fetchStreamingResponse(
-                    authToken = authToken,
-                    messagesToKeep = messagesToKeep,
-                    currentMode = effectiveMode,
-                    customInstructions = customInstructions,
-                    chatContextSummary = chatContextSummary,
-                    filesContext = filesContext,
-                    callback = object : AiApiService.StreamCallback {
-                        override fun onChunk(accumulatedText: String) {
-                            onChunk(accumulatedText)
-                        }
-
-                        override fun onComplete(fullText: String) {
-                            val generatedImage = extractImageAttachment(fullText)
-                            val assistantMessage = JSONObject().apply {
-                                put("role", "assistant")
-                                put("content", fullText)
-                                generatedImage.imageUrl?.let { put("imageUri", it) }
-                                generatedImage.attachmentData?.let { put("base64", it) }
-                                generatedImage.mimeType?.let { put("mimeType", it) }
-                                generatedImage.fileName?.let { put("fileName", it) }
-                            }
-                            chatHistory.add(assistantMessage)
-                            saveCompletedResponse(fullText)
-                            onComplete()
-                        }
-
-                        override fun onError(errorMessage: String) {
-                            onError(errorMessage)
-                        }
+                val streamCallback = object : AiApiService.StreamCallback {
+                    override fun onChunk(accumulatedText: String) {
+                        onChunk(accumulatedText)
                     }
-                )
+
+                    override fun onComplete(fullText: String) {
+                        val generatedImage = extractImageAttachment(fullText)
+                        val assistantMessage = JSONObject().apply {
+                            put("role", "assistant")
+                            put("content", fullText)
+                            generatedImage.imageUrl?.let { put("imageUri", it) }
+                            generatedImage.attachmentData?.let { put("base64", it) }
+                            generatedImage.mimeType?.let { put("mimeType", it) }
+                            generatedImage.fileName?.let { put("fileName", it) }
+                        }
+                        chatHistory.add(assistantMessage)
+                        saveCompletedResponse(fullText)
+                        onComplete()
+                    }
+
+                    override fun onError(errorMessage: String) {
+                        onError(errorMessage)
+                    }
+                }
+
+                when (aiProviderSettings.getProvider()) {
+                    AiProvider.OPENAI -> {
+                        val apiKey = aiProviderSettings.getOpenAiApiKey()
+                        OpenAiDirectService.fetchStreamingResponse(
+                            apiKey = apiKey,
+                            messagesToKeep = messagesToKeep,
+                            currentMode = effectiveMode,
+                            customInstructions = customInstructions,
+                            chatContextSummary = chatContextSummary,
+                            filesContext = filesContext,
+                            callback = streamCallback
+                        )
+                    }
+                    AiProvider.VSEGPT -> {
+                        AiApiService.fetchStreamingResponse(
+                            authToken = authToken,
+                            messagesToKeep = messagesToKeep,
+                            currentMode = effectiveMode,
+                            customInstructions = customInstructions,
+                            chatContextSummary = chatContextSummary,
+                            filesContext = filesContext,
+                            callback = streamCallback
+                        )
+                    }
+                }
             } finally {
                 if (activeResponseJob == coroutineContext[Job]) {
                     activeResponseJob = null
@@ -419,10 +443,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         if (hash != cachedHash) {
             viewModelScope.launch(Dispatchers.IO) {
-                val summaryReply = AiApiService.summarizeMessages(
-                    authToken = authToken,
-                    messagesToSummarize = messagesToSummarize
-                )
+                val summaryReply = when (aiProviderSettings.getProvider()) {
+                    AiProvider.OPENAI -> OpenAiDirectService.summarizeMessages(
+                        apiKey = aiProviderSettings.getOpenAiApiKey(),
+                        messagesToSummarize = messagesToSummarize
+                    )
+                    AiProvider.VSEGPT -> AiApiService.summarizeMessages(
+                        authToken = authToken,
+                        messagesToSummarize = messagesToSummarize
+                    )
+                }
                 if (summaryReply != null) {
                     val newSummary = if (chatContextSummary.isNotEmpty()) {
                         "$chatContextSummary\n$summaryReply"

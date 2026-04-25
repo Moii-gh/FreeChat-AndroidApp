@@ -231,6 +231,16 @@ class AccountScopedSettings(
         prefs.edit().putString(scopedKey("user_instructions"), value).apply()
     }
 
+    /** Generic scoped string getter for arbitrary keys */
+    fun getString(key: String): String {
+        return prefs.getString(scopedKey(key), "") ?: ""
+    }
+
+    /** Generic scoped string setter for arbitrary keys */
+    fun saveString(key: String, value: String) {
+        prefs.edit().putString(scopedKey(key), value).apply()
+    }
+
     fun currentAccountKey(): String {
         val userId = prefs.getString(SharedPrefsAccountSessionStore.KEY_USER_ID, null)
         if (!userId.isNullOrBlank()) {

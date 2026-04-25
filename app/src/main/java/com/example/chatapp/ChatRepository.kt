@@ -4,7 +4,10 @@ import android.content.Context
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
+import com.example.chatapp.network.AiProvider
+import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.network.OpenAiDirectService
 import com.example.chatapp.network.dto.ChatShareMessageDto
 import com.example.chatapp.network.dto.ChatShareItemDto
 import com.example.chatapp.network.dto.CreateChatShareRequest
@@ -20,6 +23,7 @@ class ChatRepository(context: Context) {
     private val dao = db.chatDao()
     private val sessionStore = SharedPrefsAccountSessionStore(context)
     private val scopedSettings = AccountScopedSettings(context)
+    private val aiProviderSettings = AiProviderSettings(scopedSettings)
     private val baseUrl = BuildConfig.APP_API_BASE_URL
 
     suspend fun getAllChats(): List<ChatEntity> = dao.getAllChatsSync(currentOwnerKey())
@@ -238,12 +242,18 @@ class ChatRepository(context: Context) {
     suspend fun generateChatTitle(
         firstUserMessage: String
     ): String? = withContext(Dispatchers.IO) {
-        val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
-        if (authToken.isBlank()) {
-            return@withContext null
+        when (aiProviderSettings.getProvider()) {
+            AiProvider.OPENAI -> {
+                val apiKey = aiProviderSettings.getOpenAiApiKey()
+                if (apiKey.isBlank()) return@withContext null
+                OpenAiDirectService.generateTitle(apiKey, firstUserMessage)
+            }
+            AiProvider.VSEGPT -> {
+                val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
+                if (authToken.isBlank()) return@withContext null
+                AiApiService.generateTitle(authToken, firstUserMessage)
+            }
         }
-
-        AiApiService.generateTitle(authToken, firstUserMessage)
     }
 
     private fun currentOwnerKey(): String {

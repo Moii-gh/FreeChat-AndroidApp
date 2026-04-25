@@ -294,3 +294,16 @@ toast_share_links_revoked;Доступ по ссылкам отключен
 toast_share_revoke_error;Не удалось отключить ссылки
 untitled_chat;Без названия
 welcome_question;Чем могу помочь?
+
+ai_provider_title;AI Провайдер
+ai_provider_section;Провайдер ИИ
+ai_provider_vsegpt_title;VseGPT (сервер)
+ai_provider_vsegpt_desc;Запросы идут через наш сервер. API ключ не нужен.
+ai_provider_openai_title;OpenAI API
+ai_provider_openai_desc;Прямое подключение к OpenAI с tools. Нужен ваш API ключ.
+ai_provider_api_key_section;Ключ API
+ai_provider_api_key_hint;Получите ключ на platform.openai.com/api-keys
+ai_provider_model_section;Модель
+ai_provider_tools_info;🔍 Поиск в интернете  •  🎨 Генерация изображений  •  ✏️ Редактирование изображений\nМодель сама определяет, когда использовать инструменты.
+ai_provider_key_empty;Пожалуйста, введите API ключ
+ai_provider_key_saved;API ключ сохранён
