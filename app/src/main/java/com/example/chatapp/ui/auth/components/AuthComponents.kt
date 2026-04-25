@@ -56,6 +56,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.ui.auth.theme.AppBlack
 import com.example.chatapp.ui.auth.theme.AppButtonDisabled
@@ -114,7 +115,7 @@ fun AuthScreenLayout(
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Назад",
+                                contentDescription = LocaleHelper.getString(androidx.compose.ui.platform.LocalContext.current, "content_desc_back"),
                                 tint = AppTextPrimary
                             )
                         }
@@ -437,7 +438,7 @@ fun OrDivider() {
             color = AppStroke
         )
         Text(
-            text = "или",
+            text = LocaleHelper.getString(androidx.compose.ui.platform.LocalContext.current, "auth_or"),
             style = MaterialTheme.typography.bodyMedium,
             color = AppTextMuted
         )
@@ -458,14 +459,14 @@ fun FooterLinks(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Условия пользования",
+            text = LocaleHelper.getString(androidx.compose.ui.platform.LocalContext.current, "auth_terms"),
             style = MaterialTheme.typography.bodyMedium,
             color = AppTextSecondary,
             textDecoration = TextDecoration.Underline,
             modifier = Modifier.clickable(onClick = onTermsClick)
         )
         Text(
-            text = "Политика конфиденциальности",
+            text = LocaleHelper.getString(androidx.compose.ui.platform.LocalContext.current, "auth_privacy_policy"),
             style = MaterialTheme.typography.bodyMedium,
             color = AppTextSecondary,
             textDecoration = TextDecoration.Underline,
@@ -477,7 +478,7 @@ fun FooterLinks(
 @Composable
 fun AgreementHint() {
     Text(
-        text = "Данные понадобятся только для настройки вашего аккаунта в FreeChat.",
+        text = LocaleHelper.getString(androidx.compose.ui.platform.LocalContext.current, "auth_agreement_hint"),
         style = MaterialTheme.typography.bodyMedium,
         color = AppTextSecondary,
         textAlign = TextAlign.Center

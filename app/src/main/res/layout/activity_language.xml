@@ -30,7 +30,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Язык"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"/>
@@ -57,7 +56,6 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="12dp"
         android:layout_marginBottom="12dp"
-        android:text="Выбрать язык"
         android:textColor="#8E8E93"
         android:textSize="14sp"/>
 

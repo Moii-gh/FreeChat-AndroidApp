@@ -30,7 +30,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Безопасность"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"/>
@@ -43,7 +42,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="12dp"
-        android:text="Ваш пароль:"
         android:textColor="#FFFFFF"
         android:textSize="16sp"/>
 
@@ -55,7 +53,6 @@
         android:layout_marginTop="8dp"
         android:background="@drawable/edit_text_bg"
         android:paddingHorizontal="16dp"
-        android:text="mypassword123"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:inputType="textPassword"
@@ -69,7 +66,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="20dp"
-        android:text="Показать пароль"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:clickable="true"
@@ -84,7 +80,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
-        android:text="Сменить пароль"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:clickable="true"
@@ -99,7 +94,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
-        android:text="Сохранить изменения"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:clickable="true"
@@ -131,7 +125,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="FreeChat Android 1.4.5"
             android:textColor="#8E8E93"
             android:textSize="12sp"/>
     </LinearLayout>

@@ -33,7 +33,7 @@ object TelegramNativeLoginClient {
         scopes: List<String>
     ): Result<Unit> {
         if (clientId.isBlank() || redirectUri.isBlank()) {
-            return Result.failure(IllegalStateException("Telegram Login не настроен"))
+            return Result.failure(IllegalStateException("auth_error_telegram_login_not_configured"))
         }
 
         return runCatching {
@@ -85,7 +85,7 @@ object TelegramNativeLoginClient {
 
         val code = uri.getQueryParameter("code")
         if (code.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("Telegram не вернул authorization code"))
+            return Result.failure(IllegalStateException("auth_error_telegram_code_missing"))
         }
 
         val state = uri.getQueryParameter("state")
@@ -94,7 +94,7 @@ object TelegramNativeLoginClient {
         val expectedNonce = loadSecureValue(context, KEY_ID_TOKEN_NONCE)
 
         if (verifier.isNullOrBlank() || expectedNonce.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("Сессия Telegram Login истекла. Попробуйте ещё раз."))
+            return Result.failure(IllegalStateException("auth_error_telegram_session_expired"))
         }
 
         if (state != null && state != expectedState) {

@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.ui.auth.components.AuthTestTags
 import com.example.chatapp.ui.auth.components.BirthDateWheelPicker
 import com.example.chatapp.ui.auth.components.PrimaryActionButton
@@ -48,6 +50,7 @@ fun BirthDatePickerScreen(
     onYearSelected: (Int) -> Unit,
     onConfirm: () -> Unit
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -69,7 +72,7 @@ fun BirthDatePickerScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Назад",
+                    contentDescription = LocaleHelper.getString(context, "content_desc_back"),
                     tint = AppTextPrimary
                 )
             }
@@ -103,7 +106,7 @@ fun BirthDatePickerScreen(
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
-                    text = "Выбери свой день рождения",
+                    text = LocaleHelper.getString(context, "auth_birth_date_picker_title"),
                     style = MaterialTheme.typography.titleLarge,
                     color = AppTextPrimary,
                     textAlign = TextAlign.Center,
@@ -120,7 +123,7 @@ fun BirthDatePickerScreen(
                 )
                 Spacer(modifier = Modifier.height(22.dp))
                 PrimaryActionButton(
-                    text = "Подтвердить",
+                    text = LocaleHelper.getString(context, "button_confirm"),
                     enabled = true,
                     loading = false,
                     onClick = onConfirm

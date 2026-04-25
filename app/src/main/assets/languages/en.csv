@@ -1,180 +1,296 @@
 TID;TEXT
-welcome_question;What can I help you with?
-button_create_image;Create image
-button_help_me_write;Help me write
-button_create_idea;Create an idea
-button_write_code;Write code
-main_panel_input;Ask a question
+action_create_image;Create image
+ai_default_image_prompt;Creative image
+ai_mode_server_routing_desc;Models and limits are selected on the server for the current account.
+ai_mode_server_routing_title;Server routing
+ai_mode_task_modes_desc;Image, search, shopping, and study modes add context to the request without switching the model manually.
+ai_mode_task_modes_title;Task modes
+ai_mode_title;AI mode
+ai_prompt_attached_file;Attached file
+ai_prompt_binary_file_no_excerpt;(Binary file without text excerpt)
+ai_prompt_chat_context_summary;Compressed context from the previous dialogue:\n%s
+ai_prompt_files_context;Brief excerpts from previously attached files:\n%s
+ai_prompt_short_excerpt;Short excerpt
+ai_prompt_user_instructions;User instructions:\n%s
+ai_summary_file_excerpt_label;File excerpt
+ai_summary_file_label;File
+ai_summary_prompt;Make a short summary of the important facts from this part of the conversation:
+ai_system_prompt_shopping;You are a shopping assistant. Find options, compare characteristics, and note real limitations.
+ai_system_prompt_study;You are a study assistant. Explain step by step, check understanding, and help reinforce the material.
+ai_thinking;Thinking...
+anonymous_mode_desc;Your chat will not be saved on the device.\nAfter closing the tab, all messages will disappear without a trace.
+anonymous_mode_title;Incognito mode
+app_brand;FreeChat
+app_version;FreeChat Android %s
+attachment_context_file_summary;File summary
+attachment_context_mime;MIME
+attachment_context_preview;Preview
+attachment_context_truncated;[Context truncated for privacy and token safety]
+attachment_empty_text;[File/Image without text]
+attachment_read_error;Could not read attachment
+attachment_text_truncated;[File content truncated]
+attachment_too_large;Attachment is too large to analyze
+auth_about_subtitle;This information is only needed for your FreeChat profile.
+auth_about_title;Tell us about yourself
+auth_agreement_hint;Data is only needed to set up your FreeChat account.
+auth_birth_date_picker_title;Choose your birthday
+auth_birth_date_placeholder;Date of birth
+auth_bot_code_placeholder;Code from bot
+auth_continue_with_telegram;Continue with Telegram
+auth_create_account;Create account
+auth_error_birth_date_required;Choose your date of birth
+auth_error_bot_link_not_ready;Telegram bot link is not ready yet
+auth_error_code_required;Enter the 6-digit code
+auth_error_full_name_required;Enter your full name
+auth_error_password_too_short;Password must contain at least 6 characters
+auth_error_restart_login;Start sign-in again
+auth_error_restart_registration;Start registration again
+auth_error_telegram_code_missing;Telegram did not return an authorization code
+auth_error_telegram_cross_app_failed;Telegram cross-app auth failed: %s
+auth_error_telegram_id_token_missing;Telegram did not return id_token
+auth_error_telegram_login_not_configured;Telegram Login is not configured. Set TELEGRAM_LOGIN_CLIENT_ID and TELEGRAM_LOGIN_REDIRECT_URI.
+auth_error_telegram_malformed_id_token;Telegram returned a malformed ID token
+auth_error_telegram_native_url_missing;Telegram did not return a native auth URL
+auth_error_telegram_nonce_mismatch;Telegram ID token nonce does not match
+auth_error_telegram_session_expired;Telegram Login session expired. Try again.
+auth_error_telegram_token_exchange_failed;Telegram token exchange failed: %s
+auth_error_verify_code_first;Confirm the Telegram code first
+auth_full_name_placeholder;Full name
+auth_info_login_canceled;Telegram sign-in canceled
+auth_info_opening_telegram;Opening Telegram...
+auth_info_verifying_telegram_data;Verifying Telegram data...
+auth_info_verifying_telegram_token;Verifying Telegram ID token...
+auth_open_telegram;Open Telegram
+auth_opening_telegram;Opening Telegram...
+auth_or;or
+auth_password_placeholder;Password
+auth_password_subtitle;Telegram is confirmed. Now set a password to finish creating the account.
+auth_password_title;Create a password
+auth_privacy_policy;Privacy policy
+auth_refresh_widget;Refresh widget
+auth_signed_in_desc;You can continue working inside the app.
+auth_signed_in_subtitle;Account confirmed and authorization is complete.
+auth_signed_in_title;You are signed in to FreeChat
+auth_telegram_code_register_subtitle;We opened the Telegram bot. Send /start and enter the code from the chat to continue registration.
+auth_telegram_code_title;Confirm Telegram
+auth_telegram_code_widget_subtitle;Confirm sign-in in the Telegram Login Widget.
+auth_telegram_confirmed_desc;You are continuing sign-in with a confirmed FreeChat account.
+auth_telegram_confirmed_title;Telegram confirmed
+auth_telegram_login_not_completed;Telegram Login was not completed
+auth_telegram_login_open_error;Could not open Telegram Login
+auth_telegram_open_error;Could not open Telegram. Check that it is installed.
+auth_telegram_read_response_error;Could not read Telegram response
+auth_telegram_widget_backend_not_configured;Telegram Login Widget is not configured on the backend. Check TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME.
+auth_telegram_widget_load_error;Could not load Telegram Login Widget
+auth_telegram_widget_server_open_error;The server could not open Telegram Login Widget
+auth_telegram_widget_subtitle;Confirm sign-in in the official Telegram Login Widget.
+auth_telegram_widget_title;Sign in with Telegram
+auth_telegram_widget_unavailable;No connection or Telegram Login Widget is unavailable
+auth_terms;Terms of use
+auth_welcome_subtitle;Confirm Telegram to create a new account or safely sign in to FreeChat.
+auth_welcome_title;Sign in or sign up
+billing_auto_renew_disabled;Auto-renew disabled.
+billing_cancel_auto_renew;Cancel auto-renew
+billing_checkout_url_missing;Checkout URL is missing.
+billing_current_period_end;Current period end
+billing_hint_active_pro;Your account can use server-side pro models. Renewals are handled by YooKassa.
+billing_hint_cancel_at_period_end;Pro access remains active until the paid period ends. Auto-renew is disabled.
+billing_hint_pending;Complete payment in the browser. Access switches on after the YooKassa webhook reaches the server.
+billing_hint_server_controlled;Access is controlled on the server.
+billing_hint_upgrade;This unlocks higher-tier models on the server. The client no longer selects the model itself.
+billing_payment_page_opened;Payment page opened.
+billing_plan;Plan
+billing_plan_free;Free
+billing_plan_pro;Pro
+billing_price;Price
+billing_price_rub_30_days;%s RUB / 30 days
+billing_refresh_status;Refresh status
+billing_status;Status
+billing_status_active;Active
+billing_status_active_until_period_end;Active until period end
+billing_status_auto_renew_disabled;Auto-renew disabled
+billing_status_expired;Expired
+billing_status_inactive;Inactive
+billing_status_payment_issue;Payment issue
+billing_status_pending_payment;Pending payment
+billing_status_unknown;Unknown status: %s
+billing_upgrade_for_rub;Upgrade for %s RUB
+button_about;About
 button_camera;Camera
-button_photo;Photo
-button_files;Files
+button_cancel;Cancel
+button_change_password;Change password
+button_confirm;Confirm
+button_continue;Continue
+button_create_idea;Create an idea
 button_create_image;Create image
 button_create_image_description;Create any image
-button_Search_the_web;Search the web
-button_Search_the_web_description;Search for new information in real-time
-button _purchase_research;Purchase research
-button _purchase_research_description;Get a detailed shopping guide
-button_stud_ and_training;Study and training
-button_stud_ and_training_description;Learn a new concept
-panel_create_image;Image
-main_panel_input_create_image;Create image
-panel_search;Search
-main_panel_input_panel_search;Search the web
-panel_purchase_research;Purchase research
-main_panel_input_purchase_research;Product search
-panel_stud_ and_training;Study
-main_panel_stud_ and_training;Training and study
-button_new_chat;New chat
-button_telegram_bot;Telegram bot
-history_lable_today;Today
-history_lable_in_the_last_7_days;In the last 7 days
-history_lable_previously;Previously
-user_subscription;Free
-interlineation;FreeChat tries its best, but may make mistakes
-profile_and_settings;Profile and settings
-button_edit_profile;Edit profile
-setting;Settings
-button_personalization;Personalization
-button_apps;AI Mode
-button_language;Language
-button_security;Security
-button_Information_about;About
-button_report_a_problem;Report a problem
-app_version;FreeChat Android <version>
-user_email;<mail>
-user_input;<user_input>
-chat_ai_output;<chat_ai_output>
-add_input_photo;<add_input_photo>
-add_input_files;<add_input_files>
-panel_edit_name;Name
-input_edit_name;<input_edit_name>
-panel_edit_emeil;Email
-input_edit_email;<input_edit_email>
-lable_personalization;Personalization
-lable_personalization_instructions;Custom instructions
-input_personalization_instructions;<input_personalization_instructions>
-lable_language;Language
-lable_select_language;Select language
-button_select_language_russian;Русский
-button_select_language_english;English
-button_select_language_ukrainian;Українська
-button_select_language_french;Français
-button_select_language_italian;Italiano
-button_select_language_old_russian;Руснацькый
-button_select_language_pirate_speak;Pirate Speak
-button_select_language_hindi;हिन्दी (Hindi)
-button_select_language_georgian;ქართული (Georgian)
-lable_security;Security
-lable_your_password;Your password
-input_password;<input_password>
-button_show_password;Show password
-button_hide_password;Hide password
-button_change_password;Change password
-lable_apps;AI Mode
-button_lable_search_for_apps;Search for apps
-input_search_for_apps;<input_search_for_apps>
-button_lable_all_apps;All apps
-button_mycalculator;MyCalculator
-app_mycalculator_description;Romanikha Tsvetkova Calculator
-main_lable_mycalculator;MyCalculator
-button_install_app;Install
-in_app_mycalculator_description;Romanikha Tsvetkova Calculator
-app_description;Description
-app_description_2;MyCalculator
-rating_app;1,1
-total_rating_app;203.9K ratings
-total_install_app;40M+
-install_app_description;Downloads
-total_weight_app;30.1 MB
-weight_app_deacription;Size
-button_write_a_review;Write a review
-toast_no_limits;No limits in current mode.
-toast_anonymous_chat;Anonymous chat
-speech_speak_now;Speak now...
-speech_listening;Listening...
-speech_error_audio;Audio error
-speech_error_client;Client error
-speech_error_permission;No permission
-speech_error_network;Network error
-speech_error_no_match;Speech not recognized
-speech_error_busy;Service busy
-speech_error_server;Server error
-speech_error_timeout;Silence
-speech_error_generic;Recognition error
-toast_chat_deleted;Chat deleted
-dialog_confirm;Confirmation
-dialog_delete_all_history;Delete ALL chat history?
 button_delete;Delete
-toast_all_history_deleted;All history deleted
-button_cancel;Cancel
-section_pinned;Pinned
-no_chat_history;No chat history
-no_search_results;Nothing found
-menu_rename;Rename
-menu_unpin_chat;Unpin chat
-menu_pin_chat;Pin chat
-toast_chat_not_saved;Chat not saved
-label_untitled;Untitled
-dialog_rename_hint;New name
+button_edit_profile;Edit profile
+button_files;Files
+button_hide_password;Hide password
+button_language;Language
+button_more;More
+button_new_chat;New chat
 button_ok;OK
-toast_load_error;Load error
-toast_chat_empty;Chat is empty
-export_sender_you;You
+button_personalization;Personalization
+button_photo;Photo
+button_purchase_research;Purchase research
+button_purchase_research_description;Get a detailed shopping guide
+button_report_problem;Report a problem
+button_save;Save
+button_search_web;Search the web
+button_search_web_description;Search for new information in real-time
+button_security;Security
+button_show_password;Show password
+button_study_training;Study and training
+button_study_training_description;Learn a new concept
+chat_error_empty;Chat is empty
+chat_error_not_found;Chat not found
+code_copied;Copied!
+code_copy;Copy
+code_default_language;Code
+content_desc_add_attachment;Add attachment
+content_desc_anonymous_chat;Incognito chat
+content_desc_back;Back
+content_desc_clear_mode;Clear mode
+content_desc_menu;Menu
+content_desc_microphone;Microphone
+content_desc_more_options;More options
+content_desc_new_chat;New chat
+content_desc_remove_attachment;Remove attachment
+content_desc_send;Send
+dialog_change_password;Change password
+dialog_rename_hint;New name
 export_sender_bot;Bot
-toast_doc_saved;Document saved
-toast_doc_error;Error creating document
-toast_limits_exhausted;You have run out of free requests for today! Press the +5 button above.
-toast_error;Error
-toast_open_attachment_error;Failed to open attachment
+export_sender_you;You
+external_link_unavailable;Link is unavailable
+hint_create_image;Describe the image you want to create
+history_label_last_7_days;In the last 7 days
+history_label_previously;Previously
+history_label_today;Today
 image_creating;Creating images...
 image_ready;Image ready
-code_copy;Copy
-code_copied;Copied!
-toast_liked;Liked!
-toast_disliked;Disliked
-toast_copied;Copied
+label_email;Email
+label_file_analysis;File/photo analysis
+label_name;Name
+label_new_chat;New chat
+label_personalization;Personalization
+label_personalization_instructions;Custom instructions
+label_select_language;Select language
+label_user;User
+label_your_password;Your password
+language_name_br;Belarusian
+language_name_en;English
+language_name_fr;French
+language_name_go;Georgian
+language_name_it;Italian
+language_name_ru;Russian
+language_name_uk;Ukrainian
+main_panel_input;Ask a question
+main_panel_input_create_image;Create image
+main_panel_input_panel_search;Search the web
+main_panel_input_purchase_research;Product search
+main_panel_study_training;Training and study
+menu_copy_text;Copy text
+menu_edit_message;Edit message
+menu_pin_chat;Pin chat
 menu_regenerate;Regenerate
+menu_rename;Rename
+menu_revoke_share_links;Disable shared links
+menu_unpin_chat;Unpin chat
+network_connect_error;Could not connect to the server
+network_empty_response;Empty server response
+network_error_with_message;Network error: %s
+network_http_error;Error %s
+network_unknown_error;Unknown error
+no_chat_history;No chat history
+no_search_results;Nothing found
+not_available;-
+panel_create_image;Image
+panel_purchase_research;Purchase research
+panel_search;Search
+panel_study_training;Study
+password_confirm_new_hint;Confirm new password
+password_current_hint;Current password
+password_error_current_required;Enter current password
+password_error_mismatch;Passwords do not match
+password_error_new_too_short;New password must be at least 6 characters
+password_new_hint;New password
+password_securely_stored;Password is stored securely
+password_sign_in_again;Sign in again
+profile_and_settings;Profile and settings
+prompt_idea_prefix;Brainstorm some ideas
+quick_suggestion_idea_1;Brainstorm ideas for my next vacation
+quick_suggestion_idea_2;Brainstorm ideas for a brand campaign
+quick_suggestion_idea_3;Brainstorm ideas for a new workout plan
+quick_suggestion_idea_4;Brainstorm ideas for a dinner party menu
+quick_suggestion_image_1;Create an image for my presentation
+quick_suggestion_image_2;Create an image of my pet
+quick_suggestion_image_3;Create an image for my website
+quick_suggestion_image_4;Create felt-style images
+request_failed_http;Request failed: HTTP %s
+section_pinned;Pinned
+session_expired_sign_in;Session expired. Sign in again.
+session_missing_sign_in;Session not found. Sign in again.
+settings_shared_links;Shared chats
+settings_subscription;Pro subscription
+settings_title;Settings
+share;Share
+share_empty_response;Empty share response
+share_image;Share image
+share_link_creation_failed;Share link creation failed
+share_link_revoke_failed;Share link revoke failed
+share_link_unavailable;Share link is unavailable
+share_revoke_empty_response;Empty revoke response
+shared_chat_empty;Shared chat is empty
+shared_chat_title;Shared chat
+shared_link_copied;Link copied
+shared_link_created_at;Created: %s
+shared_link_delete_error;Failed to delete link
+shared_link_delete_message;Delete this link? People who have it will lose access to the chat copy.
+shared_link_delete_old_error;Could not delete old link
+shared_link_delete_title;Delete link
+shared_link_deleted;Link deleted
+shared_link_expired_copy_error;This link is expired and cannot be copied
+shared_link_unknown_date;Date unknown
+shared_links_empty_desc;Share a chat to see it here
+shared_links_empty_title;No links yet
+shared_links_load_error;Failed to load links
+speech_error_audio;Audio error
+speech_error_busy;Service busy
+speech_error_client;Client error
+speech_error_generic;Recognition error
+speech_error_network;Network error
+speech_error_no_match;Speech not recognized
+speech_error_permission;No permission
+speech_error_server;Server error
+speech_error_timeout;Silence
+speech_listening;Listening...
+speech_speak_now;Speak now...
+toast_ad_loading;Ad is still loading, please wait...
+toast_chat_empty;Chat is empty
+toast_copied;Copied
+toast_disliked;Disliked
+toast_doc_error;Error creating document
+toast_doc_saved_with_path;Document saved:\n%s
+toast_error;Error
 toast_image_copied;Image copied
 toast_image_copy_error;Error copying image
-toast_share_error;Error sharing
-toast_reward;You received +5 free requests!
-toast_ad_loading;Ad is still loading, please wait...
-ai_thinking;Thinking...
-label_file_analysis;File/photo analysis
-label_new_chat;New chat
-toast_logout;You have been logged out
-toast_profile_saved;Profile saved
-toast_name_empty;Name cannot be empty
-toast_changes_saved;Changes saved
-dialog_new_password_hint;New password
-dialog_change_password;Change password
-button_save;Save
-toast_password_changed;Password changed
-toast_password_empty;Password cannot be empty
-toast_instructions_saved;Instructions saved
-share_image;Share image
-share;Share
-menu_revoke_share_links;Disable shared links
-toast_share_link_created;Share link created
-toast_share_links_revoked;Shared links disabled
-toast_share_links_not_found;No active shared links
-toast_share_revoke_error;Failed to disable shared links
-toast_share_importing;Opening shared chat...
-toast_share_imported;Shared chat copied
-toast_share_import_error;Failed to open shared chat
-ai_mode_plus_title;Extended mode
-ai_mode_plus_desc;Uses an expanded set of models and capabilities
-ai_mode_free_title;Free mode (with limits)
-ai_mode_free_desc;Uses the basic model tier. All current limits are preserved
-ai_mode_auto_title;Automatic mode
-ai_mode_auto_desc;The system dynamically selects the best model based on the task and response
-toast_reward_updated;Added 5 limits
 toast_incognito_info;Anonymous chat is not saved in history
-ai_switching_fallback;Switching to fallback model...
-ai_error_retry;Failed to get response. Please try again.
-action_create_image;Create image
-hint_create_image;Describe the image you want to create
-prompt_idea_prefix;Brainstorm some ideas
-button_more;More
-anonymous_mode_title;Incognito mode
-anonymous_mode_desc;Your chat will not be saved on the device.\nAfter closing the tab, all messages will disappear without a trace.
+toast_instructions_saved;Instructions saved
+toast_liked;Liked!
+toast_limits_exhausted;You have run out of free requests for today! Press the +5 button above.
+toast_logout;You have been logged out
+toast_name_empty;Name cannot be empty
+toast_open_attachment_error_with_message;Failed to open attachment: %s
+toast_profile_saved;Profile saved
+toast_share_error;Error sharing
+toast_share_import_error;Failed to open shared chat
+toast_share_imported;Shared chat copied
+toast_share_importing;Opening shared chat...
+toast_share_link_created;Share link created
+toast_share_links_not_found;No active shared links
+toast_share_links_revoked;Shared links disabled
+toast_share_revoke_error;Failed to disable shared links
+untitled_chat;Untitled
+welcome_question;What can I help you with?

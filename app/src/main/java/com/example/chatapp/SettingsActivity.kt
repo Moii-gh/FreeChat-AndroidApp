@@ -97,7 +97,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateProfileUi() {
-        val userName = accountSettings.getDisplayName(sessionStore.getCurrentUserName() ?: "User")
+        val userName = accountSettings.getDisplayName(
+            sessionStore.getCurrentUserName() ?: LocaleHelper.getString(this, "label_user")
+        )
         val userEmail = sessionStore.getCurrentUserEmail().orEmpty()
         val avatarUri = accountSettings.getAvatarUri()
 
@@ -139,14 +141,19 @@ class SettingsActivity : AppCompatActivity() {
     private fun applyTranslations() {
         findViewById<TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "profile_and_settings")
         findViewById<TextView>(R.id.btnEditProfile)?.text = LocaleHelper.getString(this, "button_edit_profile")
-        findViewById<TextView>(R.id.tvSettingsHeader)?.text = LocaleHelper.getString(this, "setting")
+        findViewById<TextView>(R.id.tvSettingsHeader)?.text = LocaleHelper.getString(this, "settings_title")
         findViewById<TextView>(R.id.tvLabelPersonalization)?.text = LocaleHelper.getString(this, "button_personalization")
-        findViewById<TextView>(R.id.tvLabelLinks)?.text = "Отправленные чаты" // Replace localization if needed
+        findViewById<TextView>(R.id.tvLabelLinks)?.text = LocaleHelper.getString(this, "settings_shared_links")
         findViewById<TextView>(R.id.tvLabelLanguage)?.text = LocaleHelper.getString(this, "button_language")
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
-        findViewById<TextView>(R.id.tvLabelSubscription)?.text = "Pro subscription"
-        findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_Information_about")
-        findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_a_problem")
+        findViewById<TextView>(R.id.tvLabelSubscription)?.text = LocaleHelper.getString(this, "settings_subscription")
+        findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
+        findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")
+        findViewById<TextView>(R.id.tvAppVersion)?.text = LocaleHelper.formatString(
+            this,
+            "app_version",
+            BuildConfig.VERSION_NAME
+        )
     }
 
     private fun showEditProfileDialog() {
@@ -166,8 +173,8 @@ class SettingsActivity : AppCompatActivity() {
         ivDialogAvatar = view.findViewById(R.id.ivDialogAvatar)
         dialogAvatarLetter = view.findViewById(R.id.dialogAvatarLetter)
 
-        view.findViewById<TextView>(R.id.tvLabelDialogName)?.text = LocaleHelper.getString(this, "lable_name")
-        view.findViewById<TextView>(R.id.tvLabelDialogEmail)?.text = LocaleHelper.getString(this, "lable_email")
+        view.findViewById<TextView>(R.id.tvLabelDialogName)?.text = LocaleHelper.getString(this, "label_name")
+        view.findViewById<TextView>(R.id.tvLabelDialogEmail)?.text = LocaleHelper.getString(this, "label_email")
         view.findViewById<TextView>(R.id.btnSaveProfile)?.text = LocaleHelper.getString(this, "button_save")
 
         view.findViewById<View>(R.id.dialogAvatarContainer).setHapticClickListener {
@@ -179,7 +186,11 @@ class SettingsActivity : AppCompatActivity() {
             dialogAvatarLetter = null
         }
 
-        etName.setText(accountSettings.getDisplayName(sessionStore.getCurrentUserName() ?: "User"))
+        etName.setText(
+            accountSettings.getDisplayName(
+                sessionStore.getCurrentUserName() ?: LocaleHelper.getString(this, "label_user")
+            )
+        )
         etEmail.setText(sessionStore.getCurrentUserEmail().orEmpty())
         etEmail.isEnabled = false
         etEmail.alpha = 0.7f
@@ -203,7 +214,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun openExternalLink(url: String) {
         if (url.isBlank()) {
-            Toast.makeText(this, "Ссылка недоступна", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, LocaleHelper.getString(this, "external_link_unavailable"), Toast.LENGTH_SHORT).show()
             return
         }
 

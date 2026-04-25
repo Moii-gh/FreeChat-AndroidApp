@@ -19,12 +19,12 @@ class AiModeActivity : AppCompatActivity() {
     private val modes by lazy {
         listOf(
             ModeItem(
-                title = "Server-side routing",
-                desc = "The backend now chooses the model by subscription and request type. The client no longer switches providers itself."
+                title = LocaleHelper.getString(this, "ai_mode_server_routing_title"),
+                desc = LocaleHelper.getString(this, "ai_mode_server_routing_desc")
             ),
             ModeItem(
-                title = "Task modes stay available",
-                desc = "Chat, study, shopping, search and image generation still work, but they only describe the task. Final model selection happens on the server."
+                title = LocaleHelper.getString(this, "ai_mode_task_modes_title"),
+                desc = LocaleHelper.getString(this, "ai_mode_task_modes_desc")
             )
         )
     }
@@ -38,7 +38,7 @@ class AiModeActivity : AppCompatActivity() {
         modesContainer = findViewById(R.id.modesContainer)
         populateModes()
 
-        findViewById<TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "lable_apps")
+        findViewById<TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "label_apps")
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
     }
 

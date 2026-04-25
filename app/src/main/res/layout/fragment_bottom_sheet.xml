@@ -34,7 +34,7 @@
             android:clickable="true"
             android:focusable="true">
             <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_camera_new" app:tint="#FFFFFF"/>
-            <TextView android:id="@+id/tvBtnCamera" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Камера" android:textColor="#FFFFFF" android:layout_marginTop="10dp" android:textSize="14sp"/>
+            <TextView android:id="@+id/tvBtnCamera" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:layout_marginTop="10dp" android:textSize="14sp"/>
         </LinearLayout>
 
         <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
@@ -50,7 +50,7 @@
             android:clickable="true"
             android:focusable="true">
             <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_photo_new" app:tint="#FFFFFF"/>
-            <TextView android:id="@+id/tvBtnPhoto" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Фото" android:textColor="#FFFFFF" android:layout_marginTop="10dp" android:textSize="14sp"/>
+            <TextView android:id="@+id/tvBtnPhoto" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:layout_marginTop="10dp" android:textSize="14sp"/>
         </LinearLayout>
 
         <Space android:layout_width="12dp" android:layout_height="wrap_content"/>
@@ -66,7 +66,7 @@
             android:clickable="true"
             android:focusable="true">
             <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_file_new" app:tint="#FFFFFF"/>
-            <TextView android:id="@+id/tvBtnFiles" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Файлы" android:textColor="#FFFFFF" android:layout_marginTop="10dp" android:textSize="14sp"/>
+            <TextView android:id="@+id/tvBtnFiles" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:layout_marginTop="10dp" android:textSize="14sp"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -89,32 +89,32 @@
         <LinearLayout android:id="@+id/optCreateImage" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="16dp" android:paddingBottom="16dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true">
             <ImageView android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/ic_palette" app:tint="#FFFFFF" android:scaleType="fitCenter"/>
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
-                <TextView android:id="@+id/tvOptCreateImageTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Создать изображение" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
-                <TextView android:id="@+id/tvOptCreateImageDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Создать любое изображение" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
+                <TextView android:id="@+id/tvOptCreateImageTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
+                <TextView android:id="@+id/tvOptCreateImageDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/optSearch" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="16dp" android:paddingBottom="16dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true">
             <ImageView android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/ic_globe_new" app:tint="#FFFFFF" android:scaleType="fitCenter"/>
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
-                <TextView android:id="@+id/tvOptSearchTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Поиск в сети" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
-                <TextView android:id="@+id/tvOptSearchDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Искать новую информацию в режиме п..." android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp" android:maxLines="1" android:ellipsize="end"/>
+                <TextView android:id="@+id/tvOptSearchTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
+                <TextView android:id="@+id/tvOptSearchDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp" android:maxLines="1" android:ellipsize="end"/>
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/optShopping" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="16dp" android:paddingBottom="16dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true">
             <ImageView android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/ic_shopping_new" app:tint="#FFFFFF" android:scaleType="fitCenter"/>
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
-                <TextView android:id="@+id/tvOptShoppingTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Исследование покупок" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
-                <TextView android:id="@+id/tvOptShoppingDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Получить подробный гид по покупкам" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
+                <TextView android:id="@+id/tvOptShoppingTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
+                <TextView android:id="@+id/tvOptShoppingDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/optStudy" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="16dp" android:paddingBottom="16dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true">
             <ImageView android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/ic_book_new" app:tint="#FFFFFF" android:scaleType="fitCenter"/>
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
-                <TextView android:id="@+id/tvOptStudyTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Учеба и обучение" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
-                <TextView android:id="@+id/tvOptStudyDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Изучите новую концепцию" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
+                <TextView android:id="@+id/tvOptStudyTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
+                <TextView android:id="@+id/tvOptStudyDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

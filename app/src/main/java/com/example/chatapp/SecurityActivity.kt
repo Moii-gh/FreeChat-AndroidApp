@@ -61,15 +61,19 @@ class SecurityActivity : AppCompatActivity() {
 
     private fun bindTranslations() {
         findViewById<TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "button_security")
-        findViewById<TextView>(R.id.tvPasswordLabel)?.text = LocaleHelper.getString(this, "lable_your_password")
+        findViewById<TextView>(R.id.tvPasswordLabel)?.text = LocaleHelper.getString(this, "label_your_password")
         findViewById<TextView>(R.id.btnChangePassword)?.text = LocaleHelper.getString(this, "button_change_password")
         findViewById<TextView>(R.id.btnSavePassword)?.text = LocaleHelper.getString(this, "button_save")
     }
 
     private fun renderPasswordField() {
         val signedIn = sessionStore.isSignedIn()
-        val maskedValue = if (signedIn) "********" else "Войдите снова"
-        val visibleValue = if (signedIn) "Пароль хранится безопасно" else "Войдите снова"
+        val maskedValue = if (signedIn) "********" else LocaleHelper.getString(this, "password_sign_in_again")
+        val visibleValue = if (signedIn) {
+            LocaleHelper.getString(this, "password_securely_stored")
+        } else {
+            LocaleHelper.getString(this, "password_sign_in_again")
+        }
 
         etPassword.setText(if (isMasked) maskedValue else visibleValue)
         etPassword.inputType = if (isMasked) {
@@ -90,7 +94,7 @@ class SecurityActivity : AppCompatActivity() {
     private fun showChangePasswordDialog() {
         val token = sessionStore.getAuthToken()
         if (token.isNullOrBlank()) {
-            Toast.makeText(this, "Сессия не найдена. Войдите снова", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, LocaleHelper.getString(this, "session_missing_sign_in"), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -99,9 +103,9 @@ class SecurityActivity : AppCompatActivity() {
             setPadding(48, 32, 48, 16)
         }
 
-        val currentPasswordField = createPasswordInput("Текущий пароль")
-        val newPasswordField = createPasswordInput("Новый пароль")
-        val confirmPasswordField = createPasswordInput("Повторите новый пароль")
+        val currentPasswordField = createPasswordInput(LocaleHelper.getString(this, "password_current_hint"))
+        val newPasswordField = createPasswordInput(LocaleHelper.getString(this, "password_new_hint"))
+        val confirmPasswordField = createPasswordInput(LocaleHelper.getString(this, "password_confirm_new_hint"))
 
         container.addView(currentPasswordField)
         container.addView(newPasswordField)
@@ -121,9 +125,9 @@ class SecurityActivity : AppCompatActivity() {
                 val confirmPassword = confirmPasswordField.text.toString().trim()
 
                 when {
-                    currentPassword.isEmpty() -> toast("Введите текущий пароль")
-                    newPassword.length < 6 -> toast("Новый пароль должен содержать минимум 6 символов")
-                    newPassword != confirmPassword -> toast("Новый пароль и подтверждение не совпадают")
+                    currentPassword.isEmpty() -> toast(LocaleHelper.getString(this, "password_error_current_required"))
+                    newPassword.length < 6 -> toast(LocaleHelper.getString(this, "password_error_new_too_short"))
+                    newPassword != confirmPassword -> toast(LocaleHelper.getString(this, "password_error_mismatch"))
                     else -> {
                         changePassword(token, currentPassword, newPassword, dialog)
                     }

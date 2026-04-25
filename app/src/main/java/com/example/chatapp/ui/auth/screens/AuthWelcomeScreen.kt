@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.ui.auth.components.AuthScreenLayout
 import com.example.chatapp.ui.auth.components.AuthTestTags
 import com.example.chatapp.ui.auth.components.StatusMessageCard
@@ -17,9 +19,10 @@ fun AuthWelcomeScreen(
     state: AuthUiState,
     onContinueWithTelegram: () -> Unit
 ) {
+    val context = LocalContext.current
     AuthScreenLayout(
-        title = "Войти или зарегистрироваться",
-        subtitle = "Подтвердите Telegram, чтобы создать новый аккаунт или безопасно войти в FreeChat."
+        title = LocaleHelper.getString(context, "auth_welcome_title"),
+        subtitle = LocaleHelper.getString(context, "auth_welcome_subtitle")
     ) {
         StatusMessageCard(
             errorMessage = state.errorMessage,
@@ -29,7 +32,7 @@ fun AuthWelcomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
         TelegramLoginButton(
-            text = "Продолжить через Telegram",
+            text = LocaleHelper.getString(context, "auth_continue_with_telegram"),
             enabled = !state.isLoading,
             loading = state.isLoading && state.telegramFlowMode == TelegramFlowMode.WIDGET,
             onClick = onContinueWithTelegram,

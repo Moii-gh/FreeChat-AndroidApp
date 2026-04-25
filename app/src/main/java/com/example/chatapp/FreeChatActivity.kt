@@ -122,8 +122,18 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
         binding.tvAnonymousTitle.text = LocaleHelper.getString(this, "anonymous_mode_title")
         binding.tvAnonymousDesc.text = LocaleHelper.getString(this, "anonymous_mode_desc")
+        binding.btnMenu.contentDescription = LocaleHelper.getString(this, "content_desc_menu")
+        binding.btnChat.contentDescription = LocaleHelper.getString(this, "content_desc_anonymous_chat")
+        binding.btnNewChat.contentDescription = LocaleHelper.getString(this, "content_desc_new_chat")
+        binding.btnMore.contentDescription = LocaleHelper.getString(this, "content_desc_more_options")
+        binding.btnPlus.contentDescription = LocaleHelper.getString(this, "content_desc_add_attachment")
+        binding.btnMic.contentDescription = LocaleHelper.getString(this, "content_desc_microphone")
+        binding.btnSend.contentDescription = LocaleHelper.getString(this, "content_desc_send")
+        binding.btnRemovePreview.contentDescription = LocaleHelper.getString(this, "content_desc_remove_attachment")
+        binding.btnCloseChip.contentDescription = LocaleHelper.getString(this, "content_desc_clear_mode")
 
         // Drawer texts
+        findViewById<android.widget.TextView>(R.id.tvDrawerTitle)?.text = LocaleHelper.getString(this, "app_brand")
         findViewById<android.widget.TextView>(R.id.tvDrawerNewChat)?.text = LocaleHelper.getString(this, "button_new_chat")
         findViewById<android.widget.EditText>(R.id.etDrawerSearch)?.hint = LocaleHelper.getString(this, "panel_search")
         drawerManager.populateChats(chatViewModel.cachedChats) // Automatically re-renders chat titles correctly
@@ -133,7 +143,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             "create_image" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_create_image")
             "search" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_panel_search")
             "shopping" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_purchase_research")
-            "study" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_stud_ and_training")
+            "study" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_study_training")
             else -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
         }
     }
@@ -190,17 +200,17 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun quickSuggestionsFor(category: QuickSuggestionCategory): List<String> = when (category) {
         QuickSuggestionCategory.IMAGE -> listOf(
-            "Создай изображение для моей презентации",
-            "Создай изображение моего питомца",
-            "Создай изображение для моего сайта",
-            "Создай изображения из фетра"
+            LocaleHelper.getString(this, "quick_suggestion_image_1"),
+            LocaleHelper.getString(this, "quick_suggestion_image_2"),
+            LocaleHelper.getString(this, "quick_suggestion_image_3"),
+            LocaleHelper.getString(this, "quick_suggestion_image_4")
         )
 
         QuickSuggestionCategory.IDEA -> listOf(
-            "Придумай несколько идей для моего следующего отпуска",
-            "Придумай несколько идей для рекламной кампании бренда",
-            "Придумай несколько идей для новой программы тренировок",
-            "Придумай несколько идей для меню званого ужина"
+            LocaleHelper.getString(this, "quick_suggestion_idea_1"),
+            LocaleHelper.getString(this, "quick_suggestion_idea_2"),
+            LocaleHelper.getString(this, "quick_suggestion_idea_3"),
+            LocaleHelper.getString(this, "quick_suggestion_idea_4")
         )
     }
 
@@ -239,12 +249,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
 
         val normalized = query.trim().lowercase()
+        val imagePrefix = imagePromptPrefix().trim().lowercase()
+        val ideaPrefix = ideaPromptPrefix().trim().lowercase()
         val category = when {
             normalized.isBlank() -> null
-            normalized.startsWith("создай изображ") || normalized.startsWith("создать изображ") ->
+            imagePrefix.isNotBlank() && normalized.startsWith(imagePrefix) ->
                 QuickSuggestionCategory.IMAGE
 
-            normalized.startsWith("придумай") || normalized.startsWith("помоги придумать") ->
+            ideaPrefix.isNotBlank() && normalized.startsWith(ideaPrefix) ->
                 QuickSuggestionCategory.IDEA
 
             else -> null
@@ -734,7 +746,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val attachmentPayload = try {
             buildAttachmentPayload(previewUri)
         } catch (e: IllegalArgumentException) {
-            toast(e.message ?: "Could not read attachment")
+            toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
             return
         }
 
@@ -762,7 +774,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             chatViewModel.currentChatTitle = when {
                 text.isNotBlank() -> text.take(60)
                 previewUri != null -> LocaleHelper.getString(this, "label_file_analysis")
-                else -> "Новый чат"
+                else -> LocaleHelper.getString(this, "label_new_chat")
             }
             chatViewModel.isFirstMessage = false
         }
@@ -1098,12 +1110,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     ): String {
         val preview = extractedText.trim().take(MAX_ATTACHMENT_CONTEXT_CHARS)
         return buildString {
-            append("File summary")
+            append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_file_summary"))
             if (!fileName.isNullOrBlank()) append(": ").append(fileName)
-            append("\nMIME: ").append(mimeType)
-            append("\nPreview:\n").append(preview)
+            append("\n").append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_mime")).append(": ").append(mimeType)
+            append("\n").append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_preview")).append(":\n").append(preview)
             if (extractedText.length > preview.length) {
-                append("\n\n[Context truncated for privacy and token safety]")
+                append("\n\n").append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_truncated"))
             }
         }
     }
@@ -1220,7 +1232,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun readAttachmentBytes(uri: Uri): ByteArray {
         val declaredSize = queryAttachmentSize(uri)
         if (declaredSize != null && declaredSize > MAX_ATTACHMENT_BYTES) {
-            throw IllegalArgumentException("Attachment is too large to analyze")
+            throw IllegalArgumentException(LocaleHelper.getString(this, "attachment_too_large"))
         }
 
         val output = java.io.ByteArrayOutputStream()
@@ -1232,11 +1244,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 if (read == -1) break
                 totalBytes += read
                 if (totalBytes > MAX_ATTACHMENT_BYTES) {
-                    throw IllegalArgumentException("Attachment is too large to analyze")
+                    throw IllegalArgumentException(LocaleHelper.getString(this, "attachment_too_large"))
                 }
                 output.write(buffer, 0, read)
             }
-        } ?: throw IllegalArgumentException("Could not read attachment")
+        } ?: throw IllegalArgumentException(LocaleHelper.getString(this, "attachment_read_error"))
 
         return output.toByteArray()
     }
@@ -1315,7 +1327,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun truncateText(text: String): String {
         return if (text.length > MAX_EXTRACTED_TEXT_CHARS) {
-            text.take(MAX_EXTRACTED_TEXT_CHARS) + "\n\n[Содержимое файла обрезано]"
+            text.take(MAX_EXTRACTED_TEXT_CHARS) + "\n\n" + LocaleHelper.getString(this, "attachment_text_truncated")
         } else {
             text
         }

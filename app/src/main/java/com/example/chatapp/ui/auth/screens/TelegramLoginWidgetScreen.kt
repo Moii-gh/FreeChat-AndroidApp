@@ -45,6 +45,7 @@ import com.example.chatapp.ui.auth.components.SecondaryOutlineButton
 import com.example.chatapp.ui.auth.components.StatusMessageCard
 import com.example.chatapp.ui.auth.theme.AppStroke
 import com.example.chatapp.ui.auth.theme.AppTextPrimary
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.util.TelegramWidgetPayloadParser
 import com.example.chatapp.viewmodel.AuthUiState
 
@@ -60,11 +61,13 @@ fun TelegramLoginWidgetScreen(
     var pageError by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableStateOf(0) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     BackHandler(onBack = onBack)
 
     AuthScreenLayout(
-        title = "Вход через Telegram",
-        subtitle = "Подтвердите вход в официальном Telegram Login Widget.",
+        title = LocaleHelper.getString(context, "auth_telegram_widget_title"),
+        subtitle = LocaleHelper.getString(context, "auth_telegram_widget_subtitle"),
         onBack = onBack
     ) {
         StatusMessageCard(
@@ -90,7 +93,7 @@ fun TelegramLoginWidgetScreen(
                 onAuthPayload = { payload ->
                     val request = TelegramWidgetPayloadParser.parse(payload)
                     if (request == null) {
-                        val message = "Не удалось прочитать ответ Telegram"
+                        val message = LocaleHelper.getString(context, "auth_telegram_read_response_error")
                         pageError = message
                         onError(message)
                     } else {
@@ -116,7 +119,7 @@ fun TelegramLoginWidgetScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         SecondaryOutlineButton(
-            text = "Обновить виджет",
+            text = LocaleHelper.getString(context, "auth_refresh_widget"),
             onClick = {
                 pageError = null
                 reloadKey += 1
@@ -209,7 +212,7 @@ private fun WebView.configureTelegramWebView(
         ) {
             if (request?.isForMainFrame == true) {
                 onPageLoadingChanged(false)
-                onPageError("Нет подключения или Telegram Login Widget недоступен")
+                onPageError(LocaleHelper.getString(context, "auth_telegram_widget_unavailable"))
             }
         }
 
@@ -221,9 +224,9 @@ private fun WebView.configureTelegramWebView(
             if (request?.isForMainFrame == true) {
                 onPageLoadingChanged(false)
                 val message = if (errorResponse?.statusCode == 503) {
-                    "Telegram Login Widget не настроен на backend. Проверьте TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME."
+                    LocaleHelper.getString(context, "auth_telegram_widget_backend_not_configured")
                 } else {
-                    "Сервер не смог открыть Telegram Login Widget"
+                    LocaleHelper.getString(context, "auth_telegram_widget_server_open_error")
                 }
                 onPageError(message)
             }
@@ -295,7 +298,7 @@ private class TelegramAuthBridge(
     @JavascriptInterface
     fun onTelegramAuthError(message: String) {
         mainHandler.post {
-            onError(message.ifBlank { "Не удалось загрузить Telegram Login Widget" })
+            onError(message.ifBlank { "Telegram Login Widget error" })
         }
     }
 }

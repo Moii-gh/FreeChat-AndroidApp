@@ -52,7 +52,7 @@ class SharedLinksAdapter(
         private val btnDelete: FrameLayout = itemView.findViewById(R.id.btnDelete)
 
         fun bind(item: ChatShareItemDto) {
-            tvLinkTitle.text = item.title.ifBlank { "Без названия" }
+            tvLinkTitle.text = item.title.ifBlank { LocaleHelper.getString(itemView.context, "untitled_chat") }
 
             val formattedDate = try {
                 item.createdAt?.let { raw ->
@@ -64,10 +64,10 @@ class SharedLinksAdapter(
                     for (parser in parsers) {
                         try { date = parser.parse(raw); break } catch (_: Exception) {}
                     }
-                    if (date != null) "Создано: ${dateFormat.format(date)}" else "Создано: $raw"
-                } ?: "Дата неизвестна"
+                    if (date != null) LocaleHelper.formatString(itemView.context, "shared_link_created_at", dateFormat.format(date)) else LocaleHelper.formatString(itemView.context, "shared_link_created_at", raw)
+                } ?: LocaleHelper.getString(itemView.context, "shared_link_unknown_date")
             } catch (_: Exception) {
-                "Дата неизвестна"
+                LocaleHelper.getString(itemView.context, "shared_link_unknown_date")
             }
             tvLinkDate.text = formattedDate
 

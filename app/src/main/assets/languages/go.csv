@@ -1,162 +1,296 @@
-﻿TID;TEXT
-welcome_question;რით შემიძლია დახმარება?
-button_create_image;შექმენით სურათი
-button_help_me_write;დამეხმარეთ დაწერა
-button_create_idea;იდეა მოიფიქროთ
-button_write_code;დაწერე კოდი
-main_panel_input;დასვით კითხვა
+TID;TEXT
+action_create_image;სურათის შექმნა
+ai_default_image_prompt;კრეატიული სურათი
+ai_mode_server_routing_desc;მოდელები და ლიმიტები მიმდინარე ანგარიშისთვის სერვერზე ირჩევა.
+ai_mode_server_routing_title;სერვერის მარშრუტიზაცია
+ai_mode_task_modes_desc;სურათის, ძიების, შეძენისა და სწავლის რეჟიმები მოთხოვნას კონტექსტს უმატებს მოდელის ხელით შეცვლის გარეშე.
+ai_mode_task_modes_title;ამოცანის რეჟიმები
+ai_mode_title;AI რეჟიმი
+ai_prompt_attached_file;მიმაგრებული ფაილი
+ai_prompt_binary_file_no_excerpt;(ბინარული ფაილი ტექსტური ამონარიდის გარეშე)
+ai_prompt_chat_context_summary;წინა დიალოგის შეკუმშული კონტექსტი:\n%s
+ai_prompt_files_context;ადრე მიმაგრებული ფაილების მოკლე ამონარიდები:\n%s
+ai_prompt_short_excerpt;მოკლე ამონარიდი
+ai_prompt_user_instructions;მომხმარებლის ინსტრუქციები:\n%s
+ai_summary_file_excerpt_label;ფაილის ამონარიდი
+ai_summary_file_label;ფაილი
+ai_summary_prompt;შექმენი საუბრის ამ ნაწილის მნიშვნელოვანი ფაქტების მოკლე შეჯამება:
+ai_system_prompt_shopping;შენ ხარ საყიდლების ასისტენტი. მოძებნე ვარიანტები, შეადარე მახასიათებლები და აღნიშნე რეალური შეზღუდვები.
+ai_system_prompt_study;შენ ხარ სასწავლო ასისტენტი. ახსენი ნაბიჯ-ნაბიჯ, შეამოწმე გაგება და დაეხმარე მასალის განმტკიცებაში.
+ai_thinking;ვფიქრობ...
+anonymous_mode_desc;თქვენი ჩატი მოწყობილობაზე არ შეინახება.\nჩანართის დახურვის შემდეგ ყველა შეტყობინება გაქრება.
+anonymous_mode_title;ინკოგნიტო რეჟიმი
+app_brand;FreeChat
+app_version;FreeChat Android %s
+attachment_context_file_summary;ფაილის შეჯამება
+attachment_context_mime;MIME
+attachment_context_preview;წინასწარი ნახვა
+attachment_context_truncated;[კონტექსტი კონფიდენციალურობისა და ტოკენების გამო შემოკლებულია]
+attachment_empty_text;[ფაილი/სურათი ტექსტის გარეშე]
+attachment_read_error;დანართის წაკითხვა ვერ მოხერხდა
+attachment_text_truncated;[ფაილის შინაარსი შემოკლებულია]
+attachment_too_large;დანართი ანალიზისთვის ძალიან დიდია
+auth_about_subtitle;ეს ინფორმაცია მხოლოდ თქვენი FreeChat პროფილისთვის არის საჭირო.
+auth_about_title;გვიამბეთ თქვენ შესახებ
+auth_agreement_hint;მონაცემები მხოლოდ თქვენი FreeChat ანგარიშის მოსაწყობად არის საჭირო.
+auth_birth_date_picker_title;აირჩიეთ დაბადების თარიღი
+auth_birth_date_placeholder;დაბადების თარიღი
+auth_bot_code_placeholder;კოდი ბოტიდან
+auth_continue_with_telegram;Telegram-ით გაგრძელება
+auth_create_account;ანგარიშის შექმნა
+auth_error_birth_date_required;აირჩიეთ დაბადების თარიღი
+auth_error_bot_link_not_ready;Telegram ბოტის ბმული ჯერ მზად არ არის
+auth_error_code_required;შეიყვანეთ 6-ნიშნა კოდი
+auth_error_full_name_required;შეიყვანეთ სრული სახელი
+auth_error_password_too_short;პაროლი მინიმუმ 6 სიმბოლოს უნდა შეიცავდეს
+auth_error_restart_login;შესვლა თავიდან დაიწყეთ
+auth_error_restart_registration;რეგისტრაცია თავიდან დაიწყეთ
+auth_error_telegram_code_missing;Telegram-მა ავტორიზაციის კოდი არ დააბრუნა
+auth_error_telegram_cross_app_failed;Telegram cross-app auth ვერ მოხერხდა: %s
+auth_error_telegram_id_token_missing;Telegram-მა id_token არ დააბრუნა
+auth_error_telegram_login_not_configured;Telegram Login კონფიგურირებული არ არის. მიუთითეთ TELEGRAM_LOGIN_CLIENT_ID და TELEGRAM_LOGIN_REDIRECT_URI.
+auth_error_telegram_malformed_id_token;Telegram-მა არასწორი ID token დააბრუნა
+auth_error_telegram_native_url_missing;Telegram-მა native auth URL არ დააბრუნა
+auth_error_telegram_nonce_mismatch;Telegram ID token-ის nonce არ ემთხვევა
+auth_error_telegram_session_expired;Telegram Login-ის სესია ამოიწურა. სცადეთ კიდევ ერთხელ.
+auth_error_telegram_token_exchange_failed;Telegram token-ის გაცვლა ვერ მოხერხდა: %s
+auth_error_verify_code_first;ჯერ Telegram-ის კოდი დაადასტურეთ
+auth_full_name_placeholder;სრული სახელი
+auth_info_login_canceled;Telegram-ით შესვლა გაუქმდა
+auth_info_opening_telegram;Telegram იხსნება...
+auth_info_verifying_telegram_data;Telegram-ის მონაცემები მოწმდება...
+auth_info_verifying_telegram_token;Telegram ID token მოწმდება...
+auth_open_telegram;Telegram-ის გახსნა
+auth_opening_telegram;Telegram იხსნება...
+auth_or;ან
+auth_password_placeholder;პაროლი
+auth_password_subtitle;Telegram დადასტურებულია. ანგარიშის შესაქმნელად ახლა დააყენეთ პაროლი.
+auth_password_title;შექმენით პაროლი
+auth_privacy_policy;კონფიდენციალურობის პოლიტიკა
+auth_refresh_widget;ვიჯეტის განახლება
+auth_signed_in_desc;ახლა შეგიძლიათ აპში მუშაობა გააგრძელოთ.
+auth_signed_in_subtitle;ანგარიში დადასტურდა და ავტორიზაცია დასრულებულია.
+auth_signed_in_title;თქვენ შესული ხართ FreeChat-ში
+auth_telegram_code_register_subtitle;ჩვენ გავხსენით Telegram ბოტი. გაგზავნეთ /start და რეგისტრაციის გასაგრძელებლად შეიყვანეთ კოდი ჩატიდან.
+auth_telegram_code_title;დაადასტურეთ Telegram
+auth_telegram_code_widget_subtitle;დაადასტურეთ შესვლა Telegram Login Widget-ში.
+auth_telegram_confirmed_desc;თქვენ აგრძელებთ შესვლას დადასტურებული FreeChat ანგარიშით.
+auth_telegram_confirmed_title;Telegram დადასტურდა
+auth_telegram_login_not_completed;Telegram Login არ დასრულდა
+auth_telegram_login_open_error;Telegram Login-ის გახსნა ვერ მოხერხდა
+auth_telegram_open_error;Telegram-ის გახსნა ვერ მოხერხდა. შეამოწმეთ, დაყენებულია თუ არა.
+auth_telegram_read_response_error;Telegram-ის პასუხის წაკითხვა ვერ მოხერხდა
+auth_telegram_widget_backend_not_configured;Telegram Login Widget backend-ზე არ არის კონფიგურირებული. შეამოწმეთ TELEGRAM_BOT_TOKEN და TELEGRAM_BOT_USERNAME.
+auth_telegram_widget_load_error;Telegram Login Widget-ის ჩატვირთვა ვერ მოხერხდა
+auth_telegram_widget_server_open_error;სერვერმა Telegram Login Widget ვერ გახსნა
+auth_telegram_widget_subtitle;დაადასტურეთ შესვლა ოფიციალურ Telegram Login Widget-ში.
+auth_telegram_widget_title;Telegram-ით შესვლა
+auth_telegram_widget_unavailable;კავშირი არ არის ან Telegram Login Widget მიუწვდომელია
+auth_terms;გამოყენების პირობები
+auth_welcome_subtitle;დაადასტურეთ Telegram ახალი ანგარიშის შესაქმნელად ან FreeChat-ში უსაფრთხოდ შესასვლელად.
+auth_welcome_title;შესვლა ან რეგისტრაცია
+billing_auto_renew_disabled;ავტოგანახლება გამორთულია.
+billing_cancel_auto_renew;ავტოგანახლების გაუქმება
+billing_checkout_url_missing;გადახდის ბმული არ არის.
+billing_current_period_end;მიმდინარე პერიოდის დასასრული
+billing_hint_active_pro;თქვენს ანგარიშს სერვერული Pro მოდელების გამოყენება შეუძლია. განახლებებს YooKassa ამუშავებს.
+billing_hint_cancel_at_period_end;Pro წვდომა ფასიანი პერიოდის ბოლომდე აქტიურია. ავტომატური განახლება გამორთულია.
+billing_hint_pending;გადახდა ბრაუზერში დაასრულეთ. წვდომა ჩაირთვება, როცა YooKassa webhook სერვერზე მივა.
+billing_hint_server_controlled;წვდომა სერვერზე კონტროლდება.
+billing_hint_upgrade;ეს სერვერზე მაღალი დონის მოდელებს ხსნის. კლიენტი მოდელს თავად აღარ ირჩევს.
+billing_payment_page_opened;გადახდის გვერდი გაიხსნა.
+billing_plan;გეგმა
+billing_plan_free;უფასო
+billing_plan_pro;Pro
+billing_price;ფასი
+billing_price_rub_30_days;%s RUB / 30 დღე
+billing_refresh_status;სტატუსის განახლება
+billing_status;სტატუსი
+billing_status_active;აქტიური
+billing_status_active_until_period_end;აქტიურია პერიოდის ბოლომდე
+billing_status_auto_renew_disabled;ავტოგანახლება გამორთულია
+billing_status_expired;ვადაგასულია
+billing_status_inactive;არააქტიური
+billing_status_payment_issue;გადახდის პრობლემა
+billing_status_pending_payment;გადახდის მოლოდინშია
+billing_status_unknown;უცნობი სტატუსი: %s
+billing_upgrade_for_rub;Pro-ზე გადასვლა %s RUB-ად
+button_about;ინფორმაცია იმის შესახებ
 button_camera;კამერა
-button_photo;ფოტო
-button_files;ფაილები
+button_cancel;გაუქმება
+button_change_password;პაროლის შეცვლა
+button_confirm;დადასტურება
+button_continue;გაგრძელება
+button_create_idea;იდეა მოიფიქროთ
 button_create_image;შექმენით სურათი
 button_create_image_description;შექმენით ნებისმიერი სურათი
-button_Search_the_web;მოძებნეთ ინტერნეტში
-button_Search_the_web_description;ახალი ინფორმაციის ძიება p-ში…
-button _purchase_research;შესყიდვების კვლევა
-button _purchase_research_description;მიიღეთ დეტალური სავაჭრო სახელმძღვანელო
-button_stud_ and_training;სწავლა და ტრენინგი
-button_stud_ and_training_description;ისწავლეთ ახალი კონცეფცია
-panel_create_image;გამოსახულება
-main_panel_input_create_image;შექმენით სურათი
-panel_search;ძიება
-main_panel_input_panel_search;მოძებნეთ ინტერნეტში
-panel_purchase_research;შესყიდვების კვლევა
-main_panel_input_purchase_research;მოძებნეთ შესყიდვები
-panel_stud_ and_training;კვლევები
-main_panel_stud_ and_training;განათლება და სწავლა
-button_new_chat;ახალი ჩატი
-button_telegram_bot;Telegram-ის ბოტი
-history_lable_today;დღეს
-history_lable_in_the_last_7_days;ბოლო 7 დღის განმავლობაში
-history_lable_previously;ადრე
-user_subscription;Free
-interlineation;FreeChat ბევრს ცდილობს, მაგრამ შეიძლება შეცდომებიც დაუშვას.
-profile_and_settings;პროფილი და პარამეტრები
-button_edit_profile;პროფილის რედაქტირება
-setting;პარამეტრები
-button_personalization;პერსონალიზაცია
-button_apps;AI რეჟიმი
-button_language;ენა
-button_security;უსაფრთხოება
-button_Information_about;ინფორმაცია იმის შესახებ
-button_report_a_problem;შეატყობინეთ პრობლემას
-app_version;FreeChat Abdroid <version>
-user_email;<mail>
-user_input;<user_input>
-chat_ai_output;<chat_ai_output>
-add_input_photo;<add_input_photo>
-add_input_files;<add_input_files>
-panel_edit_name;სახელი
-input_edit_name;<input_edit_name>
-panel_edit_emeil;ფოსტა
-input_edit_email;<input_edit_email>
-lable_personalization;პერსონალიზაცია
-lable_personalization_instructions;მომხმარებლის ინსტრუქციები
-input_personalization_instructions;<input_personalization_instructions>
-lable_language;ენა
-lable_select_language;აირჩიეთ ენა
-button_select_language_russian;Русский
-button_select_language_english;English
-button_select_language_ukrainian;Українська
-button_select_language_french;Français
-button_select_language_italian;Italiano
-button_select_language_old_russian;Руснацькый
-button_select_language_pirate_speak;Pirate Speak
-button_select_language_hindi;हिन्दी (Hindi)
-button_select_language_georgian;ქართული (Georgian)
-lable_security;უსაფრთხოება
-lable_your_password;თქვენი პაროლი
-input_password;<input_password>
-button_show_password;პაროლის ჩვენება
-button_hide_password;პაროლის დამალვა
-button_change_password;პაროლის შეცვლა
-lable_apps;AI რეჟიმი
-button_lable_search_for_apps;აპლიკაციები
-input_search_for_apps;<input_search_for_apps>
-button_lable_all_apps;ყველა აპლიკაცია
-button_mycalculator;MyCalculator
-app_mycalculator_description;რომანიხა ცვეტკოვას კალკულატორი
-main_lable_mycalculator;MyCalculator
-button_install_app;დააინსტალირეთ
-in_app_mycalculator_description;რომანიხა ცვეტკოვას კალკულატორი
-app_description;აღწერა
-app_description_2;MyCalculator
-rating_app;1,1
-total_rating_app;203.9 ათასი შეფასება
-total_install_app;40 მილიონი +
-install_app_description;ჩამოტვირთვები
-total_weight_app;30.1 MB
-weight_app_deacription;ზომა
-button_write_a_review;დაწერეთ მიმოხილვა
-toast_no_limits;მიმდინარე რეჟიმში ლიმიტები არ არის.
-toast_anonymous_chat;ანონიმური ჩატი
-speech_speak_now;ილაპარაკეთ...
-speech_listening;ვუსმენ...
-speech_error_audio;აუდიო შეცდომა
-speech_error_client;კლიენტის შეცდომა
-speech_error_permission;ნებართვა არ არის
-speech_error_network;ქსელის შეცდომა
-speech_error_no_match;მეტყველება ვერ ამოიცნო
-speech_error_busy;სერვისი დაკავებულია
-speech_error_server;სერვერის შეცდომა
-speech_error_timeout;სიჩუმე
-speech_error_generic;ამოცნობის შეცდომა
-toast_chat_deleted;ჩატი წაიშალა
-dialog_confirm;დადასტურება
-dialog_delete_all_history;წავშალოთ მთელი ჩატის ისტორია?
 button_delete;წაშლა
-toast_all_history_deleted;მთელი ისტორია წაიშალა
-button_cancel;გაუქმება
-section_pinned;მიმაგრებული
-no_chat_history;ჩატის ისტორია არ არის
-no_search_results;არაფერი მოიძებნა
-menu_rename;გადარქმევა
-menu_unpin_chat;ჩატის მოხსნა
-menu_pin_chat;ჩატის მიმაგრება
-toast_chat_not_saved;ჩატი არ არის შენახული
-label_untitled;უსახელო
-dialog_rename_hint;ახალი სახელი
+button_edit_profile;პროფილის რედაქტირება
+button_files;ფაილები
+button_hide_password;პაროლის დამალვა
+button_language;ენა
+button_more;მეტი
+button_new_chat;ახალი ჩატი
 button_ok;OK
-toast_load_error;ჩატვირთვის შეცდომა
-toast_chat_empty;ჩატი ცარიელია
-export_sender_you;თქვენ
+button_personalization;პერსონალიზაცია
+button_photo;ფოტო
+button_purchase_research;შესყიდვების კვლევა
+button_purchase_research_description;მიიღეთ დეტალური სავაჭრო სახელმძღვანელო
+button_report_problem;შეატყობინეთ პრობლემას
+button_save;შენახვა
+button_search_web;მოძებნეთ ინტერნეტში
+button_search_web_description;ახალი ინფორმაციის ძიება p-ში…
+button_security;უსაფრთხოება
+button_show_password;პაროლის ჩვენება
+button_study_training;სწავლა და ტრენინგი
+button_study_training_description;ისწავლეთ ახალი კონცეფცია
+chat_error_empty;ჩატი ცარიელია
+chat_error_not_found;ჩატი ვერ მოიძებნა
+code_copied;კოპირებულია!
+code_copy;კოპირება
+code_default_language;კოდი
+content_desc_add_attachment;დანართის დამატება
+content_desc_anonymous_chat;ინკოგნიტო ჩატი
+content_desc_back;უკან
+content_desc_clear_mode;რეჟიმის გასუფთავება
+content_desc_menu;მენიუ
+content_desc_microphone;მიკროფონი
+content_desc_more_options;მეტი მოქმედება
+content_desc_new_chat;ახალი ჩატი
+content_desc_remove_attachment;დანართის წაშლა
+content_desc_send;გაგზავნა
+dialog_change_password;პაროლის შეცვლა
+dialog_rename_hint;ახალი სახელი
 export_sender_bot;ბოტი
-toast_doc_saved;დოკუმენტი შენახულია
-toast_doc_error;დოკუმენტის შექმნის შეცდომა
-toast_limits_exhausted;თქვენი უფასო მოთხოვნები ამოიწურა! დააჭირეთ ზემოთ +5 ღილაკს.
-toast_error;შეცდომა
-toast_open_attachment_error;დანართის გახსნა ვერ მოხერხდა
+export_sender_you;თქვენ
+external_link_unavailable;ბმული მიუწვდომელია
+hint_create_image;აღწერეთ სურათი, რომლის შექმნაც გსურთ
+history_label_last_7_days;ბოლო 7 დღის განმავლობაში
+history_label_previously;ადრე
+history_label_today;დღეს
 image_creating;სურათების შექმნა...
 image_ready;სურათი მზადაა
-code_copy;კოპირება
-code_copied;კოპირებულია!
-toast_liked;მოეწონა!
-toast_disliked;არ მოეწონა
-toast_copied;კოპირებულია
+label_email;ფოსტა
+label_file_analysis;ფაილის/ფოტოს ანალიზი
+label_name;სახელი
+label_new_chat;ახალი ჩატი
+label_personalization;პერსონალიზაცია
+label_personalization_instructions;მომხმარებლის ინსტრუქციები
+label_select_language;აირჩიეთ ენა
+label_user;მომხმარებელი
+label_your_password;თქვენი პაროლი
+language_name_br;ბელარუსული
+language_name_en;ინგლისური
+language_name_fr;ფრანგული
+language_name_go;ქართული
+language_name_it;იტალიური
+language_name_ru;რუსული
+language_name_uk;უკრაინული
+main_panel_input;დასვით კითხვა
+main_panel_input_create_image;შექმენით სურათი
+main_panel_input_panel_search;მოძებნეთ ინტერნეტში
+main_panel_input_purchase_research;მოძებნეთ შესყიდვები
+main_panel_study_training;განათლება და სწავლა
+menu_copy_text;ტექსტის კოპირება
+menu_edit_message;შეტყობინების რედაქტირება
+menu_pin_chat;ჩატის მიმაგრება
 menu_regenerate;ხელახლა გენერირება
+menu_rename;გადარქმევა
+menu_revoke_share_links;გაზიარებული ბმულების გამორთვა
+menu_unpin_chat;ჩატის მოხსნა
+network_connect_error;სერვერთან დაკავშირება ვერ მოხერხდა
+network_empty_response;სერვერის ცარიელი პასუხი
+network_error_with_message;ქსელის შეცდომა: %s
+network_http_error;შეცდომა %s
+network_unknown_error;უცნობი შეცდომა
+no_chat_history;ჩატის ისტორია არ არის
+no_search_results;არაფერი მოიძებნა
+not_available;-
+panel_create_image;გამოსახულება
+panel_purchase_research;შესყიდვების კვლევა
+panel_search;ძიება
+panel_study_training;კვლევები
+password_confirm_new_hint;დაადასტურეთ ახალი პაროლი
+password_current_hint;მიმდინარე პაროლი
+password_error_current_required;შეიყვანეთ მიმდინარე პაროლი
+password_error_mismatch;პაროლები არ ემთხვევა
+password_error_new_too_short;ახალი პაროლი მინიმუმ 6 სიმბოლოს უნდა შეიცავდეს
+password_new_hint;ახალი პაროლი
+password_securely_stored;პაროლი უსაფრთხოდ ინახება
+password_sign_in_again;შედით ხელახლა
+profile_and_settings;პროფილი და პარამეტრები
+prompt_idea_prefix;მოიფიქრე რამდენიმე იდეა
+quick_suggestion_idea_1;მოიფიქრე იდეები ჩემი შემდეგი შვებულებისთვის
+quick_suggestion_idea_2;მოიფიქრე იდეები ბრენდის კამპანიისთვის
+quick_suggestion_idea_3;მოიფიქრე იდეები ახალი ვარჯიშის გეგმისთვის
+quick_suggestion_idea_4;მოიფიქრე იდეები სადილის წვეულების მენიუსთვის
+quick_suggestion_image_1;შექმენი სურათი ჩემი პრეზენტაციისთვის
+quick_suggestion_image_2;შექმენი ჩემი შინაური ცხოველის სურათი
+quick_suggestion_image_3;შექმენი სურათი ჩემი ვებსაიტისთვის
+quick_suggestion_image_4;შექმენი თექის სტილის სურათები
+request_failed_http;მოთხოვნა ვერ შესრულდა: HTTP %s
+section_pinned;მიმაგრებული
+session_expired_sign_in;სესია ამოიწურა. შედით ხელახლა.
+session_missing_sign_in;სესია ვერ მოიძებნა. შედით ხელახლა.
+settings_shared_links;გაზიარებული ჩატები
+settings_subscription;Pro გამოწერა
+settings_title;პარამეტრები
+share;გაზიარება
+share_empty_response;გაზიარების ცარიელი პასუხი
+share_image;სურათის გაზიარება
+share_link_creation_failed;ბმულის შექმნა ვერ მოხერხდა
+share_link_revoke_failed;ბმულის გაუქმება ვერ მოხერხდა
+share_link_unavailable;გაზიარების ბმული მიუწვდომელია
+share_revoke_empty_response;გაუქმების ცარიელი პასუხი
+shared_chat_empty;გაზიარებული ჩატი ცარიელია
+shared_chat_title;გაზიარებული ჩატი
+shared_link_copied;ბმული დაკოპირდა
+shared_link_created_at;შექმნილია: %s
+shared_link_delete_error;ბმულის წაშლა ვერ მოხერხდა
+shared_link_delete_message;წავშალოთ ეს ბმული? ვისაც ის აქვს, ჩატის ასლზე წვდომას დაკარგავს.
+shared_link_delete_old_error;ძველი ბმულის წაშლა შეუძლებელია
+shared_link_delete_title;ბმულის წაშლა
+shared_link_deleted;ბმული წაიშალა
+shared_link_expired_copy_error;ბმულს ვადა გაუვიდა და ვერ დაკოპირდება
+shared_link_unknown_date;თარიღი უცნობია
+shared_links_empty_desc;გააზიარეთ ჩატი, რომ აქ გამოჩნდეს
+shared_links_empty_title;ბმულები ჯერ არ არის
+shared_links_load_error;ბმულების ჩატვირთვა ვერ მოხერხდა
+speech_error_audio;აუდიო შეცდომა
+speech_error_busy;სერვისი დაკავებულია
+speech_error_client;კლიენტის შეცდომა
+speech_error_generic;ამოცნობის შეცდომა
+speech_error_network;ქსელის შეცდომა
+speech_error_no_match;მეტყველება ვერ ამოიცნო
+speech_error_permission;ნებართვა არ არის
+speech_error_server;სერვერის შეცდომა
+speech_error_timeout;სიჩუმე
+speech_listening;ვუსმენ...
+speech_speak_now;ილაპარაკეთ...
+toast_ad_loading;რეკლამა ჯერ იტვირთება, მოიცადეთ...
+toast_chat_empty;ჩატი ცარიელია
+toast_copied;კოპირებულია
+toast_disliked;არ მოეწონა
+toast_doc_error;დოკუმენტის შექმნის შეცდომა
+toast_doc_saved_with_path;დოკუმენტი შენახულია:\n%s
+toast_error;შეცდომა
 toast_image_copied;სურათი კოპირებულია
 toast_image_copy_error;სურათის კოპირების შეცდომა
-toast_share_error;გაზიარების შეცდომა
-toast_reward;თქვენ მიიღეთ +5 უფასო მოთხოვნა!
-toast_ad_loading;რეკლამა ჯერ იტვირთება, მოიცადეთ...
-ai_thinking;ვფიქრობ...
-label_file_analysis;ფაილის/ფოტოს ანალიზი
-label_new_chat;ახალი ჩატი
-toast_logout;თქვენ გამოხვედით პროფილიდან
-toast_profile_saved;პროფილი შენახულია
-toast_name_empty;სახელი არ შეიძლება იყოს ცარიელი
-toast_changes_saved;ცვლილებები შენახულია
-dialog_new_password_hint;ახალი პაროლი
-dialog_change_password;პაროლის შეცვლა
-button_save;შენახვა
-toast_password_changed;პაროლი შეიცვალა
-toast_password_empty;პაროლი არ შეიძლება იყოს ცარიელი
+toast_incognito_info;ინკოგნიტო ჩატი ისტორიაში არ ინახება
 toast_instructions_saved;ინსტრუქციები შენახულია
-share_image;სურათის გაზიარება
-share;გაზიარება
-ai_mode_plus_title;გაფართოებული რეჟიმი
-ai_mode_plus_desc;გამოიყენება მოდელებისა და შესაძლებლობების გაფართოებული ნაკრები
-ai_mode_free_title;უფასო რეჟიმი (ლიმიტებით)
-ai_mode_free_desc;გამოიყენება საბაზო მოდელების დონე. ყველა მიმდინარე ლიმიტი შენარჩუნებულია
-ai_mode_auto_title;ავტომატური რეჟიმი
-ai_mode_auto_desc;სისტემა დინამიურად ირჩევს საუკეთესო მოდელს ამოცანისა და პასუხის მიხედვით
+toast_liked;მოეწონა!
+toast_limits_exhausted;თქვენი უფასო მოთხოვნები ამოიწურა! დააჭირეთ ზემოთ +5 ღილაკს.
+toast_logout;თქვენ გამოხვედით პროფილიდან
+toast_name_empty;სახელი არ შეიძლება იყოს ცარიელი
+toast_open_attachment_error_with_message;დანართის გახსნა ვერ მოხერხდა: %s
+toast_profile_saved;პროფილი შენახულია
+toast_share_error;გაზიარების შეცდომა
+toast_share_import_error;გაზიარებული ჩატის გახსნა ვერ მოხერხდა
+toast_share_imported;გაზიარებული ჩატი დაკოპირდა
+toast_share_importing;გაზიარებული ჩატი იხსნება...
+toast_share_link_created;გაზიარების ბმული შეიქმნა
+toast_share_links_not_found;აქტიური გაზიარებული ბმულები არ არის
+toast_share_links_revoked;გაზიარებული ბმულები გამორთულია
+toast_share_revoke_error;გაზიარებული ბმულების გამორთვა ვერ მოხერხდა
+untitled_chat;უსათაურო
+welcome_question;რით შემიძლია დახმარება?

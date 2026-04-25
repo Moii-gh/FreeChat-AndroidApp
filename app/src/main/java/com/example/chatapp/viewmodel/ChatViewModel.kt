@@ -45,7 +45,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val accountSettings = AccountScopedSettings(application)
     private val sessionStore = SharedPrefsAccountSessionStore(application)
     private val authRepository = AuthRepository(
-        service = NetworkModule.createAuthApiService(com.example.chatapp.BuildConfig.APP_API_BASE_URL)
+        service = NetworkModule.createAuthApiService(com.example.chatapp.BuildConfig.APP_API_BASE_URL),
+        localize = LocaleHelper.localizer(application)
     )
 
     // ──────── Состояние текущего чата ────────
@@ -215,7 +216,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         val userMessage = JSONObject().apply {
             put("role", "user")
-            put("content", if (content.isEmpty()) "[Файл/Изображение без текста]" else content)
+            put("content", if (content.isEmpty()) LocaleHelper.getString(getApplication(), "attachment_empty_text") else content)
             if (base64Data != null) put("base64", base64Data)
             if (fileUri != null) put("imageUri", fileUri)
             if (mimeType != null) put("mimeType", mimeType)
@@ -274,7 +275,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val filesContext = buildFilesContext()
         val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
         if (authToken.isBlank()) {
-            onError("Session expired. Sign in again.")
+            onError(LocaleHelper.getString(getApplication(), "session_expired_sign_in"))
             return
         }
 
@@ -368,7 +369,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         if (hash != cachedHash) {
             viewModelScope.launch(Dispatchers.IO) {
-                val summaryReply = AiApiService.summarizeMessages(authToken, messagesToSummarize)
+                val summaryReply = AiApiService.summarizeMessages(
+                    authToken = authToken,
+                    messagesToSummarize = messagesToSummarize
+                )
                 if (summaryReply != null) {
                     val newSummary = if (chatContextSummary.isNotEmpty()) {
                         "$chatContextSummary\n$summaryReply"
@@ -456,7 +460,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun registerAttachedFile(fileName: String?, mimeType: String?, fileContext: String?) {
         val entry = buildString {
-            append("--- Файл")
+            append("--- ").append(LocaleHelper.getString(getApplication(), "attachment_context_file_summary"))
             if (!fileName.isNullOrBlank()) append(": $fileName")
             if (!mimeType.isNullOrBlank()) append(" ($mimeType)")
             append(" ---")

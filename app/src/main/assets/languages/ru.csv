@@ -1,182 +1,296 @@
 TID;TEXT
-welcome_question;Чем могу помочь?
-button_create_image;Создать изображение
-button_help_me_write;Помоги мне написать
-button_create_idea;Придумать идею
-button_write_code;Написать код
-main_panel_input;Задайте вопрос
+action_create_image;Создать изображение
+ai_default_image_prompt;Креативное изображение
+ai_mode_server_routing_desc;Модели и лимиты выбираются на сервере для текущего аккаунта.
+ai_mode_server_routing_title;Серверная маршрутизация
+ai_mode_task_modes_desc;Режимы изображений, поиска, покупок и обучения добавляют контекст к запросу без ручного выбора модели.
+ai_mode_task_modes_title;Режимы задач
+ai_mode_title;Режим работы ИИ
+ai_prompt_attached_file;Прикреплённый файл
+ai_prompt_binary_file_no_excerpt;(Бинарный файл без текстовой выдержки)
+ai_prompt_chat_context_summary;Сжатый контекст предыдущего диалога:\n%s
+ai_prompt_files_context;Краткие выдержки из ранее прикреплённых файлов:\n%s
+ai_prompt_short_excerpt;Краткая выдержка
+ai_prompt_user_instructions;Инструкции пользователя:\n%s
+ai_summary_file_excerpt_label;Выдержка из файла
+ai_summary_file_label;Файл
+ai_summary_prompt;Сделай краткую сводку важных фактов из этой части переписки:
+ai_system_prompt_shopping;Ты помощник по покупкам. Ищи варианты, сравнивай характеристики и отмечай реальные ограничения.
+ai_system_prompt_study;Ты учебный помощник. Объясняй пошагово, проверяй понимание и помогай закрепить материал.
+ai_thinking;Думаю...
+anonymous_mode_desc;Ваш чат не будет сохранен на устройстве.\nПосле закрытия вкладки все сообщения исчезнут без следа.
+anonymous_mode_title;Режим инкогнито
+app_brand;FreeChat
+app_version;FreeChat Android %s
+attachment_context_file_summary;Сводка файла
+attachment_context_mime;MIME
+attachment_context_preview;Предпросмотр
+attachment_context_truncated;[Контекст обрезан для приватности и экономии токенов]
+attachment_empty_text;[Файл/Изображение без текста]
+attachment_read_error;Не удалось прочитать вложение
+attachment_text_truncated;[Содержимое файла обрезано]
+attachment_too_large;Вложение слишком большое для анализа
+auth_about_subtitle;Эти данные нужны только для вашего профиля FreeChat.
+auth_about_title;Расскажите о себе
+auth_agreement_hint;Данные понадобятся только для настройки вашего аккаунта FreeChat.
+auth_birth_date_picker_title;Выберите дату рождения
+auth_birth_date_placeholder;Дата рождения
+auth_bot_code_placeholder;Код из бота
+auth_continue_with_telegram;Продолжить через Telegram
+auth_create_account;Создать аккаунт
+auth_error_birth_date_required;Выберите дату рождения
+auth_error_bot_link_not_ready;Ссылка на Telegram-бота ещё не готова
+auth_error_code_required;Введите 6-значный код
+auth_error_full_name_required;Укажите полное имя
+auth_error_password_too_short;Пароль должен содержать минимум 6 символов
+auth_error_restart_login;Начните вход заново
+auth_error_restart_registration;Начните регистрацию заново
+auth_error_telegram_code_missing;Telegram не вернул authorization code
+auth_error_telegram_cross_app_failed;Ошибка Telegram cross-app auth: %s
+auth_error_telegram_id_token_missing;Telegram не вернул id_token
+auth_error_telegram_login_not_configured;Telegram Login не настроен. Укажите TELEGRAM_LOGIN_CLIENT_ID и TELEGRAM_LOGIN_REDIRECT_URI.
+auth_error_telegram_malformed_id_token;Telegram вернул некорректный ID token
+auth_error_telegram_native_url_missing;Telegram не вернул native auth URL
+auth_error_telegram_nonce_mismatch;Nonce в Telegram ID token не совпадает
+auth_error_telegram_session_expired;Сессия Telegram Login истекла. Попробуйте ещё раз.
+auth_error_telegram_token_exchange_failed;Обмен Telegram token не удался: %s
+auth_error_verify_code_first;Сначала подтвердите код из Telegram
+auth_full_name_placeholder;Полное имя
+auth_info_login_canceled;Вход через Telegram отменён
+auth_info_opening_telegram;Открываем Telegram...
+auth_info_verifying_telegram_data;Проверяем данные Telegram...
+auth_info_verifying_telegram_token;Проверяем Telegram ID token...
+auth_open_telegram;Открыть Telegram
+auth_opening_telegram;Открываем Telegram...
+auth_or;или
+auth_password_placeholder;Пароль
+auth_password_subtitle;Telegram подтверждён. Теперь задайте пароль, чтобы завершить создание аккаунта.
+auth_password_title;Создайте пароль
+auth_privacy_policy;Политика конфиденциальности
+auth_refresh_widget;Обновить виджет
+auth_signed_in_desc;Теперь можно продолжить работу внутри приложения.
+auth_signed_in_subtitle;Аккаунт подтверждён, авторизация завершена.
+auth_signed_in_title;Вы вошли в FreeChat
+auth_telegram_code_register_subtitle;Мы открыли Telegram-бота. Отправьте /start и введите код из чата, чтобы продолжить регистрацию.
+auth_telegram_code_title;Подтвердите Telegram
+auth_telegram_code_widget_subtitle;Подтвердите вход в Telegram Login Widget.
+auth_telegram_confirmed_desc;Вы продолжаете вход в подтверждённый аккаунт FreeChat.
+auth_telegram_confirmed_title;Telegram подтверждён
+auth_telegram_login_not_completed;Telegram Login не завершён
+auth_telegram_login_open_error;Не удалось открыть Telegram Login
+auth_telegram_open_error;Не удалось открыть Telegram. Проверьте, установлен ли он.
+auth_telegram_read_response_error;Не удалось прочитать ответ Telegram
+auth_telegram_widget_backend_not_configured;Telegram Login Widget не настроен на backend. Проверьте TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME.
+auth_telegram_widget_load_error;Не удалось загрузить Telegram Login Widget
+auth_telegram_widget_server_open_error;Сервер не смог открыть Telegram Login Widget
+auth_telegram_widget_subtitle;Подтвердите вход в официальном Telegram Login Widget.
+auth_telegram_widget_title;Вход через Telegram
+auth_telegram_widget_unavailable;Нет подключения или Telegram Login Widget недоступен
+auth_terms;Условия пользования
+auth_welcome_subtitle;Подтвердите Telegram, чтобы создать новый аккаунт или безопасно войти в FreeChat.
+auth_welcome_title;Войти или зарегистрироваться
+billing_auto_renew_disabled;Автопродление отключено.
+billing_cancel_auto_renew;Отменить автопродление
+billing_checkout_url_missing;Ссылка на оплату отсутствует.
+billing_current_period_end;Конец текущего периода
+billing_hint_active_pro;Ваш аккаунт может использовать серверные Pro-модели. Продления обрабатывает YooKassa.
+billing_hint_cancel_at_period_end;Доступ Pro действует до конца оплаченного периода. Автопродление отключено.
+billing_hint_pending;Завершите оплату в браузере. Доступ включится после webhook YooKassa на сервере.
+billing_hint_server_controlled;Доступ контролируется на сервере.
+billing_hint_upgrade;Это открывает модели более высокого уровня на сервере. Клиент больше не выбирает модель сам.
+billing_payment_page_opened;Страница оплаты открыта.
+billing_plan;План
+billing_plan_free;Free
+billing_plan_pro;Pro
+billing_price;Цена
+billing_price_rub_30_days;%s RUB / 30 дней
+billing_refresh_status;Обновить статус
+billing_status;Статус
+billing_status_active;Активна
+billing_status_active_until_period_end;Активна до конца периода
+billing_status_auto_renew_disabled;Автопродление отключено
+billing_status_expired;Истекла
+billing_status_inactive;Неактивна
+billing_status_payment_issue;Проблема с оплатой
+billing_status_pending_payment;Ожидает оплаты
+billing_status_unknown;Неизвестный статус: %s
+billing_upgrade_for_rub;Перейти на Pro за %s RUB
+button_about;Сведения о
 button_camera;Камера
-button_photo;Фото
-button_files;Файлы
+button_cancel;Отмена
+button_change_password;Сменить пароль
+button_confirm;Подтвердить
+button_continue;Продолжить
+button_create_idea;Придумать идею
 button_create_image;Создать изображение
 button_create_image_description;Создать любое изображение
-button_Search_the_web;Поиск в сети
-button_Search_the_web_description;Искать новую информацию в режиме п…
-button _purchase_research;Исследование покупок
-button _purchase_research_description;Получить подробный гид по покупкам
-button_stud_ and_training;Учеба и обучение
-button_stud_ and_training_description;Изучите новую концепцию
-panel_create_image;Изображение
-main_panel_input_create_image;Создать изображение
-panel_search;Поиск
-main_panel_input_panel_search;Поиск в сети
-panel_purchase_research;Исследование покупок
-main_panel_input_purchase_research;Поиск покупок
-panel_stud_ and_training;Учеба
-main_panel_stud_ and_training;Обучение и учеба
-button_new_chat;Новый чат
-button_telegram_bot;Telegram-бот
-history_lable_today;Сегодня
-history_lable_in_the_last_7_days;За последние 7 дней
-history_lable_previously;Ранее
-user_subscription;Free
-interlineation;FreeChat старается, но может ошибаться
-profile_and_settings;Профиль и настройки
-button_edit_profile;Редактировать профиль
-setting;Настройки
-button_personalization;Персонализация
-button_apps;Режим работы ИИ
-button_language;Язык
-button_security;Безопасность
-button_Information_about;Сведения о
-button_report_a_problem;Сообщить о проблеме
-app_version;FreeChat Abdroid <version>
-user_email;<mail>
-user_input;<user_input>
-chat_ai_output;<chat_ai_output>
-add_input_photo;<add_input_photo>
-add_input_files;<add_input_files>
-panel_edit_name;Имя
-input_edit_name;<input_edit_name>
-panel_edit_emeil;Почта
-input_edit_email;<input_edit_email>
-lable_personalization;Персонализация
-lable_personalization_instructions;Пользовательские инструкции
-input_personalization_instructions;<input_personalization_instructions>
-lable_language;Язык
-lable_select_language;Выбрать язык
-button_select_language_russian;Русский
-button_select_language_english;English
-button_select_language_ukrainian;Українська
-button_select_language_french;Français
-button_select_language_italian;Italiano
-button_select_language_old_russian;Руснацькый
-button_select_language_pirate_speak;Pirate Speak
-button_select_language_hindi;हिन्दी (Hindi)
-button_select_language_georgian;ქართული (Georgian)
-lable_security;Безопасность
-lable_your_password;Ваш пароль
-input_password;<input_password>
-button_show_password;Показать пароль
-button_hide_password;Скрыть пароль
-button_change_password;Сменить пароль
-lable_apps;Режим работы ИИ
-button_lable_search_for_apps;Поиск приложений
-input_search_for_apps;<input_search_for_apps>
-button_lable_all_apps;Все приложения
-button_mycalculator;MyCalculator
-app_mycalculator_description;Калькулятор Романихи Цветковой
-main_lable_mycalculator;MyCalculator
-button_install_app;Установить
-in_app_mycalculator_description;Калькулятор Романихи Цветковой
-app_description;Описание
-app_description_2;MyCalculator
-rating_app;1,1
-total_rating_app;203,9 тыс оценок
-total_install_app;40 млн +
-install_app_description;Скачиваний
-total_weight_app;30.1 MB
-weight_app_deacription;Размер
-button_write_a_review;Написать отзыв
-toast_no_limits;В текущем режиме нет лимитов.
-toast_anonymous_chat;Анонимный чат
-speech_speak_now;Говорите...
-speech_listening;Слушаю...
-speech_error_audio;Ошибка звука
-speech_error_client;Ошибка клиента
-speech_error_permission;Нет разрешения
-speech_error_network;Ошибка сети
-speech_error_no_match;Речь не распознана
-speech_error_busy;Служба занята
-speech_error_server;Ошибка сервера
-speech_error_timeout;Тишина
-speech_error_generic;Ошибка распознавания
-toast_chat_deleted;Чат удален
-dialog_confirm;Подтверждение
-dialog_delete_all_history;Удалить ВСЮ историю чатов?
 button_delete;Удалить
-toast_all_history_deleted;Вся история удалена
-button_cancel;Отмена
-section_pinned;Закреплённые
-no_chat_history;Нет истории чатов
-no_search_results;Ничего не найдено
-menu_rename;Переименовать
-menu_unpin_chat;Открепить чат
-menu_pin_chat;Закрепить чат
-toast_chat_not_saved;Чат не сохранен
-label_untitled;Без названия
-dialog_rename_hint;Новое название
+button_edit_profile;Редактировать профиль
+button_files;Файлы
+button_hide_password;Скрыть пароль
+button_language;Язык
+button_more;Больше
+button_new_chat;Новый чат
 button_ok;ОК
-toast_load_error;Ошибка загрузки
-toast_chat_empty;Чат пуст
-export_sender_you;Вы
+button_personalization;Персонализация
+button_photo;Фото
+button_purchase_research;Исследование покупок
+button_purchase_research_description;Получить подробный гид по покупкам
+button_report_problem;Сообщить о проблеме
+button_save;Сохранить
+button_search_web;Поиск в сети
+button_search_web_description;Искать новую информацию в режиме п…
+button_security;Безопасность
+button_show_password;Показать пароль
+button_study_training;Учеба и обучение
+button_study_training_description;Изучите новую концепцию
+chat_error_empty;Чат пуст
+chat_error_not_found;Чат не найден
+code_copied;Скопировано!
+code_copy;Скопировать
+code_default_language;Код
+content_desc_add_attachment;Добавить вложение
+content_desc_anonymous_chat;Чат инкогнито
+content_desc_back;Назад
+content_desc_clear_mode;Сбросить режим
+content_desc_menu;Меню
+content_desc_microphone;Микрофон
+content_desc_more_options;Больше действий
+content_desc_new_chat;Новый чат
+content_desc_remove_attachment;Удалить вложение
+content_desc_send;Отправить
+dialog_change_password;Смена пароля
+dialog_rename_hint;Новое название
 export_sender_bot;Бот
-toast_doc_saved;Документ сохранен
-toast_doc_error;Ошибка при создании документа
-toast_limits_exhausted;У вас закончились бесплатные запросы на сегодня! Нажмите кнопку +5 сверху.
-toast_error;Ошибка
-toast_open_attachment_error;Не удалось открыть вложение
+export_sender_you;Вы
+external_link_unavailable;Ссылка недоступна
+hint_create_image;Опишите изображение, которое хотите создать
+history_label_last_7_days;За последние 7 дней
+history_label_previously;Ранее
+history_label_today;Сегодня
 image_creating;Создание изображений...
 image_ready;Изображение готово
-code_copy;Скопировать
-code_copied;Скопировано!
-toast_liked;Понравилось!
-toast_disliked;Не понравилось
-toast_copied;Скопировано
-menu_regenerate;Перегенерировать
-menu_edit_message;Редактировать сообщение
+label_email;Почта
+label_file_analysis;Анализ файла/фото
+label_name;Имя
+label_new_chat;Новый чат
+label_personalization;Персонализация
+label_personalization_instructions;Пользовательские инструкции
+label_select_language;Выбрать язык
+label_user;Пользователь
+label_your_password;Ваш пароль
+language_name_br;Белорусский
+language_name_en;Английский
+language_name_fr;Французский
+language_name_go;Грузинский
+language_name_it;Итальянский
+language_name_ru;Русский
+language_name_uk;Украинский
+main_panel_input;Задайте вопрос
+main_panel_input_create_image;Создать изображение
+main_panel_input_panel_search;Поиск в сети
+main_panel_input_purchase_research;Поиск покупок
+main_panel_study_training;Обучение и учеба
 menu_copy_text;Скопировать текст
+menu_edit_message;Редактировать сообщение
+menu_pin_chat;Закрепить чат
+menu_regenerate;Перегенерировать
+menu_rename;Переименовать
+menu_revoke_share_links;Отключить ссылки
+menu_unpin_chat;Открепить чат
+network_connect_error;Не удалось подключиться к серверу
+network_empty_response;Пустой ответ сервера
+network_error_with_message;Сетевая ошибка: %s
+network_http_error;Ошибка %s
+network_unknown_error;Неизвестная ошибка
+no_chat_history;Нет истории чатов
+no_search_results;Ничего не найдено
+not_available;-
+panel_create_image;Изображение
+panel_purchase_research;Исследование покупок
+panel_search;Поиск
+panel_study_training;Учеба
+password_confirm_new_hint;Подтвердите новый пароль
+password_current_hint;Текущий пароль
+password_error_current_required;Введите текущий пароль
+password_error_mismatch;Пароли не совпадают
+password_error_new_too_short;Новый пароль должен быть не короче 6 символов
+password_new_hint;Новый пароль
+password_securely_stored;Пароль хранится безопасно
+password_sign_in_again;Войдите снова
+profile_and_settings;Профиль и настройки
+prompt_idea_prefix;Придумай несколько идей
+quick_suggestion_idea_1;Придумай несколько идей для моего следующего отпуска
+quick_suggestion_idea_2;Придумай несколько идей для рекламной кампании бренда
+quick_suggestion_idea_3;Придумай несколько идей для новой программы тренировок
+quick_suggestion_idea_4;Придумай несколько идей для меню званого ужина
+quick_suggestion_image_1;Создай изображение для моей презентации
+quick_suggestion_image_2;Создай изображение моего питомца
+quick_suggestion_image_3;Создай изображение для моего сайта
+quick_suggestion_image_4;Создай изображения из фетра
+request_failed_http;Запрос не выполнен: HTTP %s
+section_pinned;Закреплённые
+session_expired_sign_in;Сессия истекла. Войдите снова.
+session_missing_sign_in;Сессия не найдена. Войдите снова.
+settings_shared_links;Отправленные чаты
+settings_subscription;Подписка Pro
+settings_title;Настройки
+share;Поделиться
+share_empty_response;Пустой ответ для ссылки
+share_image;Поделиться изображением
+share_link_creation_failed;Не удалось создать ссылку
+share_link_revoke_failed;Не удалось отключить ссылку
+share_link_unavailable;Ссылка недоступна
+share_revoke_empty_response;Пустой ответ отключения ссылки
+shared_chat_empty;Общий чат пуст
+shared_chat_title;Общий чат
+shared_link_copied;Ссылка скопирована
+shared_link_created_at;Создано: %s
+shared_link_delete_error;Ошибка удаления ссылки
+shared_link_delete_message;Удалить эту ссылку? Люди, у которых она есть, потеряют доступ к копии чата.
+shared_link_delete_old_error;Невозможно удалить старую ссылку
+shared_link_delete_title;Удаление ссылки
+shared_link_deleted;Ссылка удалена
+shared_link_expired_copy_error;Ссылка устарела и не может быть скопирована
+shared_link_unknown_date;Дата неизвестна
+shared_links_empty_desc;Поделитесь чатом, чтобы он появился здесь
+shared_links_empty_title;Нет созданных ссылок
+shared_links_load_error;Ошибка загрузки ссылок
+speech_error_audio;Ошибка звука
+speech_error_busy;Служба занята
+speech_error_client;Ошибка клиента
+speech_error_generic;Ошибка распознавания
+speech_error_network;Ошибка сети
+speech_error_no_match;Речь не распознана
+speech_error_permission;Нет разрешения
+speech_error_server;Ошибка сервера
+speech_error_timeout;Тишина
+speech_listening;Слушаю...
+speech_speak_now;Говорите...
+toast_ad_loading;Реклама еще загружается, подождите пару секунд...
+toast_chat_empty;Чат пуст
+toast_copied;Скопировано
+toast_disliked;Не понравилось
+toast_doc_error;Ошибка при создании документа
+toast_doc_saved_with_path;Документ сохранён:\n%s
+toast_error;Ошибка
 toast_image_copied;Изображение скопировано
 toast_image_copy_error;Ошибка копирования изображения
-toast_share_error;Ошибка при попытке поделиться
-toast_reward;Вы получили +5 бесплатных запросов!
-toast_ad_loading;Реклама еще загружается, подождите пару секунд...
-ai_thinking;Думаю...
-label_file_analysis;Анализ файла/фото
-label_new_chat;Новый чат
-toast_logout;Вы вышли из профиля
-toast_profile_saved;Профиль сохранён
-toast_name_empty;Имя не может быть пустым
-toast_changes_saved;Изменения сохранены
-dialog_new_password_hint;Новый пароль
-dialog_change_password;Смена пароля
-button_save;Сохранить
-toast_password_changed;Пароль изменён
-toast_password_empty;Пароль не может быть пустым
-toast_instructions_saved;Инструкции сохранены
-share_image;Поделиться изображением
-share;Поделиться
-menu_revoke_share_links;Отключить ссылки
-toast_share_link_created;Ссылка на чат создана
-toast_share_links_revoked;Доступ по ссылкам отключен
-toast_share_links_not_found;Активных ссылок нет
-toast_share_revoke_error;Не удалось отключить ссылки
-toast_share_importing;Открываем чат по ссылке...
-toast_share_imported;Копия чата создана
-toast_share_import_error;Не удалось открыть чат по ссылке
-ai_mode_plus_title;Расширенный режим
-ai_mode_plus_desc;Используется расширенный набор моделей и возможностей
-ai_mode_free_title;Бесплатный режим (с лимитами)
-ai_mode_free_desc;Используется базовый набор моделей. Сохраняются все текущие лимиты
-ai_mode_auto_title;Автоматический режим
-ai_mode_auto_desc;Система динамически выбирает лучшую модель в зависимости от задачи и ответа
-toast_reward_updated;Добавлено 5 запросов
 toast_incognito_info;Инкогнито-чат не сохраняется в истории
-ai_switching_fallback;Переключаемся на резервную модель…
-ai_error_retry;Не удалось получить ответ. Попробуйте еще раз.
-action_create_image;Создать изображение
-hint_create_image;Опишите изображение, которое хотите создать
-prompt_idea_prefix;Придумай несколько идей
-button_more;Больше
-anonymous_mode_title;Режим инкогнито
-anonymous_mode_desc;Ваш чат не будет сохранен на устройстве.\nПосле закрытия вкладки все сообщения исчезнут без следа.
+toast_instructions_saved;Инструкции сохранены
+toast_liked;Понравилось!
+toast_limits_exhausted;У вас закончились бесплатные запросы на сегодня! Нажмите кнопку +5 сверху.
+toast_logout;Вы вышли из профиля
+toast_name_empty;Имя не может быть пустым
+toast_open_attachment_error_with_message;Не удалось открыть вложение: %s
+toast_profile_saved;Профиль сохранён
+toast_share_error;Ошибка при попытке поделиться
+toast_share_import_error;Не удалось открыть чат по ссылке
+toast_share_imported;Копия чата создана
+toast_share_importing;Открываем чат по ссылке...
+toast_share_link_created;Ссылка на чат создана
+toast_share_links_not_found;Активных ссылок нет
+toast_share_links_revoked;Доступ по ссылкам отключен
+toast_share_revoke_error;Не удалось отключить ссылки
+untitled_chat;Без названия
+welcome_question;Чем могу помочь?

@@ -128,10 +128,6 @@ class PopupMenuHelper(
             onShare(chat)
         })
 
-        menuLayout.addView(createPopupMenuItem(R.drawable.ic_external_link, LocaleHelper.getString(activity, "menu_revoke_share_links"), Color.WHITE) {
-            dialog.dismiss()
-            onRevokeShares(chat)
-        })
 
         menuLayout.addView(createMenuDivider())
 
@@ -236,10 +232,6 @@ class PopupMenuHelper(
             onShare(chat)
         })
 
-        popupView.addView(createPopupMenuItem(R.drawable.ic_external_link, LocaleHelper.getString(activity, "menu_revoke_share_links"), Color.WHITE) {
-            popupWindow.dismiss()
-            onRevokeShares(chat)
-        })
 
         popupView.addView(createMenuDivider())
 

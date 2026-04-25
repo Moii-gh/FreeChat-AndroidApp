@@ -35,7 +35,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="Профиль и настройки"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:textStyle="bold"/>
@@ -90,7 +89,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="P"
                         android:textColor="#CCCCCC"
                         android:textSize="40sp"
                         android:textStyle="bold"/>
@@ -105,7 +103,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="User"
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold"/>
@@ -116,7 +113,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="user156@gmail.com"
                 android:textColor="#9E9E9E"
                 android:textSize="14sp"
                 android:autoLink="email"
@@ -132,7 +128,6 @@
                 android:background="@drawable/btn_edit_profile_outline"
                 android:paddingHorizontal="18dp"
                 android:paddingVertical="8dp"
-                android:text="Редактировать профиль"
                 android:textColor="#CCCCCC"
                 android:textSize="13sp"
                 android:clickable="true"
@@ -162,7 +157,6 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="28dp"
             android:layout_marginBottom="4dp"
-            android:text="Настройки"
             android:textColor="#FFFFFF"
             android:textSize="24sp"
             android:textStyle="bold"/>
@@ -192,7 +186,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Персонализация"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
         </LinearLayout>
@@ -220,7 +213,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Отправленные чаты"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
         </LinearLayout>
@@ -248,7 +240,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Язык"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
         </LinearLayout>
@@ -276,7 +267,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Безопасность"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
         </LinearLayout>
@@ -305,7 +295,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Pro subscription"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
 
@@ -338,7 +327,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Сведения о"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
 
@@ -371,7 +359,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Сообщить о проблеме"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
         </LinearLayout>
@@ -397,10 +384,10 @@
                 android:src="@drawable/logo"/>
 
             <TextView
+                android:id="@+id/tvAppVersion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="FreeChat Android 1.4.5"
                 android:textColor="#8E8E93"
                 android:textSize="12sp"/>
         </LinearLayout>

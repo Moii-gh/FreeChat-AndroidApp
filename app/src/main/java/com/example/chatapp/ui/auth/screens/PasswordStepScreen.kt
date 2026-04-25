@@ -17,7 +17,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.ui.auth.components.AuthScreenLayout
 import com.example.chatapp.ui.auth.components.AuthTestTags
 import com.example.chatapp.ui.auth.components.AuthTextField
@@ -37,8 +39,9 @@ fun PasswordStepScreen(
     onContinue: () -> Unit,
     onBack: () -> Unit
 ) {
-    val title = "Создайте пароль"
-    val subtitle = "Telegram подтверждён. Теперь задайте пароль, чтобы завершить создание аккаунта."
+    val context = LocalContext.current
+    val title = LocaleHelper.getString(context, "auth_password_title")
+    val subtitle = LocaleHelper.getString(context, "auth_password_subtitle")
 
     AuthScreenLayout(
         title = title,
@@ -57,7 +60,7 @@ fun PasswordStepScreen(
         AuthTextField(
             value = state.password,
             onValueChange = onPasswordChanged,
-            placeholder = "Пароль",
+            placeholder = LocaleHelper.getString(context, "auth_password_placeholder"),
             isPasswordField = true,
             isPasswordVisible = state.isPasswordVisible,
             trailingIcon = {
@@ -77,7 +80,7 @@ fun PasswordStepScreen(
         )
         Spacer(modifier = Modifier.height(20.dp))
         PrimaryActionButton(
-            text = "Создать аккаунт",
+            text = LocaleHelper.getString(context, "auth_create_account"),
             enabled = state.canSubmitPasswordStep,
             loading = state.isLoading,
             onClick = onContinue,
@@ -88,6 +91,7 @@ fun PasswordStepScreen(
 
 @Composable
 private fun TelegramConfirmedCard() {
+    val context = LocalContext.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -98,13 +102,13 @@ private fun TelegramConfirmedCard() {
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
             Text(
-                text = "Telegram подтверждён",
+                text = LocaleHelper.getString(context, "auth_telegram_confirmed_title"),
                 style = MaterialTheme.typography.bodyLarge,
                 color = AppTextPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Вы продолжаете вход в подтверждённый аккаунт FreeChat.",
+                text = LocaleHelper.getString(context, "auth_telegram_confirmed_desc"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppTextMuted
             )

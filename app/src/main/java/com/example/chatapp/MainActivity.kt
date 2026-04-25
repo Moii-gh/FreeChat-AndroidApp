@@ -26,9 +26,11 @@ class MainActivity : ComponentActivity() {
     private val authViewModel: AuthViewModel by viewModels {
         AuthViewModel.Factory(
             repository = AuthRepository(
-                service = NetworkModule.createAuthApiService(BuildConfig.APP_API_BASE_URL)
+                service = NetworkModule.createAuthApiService(BuildConfig.APP_API_BASE_URL),
+                localize = LocaleHelper.localizer(applicationContext)
             ),
-            accountSessionStore = accountSessionStore
+            accountSessionStore = accountSessionStore,
+            localize = { key -> LocaleHelper.getString(applicationContext, key) }
         )
     }
 
@@ -111,7 +113,7 @@ class MainActivity : ComponentActivity() {
                 authViewModel.completeTelegramNativeLogin(idToken)
             }.onFailure { error ->
                 authViewModel.onTelegramWidgetError(
-                    error.message ?: "Telegram Login не завершён"
+                    error.message ?: LocaleHelper.getString(this@MainActivity, "auth_telegram_login_not_completed")
                 )
             }
         }

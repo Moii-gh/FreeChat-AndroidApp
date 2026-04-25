@@ -16,9 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.ui.auth.components.AuthScreenLayout
 import com.example.chatapp.ui.auth.components.AuthTestTags
 import com.example.chatapp.ui.auth.theme.AppStroke
@@ -31,9 +33,10 @@ import com.example.chatapp.ui.auth.theme.AppTextSecondary
 fun SignedInScreen(
     email: String
 ) {
+    val context = LocalContext.current
     AuthScreenLayout(
-        title = "Вы вошли в FreeChat",
-        subtitle = "Аккаунт подтверждён и авторизация завершена."
+        title = LocaleHelper.getString(context, "auth_signed_in_title"),
+        subtitle = LocaleHelper.getString(context, "auth_signed_in_subtitle")
     ) {
         Surface(
             modifier = Modifier.testTag(AuthTestTags.SIGNED_IN_SCREEN),
@@ -60,7 +63,7 @@ fun SignedInScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Теперь пользователь не застревает на экране подтверждения и может продолжить работу внутри приложения.",
+                    text = LocaleHelper.getString(context, "auth_signed_in_desc"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppTextSecondary,
                     textAlign = TextAlign.Center

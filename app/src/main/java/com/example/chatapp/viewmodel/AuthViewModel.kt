@@ -106,7 +106,8 @@ sealed interface AuthEvent {
 
 class AuthViewModel(
     private val repository: AuthRepositoryContract,
-    private val accountSessionStore: AccountSessionStore
+    private val accountSessionStore: AccountSessionStore,
+    private val localize: (String) -> String = { it }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -199,7 +200,7 @@ class AuthViewModel(
         scopes: List<String>
     ) {
         if (clientId.isBlank() || redirectUri.isBlank()) {
-            setError("Telegram Login не настроен. Укажите TELEGRAM_LOGIN_CLIENT_ID и TELEGRAM_LOGIN_REDIRECT_URI.")
+            setError(localize("auth_error_telegram_login_not_configured"))
             return
         }
 
@@ -209,7 +210,7 @@ class AuthViewModel(
                     telegramFlowMode = TelegramFlowMode.WIDGET,
                     isLoading = true,
                     errorMessage = null,
-                    infoMessage = "Открываем Telegram..."
+                    infoMessage = localize("auth_info_opening_telegram")
                 )
             }
             _events.emit(
@@ -225,7 +226,7 @@ class AuthViewModel(
     fun openTelegramBot() {
         val botUrl = _uiState.value.telegramBotUrl
         if (botUrl.isNullOrBlank()) {
-            setError("Ссылка на Telegram-бота ещё не готова")
+            setError(localize("auth_error_bot_link_not_ready"))
             return
         }
 
@@ -241,8 +242,8 @@ class AuthViewModel(
         val challengeId = state.telegramChallengeId
 
         when {
-            challengeId.isNullOrBlank() -> setError("Начните вход заново")
-            !state.isTelegramCodeValid -> setError("Введите 6-значный код")
+            challengeId.isNullOrBlank() -> setError(localize("auth_error_restart_login"))
+            !state.isTelegramCodeValid -> setError(localize("auth_error_code_required"))
             else -> {
                 viewModelScope.launch {
                     _uiState.update {
@@ -309,7 +310,7 @@ class AuthViewModel(
                     telegramFlowMode = TelegramFlowMode.WIDGET,
                     isLoading = true,
                     errorMessage = null,
-                    infoMessage = "Проверяем данные Telegram..."
+                    infoMessage = localize("auth_info_verifying_telegram_data")
                 )
             }
 
@@ -335,7 +336,7 @@ class AuthViewModel(
                     telegramFlowMode = TelegramFlowMode.WIDGET,
                     isLoading = true,
                     errorMessage = null,
-                    infoMessage = "Проверяем Telegram ID token..."
+                    infoMessage = localize("auth_info_verifying_telegram_token")
                 )
             }
 
@@ -373,7 +374,7 @@ class AuthViewModel(
             it.copy(
                 isLoading = false,
                 errorMessage = null,
-                infoMessage = "Вход через Telegram отменён"
+                infoMessage = localize("auth_info_login_canceled")
             )
         }
     }
@@ -458,11 +459,11 @@ class AuthViewModel(
         val challengeId = state.telegramChallengeId
 
         when {
-            challengeId.isNullOrBlank() -> setError("Начните регистрацию заново")
-            !state.isTelegramCodeVerified -> setError("Сначала подтвердите код из Telegram")
-            !state.isFullNameValid -> setError("Укажите полное имя")
-            state.birthDate == null -> setError("Выберите дату рождения")
-            !state.isPasswordValid -> setError("Пароль должен содержать минимум 6 символов")
+            challengeId.isNullOrBlank() -> setError(localize("auth_error_restart_registration"))
+            !state.isTelegramCodeVerified -> setError(localize("auth_error_verify_code_first"))
+            !state.isFullNameValid -> setError(localize("auth_error_full_name_required"))
+            state.birthDate == null -> setError(localize("auth_error_birth_date_required"))
+            !state.isPasswordValid -> setError(localize("auth_error_password_too_short"))
             else -> {
                 viewModelScope.launch {
                     _uiState.update {
@@ -531,11 +532,12 @@ class AuthViewModel(
 
     class Factory(
         private val repository: AuthRepositoryContract,
-        private val accountSessionStore: AccountSessionStore
+        private val accountSessionStore: AccountSessionStore,
+        private val localize: (String) -> String = { it }
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return AuthViewModel(repository, accountSessionStore) as T
+            return AuthViewModel(repository, accountSessionStore, localize) as T
         }
     }
 }

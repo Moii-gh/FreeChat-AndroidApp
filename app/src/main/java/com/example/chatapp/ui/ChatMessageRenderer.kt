@@ -170,7 +170,7 @@ class ChatMessageRenderer(
                 addUserMessageWithFile(baseText, safeUri, historyIndex)
             }
         } else if (imageUrl != null) {
-            val isPhoto = content.contains("[Извлеченный текст из фото]") || imageUrl.contains("image")
+            val isPhoto = content.contains("[Извлеченный текст из фото]") || content.contains("[Extracted text from photo]") || imageUrl.contains("image")
             val title = LocaleHelper.getString(context, "label_file_analysis")
             val icon = if (isPhoto) R.drawable.ic_camera else R.drawable.ic_file_new
             addUserMessageSimulatedAttachment(baseText, title, icon, imageUrl, historyIndex)
@@ -231,7 +231,7 @@ class ChatMessageRenderer(
             fileContainer.setOnClickListener { FileUtils.openUri(context, Uri.parse(uriStr)) }
         }
 
-        if (message.isNotEmpty() && message != "[Пустое сообщение]" && message != "[Файл/Изображение без текста]") {
+        if (message.isNotEmpty() && message != LocaleHelper.getString(context, "attachment_empty_text")) {
             addUserMessage(message, historyIndex)
         }
     }

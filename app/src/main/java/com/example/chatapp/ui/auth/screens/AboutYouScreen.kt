@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.ui.auth.components.AgreementHint
 import com.example.chatapp.ui.auth.components.AuthScreenLayout
 import com.example.chatapp.ui.auth.components.AuthTestTags
@@ -25,9 +27,10 @@ fun AboutYouScreen(
     onContinue: () -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     AuthScreenLayout(
-        title = "Расскажите о себе",
-        subtitle = "Эти данные понадобятся только для вашего профиля FreeChat.",
+        title = LocaleHelper.getString(context, "auth_about_title"),
+        subtitle = LocaleHelper.getString(context, "auth_about_subtitle"),
         onBack = onBack
     ) {
         StatusMessageCard(
@@ -40,13 +43,13 @@ fun AboutYouScreen(
         AuthTextField(
             value = state.fullName,
             onValueChange = onFullNameChanged,
-            placeholder = "Полное имя",
+            placeholder = LocaleHelper.getString(context, "auth_full_name_placeholder"),
             testTag = AuthTestTags.FULL_NAME_FIELD
         )
         Spacer(modifier = Modifier.height(12.dp))
         ReadonlyField(
             value = state.birthDate?.format(BirthDateFormatter).orEmpty(),
-            placeholder = "Дата рождения",
+            placeholder = LocaleHelper.getString(context, "auth_birth_date_placeholder"),
             onClick = onBirthDateClick,
             testTag = AuthTestTags.DATE_FIELD
         )
@@ -54,7 +57,7 @@ fun AboutYouScreen(
         AgreementHint()
         Spacer(modifier = Modifier.height(24.dp))
         PrimaryActionButton(
-            text = "Продолжить",
+            text = LocaleHelper.getString(context, "button_continue"),
             enabled = state.canContinueFromAboutYou,
             loading = false,
             onClick = onContinue,

@@ -10,7 +10,6 @@ import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class LanguageActivity : AppCompatActivity() {
@@ -18,7 +17,7 @@ class LanguageActivity : AppCompatActivity() {
     private lateinit var languageContainer: LinearLayout
     private lateinit var tvTitle: TextView
     private lateinit var tvSelectLabel: TextView
-    private var selectedLanguageCode: String = "ru"
+    private var selectedLanguageCode: String = "en"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,13 +51,14 @@ class LanguageActivity : AppCompatActivity() {
 
     private fun updateUiText() {
         tvTitle.text = LocaleHelper.getString(this, "button_language")
-        tvSelectLabel.text = LocaleHelper.getString(this, "lable_select_language")
+        tvSelectLabel.text = LocaleHelper.getString(this, "label_select_language")
     }
 
     private fun populateLanguages() {
         languageContainer.removeAllViews()
 
-        for ((code, name) in LocaleHelper.LANGUAGES) {
+        for ((code, _) in LocaleHelper.LANGUAGES) {
+            val name = LocaleHelper.getLanguageDisplayName(this, code)
             val isSelected = code == selectedLanguageCode
 
             val button = TextView(this).apply {

@@ -25,8 +25,8 @@ class PersonalizationActivity : AppCompatActivity() {
         etInstructions.setText(accountSettings.getUserInstructions())
         
         // Translate UI
-        findViewById<android.widget.TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "lable_personalization")
-        findViewById<android.widget.TextView>(R.id.tvInstructionsLabel)?.text = LocaleHelper.getString(this, "lable_personalization_instructions")
+        findViewById<android.widget.TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "label_personalization")
+        findViewById<android.widget.TextView>(R.id.tvInstructionsLabel)?.text = LocaleHelper.getString(this, "label_personalization_instructions")
 
         // Back button
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }

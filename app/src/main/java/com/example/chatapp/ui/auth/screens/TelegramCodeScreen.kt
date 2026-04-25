@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.ui.auth.components.AuthScreenLayout
 import com.example.chatapp.ui.auth.components.AuthTestTags
 import com.example.chatapp.ui.auth.components.AuthTextField
@@ -24,16 +26,17 @@ fun TelegramCodeScreen(
     onContinue: () -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val subtitle = when (state.telegramFlowMode) {
         TelegramFlowMode.REGISTER ->
-            "Мы открыли Telegram-бота. Отправьте /start и введите код из чата, чтобы продолжить регистрацию."
+            LocaleHelper.getString(context, "auth_telegram_code_register_subtitle")
 
         TelegramFlowMode.WIDGET ->
-            "Подтвердите вход в Telegram Login Widget."
+            LocaleHelper.getString(context, "auth_telegram_code_widget_subtitle")
     }
 
     AuthScreenLayout(
-        title = "Подтвердите Telegram",
+        title = LocaleHelper.getString(context, "auth_telegram_code_title"),
         subtitle = subtitle,
         onBack = onBack
     ) {
@@ -45,7 +48,7 @@ fun TelegramCodeScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
         SecondaryOutlineButton(
-            text = if (state.isOpeningTelegram) "Открываем Telegram..." else "Открыть Telegram",
+            text = if (state.isOpeningTelegram) LocaleHelper.getString(context, "auth_opening_telegram") else LocaleHelper.getString(context, "auth_open_telegram"),
             onClick = onOpenTelegram,
             enabled = !state.isOpeningTelegram && !state.telegramBotUrl.isNullOrBlank(),
             testTag = AuthTestTags.OPEN_TELEGRAM_BUTTON
@@ -54,13 +57,13 @@ fun TelegramCodeScreen(
         AuthTextField(
             value = state.telegramCode,
             onValueChange = onCodeChanged,
-            placeholder = "Код из бота",
+            placeholder = LocaleHelper.getString(context, "auth_bot_code_placeholder"),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             testTag = AuthTestTags.TELEGRAM_CODE_FIELD
         )
         Spacer(modifier = Modifier.height(20.dp))
         PrimaryActionButton(
-            text = "Продолжить",
+            text = LocaleHelper.getString(context, "button_continue"),
             enabled = state.canVerifyTelegramCode,
             loading = state.isVerifyingTelegramCode || state.isLoading,
             onClick = onContinue,

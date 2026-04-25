@@ -72,14 +72,14 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
         view.findViewById<android.widget.TextView>(R.id.tvOptCreateImageTitle)?.text = LocaleHelper.getString(context, "button_create_image")
         view.findViewById<android.widget.TextView>(R.id.tvOptCreateImageDesc)?.text = LocaleHelper.getString(context, "button_create_image_description")
         
-        view.findViewById<android.widget.TextView>(R.id.tvOptSearchTitle)?.text = LocaleHelper.getString(context, "button_Search_the_web")
-        view.findViewById<android.widget.TextView>(R.id.tvOptSearchDesc)?.text = LocaleHelper.getString(context, "button_Search_the_web_description")
+        view.findViewById<android.widget.TextView>(R.id.tvOptSearchTitle)?.text = LocaleHelper.getString(context, "button_search_web")
+        view.findViewById<android.widget.TextView>(R.id.tvOptSearchDesc)?.text = LocaleHelper.getString(context, "button_search_web_description")
         
-        view.findViewById<android.widget.TextView>(R.id.tvOptShoppingTitle)?.text = LocaleHelper.getString(context, "button _purchase_research")
-        view.findViewById<android.widget.TextView>(R.id.tvOptShoppingDesc)?.text = LocaleHelper.getString(context, "button _purchase_research_description")
+        view.findViewById<android.widget.TextView>(R.id.tvOptShoppingTitle)?.text = LocaleHelper.getString(context, "button_purchase_research")
+        view.findViewById<android.widget.TextView>(R.id.tvOptShoppingDesc)?.text = LocaleHelper.getString(context, "button_purchase_research_description")
         
-        view.findViewById<android.widget.TextView>(R.id.tvOptStudyTitle)?.text = LocaleHelper.getString(context, "button_stud_ and_training")
-        view.findViewById<android.widget.TextView>(R.id.tvOptStudyDesc)?.text = LocaleHelper.getString(context, "button_stud_ and_training_description")
+        view.findViewById<android.widget.TextView>(R.id.tvOptStudyTitle)?.text = LocaleHelper.getString(context, "button_study_training")
+        view.findViewById<android.widget.TextView>(R.id.tvOptStudyDesc)?.text = LocaleHelper.getString(context, "button_study_training_description")
 
         view.findViewById<View>(R.id.btnCamera).setHapticClickListener {
             val context = requireContext()
@@ -136,9 +136,9 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
 
         view.findViewById<View>(R.id.optStudy).setHapticClickListener {
             activity?.setInputContext(
-                LocaleHelper.getString(requireContext(), "panel_stud_ and_training"),
+                LocaleHelper.getString(requireContext(), "panel_study_training"),
                 R.drawable.ic_book_new,
-                LocaleHelper.getString(requireContext(), "main_panel_stud_ and_training"),
+                LocaleHelper.getString(requireContext(), "main_panel_study_training"),
                 "#34C759",
                 "study"
             )

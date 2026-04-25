@@ -1,162 +1,296 @@
-﻿TID;TEXT
-welcome_question;Come posso aiutarti?
-button_create_image;Crea immagine
-button_help_me_write;Aiutami a scrivere
-button_create_idea;Genera un'idea
-button_write_code;Scrivi codice
-main_panel_input;Fai una domanda
+TID;TEXT
+action_create_image;Créer une image
+ai_default_image_prompt;Image créative
+ai_mode_server_routing_desc;Les modèles et limites sont choisis côté serveur pour le compte actif.
+ai_mode_server_routing_title;Routage serveur
+ai_mode_task_modes_desc;Les modes image, recherche, achat et étude ajoutent du contexte sans changer manuellement de modèle.
+ai_mode_task_modes_title;Modes de tâche
+ai_mode_title;Mode IA
+ai_prompt_attached_file;Fichier joint
+ai_prompt_binary_file_no_excerpt;(Fichier binaire sans extrait texte)
+ai_prompt_chat_context_summary;Contexte compressé du dialogue précédent :\n%s
+ai_prompt_files_context;Courts extraits des fichiers joints précédemment :\n%s
+ai_prompt_short_excerpt;Court extrait
+ai_prompt_user_instructions;Instructions utilisateur :\n%s
+ai_summary_file_excerpt_label;Extrait du fichier
+ai_summary_file_label;Fichier
+ai_summary_prompt;Fais un bref résumé des faits importants de cette partie de la conversation :
+ai_system_prompt_shopping;Tu es un assistant d'achat. Trouve des options, compare les caractéristiques et signale les limites réelles.
+ai_system_prompt_study;Tu es un assistant d'étude. Explique étape par étape, vérifie la compréhension et aide à consolider le sujet.
+ai_thinking;Sto pensando...
+anonymous_mode_desc;Votre chat ne sera pas enregistré sur l'appareil.\nAprès la fermeture de l'onglet, tous les messages disparaîtront.
+anonymous_mode_title;Mode incognito
+app_brand;FreeChat
+app_version;FreeChat Android %s
+attachment_context_file_summary;Résumé du fichier
+attachment_context_mime;MIME
+attachment_context_preview;Aperçu
+attachment_context_truncated;[Contexte tronqué pour la confidentialité et les tokens]
+attachment_empty_text;[Fichier/Image sans texte]
+attachment_read_error;Impossible de lire la pièce jointe
+attachment_text_truncated;[Contenu du fichier tronqué]
+attachment_too_large;La pièce jointe est trop volumineuse à analyser
+auth_about_subtitle;Ces informations servent uniquement à votre profil FreeChat.
+auth_about_title;Parlez-nous de vous
+auth_agreement_hint;Les données servent uniquement à configurer votre compte FreeChat.
+auth_birth_date_picker_title;Choisissez votre date de naissance
+auth_birth_date_placeholder;Date de naissance
+auth_bot_code_placeholder;Code du bot
+auth_continue_with_telegram;Continuer avec Telegram
+auth_create_account;Créer un compte
+auth_error_birth_date_required;Choisissez votre date de naissance
+auth_error_bot_link_not_ready;Le lien du bot Telegram n'est pas encore prêt
+auth_error_code_required;Saisissez le code à 6 chiffres
+auth_error_full_name_required;Saisissez votre nom complet
+auth_error_password_too_short;Le mot de passe doit contenir au moins 6 caractères
+auth_error_restart_login;Recommencez la connexion
+auth_error_restart_registration;Recommencez l'inscription
+auth_error_telegram_code_missing;Telegram n'a pas renvoyé de code d'autorisation
+auth_error_telegram_cross_app_failed;Échec de Telegram cross-app auth : %s
+auth_error_telegram_id_token_missing;Telegram n'a pas renvoyé id_token
+auth_error_telegram_login_not_configured;Telegram Login n'est pas configuré. Renseignez TELEGRAM_LOGIN_CLIENT_ID et TELEGRAM_LOGIN_REDIRECT_URI.
+auth_error_telegram_malformed_id_token;Telegram a renvoyé un token ID mal formé
+auth_error_telegram_native_url_missing;Telegram n'a pas renvoyé d'URL native d'authentification
+auth_error_telegram_nonce_mismatch;Le nonce du token ID Telegram ne correspond pas
+auth_error_telegram_session_expired;La session Telegram Login a expiré. Réessayez.
+auth_error_telegram_token_exchange_failed;Échec de l'échange du token Telegram : %s
+auth_error_verify_code_first;Confirmez d'abord le code Telegram
+auth_full_name_placeholder;Nom complet
+auth_info_login_canceled;Connexion Telegram annulée
+auth_info_opening_telegram;Ouverture de Telegram...
+auth_info_verifying_telegram_data;Vérification des données Telegram...
+auth_info_verifying_telegram_token;Vérification du token ID Telegram...
+auth_open_telegram;Ouvrir Telegram
+auth_opening_telegram;Ouverture de Telegram...
+auth_or;ou
+auth_password_placeholder;Mot de passe
+auth_password_subtitle;Telegram est confirmé. Définissez maintenant un mot de passe pour terminer la création du compte.
+auth_password_title;Créez un mot de passe
+auth_privacy_policy;Politique de confidentialité
+auth_refresh_widget;Actualiser le widget
+auth_signed_in_desc;Vous pouvez continuer dans l'application.
+auth_signed_in_subtitle;Compte confirmé et autorisation terminée.
+auth_signed_in_title;Vous êtes connecté à FreeChat
+auth_telegram_code_register_subtitle;Nous avons ouvert le bot Telegram. Envoyez /start puis saisissez le code du chat pour continuer.
+auth_telegram_code_title;Confirmez Telegram
+auth_telegram_code_widget_subtitle;Confirmez la connexion dans Telegram Login Widget.
+auth_telegram_confirmed_desc;Vous continuez avec un compte FreeChat confirmé.
+auth_telegram_confirmed_title;Telegram confirmé
+auth_telegram_login_not_completed;Telegram Login n'est pas terminé
+auth_telegram_login_open_error;Impossible d'ouvrir Telegram Login
+auth_telegram_open_error;Impossible d'ouvrir Telegram. Vérifiez qu'il est installé.
+auth_telegram_read_response_error;Impossible de lire la réponse Telegram
+auth_telegram_widget_backend_not_configured;Telegram Login Widget n'est pas configuré côté backend. Vérifiez TELEGRAM_BOT_TOKEN et TELEGRAM_BOT_USERNAME.
+auth_telegram_widget_load_error;Impossible de charger Telegram Login Widget
+auth_telegram_widget_server_open_error;Le serveur n'a pas pu ouvrir Telegram Login Widget
+auth_telegram_widget_subtitle;Confirmez la connexion dans le widget officiel Telegram Login.
+auth_telegram_widget_title;Connexion avec Telegram
+auth_telegram_widget_unavailable;Pas de connexion ou Telegram Login Widget indisponible
+auth_terms;Conditions d'utilisation
+auth_welcome_subtitle;Confirmez Telegram pour créer un compte ou vous connecter à FreeChat en sécurité.
+auth_welcome_title;Se connecter ou s'inscrire
+billing_auto_renew_disabled;Renouvellement automatique désactivé.
+billing_cancel_auto_renew;Annuler le renouvellement automatique
+billing_checkout_url_missing;L'URL de paiement est manquante.
+billing_current_period_end;Fin de la période actuelle
+billing_hint_active_pro;Votre compte peut utiliser les modèles Pro côté serveur. Les renouvellements sont gérés par YooKassa.
+billing_hint_cancel_at_period_end;L'accès Pro reste actif jusqu'à la fin de la période payée. Le renouvellement automatique est désactivé.
+billing_hint_pending;Terminez le paiement dans le navigateur. L'accès s'active après le webhook YooKassa côté serveur.
+billing_hint_server_controlled;L'accès est contrôlé côté serveur.
+billing_hint_upgrade;Cela débloque les modèles supérieurs côté serveur. Le client ne choisit plus le modèle lui-même.
+billing_payment_page_opened;Page de paiement ouverte.
+billing_plan;Offre
+billing_plan_free;Gratuit
+billing_plan_pro;Pro
+billing_price;Prix
+billing_price_rub_30_days;%s RUB / 30 jours
+billing_refresh_status;Actualiser le statut
+billing_status;Statut
+billing_status_active;Actif
+billing_status_active_until_period_end;Actif jusqu'à la fin de la période
+billing_status_auto_renew_disabled;Renouvellement automatique désactivé
+billing_status_expired;Expiré
+billing_status_inactive;Inactif
+billing_status_payment_issue;Problème de paiement
+billing_status_pending_payment;Paiement en attente
+billing_status_unknown;Statut inconnu : %s
+billing_upgrade_for_rub;Passer à Pro pour %s RUB
+button_about;Informazioni su
 button_camera;Fotocamera
-button_photo;Foto
-button_files;File
+button_cancel;Annulla
+button_change_password;Cambia password
+button_confirm;Confirmer
+button_continue;Continuer
+button_create_idea;Genera un'idea
 button_create_image;Crea immagine
 button_create_image_description;Crea qualsiasi immagine
-button_Search_the_web;Cerca sul web
-button_Search_the_web_description;Cerca nuove informazioni in tempo reale
-button _purchase_research;Ricerca acquisti
-button _purchase_research_description;Ottieni una guida dettagliata agli acquisti
-button_stud_ and_training;Studio e formazione
-button_stud_ and_training_description;Impara un nuovo concetto
-panel_create_image;Immagine
-main_panel_input_create_image;Crea immagine
-panel_search;Cerca
-main_panel_input_panel_search;Cerca sul web
-panel_purchase_research;Ricerca acquisti
-main_panel_input_purchase_research;Ricerca prodotti
-panel_stud_ and_training;Studio
-main_panel_stud_ and_training;Formazione e studio
-button_new_chat;Nuova chat
-button_telegram_bot;Bot Telegram
-history_lable_today;Oggi
-history_lable_in_the_last_7_days;Negli ultimi 7 giorni
-history_lable_previously;Precedentemente
-user_subscription;Gratis
-interlineation;FreeChat fa del suo meglio, ma può commettere errori
-profile_and_settings;Profilo e impostazioni
-button_edit_profile;Modifica profilo
-setting;Impostazioni
-button_personalization;Personalizzazione
-button_apps;Modalità IA
-button_language;Lingua
-button_security;Sicurezza
-button_Information_about;Informazioni su
-button_report_a_problem;Segnala un problema
-app_version;FreeChat Android <version>
-user_email;<mail>
-user_input;<user_input>
-chat_ai_output;<chat_ai_output>
-add_input_photo;<add_input_photo>
-add_input_files;<add_input_files>
-panel_edit_name;Nome
-input_edit_name;<input_edit_name>
-panel_edit_emeil;Email
-input_edit_email;<input_edit_email>
-lable_personalization;Personalizzazione
-lable_personalization_instructions;Istruzioni personalizzate
-input_personalization_instructions;<input_personalization_instructions>
-lable_language;Lingua
-lable_select_language;Seleziona lingua
-button_select_language_russian;Русский
-button_select_language_english;English
-button_select_language_ukrainian;Українська
-button_select_language_french;Français
-button_select_language_italian;Italiano
-button_select_language_old_russian;Руснацькый
-button_select_language_pirate_speak;Pirate Speak
-button_select_language_hindi;हिन्दी (Hindi)
-button_select_language_georgian;ქართული (Georgian)
-lable_security;Sicurezza
-lable_your_password;La tua password
-input_password;<input_password>
-button_show_password;Mostra password
-button_hide_password;Nascondi password
-button_change_password;Cambia password
-lable_apps;Modalità IA
-button_lable_search_for_apps;Cerca app
-input_search_for_apps;<input_search_for_apps>
-button_lable_all_apps;Tutte le app
-button_mycalculator;MyCalculator
-app_mycalculator_description;Calcolatrice Romanikha Tsvetkova
-main_lable_mycalculator;MyCalculator
-button_install_app;Installa
-in_app_mycalculator_description;Calcolatrice Romanikha Tsvetkova
-app_description;Descrizione
-app_description_2;MyCalculator
-rating_app;1,1
-total_rating_app;203,9K valutazioni
-total_install_app;40M+
-install_app_description;Download
-total_weight_app;30,1 MB
-weight_app_deacription;Dimensione
-button_write_a_review;Scrivi una recensione
-toast_no_limits;Nessun limite nella modalità corrente.
-toast_anonymous_chat;Chat anonima
-speech_speak_now;Parla...
-speech_listening;Ascolto...
-speech_error_audio;Errore audio
-speech_error_client;Errore client
-speech_error_permission;Nessun permesso
-speech_error_network;Errore di rete
-speech_error_no_match;Voce non riconosciuta
-speech_error_busy;Servizio occupato
-speech_error_server;Errore del server
-speech_error_timeout;Silenzio
-speech_error_generic;Errore di riconoscimento
-toast_chat_deleted;Chat eliminata
-dialog_confirm;Conferma
-dialog_delete_all_history;Eliminare TUTTA la cronologia delle chat?
 button_delete;Elimina
-toast_all_history_deleted;Tutta la cronologia è stata eliminata
-button_cancel;Annulla
-section_pinned;Fissati
-no_chat_history;Nessuna cronologia chat
-no_search_results;Nessun risultato
-menu_rename;Rinomina
-menu_unpin_chat;Sblocca chat
-menu_pin_chat;Fissa chat
-toast_chat_not_saved;Chat non salvata
-label_untitled;Senza titolo
-dialog_rename_hint;Nuovo nome
+button_edit_profile;Modifica profilo
+button_files;File
+button_hide_password;Nascondi password
+button_language;Lingua
+button_more;Plus
+button_new_chat;Nuova chat
 button_ok;OK
-toast_load_error;Errore di caricamento
-toast_chat_empty;La chat è vuota
-export_sender_you;Tu
+button_personalization;Personalizzazione
+button_photo;Foto
+button_purchase_research;Ricerca acquisti
+button_purchase_research_description;Ottieni una guida dettagliata agli acquisti
+button_report_problem;Segnala un problema
+button_save;Salva
+button_search_web;Cerca sul web
+button_search_web_description;Cerca nuove informazioni in tempo reale
+button_security;Sicurezza
+button_show_password;Mostra password
+button_study_training;Studio e formazione
+button_study_training_description;Impara un nuovo concetto
+chat_error_empty;Le chat est vide
+chat_error_not_found;Chat introuvable
+code_copied;Copiato!
+code_copy;Copia
+code_default_language;Code
+content_desc_add_attachment;Ajouter une pièce jointe
+content_desc_anonymous_chat;Chat incognito
+content_desc_back;Retour
+content_desc_clear_mode;Effacer le mode
+content_desc_menu;Menu
+content_desc_microphone;Microphone
+content_desc_more_options;Plus d'options
+content_desc_new_chat;Nouvelle discussion
+content_desc_remove_attachment;Retirer la pièce jointe
+content_desc_send;Envoyer
+dialog_change_password;Cambio password
+dialog_rename_hint;Nuovo nome
 export_sender_bot;Bot
-toast_doc_saved;Documento salvato
-toast_doc_error;Errore nella creazione del documento
-toast_limits_exhausted;Hai esaurito le richieste gratuite per oggi! Premi il pulsante +5 in alto.
-toast_error;Errore
-toast_open_attachment_error;Impossibile aprire l'allegato
+export_sender_you;Tu
+external_link_unavailable;Lien indisponible
+hint_create_image;Décrivez l'image à créer
+history_label_last_7_days;Negli ultimi 7 giorni
+history_label_previously;Precedentemente
+history_label_today;Oggi
 image_creating;Creazione immagini...
 image_ready;Immagine pronta
-code_copy;Copia
-code_copied;Copiato!
-toast_liked;Piaciuto!
-toast_disliked;Non piaciuto
-toast_copied;Copiato
+label_email;Email
+label_file_analysis;Analisi file/foto
+label_name;Nome
+label_new_chat;Nuova chat
+label_personalization;Personalizzazione
+label_personalization_instructions;Istruzioni personalizzate
+label_select_language;Seleziona lingua
+label_user;Utilisateur
+label_your_password;La tua password
+language_name_br;Biélorusse
+language_name_en;Anglais
+language_name_fr;Français
+language_name_go;Géorgien
+language_name_it;Italien
+language_name_ru;Russe
+language_name_uk;Ukrainien
+main_panel_input;Fai una domanda
+main_panel_input_create_image;Crea immagine
+main_panel_input_panel_search;Cerca sul web
+main_panel_input_purchase_research;Ricerca prodotti
+main_panel_study_training;Formazione e studio
+menu_copy_text;Copier le texte
+menu_edit_message;Modifier le message
+menu_pin_chat;Fissa chat
 menu_regenerate;Rigenera
+menu_rename;Rinomina
+menu_revoke_share_links;Désactiver les liens partagés
+menu_unpin_chat;Sblocca chat
+network_connect_error;Impossible de se connecter au serveur
+network_empty_response;Réponse serveur vide
+network_error_with_message;Erreur réseau : %s
+network_http_error;Erreur %s
+network_unknown_error;Erreur inconnue
+no_chat_history;Nessuna cronologia chat
+no_search_results;Nessun risultato
+not_available;-
+panel_create_image;Immagine
+panel_purchase_research;Ricerca acquisti
+panel_search;Cerca
+panel_study_training;Studio
+password_confirm_new_hint;Confirmer le nouveau mot de passe
+password_current_hint;Mot de passe actuel
+password_error_current_required;Saisissez le mot de passe actuel
+password_error_mismatch;Les mots de passe ne correspondent pas
+password_error_new_too_short;Le nouveau mot de passe doit contenir au moins 6 caractères
+password_new_hint;Nouveau mot de passe
+password_securely_stored;Le mot de passe est stocké en sécurité
+password_sign_in_again;Connectez-vous à nouveau
+profile_and_settings;Profilo e impostazioni
+prompt_idea_prefix;Trouve quelques idées
+quick_suggestion_idea_1;Trouve des idées pour mes prochaines vacances
+quick_suggestion_idea_2;Trouve des idées pour une campagne de marque
+quick_suggestion_idea_3;Trouve des idées pour un nouveau programme d'entraînement
+quick_suggestion_idea_4;Trouve des idées pour un menu de dîner
+quick_suggestion_image_1;Crée une image pour ma présentation
+quick_suggestion_image_2;Crée une image de mon animal
+quick_suggestion_image_3;Crée une image pour mon site
+quick_suggestion_image_4;Crée des images en feutre
+request_failed_http;Échec de la requête : HTTP %s
+section_pinned;Fissati
+session_expired_sign_in;Session expirée. Connectez-vous à nouveau.
+session_missing_sign_in;Session introuvable. Connectez-vous à nouveau.
+settings_shared_links;Chats partagés
+settings_subscription;Abonnement Pro
+settings_title;Impostazioni
+share;Condividi
+share_empty_response;Réponse de partage vide
+share_image;Condividi immagine
+share_link_creation_failed;Échec de la création du lien
+share_link_revoke_failed;Échec de la révocation du lien
+share_link_unavailable;Le lien de partage est indisponible
+share_revoke_empty_response;Réponse de révocation vide
+shared_chat_empty;Le chat partagé est vide
+shared_chat_title;Chat partagé
+shared_link_copied;Lien copié
+shared_link_created_at;Créé : %s
+shared_link_delete_error;Échec de la suppression du lien
+shared_link_delete_message;Supprimer ce lien ? Les personnes qui l'ont perdront l'accès à la copie du chat.
+shared_link_delete_old_error;Impossible de supprimer l'ancien lien
+shared_link_delete_title;Supprimer le lien
+shared_link_deleted;Lien supprimé
+shared_link_expired_copy_error;Ce lien a expiré et ne peut pas être copié
+shared_link_unknown_date;Date inconnue
+shared_links_empty_desc;Partagez un chat pour le voir ici
+shared_links_empty_title;Aucun lien pour le moment
+shared_links_load_error;Échec du chargement des liens
+speech_error_audio;Errore audio
+speech_error_busy;Servizio occupato
+speech_error_client;Errore client
+speech_error_generic;Errore di riconoscimento
+speech_error_network;Errore di rete
+speech_error_no_match;Voce non riconosciuta
+speech_error_permission;Nessun permesso
+speech_error_server;Errore del server
+speech_error_timeout;Silenzio
+speech_listening;Ascolto...
+speech_speak_now;Parla...
+toast_ad_loading;La pubblicità sta ancora caricando, attendi...
+toast_chat_empty;La chat è vuota
+toast_copied;Copiato
+toast_disliked;Non piaciuto
+toast_doc_error;Errore nella creazione del documento
+toast_doc_saved_with_path;Document enregistré :\n%s
+toast_error;Errore
 toast_image_copied;Immagine copiata
 toast_image_copy_error;Errore copia immagine
-toast_share_error;Errore di condivisione
-toast_reward;Hai ricevuto +5 richieste gratuite!
-toast_ad_loading;La pubblicità sta ancora caricando, attendi...
-ai_thinking;Sto pensando...
-label_file_analysis;Analisi file/foto
-label_new_chat;Nuova chat
-toast_logout;Sei uscito dal profilo
-toast_profile_saved;Profilo salvato
-toast_name_empty;Il nome non può essere vuoto
-toast_changes_saved;Modifiche salvate
-dialog_new_password_hint;Nuova password
-dialog_change_password;Cambio password
-button_save;Salva
-toast_password_changed;Password cambiata
-toast_password_empty;La password non può essere vuota
+toast_incognito_info;Le chat incognito n'est pas enregistré dans l'historique
 toast_instructions_saved;Istruzioni salvate
-share_image;Condividi immagine
-share;Condividi
-ai_mode_plus_title;Modalità avanzata
-ai_mode_plus_desc;Usa un set esteso di modelli e capacità
-ai_mode_free_title;Modalità gratuita (con limiti)
-ai_mode_free_desc;Usa il livello base dei modelli. Tutti i limiti attuali vengono mantenuti
-ai_mode_auto_title;Modalità automatica
-ai_mode_auto_desc;Il sistema seleziona dinamicamente il modello migliore in base al compito e alla risposta
+toast_liked;Piaciuto!
+toast_limits_exhausted;Hai esaurito le richieste gratuite per oggi! Premi il pulsante +5 in alto.
+toast_logout;Sei uscito dal profilo
+toast_name_empty;Il nome non può essere vuoto
+toast_open_attachment_error_with_message;Impossible d'ouvrir la pièce jointe : %s
+toast_profile_saved;Profilo salvato
+toast_share_error;Errore di condivisione
+toast_share_import_error;Échec de l'ouverture du chat partagé
+toast_share_imported;Chat partagé copié
+toast_share_importing;Ouverture du chat partagé...
+toast_share_link_created;Lien de partage créé
+toast_share_links_not_found;Aucun lien partagé actif
+toast_share_links_revoked;Liens partagés désactivés
+toast_share_revoke_error;Échec de la désactivation des liens partagés
+untitled_chat;Sans titre
+welcome_question;Come posso aiutarti?

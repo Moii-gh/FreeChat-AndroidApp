@@ -30,7 +30,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Отправленные чаты"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"/>
@@ -87,7 +86,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Нет созданных ссылок"
                 android:textColor="#8E8E93"
                 android:textSize="16sp"/>
 
@@ -95,7 +93,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Поделитесь чатом, чтобы он появился здесь"
                 android:textColor="#48484A"
                 android:textSize="13sp"/>
         </LinearLayout>

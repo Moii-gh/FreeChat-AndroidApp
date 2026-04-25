@@ -36,6 +36,7 @@ import com.example.chatapp.ui.auth.screens.PasswordStepScreen
 import com.example.chatapp.ui.auth.screens.TelegramCodeScreen
 import com.example.chatapp.ui.auth.screens.TelegramLoginWidgetScreen
 import com.example.chatapp.ui.auth.theme.AppBlack
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.viewmodel.AuthEvent
 import com.example.chatapp.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -89,7 +90,7 @@ fun AuthNavGraph(
                         val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(event.url))
                         val fallbackLaunched = runCatching { context.startActivity(fallbackIntent) }.isSuccess
                         if (!fallbackLaunched) {
-                            snackbarHostState.showSnackbar("Не удалось открыть Telegram. Проверьте, установлен ли он.")
+                            snackbarHostState.showSnackbar(LocaleHelper.getString(context, "auth_telegram_open_error"))
                         }
                     }
                 }
@@ -102,7 +103,7 @@ fun AuthNavGraph(
                         scopes = event.scopes
                     ).onFailure { error ->
                         viewModel.onTelegramWidgetError(
-                            error.message ?: "Не удалось открыть Telegram Login"
+                            error.message ?: LocaleHelper.getString(context, "auth_telegram_login_open_error")
                         )
                     }
                 }

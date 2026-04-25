@@ -79,19 +79,19 @@ class DrawerManager(
 
             // Сегодня
             if (todayChats.isNotEmpty()) {
-                chatsContainer.addView(createSectionHeader(LocaleHelper.getString(context, "history_lable_today")))
+                chatsContainer.addView(createSectionHeader(LocaleHelper.getString(context, "history_label_today")))
                 todayChats.forEach { chatsContainer.addView(createChatViewItem(it)) }
             }
 
             // За 7 дней
             if (weekChats.isNotEmpty()) {
-                chatsContainer.addView(createSectionHeader(LocaleHelper.getString(context, "history_lable_in_the_last_7_days")))
+                chatsContainer.addView(createSectionHeader(LocaleHelper.getString(context, "history_label_last_7_days")))
                 weekChats.forEach { chatsContainer.addView(createChatViewItem(it)) }
             }
 
             // Ранее
             if (earlierChats.isNotEmpty()) {
-                chatsContainer.addView(createSectionHeader(LocaleHelper.getString(context, "history_lable_previously")))
+                chatsContainer.addView(createSectionHeader(LocaleHelper.getString(context, "history_label_previously")))
                 earlierChats.forEach { chatsContainer.addView(createChatViewItem(it)) }
             }
 

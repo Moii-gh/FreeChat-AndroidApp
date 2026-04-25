@@ -74,6 +74,7 @@ interface AuthRepositoryContract {
 
 class AuthRepository(
     private val service: AuthApiService,
+    private val localize: (String, Array<out Any>) -> String = { key, _ -> key },
     private val gson: Gson = Gson()
 ) : AuthRepositoryContract {
 
@@ -166,7 +167,7 @@ class AuthRepository(
                 if (body != null) {
                     NetworkResult.Success(body)
                 } else {
-                    NetworkResult.Error(message = "Пустой ответ сервера")
+                    NetworkResult.Error(message = localize("network_empty_response", emptyArray()))
                 }
             } else {
                 val errorBody = response.errorBody()?.string()
@@ -174,14 +175,14 @@ class AuthRepository(
                     runCatching { gson.fromJson(it, ApiErrorResponse::class.java) }.getOrNull()
                 }
                 NetworkResult.Error(
-                    message = parsed?.message ?: "Ошибка ${response.code()}",
+                    message = parsed?.message ?: localize("network_http_error", arrayOf(response.code())),
                     fieldErrors = parsed?.errors.orEmpty()
                 )
             }
         } catch (_: IOException) {
-            NetworkResult.Error(message = "Не удалось подключиться к серверу")
+            NetworkResult.Error(message = localize("network_connect_error", emptyArray()))
         } catch (error: Exception) {
-            NetworkResult.Error(message = error.message ?: "Неизвестная ошибка")
+            NetworkResult.Error(message = error.message ?: localize("network_unknown_error", emptyArray()))
         }
     }
 }
