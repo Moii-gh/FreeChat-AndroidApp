@@ -648,16 +648,35 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                         put("role", message.role)
                         put("content", message.content)
                         message.imageUrl?.let { put("imageUri", it) }
+                        message.attachmentData?.let { put("base64", it) }
+                        message.attachmentMimeType?.let { put("mimeType", it) }
+                        message.attachmentFileName?.let { put("fileName", it) }
+                        message.attachmentContext?.let { put("fileContext", it) }
                     }
                 )
 
                 if (message.role == "user") {
-                    messageRenderer.renderRestoredUserMessage(message.content, message.imageUrl, historyIndex)
+                    messageRenderer.renderRestoredUserMessage(
+                        content = message.content,
+                        imageUrl = message.imageUrl,
+                        attachmentData = message.attachmentData,
+                        attachmentMimeType = message.attachmentMimeType,
+                        attachmentFileName = message.attachmentFileName,
+                        historyIndex = historyIndex
+                    )
                 } else {
+                    val assistantContent = if (
+                        !AssistantMessageWrapper.containsImageReply(message.content) &&
+                        !message.imageUrl.isNullOrBlank()
+                    ) {
+                        "![image](${message.imageUrl})"
+                    } else {
+                        message.content
+                    }
                     messageRenderer.addAssistantMessage(
-                        text = message.content,
+                        text = assistantContent,
                         animate = false,
-                        isImageMode = AssistantMessageWrapper.containsImageReply(message.content)
+                        isImageMode = AssistantMessageWrapper.containsImageReply(assistantContent)
                     )
                 }
             }
@@ -1088,11 +1107,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             null
         }
 
-        val base64Data = if (isImage || attachmentContext == null) {
-            Base64.encodeToString(bytes, Base64.NO_WRAP)
-        } else {
-            null
-        }
+        val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
 
         return AttachmentPayload(
             fileUri = uri.toString(),

@@ -20,7 +20,11 @@ data class SyncMessageDto(
     val role: String,
     val content: String,
     val timestamp: Long,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val attachmentData: String? = null,
+    val attachmentMimeType: String? = null,
+    val attachmentFileName: String? = null,
+    val attachmentContext: String? = null
 )
 
 @Keep

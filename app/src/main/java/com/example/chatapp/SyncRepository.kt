@@ -50,7 +50,11 @@ class SyncRepository(context: Context) {
                         role = it.role,
                         content = it.content,
                         timestamp = it.timestamp,
-                        imageUrl = it.imageUrl
+                        imageUrl = it.imageUrl,
+                        attachmentData = it.attachmentData,
+                        attachmentMimeType = it.attachmentMimeType,
+                        attachmentFileName = it.attachmentFileName,
+                        attachmentContext = it.attachmentContext
                     )
                 })
             }
@@ -109,6 +113,10 @@ class SyncRepository(context: Context) {
                                 content = remoteMsg.content,
                                 timestamp = remoteMsg.timestamp,
                                 imageUrl = remoteMsg.imageUrl,
+                                attachmentData = remoteMsg.attachmentData,
+                                attachmentMimeType = remoteMsg.attachmentMimeType,
+                                attachmentFileName = remoteMsg.attachmentFileName,
+                                attachmentContext = remoteMsg.attachmentContext,
                                 syncId = remoteMsg.syncId
                             )
                         )

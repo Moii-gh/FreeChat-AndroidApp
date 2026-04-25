@@ -85,6 +85,46 @@ class ChatMessageRenderer(
         }
     }
 
+    fun addUserMessageWithImageData(
+        message: String,
+        base64Data: String,
+        mimeType: String?,
+        fileName: String?,
+        historyIndex: Int
+    ) {
+        val density = context.resources.displayMetrics.density
+        val sizePx = (80 * density).toInt()
+        val imageView = ImageView(context).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            clipToOutline = true
+            setBackgroundResource(R.drawable.preview_background)
+            runCatching {
+                val bytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                setImageBitmap(bitmap)
+            }.onFailure {
+                setImageResource(R.drawable.ic_image)
+                setColorFilter(Color.WHITE)
+            }
+        }
+        attachUserMessageLongClick(imageView, message, historyIndex)
+        messagesContainer.addView(
+            imageView,
+            LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                gravity = Gravity.END
+                setMargins(64, 0, 0, (4 * density).toInt())
+            }
+        )
+        imageView.slideAndFadeIn()
+        imageView.setOnClickListener {
+            FileUtils.openBase64File(context, base64Data, fileName ?: "image.png", mimeType ?: "image/png")
+        }
+
+        if (message.isNotEmpty()) {
+            addUserMessage(message, historyIndex)
+        }
+    }
+
     /** Добавляет сообщение пользователя с файлом */
     fun addUserMessageWithFile(message: String, fileUri: Uri, historyIndex: Int) {
         val density = context.resources.displayMetrics.density
@@ -140,11 +180,97 @@ class ChatMessageRenderer(
         }
     }
 
+    fun addUserMessageWithFileData(
+        message: String,
+        base64Data: String,
+        mimeType: String?,
+        fileName: String?,
+        historyIndex: Int
+    ) {
+        val density = context.resources.displayMetrics.density
+        val fileContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundResource(R.drawable.bg_user_message)
+            val pV = (12 * density).toInt()
+            val pH = (16 * density).toInt()
+            setPadding(pH, pV, pH, pV)
+        }
+        val fileIcon = ImageView(context).apply {
+            setImageResource(R.drawable.ic_file_new)
+            setColorFilter(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams((24 * density).toInt(), (24 * density).toInt()).apply {
+                marginEnd = (12 * density).toInt()
+            }
+        }
+        val tvFileName = TextView(context).apply {
+            text = fileName?.takeIf { it.isNotBlank() } ?: LocaleHelper.getString(context, "label_file_analysis")
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            setSingleLine()
+            ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+            setTypeface(null, Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val caretTv = TextView(context).apply {
+            text = "вЂє"
+            setTextColor(Color.parseColor("#8E8E93"))
+            textSize = 24f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                marginStart = (12 * density).toInt()
+            }
+            setPadding(0, 0, 0, (4 * density).toInt())
+        }
+        fileContainer.addView(fileIcon)
+        fileContainer.addView(tvFileName)
+        fileContainer.addView(caretTv)
+        attachUserMessageLongClick(fileContainer, message, historyIndex)
+        messagesContainer.addView(
+            fileContainer,
+            LinearLayout.LayoutParams((260 * density).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.END
+                setMargins(64, 0, 0, (4 * density).toInt())
+            }
+        )
+        fileContainer.slideAndFadeIn()
+        fileContainer.setOnClickListener {
+            FileUtils.openBase64File(context, base64Data, fileName, mimeType)
+        }
+
+        if (message.isNotEmpty()) {
+            addUserMessage(message, historyIndex)
+        }
+    }
+
     /**
      * Восстановленное сообщение из БД: определяет тип вложения,
      * проверяет доступность URI, при необходимости показывает заглушку.
      */
-    fun renderRestoredUserMessage(content: String, imageUrl: String?, historyIndex: Int) {
+    fun renderRestoredUserMessage(
+        content: String,
+        imageUrl: String?,
+        attachmentData: String?,
+        attachmentMimeType: String?,
+        attachmentFileName: String?,
+        historyIndex: Int
+    ) {
+        val baseText = if (content.contains("\n\n[")) content.split("\n\n[")[0] else content
+        val storedAttachmentData = attachmentData?.takeIf { it.isNotBlank() }
+            ?: imageUrl?.takeIf { it.startsWith("data:", ignoreCase = true) }?.substringAfter(",", "")
+
+        if (storedAttachmentData != null) {
+            val resolvedMimeType = attachmentMimeType
+                ?: imageUrl?.takeIf { it.startsWith("data:", ignoreCase = true) }
+                    ?.substringAfter("data:")
+                    ?.substringBefore(";")
+            if (resolvedMimeType?.startsWith("image/", ignoreCase = true) == true) {
+                addUserMessageWithImageData(baseText, storedAttachmentData, resolvedMimeType, attachmentFileName, historyIndex)
+            } else {
+                addUserMessageWithFileData(baseText, storedAttachmentData, resolvedMimeType, attachmentFileName, historyIndex)
+            }
+            return
+        }
+
         var isUriReadable = false
         var isImageUri = false
         var safeUri: Uri? = null
@@ -160,8 +286,6 @@ class ChatMessageRenderer(
                 isUriReadable = false
             }
         }
-
-        val baseText = if (content.contains("\n\n[")) content.split("\n\n[")[0] else content
 
         if (isUriReadable && safeUri != null) {
             if (isImageUri) {

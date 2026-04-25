@@ -20,6 +20,7 @@ const { createChatShareRouter, createPublicShareRouter } = require("./routes/cha
 
 function createApp(options = {}) {
   const app = express();
+  app.set("trust proxy", 1);
   const resolvedUserModel = options.userModel || userModel;
   const resolvedTelegramChallengeModel =
     options.telegramChallengeModel || telegramChallengeModel;

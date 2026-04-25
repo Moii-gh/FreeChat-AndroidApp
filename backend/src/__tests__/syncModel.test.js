@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   upsertChats,
   upsertMessages,
+  getUserChats,
   getUserMessages
 } = require("../models/syncModel");
 
@@ -56,16 +57,35 @@ test("upsertMessages only inserts into non-deleted chats owned by the authentica
         role: "user",
         content: "hello",
         timestamp: 789,
-        imageUrl: null
+        imageUrl: null,
+        attachmentData: "SGVsbG8=",
+        attachmentMimeType: "text/plain",
+        attachmentFileName: "note.txt",
+        attachmentContext: "Hello"
       }
     ],
     executor
   );
 
   assert.equal(executor.queries.length, 1);
-  assert.match(executor.queries[0].text, /user_id = \$7/);
+  assert.match(executor.queries[0].text, /user_id = \$11/);
   assert.match(executor.queries[0].text, /is_deleted = false/);
-  assert.equal(executor.queries[0].params[6], "user-1");
+  assert.equal(executor.queries[0].params[6], "SGVsbG8=");
+  assert.equal(executor.queries[0].params[7], "text/plain");
+  assert.equal(executor.queries[0].params[8], "note.txt");
+  assert.equal(executor.queries[0].params[9], "Hello");
+  assert.equal(executor.queries[0].params[10], "user-1");
+});
+
+test("getUserChats returns camelCase fields for Android sync", async () => {
+  const executor = createFakeExecutor();
+
+  await getUserChats("user-1", executor);
+
+  assert.equal(executor.queries.length, 1);
+  assert.match(executor.queries[0].text, /is_pinned as "isPinned"/);
+  assert.match(executor.queries[0].text, /last_updated_ms as "lastUpdated"/);
+  assert.match(executor.queries[0].text, /is_deleted as "isDeleted"/);
 });
 
 test("getUserMessages excludes tombstoned chats from the sync response", async () => {

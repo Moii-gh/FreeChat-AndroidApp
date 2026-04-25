@@ -7,7 +7,11 @@ data class ChatShareMessageDto(
     val role: String,
     val content: String,
     val timestamp: Long,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val attachmentData: String? = null,
+    val attachmentMimeType: String? = null,
+    val attachmentFileName: String? = null,
+    val attachmentContext: String? = null
 )
 
 @Keep

@@ -9,7 +9,7 @@ const MAX_DEPTH = 8;
 const MAX_TOTAL_TEXT_CHARS = 160000;
 const MAX_STRING_LENGTH = 24000;
 const MAX_URL_LENGTH = 4096;
-const MAX_DATA_URL_LENGTH = 4 * 1024 * 1024;
+const MAX_DATA_URL_LENGTH = 8 * 1024 * 1024;
 
 function createBadRequestError(message) {
   const error = new Error(message);
@@ -49,6 +49,11 @@ function inspectAiValue(value, state, path = "request", depth = 0) {
     const maxLength = getAllowedStringLength(path, value);
     if (value.length > maxLength) {
       throw createBadRequestError(`AI request field ${path} is too large`);
+    }
+
+    const isInlineImageUrl = path.endsWith(".image_url.url") && value.startsWith("data:image/");
+    if (isInlineImageUrl) {
+      return;
     }
 
     state.totalTextChars += value.length;

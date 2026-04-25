@@ -13,6 +13,14 @@ function errorHandler(error, req, res, next) {
     Number.isInteger(error?.statusCode) ? error.statusCode :
     Number.isInteger(error?.status) ? error.status :
     500;
+  if (status >= 500) {
+    console.error("[server-error]", {
+      method: req.method,
+      path: req.originalUrl,
+      message: error?.message,
+      stack: error?.stack
+    });
+  }
   const message =
     status >= 500
       ? "Внутренняя ошибка сервера"

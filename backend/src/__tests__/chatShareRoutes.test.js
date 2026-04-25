@@ -84,3 +84,44 @@ test("chat share links expose an immutable snapshot and can be revoked", async (
   const afterRevokeResponse = await request(app).get(`/api/chat-shares/${token}`);
   assert.equal(afterRevokeResponse.status, 404);
 });
+
+test("chat share links preserve generated images and attachment metadata", async () => {
+  const userModel = createFakeUserModel();
+  const user = seedUser(userModel);
+  const app = createApp({
+    userModel,
+    chatShareModel: memoryChatShareModel,
+    rateLimitEnabled: false
+  });
+  const imageUrl = "data:image/png;base64,iVBORw0KGgo=";
+
+  const createResponse = await request(app)
+    .post("/api/chat-shares")
+    .set("Authorization", `Bearer ${createJwtToken(user)}`)
+    .send({
+      sourceChatId: "0f9f657d-558a-4711-91bc-bdc9171b1cb0",
+      title: "Image chat",
+      summary: "",
+      messages: [
+        {
+          role: "assistant",
+          content: "",
+          timestamp: 2000,
+          imageUrl,
+          attachmentData: "iVBORw0KGgo=",
+          attachmentMimeType: "image/png",
+          attachmentFileName: "generated.png"
+        }
+      ],
+      expiresInDays: 30
+    });
+
+  assert.equal(createResponse.status, 201);
+
+  const getResponse = await request(app).get(`/api/chat-shares/${createResponse.body.token}`);
+  assert.equal(getResponse.status, 200);
+  assert.equal(getResponse.body.messages[0].imageUrl, imageUrl);
+  assert.equal(getResponse.body.messages[0].attachmentData, "iVBORw0KGgo=");
+  assert.equal(getResponse.body.messages[0].attachmentMimeType, "image/png");
+  assert.equal(getResponse.body.messages[0].attachmentFileName, "generated.png");
+});

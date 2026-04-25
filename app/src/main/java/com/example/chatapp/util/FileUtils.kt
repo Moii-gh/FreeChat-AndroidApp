@@ -46,14 +46,35 @@ object FileUtils {
 
     /** Сохраняет base64-строку как PNG в кэш и возвращает FileProvider URI для шаринга */
     fun saveBase64ToCache(context: Context, base64Str: String): Uri? {
+        return saveBase64FileToCache(context, base64Str, "shared_image_${System.currentTimeMillis()}.png")
+    }
+
+    fun saveBase64FileToCache(context: Context, base64Str: String, fileName: String?): Uri? {
         return try {
             val bytes = android.util.Base64.decode(base64Str, android.util.Base64.DEFAULT)
-            val file = File(context.cacheDir, "shared_image_${System.currentTimeMillis()}.png")
+            val file = File(context.cacheDir, safeFileName(fileName))
             file.writeBytes(bytes)
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    fun openBase64File(context: Context, base64Str: String, fileName: String?, mimeType: String?) {
+        val uri = saveBase64FileToCache(context, base64Str, fileName)
+        if (uri == null) {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_open_attachment_error"), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.setDataAndType(uri, mimeType?.takeIf { it.isNotBlank() } ?: "*/*")
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "${LocaleHelper.getString(context, "toast_open_attachment_error")}: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -116,6 +137,12 @@ object FileUtils {
         } catch (e: Exception) {
             Toast.makeText(context, "${LocaleHelper.getString(context, "toast_open_attachment_error")}: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun safeFileName(fileName: String?): String {
+        val fallback = "attachment_${System.currentTimeMillis()}"
+        val raw = fileName?.takeIf { it.isNotBlank() } ?: fallback
+        return raw.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(120).ifBlank { fallback }
     }
 
     /**

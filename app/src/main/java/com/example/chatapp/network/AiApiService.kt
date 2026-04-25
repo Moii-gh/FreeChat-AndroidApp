@@ -60,6 +60,8 @@ object AiApiService {
         return JSONObject().apply {
             if (isImageGeneration) {
                 put("response_format", "b64_json")
+                put("n", 1)
+                put("size", "1024x1024")
                 val lastPrompt = messagesToKeep.lastOrNull {
                     it.getString("role") == "user"
                 }?.getString("content") ?: "Creative image"
@@ -111,6 +113,7 @@ object AiApiService {
 
     private fun buildMessageText(msg: JSONObject): String {
         val content = msg.optString("content", "")
+            .replace(Regex("!\\[[^]]*]\\(data:image/[^)]+\\)"), "[Generated image]")
         val fileName = msg.optString("fileName", "")
         val mimeType = msg.optString("mimeType", "")
         val fileContext = msg.optString("fileContext").ifBlank { msg.optString("fileText") }
@@ -190,11 +193,16 @@ object AiApiService {
                         var finalReply = ""
 
                         if (isImageGeneration) {
-                            val b64 = JSONObject(responseBody.string())
+                            val imageData = JSONObject(responseBody.string())
                                 .getJSONArray("data")
                                 .getJSONObject(0)
-                                .getString("b64_json")
-                            finalReply = "![image](data:image/png;base64,$b64)"
+                            val b64 = imageData.optString("b64_json")
+                            val imageUrl = imageData.optString("url")
+                            finalReply = when {
+                                b64.isNotBlank() -> "![image](data:image/png;base64,$b64)"
+                                imageUrl.isNotBlank() -> "![image]($imageUrl)"
+                                else -> error("Image response is empty")
+                            }
                             withContext(Dispatchers.Main) {
                                 callback.onChunk(finalReply)
                             }

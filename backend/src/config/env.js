@@ -1,8 +1,11 @@
 const path = require("path");
 const dotenv = require("dotenv");
 
-dotenv.config({ path: path.resolve(process.cwd(), "backend/.env") });
-dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: false });
+const backendDir = path.resolve(__dirname, "../..");
+const repoRoot = path.resolve(backendDir, "..");
+
+dotenv.config({ path: path.join(backendDir, ".env") });
+dotenv.config({ path: path.join(repoRoot, ".env"), override: false });
 
 function asNumber(value, fallback) {
   const parsed = Number(value);

@@ -1,10 +1,18 @@
 const { z } = require("zod");
 
+const MAX_MESSAGE_CONTENT_CHARS = 8 * 1024 * 1024;
+const MAX_ATTACHMENT_DATA_CHARS = 8 * 1024 * 1024;
+const MAX_ATTACHMENT_CONTEXT_CHARS = 160000;
+
 const chatShareMessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
-  content: z.string().max(20000),
+  content: z.string().max(MAX_MESSAGE_CONTENT_CHARS),
   timestamp: z.number().int().nonnegative(),
-  imageUrl: z.string().trim().max(4096).nullable().optional()
+  imageUrl: z.string().trim().max(MAX_ATTACHMENT_DATA_CHARS).nullable().optional(),
+  attachmentData: z.string().max(MAX_ATTACHMENT_DATA_CHARS).nullable().optional(),
+  attachmentMimeType: z.string().trim().max(255).nullable().optional(),
+  attachmentFileName: z.string().trim().max(255).nullable().optional(),
+  attachmentContext: z.string().max(MAX_ATTACHMENT_CONTEXT_CHARS).nullable().optional()
 }).strict();
 
 const createChatShareSchema = z.object({

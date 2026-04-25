@@ -45,6 +45,50 @@ function assertConfigured(upstreamUrl, model, message) {
   }
 }
 
+function gcd(left, right) {
+  let a = Math.abs(left);
+  let b = Math.abs(right);
+  while (b) {
+    const next = a % b;
+    a = b;
+    b = next;
+  }
+  return a || 1;
+}
+
+function aspectRatioFromSize(size) {
+  if (typeof size !== "string") {
+    return "";
+  }
+
+  const match = size.trim().match(/^(\d+)\s*x\s*(\d+)$/i);
+  if (!match) {
+    return "";
+  }
+
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return "";
+  }
+
+  const divisor = gcd(width, height);
+  return `${width / divisor}:${height / divisor}`;
+}
+
+function normalizeImageRequestBody(requestBody, model) {
+  if (!model?.startsWith?.("img-flux/")) {
+    return requestBody || {};
+  }
+
+  const normalized = { ...(requestBody || {}) };
+  if (!normalized.aspect_ratio) {
+    normalized.aspect_ratio = aspectRatioFromSize(normalized.size) || "1:1";
+  }
+  delete normalized.size;
+  return normalized;
+}
+
 async function proxyAiRequest({ user, currentMode, requestBody, res, onBeforeResponse }) {
   const selection = selectChatModel({
     user,
@@ -55,7 +99,7 @@ async function proxyAiRequest({ user, currentMode, requestBody, res, onBeforeRes
   assertConfigured(selection.upstreamUrl, selection.model, "AI service is not configured on the server");
 
   const upstreamRequestBody = {
-    ...(requestBody || {}),
+    ...normalizeImageRequestBody(requestBody, selection.model),
     model: selection.model
   };
 

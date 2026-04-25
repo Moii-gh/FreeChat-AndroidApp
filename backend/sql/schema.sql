@@ -91,8 +91,17 @@ create table if not exists messages (
     content text not null,
     timestamp_ms bigint not null,
     image_url text,
+    attachment_data text,
+    attachment_mime_type text,
+    attachment_file_name text,
+    attachment_context text,
     created_at timestamptz not null default now()
 );
+
+alter table if exists messages add column if not exists attachment_data text;
+alter table if exists messages add column if not exists attachment_mime_type text;
+alter table if exists messages add column if not exists attachment_file_name text;
+alter table if exists messages add column if not exists attachment_context text;
 
 create table if not exists chat_share_links (
     id uuid primary key default gen_random_uuid(),
@@ -142,3 +151,12 @@ create table if not exists billing_payments (
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
+
+do $$
+begin
+    if exists (select 1 from pg_roles where rolname = 'chatapp') then
+        grant usage on schema public to chatapp;
+        grant select, insert, update, delete on all tables in schema public to chatapp;
+        grant usage, select, update on all sequences in schema public to chatapp;
+    end if;
+end $$;

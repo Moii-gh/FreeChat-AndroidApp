@@ -75,11 +75,16 @@ class ChatRepository(context: Context) {
                 title = chat.title.ifBlank { "Shared chat" },
                 summary = chat.summary,
                 messages = messages.map { message ->
+                    val sharedImageUrl = message.imageUrl ?: extractImageUrl(message.content)
                     ChatShareMessageDto(
                         role = message.role,
-                        content = message.content,
+                        content = contentForShare(message.content, sharedImageUrl),
                         timestamp = message.timestamp,
-                        imageUrl = message.imageUrl
+                        imageUrl = sharedImageUrl,
+                        attachmentData = message.attachmentData,
+                        attachmentMimeType = message.attachmentMimeType,
+                        attachmentFileName = message.attachmentFileName,
+                        attachmentContext = message.attachmentContext
                     )
                 }
             )
@@ -166,6 +171,10 @@ class ChatRepository(context: Context) {
                         content = message.content,
                         timestamp = message.timestamp,
                         imageUrl = message.imageUrl,
+                        attachmentData = message.attachmentData,
+                        attachmentMimeType = message.attachmentMimeType,
+                        attachmentFileName = message.attachmentFileName,
+                        attachmentContext = message.attachmentContext,
                         syncId = UUID.randomUUID().toString()
                     )
                 }
@@ -174,25 +183,48 @@ class ChatRepository(context: Context) {
         }
     }
 
-    suspend fun addUserMessage(chatId: String, content: String, imageUrl: String? = null): Long {
+    suspend fun addUserMessage(
+        chatId: String,
+        content: String,
+        imageUrl: String? = null,
+        attachmentData: String? = null,
+        attachmentMimeType: String? = null,
+        attachmentFileName: String? = null,
+        attachmentContext: String? = null
+    ): Long {
         val msg = MessageEntity(
             chatId = chatId,
             role = "user",
             content = content,
             timestamp = System.currentTimeMillis(),
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            attachmentData = attachmentData,
+            attachmentMimeType = attachmentMimeType,
+            attachmentFileName = attachmentFileName,
+            attachmentContext = attachmentContext
         )
         val id = dao.insertMessage(msg)
         dao.updateChatLastUpdated(chatId, System.currentTimeMillis())
         return id
     }
 
-    suspend fun addAssistantMessage(chatId: String, content: String): Long {
+    suspend fun addAssistantMessage(
+        chatId: String,
+        content: String,
+        imageUrl: String? = null,
+        attachmentData: String? = null,
+        attachmentMimeType: String? = null,
+        attachmentFileName: String? = null
+    ): Long {
         val msg = MessageEntity(
             chatId = chatId,
             role = "assistant",
             content = content,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            imageUrl = imageUrl,
+            attachmentData = attachmentData,
+            attachmentMimeType = attachmentMimeType,
+            attachmentFileName = attachmentFileName
         )
         val id = dao.insertMessage(msg)
         dao.updateChatLastUpdated(chatId, System.currentTimeMillis())
@@ -225,5 +257,35 @@ class ChatRepository(context: Context) {
     private fun requireAuthToken(): String {
         return sessionStore.getAuthToken()?.trim()?.takeIf { it.isNotBlank() }
             ?: error("Session expired. Sign in again.")
+    }
+
+    private fun contentForShare(content: String, imageUrl: String?): String {
+        return if (!imageUrl.isNullOrBlank() && extractImageUrl(content) != null) {
+            ""
+        } else {
+            content
+        }
+    }
+
+    private fun extractImageUrl(content: String): String? {
+        val imageStart = content.indexOf("![")
+        if (imageStart == -1) {
+            return null
+        }
+
+        val start = content.indexOf("](", imageStart)
+        if (start == -1) {
+            return null
+        }
+
+        val end = content.indexOf(')', start + 2)
+        if (end == -1) {
+            return null
+        }
+
+        return content.substring(start + 2, end).takeIf { imageUrl ->
+            imageUrl.startsWith("http", ignoreCase = true) ||
+                imageUrl.startsWith("data:image", ignoreCase = true)
+        }
     }
 }

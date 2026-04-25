@@ -39,13 +39,24 @@ async function upsertMessages(userId, messages, executor) {
   if (!messages || messages.length === 0) return;
   const db = getExecutor(executor);
   const query = `
-    INSERT INTO messages (id, chat_id, role, content, timestamp_ms, image_url)
-    SELECT $1, $2, $3, $4, $5, $6
+    INSERT INTO messages (
+      id,
+      chat_id,
+      role,
+      content,
+      timestamp_ms,
+      image_url,
+      attachment_data,
+      attachment_mime_type,
+      attachment_file_name,
+      attachment_context
+    )
+    SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
     WHERE EXISTS (
       SELECT 1
       FROM chats
       WHERE id = $2
-        AND user_id = $7
+        AND user_id = $11
         AND is_deleted = false
     )
     ON CONFLICT (id) DO NOTHING
@@ -59,6 +70,10 @@ async function upsertMessages(userId, messages, executor) {
       msg.content,
       msg.timestamp,
       msg.imageUrl || null,
+      msg.attachmentData || null,
+      msg.attachmentMimeType || null,
+      msg.attachmentFileName || null,
+      msg.attachmentContext || null,
       userId
     ]);
   }
@@ -66,7 +81,16 @@ async function upsertMessages(userId, messages, executor) {
 
 async function getUserChats(userId, executor) {
   const result = await getExecutor(executor).query(
-    "SELECT id, title, timestamp_ms as timestamp, is_pinned as isPinned, last_updated_ms as lastUpdated, summary, is_deleted as isDeleted FROM chats WHERE user_id = $1",
+    `SELECT
+        id,
+        title,
+        timestamp_ms as timestamp,
+        is_pinned as "isPinned",
+        last_updated_ms as "lastUpdated",
+        summary,
+        is_deleted as "isDeleted"
+     FROM chats
+     WHERE user_id = $1`,
     [userId]
   );
   return result.rows;
@@ -74,7 +98,17 @@ async function getUserChats(userId, executor) {
 
 async function getUserMessages(userId, executor) {
   const result = await getExecutor(executor).query(
-    `SELECT m.id as "syncId", m.chat_id as "chatId", m.role, m.content, m.timestamp_ms as timestamp, m.image_url as "imageUrl" 
+    `SELECT
+        m.id as "syncId",
+        m.chat_id as "chatId",
+        m.role,
+        m.content,
+        m.timestamp_ms as timestamp,
+        m.image_url as "imageUrl",
+        m.attachment_data as "attachmentData",
+        m.attachment_mime_type as "attachmentMimeType",
+        m.attachment_file_name as "attachmentFileName",
+        m.attachment_context as "attachmentContext"
      FROM messages m 
      JOIN chats c ON m.chat_id = c.id 
      WHERE c.user_id = $1 AND c.is_deleted = false`,

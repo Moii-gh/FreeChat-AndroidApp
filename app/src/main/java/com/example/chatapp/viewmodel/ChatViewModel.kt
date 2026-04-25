@@ -40,6 +40,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val resetsAt: String?
     )
 
+    private data class ImageAttachment(
+        val imageUrl: String?,
+        val attachmentData: String?,
+        val mimeType: String?,
+        val fileName: String?
+    )
+
     private val repository = ChatRepository(application)
     private val syncRepository = com.example.chatapp.SyncRepository(application)
     private val accountSettings = AccountScopedSettings(application)
@@ -233,7 +240,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         // Сохраняем сразу, если чат уже существует
         currentChatId?.let {
             viewModelScope.launch {
-                repository.addUserMessage(it, userMessage.getString("content"), fileUri)
+                repository.addUserMessage(
+                    chatId = it,
+                    content = userMessage.getString("content"),
+                    imageUrl = fileUri,
+                    attachmentData = base64Data,
+                    attachmentMimeType = mimeType,
+                    attachmentFileName = fileName,
+                    attachmentContext = fileContext
+                )
             }
         }
 
@@ -295,9 +310,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         }
 
                         override fun onComplete(fullText: String) {
+                            val generatedImage = extractImageAttachment(fullText)
                             val assistantMessage = JSONObject().apply {
                                 put("role", "assistant")
                                 put("content", fullText)
+                                generatedImage.imageUrl?.let { put("imageUri", it) }
+                                generatedImage.attachmentData?.let { put("base64", it) }
+                                generatedImage.mimeType?.let { put("mimeType", it) }
+                                generatedImage.fileName?.let { put("fileName", it) }
                             }
                             chatHistory.add(assistantMessage)
                             saveCompletedResponse(fullText)
@@ -335,11 +355,33 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     for (msg in chatHistory) {
                         val role = msg.getString("role")
                         val content = msg.getString("content")
-                        val fileUriParams = msg.optString("imageUri").takeIf { it.isNotEmpty() }
+                        val imageUrl = msg.optString("imageUri").ifBlank {
+                            msg.optString("imageUrl")
+                        }.takeIf { it.isNotEmpty() }
+                        val attachmentData = msg.optString("base64").takeIf { it.isNotEmpty() }
+                        val attachmentMimeType = msg.optString("mimeType").takeIf { it.isNotEmpty() }
+                        val attachmentFileName = msg.optString("fileName").takeIf { it.isNotEmpty() }
                         if (role == "user") {
-                            repository.addUserMessage(chatId, content, fileUriParams)
+                            repository.addUserMessage(
+                                chatId = chatId,
+                                content = content,
+                                imageUrl = imageUrl,
+                                attachmentData = attachmentData,
+                                attachmentMimeType = attachmentMimeType,
+                                attachmentFileName = attachmentFileName,
+                                attachmentContext = msg.optString("fileContext").takeIf { it.isNotEmpty() }
+                            )
                         } else if (role == "assistant") {
-                            repository.addAssistantMessage(chatId, content)
+                            val storedImage = extractImageAttachment(content)
+                            val storedImageUrl = imageUrl ?: storedImage.imageUrl
+                            repository.addAssistantMessage(
+                                chatId = chatId,
+                                content = contentForStorage(content, storedImageUrl),
+                                imageUrl = storedImageUrl,
+                                attachmentData = attachmentData ?: storedImage.attachmentData,
+                                attachmentMimeType = attachmentMimeType ?: storedImage.mimeType,
+                                attachmentFileName = attachmentFileName ?: storedImage.fileName
+                            )
                         }
                     }
                     val titleSource = chatHistory.firstOrNull {
@@ -352,7 +394,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             currentChatId?.let { chatId ->
                 viewModelScope.launch {
-                    repository.addAssistantMessage(chatId, fullText)
+                    val generatedImage = extractImageAttachment(fullText)
+                    repository.addAssistantMessage(
+                        chatId = chatId,
+                        content = contentForStorage(fullText, generatedImage.imageUrl),
+                        imageUrl = generatedImage.imageUrl,
+                        attachmentData = generatedImage.attachmentData,
+                        attachmentMimeType = generatedImage.mimeType,
+                        attachmentFileName = generatedImage.fileName
+                    )
                     cachedChats = repository.getAllChats()
                 }
             }
@@ -478,7 +528,61 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
      * для включения в системный промпт.
      */
     private fun buildFilesContext(): String {
-        if (attachedFilesRegistry.isEmpty()) return ""
-        return attachedFilesRegistry.joinToString("\n\n")
+        val restoredFileContexts = chatHistory.mapNotNull { message ->
+            message.optString("fileContext").takeIf { it.isNotBlank() }
+        }
+        val allContexts = (attachedFilesRegistry + restoredFileContexts).distinct()
+        if (allContexts.isEmpty()) return ""
+        return allContexts.joinToString("\n\n")
+    }
+
+    private fun extractImageAttachment(content: String): ImageAttachment {
+        val imageUrl = extractMarkdownImageUrl(content)
+        if (imageUrl.isNullOrBlank()) {
+            return ImageAttachment(null, null, null, null)
+        }
+
+        if (!imageUrl.startsWith("data:image", ignoreCase = true)) {
+            return ImageAttachment(imageUrl, null, null, null)
+        }
+
+        val mimeType = imageUrl.substringAfter("data:", "")
+            .substringBefore(";", "")
+            .takeIf { it.isNotBlank() }
+            ?: "image/png"
+        val base64Data = imageUrl.substringAfter(",", "")
+            .takeIf { it.isNotBlank() }
+
+        return ImageAttachment(
+            imageUrl = imageUrl,
+            attachmentData = base64Data,
+            mimeType = mimeType,
+            fileName = "generated_image_${System.currentTimeMillis()}.png"
+        )
+    }
+
+    private fun extractMarkdownImageUrl(content: String): String? {
+        val start = content.indexOf("](")
+        if (start == -1 || !content.contains("![")) {
+            return null
+        }
+
+        val end = content.indexOf(')', start + 2)
+        if (end == -1) {
+            return null
+        }
+
+        return content.substring(start + 2, end).takeIf { imageUrl ->
+            imageUrl.startsWith("http", ignoreCase = true) ||
+                imageUrl.startsWith("data:image", ignoreCase = true)
+        }
+    }
+
+    private fun contentForStorage(content: String, imageUrl: String?): String {
+        return if (!imageUrl.isNullOrBlank() && extractMarkdownImageUrl(content) != null) {
+            ""
+        } else {
+            content
+        }
     }
 }
