@@ -38,6 +38,10 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import com.example.chatapp.util.setHapticClickListener
 import com.example.chatapp.util.OnSwipeTouchListener
+import com.example.chatapp.ads.RewardedAdManager
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 
 class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
@@ -74,6 +78,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var activeSuggestionCategory: QuickSuggestionCategory? = null
     private var suppressSuggestionUpdates = false
     private var handledShareToken: String? = null
+    private var adManager: RewardedAdManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,7 +125,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
         binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
         binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
-        binding.tvAnonymousTitle.text = LocaleHelper.getString(this, "anonymous_mode_title")
         binding.tvAnonymousDesc.text = LocaleHelper.getString(this, "anonymous_mode_desc")
         binding.btnMenu.contentDescription = LocaleHelper.getString(this, "content_desc_menu")
         binding.btnChat.contentDescription = LocaleHelper.getString(this, "content_desc_anonymous_chat")
@@ -150,6 +154,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     override fun onDestroy() {
         speechRecognizerManager.destroy()
+        adManager?.destroy()
         super.onDestroy()
     }
 
@@ -430,9 +435,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             showCurrentChatMenu()
         }
         binding.btnChat.setHapticClickListener {
-            startAnonymousChat()
+            toggleAnonymousChat()
         }
-        binding.btnAddLimits.setHapticClickListener {}
+        binding.btnAddLimits.setHapticClickListener {
+            adManager?.show()
+        }
     }
 
     private fun setupDrawer() {
@@ -539,7 +546,16 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupAds() {
-        binding.btnAddLimits.isGone = true
+        binding.btnAddLimits.isVisible = true
+        adManager = RewardedAdManager(this) {
+            chatViewModel.addLimits(5) {
+                runOnUiThread {
+                    refreshDailyQuotaUi()
+                    toast(LocaleHelper.getString(this, "toast_limits_added"))
+                }
+            }
+        }
+        adManager?.initialize()
     }
 
     private fun showWelcomeState() {
@@ -548,6 +564,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.messagesScrollView.isGone = true
         binding.topRightMain.isVisible = true
         binding.topRightChat.isGone = true
+
+        updateTopBarIcons()
 
         binding.tvWelcomeTitle.text = LocaleHelper.getString(this, "welcome_question")
         binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
@@ -563,7 +581,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.topRightMain.isVisible = true
         binding.topRightChat.isGone = true
 
-        binding.tvAnonymousTitle.text = LocaleHelper.getString(this, "anonymous_mode_title")
+        updateTopBarIcons()
+
         binding.tvAnonymousDesc.text = LocaleHelper.getString(this, "anonymous_mode_desc")
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
     }
@@ -590,11 +609,29 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         refreshDrawerSelection()
     }
 
+    private fun toggleAnonymousChat() {
+        if (chatViewModel.isAnonymousChat) {
+            chatViewModel.isAnonymousChat = false
+            startFreshChat()
+        } else {
+            startFreshChat()
+            chatViewModel.isAnonymousChat = true
+            showAnonymousWelcomeState()
+        }
+    }
+
+    private fun updateTopBarIcons() {
+        val isAnon = chatViewModel.isAnonymousChat
+        binding.btnChat.setImageResource(
+            if (isAnon) R.drawable.ic_private_chat_checked else R.drawable.ic_anonymous_chat
+        )
+        binding.btnAddLimits.isVisible = true
+    }
+
     private fun startAnonymousChat() {
         startFreshChat()
         chatViewModel.isAnonymousChat = true
         showAnonymousWelcomeState()
-        toast(LocaleHelper.getString(this, "toast_incognito_info"))
     }
 
     private fun loadChats() {
@@ -632,7 +669,22 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun openChat(chatId: String) {
         lifecycleScope.launch {
             val chat = chatViewModel.getChatById(chatId) ?: return@launch
-            val messages = chatViewModel.getMessages(chatId)
+            val messages = try {
+                chatViewModel.getMessages(chatId)
+            } catch (e: android.database.sqlite.SQLiteBlobTooBigException) {
+                e.printStackTrace()
+                // Auto-delete the corrupted chat to prevent infinite crashes
+                chatViewModel.deleteChat(chatId) {
+                    runOnUiThread {
+                        toast(LocaleHelper.getString(this@FreeChatActivity, "toast_error") + ": Chat corrupted and was deleted")
+                        startFreshChat()
+                    }
+                }
+                return@launch
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return@launch
+            }
 
             chatViewModel.resetChatState()
             chatViewModel.currentChatId = chat.id
@@ -781,7 +833,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         isSending = true
         hideQuickSuggestions()
         showMessagesState()
-        updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
+        refreshDailyQuotaUi()
 
         when {
             previewUri == null -> messageRenderer.addUserMessage(text, userHistoryIndex)
@@ -893,7 +945,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         isSending = true
         hideQuickSuggestions()
         showMessagesState()
-        updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
+        refreshDailyQuotaUi()
 
         messageRenderer.addUserMessage(text, historyIndex)
 
@@ -1074,14 +1126,29 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
     }
 
-    private fun updateLimitsCount(value: String) {
-        binding.tvLimitsCount.text = value
-    }
 
     private fun refreshDailyQuotaUi() {
-        chatViewModel.refreshDailyQuota {
+        chatViewModel.refreshDailyQuota { snapshot ->
             runOnUiThread {
-                updateLimitsCount(chatViewModel.getRemainingLimitsLabel())
+                val label = if (snapshot.isUnlimited) {
+                    SpannableString("∞")
+                } else {
+                    val base = snapshot.remainingRequests ?: 0
+                    val textPrefix = LocaleHelper.getString(this, "label_limits_requests")
+                    val fullText = "$textPrefix: $base + 5"
+                    SpannableString(fullText).apply {
+                        val plusIndex = fullText.indexOf("+")
+                        if (plusIndex != -1) {
+                            setSpan(
+                                ForegroundColorSpan(Color.parseColor("#d1a3ff")),
+                                plusIndex,
+                                fullText.length,
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                            )
+                        }
+                    }
+                }
+                binding.tvLimitsCount.text = label
             }
         }
     }

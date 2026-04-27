@@ -39,34 +39,39 @@
             <LinearLayout
                 android:id="@+id/btnAddLimits"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:orientation="horizontal"
+                android:layout_height="wrap_content"
+                android:minHeight="44dp"
+                android:orientation="vertical"
                 android:background="@drawable/bg_purple_pill"
                 android:gravity="center"
-                android:paddingHorizontal="14dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="4dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_marginTop="4dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <TextView
+                    android:id="@+id/tvAppName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FreeChat"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="normal"
+                    android:includeFontPadding="false"/>
+
+                <TextView
                     android:id="@+id/tvLimitsCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="6dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#d1a3ff"
-                    android:textSize="15sp"
-                    android:textStyle="bold"/>
+                    android:textColor="#8E8E93"
+                    android:textSize="11sp"
+                    android:textStyle="normal"
+                    android:includeFontPadding="false"
+                    tools:text="Запросы: 20 + 5"/>
             </LinearLayout>
             <!-- END LIMITS BUTTON -->
 
@@ -234,40 +239,28 @@
         <!-- ЭКРАН АНОНИМНОГО ЧАТА -->
         <LinearLayout
             android:id="@+id/anonymousWelcomeScreen"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:orientation="vertical"
             android:gravity="center"
-            android:paddingHorizontal="24dp"
+            android:padding="32dp"
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/topBar"
             app:layout_constraintBottom_toTopOf="@id/bottomInputArea"
-            app:layout_constraintVertical_chainStyle="packed">
-
-            <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@drawable/ic_anonymous_chat" 
-                app:tint="#8E8E93"
-                android:layout_marginBottom="16dp"/>
-
-            <TextView
-                android:id="@+id/tvAnonymousTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <TextView
                 android:id="@+id/tvAnonymousDesc"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#8E8E93"
-                android:textSize="14sp"
+                android:text="Этот чат не будет отображаться в вашей истории переписки и будет стерт после перезахода в приложение"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
                 android:gravity="center"
-                android:lineSpacingExtra="4dp"/>
+                android:lineSpacingExtra="4dp"
+                android:alpha="0.7"/>
+
         </LinearLayout>
 
         <!-- КОНТЕЙНЕР СООБЩЕНИЙ -->

@@ -43,17 +43,13 @@
             android:strokeWidth="1.2"
             android:strokeLineCap="round"
             android:pathData="M7,19.5c-1,1 -1.5,2.5 -2,4c1.5-0.5 3-1.5 4-2.5" />
-
-        <!-- Two lines inside (dashed/ghost style) -->
+        
+        <!-- Checkmark -->
         <path
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="1.2"
+            android:strokeWidth="1.5"
             android:strokeLineCap="round"
-            android:pathData="M8,10l8,0" />
-        <path
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="1.2"
-            android:strokeLineCap="round"
-            android:pathData="M8,14l5,0" />
+            android:strokeLineJoin="round"
+            android:pathData="M8.5,12.5l2.5,2.5l5-5" />
     </group>
 </vector>

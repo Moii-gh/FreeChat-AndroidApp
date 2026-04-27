@@ -23,6 +23,11 @@ object AiApiService {
         fun onError(errorMessage: String)
     }
 
+    private data class VseGptSearchAugmentation(
+        val context: String = "",
+        val sources: List<DuckDuckGoSearchService.SearchSource> = emptyList()
+    )
+
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     fun buildSystemPrompt(
@@ -165,8 +170,22 @@ object AiApiService {
             try {
                 val coroutineContext = currentCoroutineContext()
                 val isImageGeneration = currentMode == "create_image"
-                val systemPrompt = buildSystemPrompt(currentMode, customInstructions, chatContextSummary, filesContext)
-                val jsonInput = buildRequestBody(isImageGeneration, messagesToKeep, systemPrompt)
+                val searchAugmentation = buildDuckDuckGoContextForVseGpt(
+                    currentMode = currentMode,
+                    messagesToKeep = messagesToKeep,
+                    callback = callback
+                )
+                val systemPrompt = buildSystemPrompt(
+                    currentMode,
+                    customInstructions,
+                    chatContextSummary,
+                    filesContext
+                )
+                val messagesForRequest = appendDuckDuckGoContextMessage(
+                    messagesToKeep = messagesToKeep,
+                    duckDuckGoContext = searchAugmentation.context
+                )
+                val jsonInput = buildRequestBody(isImageGeneration, messagesForRequest, systemPrompt)
                 val payload = JSONObject().apply {
                     put("currentMode", currentMode)
                     put("request", JSONObject(jsonInput))
@@ -240,6 +259,19 @@ object AiApiService {
                             }
                         }
 
+                        if (!isImageGeneration) {
+                            val replyWithSources = appendDuckDuckGoSources(
+                                finalReply,
+                                searchAugmentation.sources
+                            )
+                            if (replyWithSources != finalReply) {
+                                finalReply = replyWithSources
+                                withContext(Dispatchers.Main) {
+                                    callback.onChunk(finalReply)
+                                }
+                            }
+                        }
+
                         withContext(Dispatchers.Main) {
                             callback.onComplete(finalReply)
                         }
@@ -258,6 +290,60 @@ object AiApiService {
                 }
             }
         }
+    }
+
+    private suspend fun buildDuckDuckGoContextForVseGpt(
+        currentMode: String?,
+        messagesToKeep: List<JSONObject>,
+        callback: StreamCallback
+    ): VseGptSearchAugmentation {
+        if (currentMode != "search" && currentMode != "shopping") {
+            return VseGptSearchAugmentation()
+        }
+
+        val query = messagesToKeep.asReversed()
+            .firstOrNull { it.optString("role") == "user" }
+            ?.optString("content", "")
+            .orEmpty()
+            .trim()
+        if (query.isBlank()) {
+            return VseGptSearchAugmentation()
+        }
+
+        withContext(Dispatchers.Main) {
+            callback.onChunk("Поиск в сети...")
+        }
+        val searchResponse = DuckDuckGoSearchService.searchWithSources(query)
+        return VseGptSearchAugmentation(
+            context = searchResponse.context,
+            sources = searchResponse.sources
+        )
+    }
+
+    private fun appendDuckDuckGoContextMessage(
+        messagesToKeep: List<JSONObject>,
+        duckDuckGoContext: String
+    ): List<JSONObject> {
+        if (duckDuckGoContext.isBlank()) {
+            return messagesToKeep
+        }
+
+        return messagesToKeep.map { JSONObject(it.toString()) } + JSONObject().apply {
+            put("role", "user")
+            put("content", "Результаты веб-поиска для предыдущего запроса:\n$duckDuckGoContext")
+        }
+    }
+
+    private fun appendDuckDuckGoSources(
+        text: String,
+        sources: List<DuckDuckGoSearchService.SearchSource>
+    ): String {
+        val sourceList = DuckDuckGoSearchService.formatSources(sources)
+        if (sourceList.isBlank() || text.contains("Источники:", ignoreCase = true)) {
+            return text
+        }
+
+        return text.trimEnd() + "\n\n" + sourceList
     }
 
     suspend fun generateTitle(

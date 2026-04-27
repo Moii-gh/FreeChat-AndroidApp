@@ -1,7 +1,11 @@
 package com.example.chatapp.ui
 
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.graphics.*
+import android.graphics.drawable.GradientDrawable
+import android.net.Uri
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.animation.LinearInterpolator
@@ -12,6 +16,7 @@ import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.dpToPx
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.regex.Pattern
 
 /**
@@ -40,7 +45,28 @@ class AssistantMessageWrapper(
 
         fun containsImageReply(text: String): Boolean {
             val imageUrl = extractImageUrl(text) ?: return false
-            return imageUrl.startsWith("http") || imageUrl.startsWith("data:image")
+            return isRenderableImageUrl(imageUrl)
+        }
+
+        fun isRenderableImageUrl(imageUrl: String?): Boolean {
+            if (imageUrl.isNullOrBlank()) {
+                return false
+            }
+
+            return imageUrl.startsWith("http://", ignoreCase = true) ||
+                imageUrl.startsWith("https://", ignoreCase = true) ||
+                imageUrl.startsWith("data:image", ignoreCase = true) ||
+                imageUrl.startsWith("content://", ignoreCase = true) ||
+                imageUrl.startsWith("file://", ignoreCase = true)
+        }
+
+        fun isLocalImageUrl(imageUrl: String?): Boolean {
+            if (imageUrl.isNullOrBlank()) {
+                return false
+            }
+
+            return imageUrl.startsWith("content://", ignoreCase = true) ||
+                imageUrl.startsWith("file://", ignoreCase = true)
         }
     }
 
@@ -54,13 +80,25 @@ class AssistantMessageWrapper(
     var imageIcon: ImageView? = null
     var imageViewResult: ImageView? = null
     var currentImageUrl: String? = null
+    private var sourcesButtonContainer: LinearLayout? = null
 
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
 
+    private data class SourceLink(
+        val title: String,
+        val url: String
+    )
+
+    private data class ParsedReply(
+        val content: String,
+        val sources: List<SourceLink>
+    )
+
     /** Показывает шиммер-заглушку при генерации изображения */
     fun showImageLoadingState() {
         contentArea.removeAllViews()
+        sourcesButtonContainer = null
         val density = context.resources.displayMetrics.density
 
         val header = LinearLayout(context).apply {
@@ -210,6 +248,263 @@ class AssistantMessageWrapper(
         }
     }
 
+    private fun parseReplySources(reply: String): ParsedReply {
+        val normalized = reply.replace("\r\n", "\n")
+        val lines = normalized.split("\n")
+        val headerIndex = lines.indexOfLast {
+            it.trim().equals("Источники:", ignoreCase = true)
+        }
+        if (headerIndex < 0) {
+            return ParsedReply(reply, emptyList())
+        }
+
+        val sources = lines.drop(headerIndex + 1)
+            .mapNotNull { parseSourceLine(it) }
+            .distinctBy { it.url }
+
+        if (sources.isEmpty()) {
+            return ParsedReply(reply, emptyList())
+        }
+
+        val content = lines.take(headerIndex)
+            .joinToString("\n")
+            .trimEnd()
+        return ParsedReply(content, sources)
+    }
+
+    private fun parseSourceLine(line: String): SourceLink? {
+        val trimmed = line.trim()
+        val separatorIndex = trimmed.indexOf(". ")
+        if (separatorIndex <= 0 || trimmed.take(separatorIndex).any { !it.isDigit() }) {
+            return null
+        }
+
+        val markdownLink = trimmed.substring(separatorIndex + 2).trim()
+        if (!markdownLink.startsWith("[")) {
+            return null
+        }
+
+        val titleEnd = markdownLink.lastIndexOf("](")
+        if (titleEnd <= 0 || !markdownLink.endsWith(")")) {
+            return null
+        }
+
+        val title = markdownLink.substring(1, titleEnd)
+            .replace("\\[", "[")
+            .replace("\\]", "]")
+            .trim()
+        val url = markdownLink.substring(titleEnd + 2, markdownLink.length - 1).trim()
+        if (!url.startsWith("http", ignoreCase = true)) {
+            return null
+        }
+
+        return SourceLink(
+            title = title.ifBlank { url },
+            url = url
+        )
+    }
+
+    private fun removeSourcesButton() {
+        sourcesButtonContainer?.let { contentArea.removeView(it) }
+        sourcesButtonContainer = null
+    }
+
+    private fun renderSourcesButton(sources: List<SourceLink>) {
+        if (sources.isEmpty()) {
+            return
+        }
+
+        val button = TextView(context).apply {
+            text = "Источники (${sources.size})"
+            setTextColor(Color.parseColor("#CCCCCC"))
+            textSize = 13f
+            gravity = Gravity.CENTER
+            minHeight = 34.dpToPx()
+            setPadding(14.dpToPx(), 7.dpToPx(), 14.dpToPx(), 7.dpToPx())
+            background = roundedDrawable(
+                fillColor = Color.parseColor("#2C2C2E"),
+                cornerRadiusPx = 999.dpToPx(),
+                strokeColor = Color.parseColor("#3A3A3C"),
+                strokeWidthPx = 1.dpToPx()
+            )
+            isClickable = true
+            isFocusable = true
+            val icon = ContextCompat.getDrawable(context, R.drawable.ic_link)?.mutate()
+            icon?.setTint(Color.parseColor("#CCCCCC"))
+            setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)
+            compoundDrawablePadding = 6.dpToPx()
+            setOnClickListener { showSourcesSheet(sources) }
+        }
+
+        sourcesButtonContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.START
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 6.dpToPx()
+                bottomMargin = 4.dpToPx()
+            }
+            addView(button, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+        }
+
+        contentArea.addView(sourcesButtonContainer)
+    }
+
+    private fun showSourcesSheet(sources: List<SourceLink>) {
+        val dialog = BottomSheetDialog(context)
+        val root = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dpToPx(), 12.dpToPx(), 24.dpToPx(), 24.dpToPx())
+            background = ContextCompat.getDrawable(context, R.drawable.rounded_dialog_bg)
+        }
+
+        val handle = View(context).apply {
+            background = roundedDrawable(
+                fillColor = Color.parseColor("#4A4A4C"),
+                cornerRadiusPx = 999.dpToPx()
+            )
+            layoutParams = LinearLayout.LayoutParams(42.dpToPx(), 4.dpToPx()).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                bottomMargin = 18.dpToPx()
+            }
+        }
+
+        val title = TextView(context).apply {
+            text = "Источники"
+            setTextColor(Color.WHITE)
+            textSize = 20f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+
+        val list = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        sources.forEach { source ->
+            list.addView(createSourceItem(source) {
+                dialog.dismiss()
+                openSourceUrl(source.url)
+            })
+        }
+
+        val scroll = ScrollView(context).apply {
+            addView(list)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 14.dpToPx()
+            }
+        }
+
+        val collapseButton = TextView(context).apply {
+            text = "Свернуть"
+            setTextColor(Color.parseColor("#CCCCCC"))
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setPadding(20.dpToPx(), 10.dpToPx(), 20.dpToPx(), 10.dpToPx())
+            background = ContextCompat.getDrawable(context, R.drawable.btn_edit_profile_outline)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { dialog.dismiss() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                topMargin = 18.dpToPx()
+            }
+        }
+
+        root.addView(handle)
+        root.addView(title)
+        root.addView(scroll)
+        root.addView(collapseButton)
+
+        dialog.setContentView(root)
+        dialog.setOnShowListener { dialogInterface ->
+            val sheetDialog = dialogInterface as BottomSheetDialog
+            val bottomSheet = sheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundColor(Color.TRANSPARENT)
+        }
+        dialog.show()
+    }
+
+    private fun createSourceItem(source: SourceLink, onClick: () -> Unit): View {
+        val item = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(14.dpToPx(), 12.dpToPx(), 14.dpToPx(), 12.dpToPx())
+            background = roundedDrawable(
+                fillColor = Color.parseColor("#2C2C2E"),
+                cornerRadiusPx = 12.dpToPx(),
+                strokeColor = Color.parseColor("#3A3A3C"),
+                strokeWidthPx = 1.dpToPx()
+            )
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { onClick() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 8.dpToPx()
+            }
+        }
+
+        val title = TextView(context).apply {
+            text = source.title
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
+        }
+        val url = TextView(context).apply {
+            text = source.url
+            setTextColor(Color.parseColor("#8E8E93"))
+            textSize = 12f
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
+            setPadding(0, 5.dpToPx(), 0, 0)
+        }
+
+        item.addView(title)
+        item.addView(url)
+        return item
+    }
+
+    private fun openSourceUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        if (context !is android.app.Activity) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        runCatching {
+            context.startActivity(intent)
+        }.onFailure {
+            Toast.makeText(context, "Не удалось открыть ссылку", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun roundedDrawable(
+        fillColor: Int,
+        cornerRadiusPx: Int,
+        strokeColor: Int? = null,
+        strokeWidthPx: Int = 0
+    ): GradientDrawable {
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(fillColor)
+            cornerRadius = cornerRadiusPx.toFloat()
+            if (strokeColor != null && strokeWidthPx > 0) {
+                setStroke(strokeWidthPx, strokeColor)
+            }
+        }
+    }
+
     /**
      * Главный метод обновления контента.
      * Парсит текст на чанки: обычный текст (Markwon) и блоки кода (SyntaxHighlighter).
@@ -219,11 +514,15 @@ class AssistantMessageWrapper(
         val thinkingText = LocaleHelper.getString(context, "ai_thinking")
         val isStatusMessage = reply == thinkingText || 
                 reply == "Поиск в сети..." || 
+                reply == "Анализ файла..." ||
+                reply == "Анализ файлов..." ||
                 reply == "Генерация изображения..." || 
+                reply == "Редактирование изображения..." ||
                 reply.startsWith("Использование инструмента")
 
         // Обработка статусов
         if (isStatusMessage) {
+            removeSourcesButton()
             btnRow?.visibility = View.GONE
             if (contentArea.childCount == 0) {
                 val textView = TextView(context).apply {
@@ -245,6 +544,9 @@ class AssistantMessageWrapper(
         btnRow?.visibility = View.VISIBLE
         textShimmerAnimator?.cancel()
         textShimmerAnimator = null
+        removeSourcesButton()
+        val parsedReply = parseReplySources(reply)
+        val displayReply = parsedReply.content
 
         // Удаляем статусную строку, если она была первой
         if (contentArea.childCount > 0) {
@@ -257,13 +559,13 @@ class AssistantMessageWrapper(
         }
 
         // Если есть картинка
-        val imageUrl = extractImageUrl(reply)
-        val hasImage = imageUrl?.startsWith("http") == true || imageUrl?.startsWith("data:image") == true
+        val imageUrl = extractImageUrl(displayReply)?.takeIf { isRenderableImageUrl(it) }
+        val hasImage = imageUrl != null
         val cleanReply = if (hasImage) {
             // Убираем маркдаун картинки из текста, чтобы не дублировать
-            reply.replace(Regex("!\\[.*?\\]\\(.*?\\)"), "").trim()
+            displayReply.replace(Regex("!\\[.*?\\]\\(.*?\\)"), "").trim()
         } else {
-            reply
+            displayReply
         }
 
         // Парсинг текста + кода: разбиваем по ``` разделителю
@@ -337,7 +639,7 @@ class AssistantMessageWrapper(
             }
         }
 
-        if (hasImage && imageUrl != null) {
+        if (imageUrl != null) {
             ensureImageContainer()
             
             pulseAnimator?.cancel()
@@ -355,6 +657,15 @@ class AssistantMessageWrapper(
                         imageViewResult?.setImageBitmap(bitmap)
                     } catch (e: Exception) { e.printStackTrace() }
                 }
+            } else if (isLocalImageUrl(imageUrl)) {
+                if (currentImageUrl != imageUrl) {
+                    currentImageUrl = imageUrl
+                    runCatching {
+                        imageViewResult?.setImageURI(Uri.parse(imageUrl))
+                    }.onFailure {
+                        imageViewResult?.load(Uri.parse(imageUrl)) { crossfade(true) }
+                    }
+                }
             } else {
                 if (currentImageUrl != imageUrl) {
                     currentImageUrl = imageUrl
@@ -368,6 +679,8 @@ class AssistantMessageWrapper(
         }
 
         // Умный автоскролл: не дёргаем, если пользователь листает вверх
+        renderSourcesButton(parsedReply.sources)
+
         val tolerance = 400
         val currentScrollY = scrollView.scrollY
         val scrollChild = scrollView.getChildAt(0) ?: return

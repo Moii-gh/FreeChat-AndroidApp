@@ -13,12 +13,14 @@ import com.example.chatapp.network.dto.ChatShareItemDto
 import com.example.chatapp.network.dto.CreateChatShareRequest
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
+import com.example.chatapp.util.FileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class ChatRepository(context: Context) {
 
+    private val appContext = context.applicationContext
     private val db = AppDatabase.getDatabase(context)
     private val dao = db.chatDao()
     private val sessionStore = SharedPrefsAccountSessionStore(context)
@@ -79,7 +81,7 @@ class ChatRepository(context: Context) {
                 title = chat.title.ifBlank { "Shared chat" },
                 summary = chat.summary,
                 messages = messages.map { message ->
-                    val sharedImageUrl = message.imageUrl ?: extractImageUrl(message.content)
+                    val sharedImageUrl = shareableImageUrl(message)
                     ChatShareMessageDto(
                         role = message.role,
                         content = contentForShare(message.content, sharedImageUrl),
@@ -169,12 +171,17 @@ class ChatRepository(context: Context) {
             )
             dao.insertMessages(
                 snapshot.messages.map { message ->
+                    val cachedImageUrl = cacheSharedDataImage(
+                        imageUrl = message.imageUrl,
+                        mimeType = message.attachmentMimeType,
+                        fileName = message.attachmentFileName
+                    )
                     MessageEntity(
                         chatId = newChatId,
                         role = message.role,
                         content = message.content,
                         timestamp = message.timestamp,
-                        imageUrl = message.imageUrl,
+                        imageUrl = cachedImageUrl ?: message.imageUrl,
                         attachmentData = message.attachmentData,
                         attachmentMimeType = message.attachmentMimeType,
                         attachmentFileName = message.attachmentFileName,
@@ -267,6 +274,56 @@ class ChatRepository(context: Context) {
     private fun requireAuthToken(): String {
         return sessionStore.getAuthToken()?.trim()?.takeIf { it.isNotBlank() }
             ?: error("Session expired. Sign in again.")
+    }
+
+    private fun shareableImageUrl(message: MessageEntity): String? {
+        val rawImageUrl = message.imageUrl ?: extractImageUrl(message.content)
+        if (rawImageUrl.isNullOrBlank()) {
+            return null
+        }
+
+        if (
+            rawImageUrl.startsWith("content://", ignoreCase = true) ||
+            rawImageUrl.startsWith("file://", ignoreCase = true)
+        ) {
+            return FileUtils.localImageUriToDataUrl(
+                context = appContext,
+                uriString = rawImageUrl,
+                fallbackMimeType = message.attachmentMimeType
+            )
+        }
+
+        return rawImageUrl.takeIf {
+            it.startsWith("http", ignoreCase = true) ||
+                it.startsWith("data:image", ignoreCase = true)
+        }
+    }
+
+    private fun cacheSharedDataImage(
+        imageUrl: String?,
+        mimeType: String?,
+        fileName: String?
+    ): String? {
+        if (imageUrl.isNullOrBlank() || !imageUrl.startsWith("data:image", ignoreCase = true)) {
+            return null
+        }
+
+        val base64Data = imageUrl.substringAfter(",", "").takeIf { it.isNotBlank() }
+            ?: return null
+        val resolvedMimeType = mimeType
+            ?: imageUrl.substringAfter("data:", "")
+                .substringBefore(";")
+                .takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: "image/png"
+        val extension = when (resolvedMimeType.lowercase()) {
+            "image/jpeg" -> "jpg"
+            "image/webp" -> "webp"
+            else -> "png"
+        }
+        val resolvedFileName = fileName?.takeIf { it.isNotBlank() }
+            ?: "shared_image_${System.currentTimeMillis()}.$extension"
+
+        return FileUtils.saveBase64FileToCache(appContext, base64Data, resolvedFileName)?.toString()
     }
 
     private fun contentForShare(content: String, imageUrl: String?): String {

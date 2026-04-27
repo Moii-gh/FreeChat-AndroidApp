@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import com.example.chatapp.LocaleHelper
 import org.json.JSONObject
 import java.io.File
+import java.util.Locale
 
 /**
  * Утилиты для работы с файлами: получение имени, экспорт в DOCX,
@@ -61,6 +62,46 @@ object FileUtils {
         }
     }
 
+    fun localImageUriToBase64(
+        context: Context,
+        uriString: String?,
+        fallbackMimeType: String? = null
+    ): Pair<String, String>? {
+        val uri = uriString
+            ?.takeIf { it.isNotBlank() }
+            ?.let { runCatching { Uri.parse(it) }.getOrNull() }
+            ?: return null
+        val scheme = uri.scheme?.lowercase(Locale.US)
+        if (scheme != "content" && scheme != "file") {
+            return null
+        }
+
+        val mimeType = fallbackMimeType
+            ?.takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: runCatching { context.contentResolver.getType(uri) }.getOrNull()
+                ?.takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: imageMimeTypeFromName(uriString)
+            ?: return null
+
+        return runCatching {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
+                input.readBytes()
+            } ?: return null
+            val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+            base64 to mimeType
+        }.getOrNull()
+    }
+
+    fun localImageUriToDataUrl(
+        context: Context,
+        uriString: String?,
+        fallbackMimeType: String? = null
+    ): String? {
+        val (base64, mimeType) = localImageUriToBase64(context, uriString, fallbackMimeType)
+            ?: return null
+        return "data:$mimeType;base64,$base64"
+    }
+
     fun openBase64File(context: Context, base64Str: String, fileName: String?, mimeType: String?) {
         val uri = saveBase64FileToCache(context, base64Str, fileName)
         if (uri == null) {
@@ -82,11 +123,20 @@ object FileUtils {
     fun copyImageBase64(context: Context, base64Str: String) {
         val uri = saveBase64ToCache(context, base64Str)
         if (uri != null) {
+            copyImageUri(context, uri)
+        } else {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copy_error"), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun copyImageUri(context: Context, uri: Uri) {
+        runCatching {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newUri(context.contentResolver, "image", uri)
             clipboard.setPrimaryClip(clip)
+        }.onSuccess {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copied"), Toast.LENGTH_SHORT).show()
-        } else {
+        }.onFailure {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copy_error"), Toast.LENGTH_SHORT).show()
         }
     }
@@ -95,28 +145,52 @@ object FileUtils {
     fun shareImageBase64(context: Context, base64Str: String) {
         val uri = saveBase64ToCache(context, base64Str)
         if (uri != null) {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/png"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, LocaleHelper.getString(context, "share_image")))
+            shareImageUri(context, uri, "image/png")
         } else {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
         }
     }
 
     /** Шарит текст через Intent.ACTION_SEND */
+    fun shareImageUri(context: Context, uri: Uri, mimeType: String? = null) {
+        val resolvedMimeType = mimeType?.takeIf { it.isNotBlank() }
+            ?: runCatching { context.contentResolver.getType(uri) }.getOrNull()
+            ?: "image/png"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = resolvedMimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooser = Intent.createChooser(intent, LocaleHelper.getString(context, "share_image")).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            if (context !is android.app.Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        runCatching {
+            context.startActivity(chooser)
+        }.onFailure {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun shareText(context: Context, text: String) {
-        context.startActivity(
-            Intent.createChooser(
-                Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, text)
-                },
-                LocaleHelper.getString(context, "share")
-            )
-        )
+        val chooser = Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            },
+            LocaleHelper.getString(context, "share")
+        ).apply {
+            if (context !is android.app.Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        runCatching {
+            context.startActivity(chooser)
+        }.onFailure {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+        }
     }
 
     /** Копирует текст в системный буфер обмена */
@@ -143,6 +217,16 @@ object FileUtils {
         val fallback = "attachment_${System.currentTimeMillis()}"
         val raw = fileName?.takeIf { it.isNotBlank() } ?: fallback
         return raw.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(120).ifBlank { fallback }
+    }
+
+    private fun imageMimeTypeFromName(value: String?): String? {
+        return when (value?.substringBefore('?')?.substringAfterLast('.', "")?.lowercase(Locale.US)) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            else -> null
+        }
     }
 
     /**

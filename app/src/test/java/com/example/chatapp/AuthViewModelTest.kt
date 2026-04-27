@@ -441,4 +441,8 @@ private class FakeAccountSessionStore : AccountSessionStore {
     override fun getDailyQuotaResetsAt(): String? = null
 
     override fun saveRemainingDailyRequests(value: Int?) = Unit
+
+    override fun consumeDailyRequest() = Unit
+
+    override fun addDailyRequests(amount: Int) = Unit
 }

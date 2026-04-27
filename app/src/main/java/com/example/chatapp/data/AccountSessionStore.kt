@@ -65,6 +65,8 @@ interface AccountSessionStore {
     fun getRemainingDailyRequests(): Int?
     fun getDailyQuotaResetsAt(): String?
     fun saveRemainingDailyRequests(value: Int?)
+    fun consumeDailyRequest()
+    fun addDailyRequests(amount: Int)
 }
 
 class SharedPrefsAccountSessionStore(
@@ -135,6 +137,7 @@ class SharedPrefsAccountSessionStore(
             remove(KEY_SUBSCRIPTION_STATUS)
             remove(KEY_DAILY_REQUEST_LIMIT)
             remove(KEY_REMAINING_DAILY_REQUESTS)
+            remove(KEY_REWARDED_REQUESTS)
             remove(KEY_DAILY_QUOTA_RESETS_AT)
         }.apply()
     }
@@ -156,13 +159,37 @@ class SharedPrefsAccountSessionStore(
     override fun getDailyRequestLimit(): Int? =
         if (prefs.contains(KEY_DAILY_REQUEST_LIMIT)) prefs.getInt(KEY_DAILY_REQUEST_LIMIT, 0) else null
 
-    override fun getRemainingDailyRequests(): Int? =
-        if (prefs.contains(KEY_REMAINING_DAILY_REQUESTS)) prefs.getInt(KEY_REMAINING_DAILY_REQUESTS, 0) else null
+    override fun getRemainingDailyRequests(): Int? {
+        val server = if (prefs.contains(KEY_REMAINING_DAILY_REQUESTS)) prefs.getInt(KEY_REMAINING_DAILY_REQUESTS, 0) else null
+        val rewarded = prefs.getInt(KEY_REWARDED_REQUESTS, 0)
+        return if (server == null) {
+            if (rewarded > 0) rewarded else null
+        } else {
+            server + rewarded
+        }
+    }
 
     override fun getDailyQuotaResetsAt(): String? = prefs.getString(KEY_DAILY_QUOTA_RESETS_AT, null)
 
     override fun saveRemainingDailyRequests(value: Int?) {
         prefs.edit().putNullableInt(KEY_REMAINING_DAILY_REQUESTS, value).apply()
+    }
+
+    override fun consumeDailyRequest() {
+        val rewarded = prefs.getInt(KEY_REWARDED_REQUESTS, 0)
+        if (rewarded > 0) {
+            prefs.edit().putInt(KEY_REWARDED_REQUESTS, rewarded - 1).apply()
+        } else {
+            val server = prefs.getInt(KEY_REMAINING_DAILY_REQUESTS, 0)
+            if (server > 0) {
+                prefs.edit().putInt(KEY_REMAINING_DAILY_REQUESTS, server - 1).apply()
+            }
+        }
+    }
+
+    override fun addDailyRequests(amount: Int) {
+        val rewarded = prefs.getInt(KEY_REWARDED_REQUESTS, 0)
+        prefs.edit().putInt(KEY_REWARDED_REQUESTS, rewarded + amount).apply()
     }
 
     companion object {
@@ -180,6 +207,7 @@ class SharedPrefsAccountSessionStore(
         const val KEY_SUBSCRIPTION_STATUS = "subscription_status"
         const val KEY_DAILY_REQUEST_LIMIT = "daily_request_limit"
         const val KEY_REMAINING_DAILY_REQUESTS = "remaining_daily_requests"
+        const val KEY_REWARDED_REQUESTS = "rewarded_requests"
         const val KEY_DAILY_QUOTA_RESETS_AT = "daily_quota_resets_at"
     }
 }

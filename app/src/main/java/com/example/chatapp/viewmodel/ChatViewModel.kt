@@ -466,6 +466,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+
     // ──────── Лимиты запросов ────────
 
     fun refreshDailyQuota(onUpdated: (DailyQuotaSnapshot) -> Unit = {}) {
@@ -493,7 +494,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         val current = snapshot.remainingRequests ?: return true
         if (current <= 0) return false
-        sessionStore.saveRemainingDailyRequests(current - 1)
+        sessionStore.consumeDailyRequest()
         return true
     }
 
@@ -508,6 +509,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Добавляет запросы (награда за просмотр рекламы) */
+    fun addLimits(amount: Int, onDone: () -> Unit) {
+        sessionStore.addDailyRequests(amount)
+        refreshDailyQuota {
+            onDone()
+        }
+    }
+
     private fun readDailyQuotaSnapshot(): DailyQuotaSnapshot {
         return DailyQuotaSnapshot(
             isUnlimited = sessionStore.isCurrentUserPro(),

@@ -172,6 +172,7 @@ image_creating;Creating images...
 image_ready;Image ready
 label_email;Email
 label_file_analysis;File/photo analysis
+label_limits_requests;Requests
 label_name;Name
 label_new_chat;New chat
 label_personalization;Personalization
@@ -279,7 +280,8 @@ toast_image_copy_error;Error copying image
 toast_incognito_info;Anonymous chat is not saved in history
 toast_instructions_saved;Instructions saved
 toast_liked;Liked!
-toast_limits_exhausted;You have run out of free requests for today! Press the +5 button above.
+toast_limits_added;Limits successfully added! +5 requests.
+toast_limits_exhausted;You have run out of free requests for today! Click the +5 button above.
 toast_logout;You have been logged out
 toast_name_empty;Name cannot be empty
 toast_open_attachment_error_with_message;Failed to open attachment: %s

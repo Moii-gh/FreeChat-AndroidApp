@@ -439,9 +439,12 @@ class ChatMessageRenderer(
                     this.bounce()
                     when (index) {
                         0 -> {
-                            if (wrapper.isImageMode && wrapper.rawText.contains("base64,")) {
-                                val b64 = wrapper.rawText.substringAfter("base64,").substringBefore(")")
+                            val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
+                            if (wrapper.isImageMode && imageUrl?.startsWith("data:image", ignoreCase = true) == true) {
+                                val b64 = imageUrl.substringAfter("base64,")
                                 FileUtils.copyImageBase64(context, b64)
+                            } else if (wrapper.isImageMode && AssistantMessageWrapper.isLocalImageUrl(imageUrl)) {
+                                FileUtils.copyImageUri(context, Uri.parse(imageUrl))
                             } else {
                                 wrapper.copyAction(wrapper.rawText)
                             }
@@ -461,9 +464,12 @@ class ChatMessageRenderer(
                             }?.start()
                         }
                         3 -> {
-                            if (wrapper.isImageMode && wrapper.rawText.contains("base64,")) {
-                                val b64 = wrapper.rawText.substringAfter("base64,").substringBefore(")")
+                            val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
+                            if (wrapper.isImageMode && imageUrl?.startsWith("data:image", ignoreCase = true) == true) {
+                                val b64 = imageUrl.substringAfter("base64,")
                                 FileUtils.shareImageBase64(context, b64)
+                            } else if (wrapper.isImageMode && AssistantMessageWrapper.isLocalImageUrl(imageUrl)) {
+                                FileUtils.shareImageUri(context, Uri.parse(imageUrl))
                             } else {
                                 wrapper.shareAction(wrapper.rawText)
                             }

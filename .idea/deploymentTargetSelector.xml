@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="ChatAPP">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-04-16T18:52:52.150700900Z">
+        <DropdownSelection timestamp="2026-04-26T19:35:56.989110100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT31TDGWB" />
