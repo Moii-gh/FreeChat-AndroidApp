@@ -22,6 +22,7 @@ const USER_COLUMNS = `
   subscription_status,
   plan_expires_at,
   token_invalid_before,
+  avatar_file_id,
   created_at
 `;
 
@@ -41,6 +42,9 @@ function toPublicUser(row) {
     telegramFirstName: row.telegram_first_name ?? null,
     telegramLastName: row.telegram_last_name ?? null,
     telegramPhotoUrl: row.telegram_photo_url ?? null,
+    avatarFileId: row.avatar_file_id ?? null,
+    avatarUrl: row.avatar_url ?? null,
+    avatarThumbUrl: row.avatar_thumb_url ?? null,
     authProvider: row.auth_provider,
     planCode: row.plan_code ?? "free",
     subscriptionStatus: row.subscription_status ?? "inactive",
@@ -60,9 +64,10 @@ async function findByEmail(email, executor) {
   }
 
   const result = await getExecutor(executor).query(
-    `select ${USER_COLUMNS}
-     from users
-     where email = $1`,
+    `select u.*, f.url as avatar_url, f.thumb_url as avatar_thumb_url
+     from users u
+     left join files f on u.avatar_file_id = f.id
+     where u.email = $1`,
     [email.toLowerCase()]
   );
 
@@ -71,9 +76,10 @@ async function findByEmail(email, executor) {
 
 async function findById(userId, executor) {
   const result = await getExecutor(executor).query(
-    `select ${USER_COLUMNS}
-     from users
-     where id = $1`,
+    `select u.*, f.url as avatar_url, f.thumb_url as avatar_thumb_url
+     from users u
+     left join files f on u.avatar_file_id = f.id
+     where u.id = $1`,
     [userId]
   );
 
@@ -86,9 +92,10 @@ async function findByTelegramUserId(telegramUserId, executor) {
   }
 
   const result = await getExecutor(executor).query(
-    `select ${USER_COLUMNS}
-     from users
-     where telegram_user_id = $1`,
+    `select u.*, f.url as avatar_url, f.thumb_url as avatar_thumb_url
+     from users u
+     left join files f on u.avatar_file_id = f.id
+     where u.telegram_user_id = $1`,
     [String(telegramUserId)]
   );
 

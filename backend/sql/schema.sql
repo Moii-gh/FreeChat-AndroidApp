@@ -40,6 +40,31 @@ alter table if exists users add column if not exists subscription_status text no
 alter table if exists users add column if not exists plan_expires_at timestamptz;
 alter table if exists users add column if not exists token_invalid_before timestamptz;
 
+
+do $$ begin
+    create type file_category_enum as enum ('avatar', 'image', 'document', 'generated_image');
+exception
+    when duplicate_object then null;
+end $$;
+
+create table if not exists files (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references users(id) on delete cascade,
+    file_category file_category_enum not null,
+    original_name text not null,
+    filename text not null unique,
+    mime_type text not null,
+    size bigint not null,
+    storage_type text not null default 'local',
+    url text,
+    thumb_url text,
+    width integer,
+    height integer,
+    created_at timestamptz not null default now()
+);
+
+alter table if exists users add column if not exists avatar_file_id uuid references files(id) on delete set null;
+
 create table if not exists telegram_auth_challenges (
     id uuid primary key default gen_random_uuid(),
     start_token text not null unique,

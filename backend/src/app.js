@@ -1,4 +1,6 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
 const { normalizeJsonContentType } = require("./middleware/normalizeJsonContentType");
@@ -17,6 +19,7 @@ const { createSyncRouter } = require("./routes/syncRoutes");
 const { createBillingRouter } = require("./routes/billingRoutes");
 const { createAiRouter } = require("./routes/aiRoutes");
 const { createChatShareRouter, createPublicShareRouter } = require("./routes/chatShareRoutes");
+const { createFileRouter } = require("./routes/fileRoutes");
 
 function createApp(options = {}) {
   const app = express();
@@ -41,6 +44,12 @@ function createApp(options = {}) {
 
   app.use(normalizeJsonContentType);
   app.use(express.json({ limit: env.jsonBodyLimit }));
+
+  const publicUploadsDir = path.resolve(__dirname, "../../uploads/public");
+  if (!fs.existsSync(publicUploadsDir)) {
+    fs.mkdirSync(publicUploadsDir, { recursive: true });
+  }
+  app.use("/uploads/public", express.static(publicUploadsDir));
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
@@ -97,6 +106,8 @@ function createApp(options = {}) {
       authenticate
     })
   );
+
+  app.use("/api/files", createFileRouter({ authenticate }));
 
   app.use((_req, res) => {
     res.status(404).json({
