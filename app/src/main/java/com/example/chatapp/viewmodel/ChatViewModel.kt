@@ -111,7 +111,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             val chatId = repository.createChat(temporaryTitle)
             cachedChats = repository.getAllChats()
             callback(chatId)
-            performSync()
         }
     }
 
@@ -370,8 +369,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * Сохраняет завершённый ответ AI в БД.
      * Если чат ещё не создан — создаёт его со всей историей.
+     * После сохранения всех сообщений запускает синхронизацию с сервером.
      */
     private fun saveCompletedResponse(fullText: String) {
+        val generatedImage = extractImageAttachment(fullText)
+        val hasContent = fullText.isNotBlank() || !generatedImage.imageUrl.isNullOrBlank()
+        if (!hasContent) {
+            return
+        }
+
         if (currentChatId == null && !isAnonymousChat) {
             createNewChat(currentChatTitle) { chatId ->
                 currentChatId = chatId
@@ -413,12 +419,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     }?.getString("content")
                         ?: LocaleHelper.getString(getApplication(), "label_file_analysis")
                     generateAndSetChatTitle(chatId, titleSource) {}
+                    performSync()
                 }
             }
         } else {
             currentChatId?.let { chatId ->
                 viewModelScope.launch {
-                    val generatedImage = extractImageAttachment(fullText)
                     repository.addAssistantMessage(
                         chatId = chatId,
                         content = contentForStorage(fullText, generatedImage.imageUrl),
@@ -428,6 +434,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         attachmentFileName = generatedImage.fileName
                     )
                     cachedChats = repository.getAllChats()
+                    performSync()
                 }
             }
         }
@@ -611,7 +618,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun contentForStorage(content: String, imageUrl: String?): String {
-        return if (!imageUrl.isNullOrBlank() && extractMarkdownImageUrl(content) != null) {
+        if (imageUrl.isNullOrBlank()) {
+            return content
+        }
+        val isBase64Image = imageUrl.startsWith("data:image", ignoreCase = true)
+        return if (isBase64Image && extractMarkdownImageUrl(content) != null) {
             ""
         } else {
             content
