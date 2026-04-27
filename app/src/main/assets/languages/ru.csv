@@ -89,32 +89,6 @@ auth_telegram_widget_unavailable;Нет подключения или Telegram L
 auth_terms;Условия пользования
 auth_welcome_subtitle;Подтвердите Telegram, чтобы создать новый аккаунт или безопасно войти в FreeChat.
 auth_welcome_title;Войти или зарегистрироваться
-billing_auto_renew_disabled;Автопродление отключено.
-billing_cancel_auto_renew;Отменить автопродление
-billing_checkout_url_missing;Ссылка на оплату отсутствует.
-billing_current_period_end;Конец текущего периода
-billing_hint_active_pro;Ваш аккаунт может использовать серверные Pro-модели. Продления обрабатывает YooKassa.
-billing_hint_cancel_at_period_end;Доступ Pro действует до конца оплаченного периода. Автопродление отключено.
-billing_hint_pending;Завершите оплату в браузере. Доступ включится после webhook YooKassa на сервере.
-billing_hint_server_controlled;Доступ контролируется на сервере.
-billing_hint_upgrade;Это открывает модели более высокого уровня на сервере. Клиент больше не выбирает модель сам.
-billing_payment_page_opened;Страница оплаты открыта.
-billing_plan;План
-billing_plan_free;Free
-billing_plan_pro;Pro
-billing_price;Цена
-billing_price_rub_30_days;%s RUB / 30 дней
-billing_refresh_status;Обновить статус
-billing_status;Статус
-billing_status_active;Активна
-billing_status_active_until_period_end;Активна до конца периода
-billing_status_auto_renew_disabled;Автопродление отключено
-billing_status_expired;Истекла
-billing_status_inactive;Неактивна
-billing_status_payment_issue;Проблема с оплатой
-billing_status_pending_payment;Ожидает оплаты
-billing_status_unknown;Неизвестный статус: %s
-billing_upgrade_for_rub;Перейти на Pro за %s RUB
 button_about;Сведения о
 button_camera;Камера
 button_cancel;Отмена
@@ -234,7 +208,6 @@ section_pinned;Закреплённые
 session_expired_sign_in;Сессия истекла. Войдите снова.
 session_missing_sign_in;Сессия не найдена. Войдите снова.
 settings_shared_links;Отправленные чаты
-settings_subscription;Подписка Pro
 settings_title;Настройки
 share;Поделиться
 share_empty_response;Пустой ответ для ссылки

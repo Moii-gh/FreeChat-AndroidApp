@@ -476,13 +476,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        viewModelScope.launch {
-            when (val result = authRepository.getBillingStatus(token)) {
-                is NetworkResult.Success -> sessionStore.saveBillingStatus(result.data)
-                is NetworkResult.Error -> Unit
-            }
-            onUpdated(readDailyQuotaSnapshot())
-        }
+        onUpdated(readDailyQuotaSnapshot())
     }
 
     /** Расходует 1 запрос из лимита. Возвращает false если лимит исчерпан. */
@@ -518,7 +512,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun readDailyQuotaSnapshot(): DailyQuotaSnapshot {
         return DailyQuotaSnapshot(
-            isUnlimited = sessionStore.isCurrentUserPro(),
+            isUnlimited = false,
             remainingRequests = sessionStore.getRemainingDailyRequests(),
             dailyRequestLimit = sessionStore.getDailyRequestLimit(),
             resetsAt = sessionStore.getDailyQuotaResetsAt()

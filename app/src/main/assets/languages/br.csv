@@ -89,32 +89,6 @@ auth_telegram_widget_unavailable;Nessuna connessione o Telegram Login Widget non
 auth_terms;Termini di utilizzo
 auth_welcome_subtitle;Conferma Telegram per creare un account o accedere in sicurezza a FreeChat.
 auth_welcome_title;Accedi o registrati
-billing_auto_renew_disabled;Rinnovo automatico disattivato.
-billing_cancel_auto_renew;Annulla rinnovo automatico
-billing_checkout_url_missing;URL di checkout mancante.
-billing_current_period_end;Fine periodo corrente
-billing_hint_active_pro;Il tuo account può usare modelli Pro lato server. I rinnovi sono gestiti da YooKassa.
-billing_hint_cancel_at_period_end;L'accesso Pro resta attivo fino alla fine del periodo pagato. Il rinnovo automatico è disattivato.
-billing_hint_pending;Completa il pagamento nel browser. L'accesso si attiva dopo il webhook YooKassa sul server.
-billing_hint_server_controlled;L'accesso è controllato sul server.
-billing_hint_upgrade;Sblocca modelli di livello superiore sul server. Il client non sceglie più il modello da solo.
-billing_payment_page_opened;Pagina di pagamento aperta.
-billing_plan;Piano
-billing_plan_free;Free
-billing_plan_pro;Pro
-billing_price;Prezzo
-billing_price_rub_30_days;%s RUB / 30 giorni
-billing_refresh_status;Aggiorna stato
-billing_status;Stato
-billing_status_active;Attivo
-billing_status_active_until_period_end;Attivo fino a fine periodo
-billing_status_auto_renew_disabled;Rinnovo automatico disattivato
-billing_status_expired;Scaduto
-billing_status_inactive;Inattivo
-billing_status_payment_issue;Problema di pagamento
-billing_status_pending_payment;Pagamento in sospeso
-billing_status_unknown;Stato sconosciuto: %s
-billing_upgrade_for_rub;Passa a Pro per %s RUB
 button_about;Звесткі аб
 button_camera;Камера
 button_cancel;Адмена
@@ -233,7 +207,6 @@ section_pinned;Замацаваныя
 session_expired_sign_in;Sessione scaduta. Accedi di nuovo.
 session_missing_sign_in;Sessione non trovata. Accedi di nuovo.
 settings_shared_links;Chat condivise
-settings_subscription;Abbonamento Pro
 settings_title;Налады
 share;Абмяняцца
 share_empty_response;Risposta di condivisione vuota

@@ -270,17 +270,7 @@ private class FakeComposeAuthRepository : AuthRepositoryContract {
         return NetworkResult.Success(AuthResponse(message = "ok"))
     }
 
-    override suspend fun getBillingStatus(token: String): NetworkResult<com.example.chatapp.network.dto.BillingStatusResponse> {
-        return NetworkResult.Success(com.example.chatapp.network.dto.BillingStatusResponse(planCode = "free", subscriptionStatus = "inactive", priceRub = 0, isPro = false))
-    }
 
-    override suspend fun startBillingCheckout(token: String): NetworkResult<com.example.chatapp.network.dto.BillingCheckoutResponse> {
-        return NetworkResult.Success(com.example.chatapp.network.dto.BillingCheckoutResponse(paymentId = "", confirmationUrl = "", status = ""))
-    }
-
-    override suspend fun cancelBillingSubscription(token: String): NetworkResult<com.example.chatapp.network.dto.BillingStatusResponse> {
-        return NetworkResult.Success(com.example.chatapp.network.dto.BillingStatusResponse(planCode = "free", subscriptionStatus = "inactive", priceRub = 0, isPro = false))
-    }
 }
 
 private class FakeComposeAccountSessionStore : AccountSessionStore {
@@ -298,13 +288,7 @@ private class FakeComposeAccountSessionStore : AccountSessionStore {
 
     override fun getCurrentUserName(): String? = null
 
-    override fun saveBillingStatus(status: com.example.chatapp.network.dto.BillingStatusResponse) = Unit
-
-    override fun getCurrentPlanCode(): String? = null
-
-    override fun getCurrentPlanExpiresAt(): String? = null
-
-    override fun isCurrentUserPro(): Boolean = false
+    override fun getCurrentUserName(): String? = null
 
     override fun getDailyRequestLimit(): Int? = null
 

@@ -89,32 +89,6 @@ auth_telegram_widget_unavailable;Немає підключення або Telegr
 auth_terms;Умови користування
 auth_welcome_subtitle;Підтвердьте Telegram, щоб створити акаунт або безпечно увійти у FreeChat.
 auth_welcome_title;Увійти або зареєструватися
-billing_auto_renew_disabled;Автоподовження вимкнено.
-billing_cancel_auto_renew;Скасувати автоподовження
-billing_checkout_url_missing;Посилання на оплату відсутнє.
-billing_current_period_end;Кінець поточного періоду
-billing_hint_active_pro;Ваш акаунт може використовувати серверні Pro-моделі. Подовження обробляє YooKassa.
-billing_hint_cancel_at_period_end;Доступ Pro діє до кінця оплаченого періоду. Автоподовження вимкнено.
-billing_hint_pending;Завершіть оплату в браузері. Доступ увімкнеться після webhook YooKassa на сервері.
-billing_hint_server_controlled;Доступ контролюється на сервері.
-billing_hint_upgrade;Це відкриває моделі вищого рівня на сервері. Клієнт більше не обирає модель сам.
-billing_payment_page_opened;Сторінку оплати відкрито.
-billing_plan;План
-billing_plan_free;Free
-billing_plan_pro;Pro
-billing_price;Ціна
-billing_price_rub_30_days;%s RUB / 30 днів
-billing_refresh_status;Оновити статус
-billing_status;Статус
-billing_status_active;Активна
-billing_status_active_until_period_end;Активна до кінця періоду
-billing_status_auto_renew_disabled;Автоподовження вимкнено
-billing_status_expired;Закінчилася
-billing_status_inactive;Неактивна
-billing_status_payment_issue;Проблема з оплатою
-billing_status_pending_payment;Очікує оплати
-billing_status_unknown;Невідомий статус: %s
-billing_upgrade_for_rub;Перейти на Pro за %s RUB
 button_about;Відомості про
 button_camera;Камера
 button_cancel;Скасувати
@@ -233,7 +207,6 @@ section_pinned;Закріплені
 session_expired_sign_in;Сесія закінчилася. Увійдіть знову.
 session_missing_sign_in;Сесію не знайдено. Увійдіть знову.
 settings_shared_links;Спільні чати
-settings_subscription;Підписка Pro
 settings_title;Налаштування
 share;Поділитися
 share_empty_response;Порожня відповідь для посилання

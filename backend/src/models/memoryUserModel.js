@@ -22,16 +22,7 @@ function toPublicUser(row) {
     telegramFirstName: row.telegram_first_name ?? null,
     telegramLastName: row.telegram_last_name ?? null,
     telegramPhotoUrl: row.telegram_photo_url ?? null,
-    authProvider: row.auth_provider,
-    planCode: row.plan_code ?? "free",
-    subscriptionStatus: row.subscription_status ?? "inactive",
-    planExpiresAt: row.plan_expires_at ?? null,
-    isPro: Boolean(
-      row.plan_code &&
-        row.plan_code !== "free" &&
-        row.plan_expires_at &&
-        new Date(row.plan_expires_at).getTime() > Date.now()
-    )
+    authProvider: row.auth_provider
   };
 }
 
@@ -79,9 +70,6 @@ async function createUser({
     telegram_last_name: null,
     telegram_photo_url: null,
     auth_provider: "email",
-    plan_code: "free",
-    subscription_status: "inactive",
-    plan_expires_at: null,
     token_invalid_before: null,
     created_at: nowIso()
   };
@@ -115,9 +103,6 @@ async function createTelegramUser({
     telegram_last_name: null,
     telegram_photo_url: null,
     auth_provider: "telegram",
-    plan_code: "free",
-    subscription_status: "inactive",
-    plan_expires_at: null,
     token_invalid_before: null,
     created_at: nowIso()
   };
@@ -151,9 +136,6 @@ async function createTelegramWidgetUser({
     telegram_last_name: telegramLastName || null,
     telegram_photo_url: telegramPhotoUrl || null,
     auth_provider: "telegram",
-    plan_code: "free",
-    subscription_status: "inactive",
-    plan_expires_at: null,
     token_invalid_before: null,
     created_at: nowIso()
   };
@@ -274,18 +256,6 @@ async function updatePassword(userId, passwordHash) {
   return user;
 }
 
-async function updatePlanState(userId, { planCode, subscriptionStatus, planExpiresAt }) {
-  const user = await findById(userId);
-  if (!user) {
-    return null;
-  }
-
-  user.plan_code = planCode;
-  user.subscription_status = subscriptionStatus;
-  user.plan_expires_at = planExpiresAt;
-  return user;
-}
-
 module.exports = {
   toPublicUser,
   findById,
@@ -300,6 +270,5 @@ module.exports = {
   incrementVerificationAttempts,
   verifyUser,
   attachTelegramIdentity,
-  updatePassword,
-  updatePlanState
+  updatePassword
 };

@@ -104,11 +104,6 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
-            android:name=".BillingActivity"
-            android:exported="false"
-            android:configChanges="orientation|screenSize|keyboardHidden"/>
-
-        <activity
             android:name=".LanguageActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"/>

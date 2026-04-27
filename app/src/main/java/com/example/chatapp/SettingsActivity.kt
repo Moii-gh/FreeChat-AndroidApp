@@ -84,10 +84,6 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, SecurityActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemSubscription).setHapticClickListener {
-            startActivity(Intent(this, BillingActivity::class.java))
-        }
-
         findViewById<View>(R.id.itemAbout).setHapticClickListener {
             openExternalLink(BuildConfig.PUBLIC_INFO_URL)
         }
@@ -155,7 +151,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
         findViewById<TextView>(R.id.tvLabelAiProvider)?.text = LocaleHelper.getString(this, "ai_provider_title")
         findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
-        findViewById<TextView>(R.id.tvLabelSubscription)?.text = LocaleHelper.getString(this, "settings_subscription")
+
         findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
         findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")
         findViewById<TextView>(R.id.tvAppVersion)?.text = LocaleHelper.formatString(

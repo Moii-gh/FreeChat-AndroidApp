@@ -5,8 +5,6 @@ import com.example.chatapp.data.AuthRepositoryContract
 import com.example.chatapp.data.NetworkResult
 import com.example.chatapp.network.dto.ApiUser
 import com.example.chatapp.network.dto.AuthResponse
-import com.example.chatapp.network.dto.BillingCheckoutResponse
-import com.example.chatapp.network.dto.BillingStatusResponse
 import com.example.chatapp.network.dto.ChangePasswordRequest
 import com.example.chatapp.network.dto.TelegramAuthBeginResponse
 import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
@@ -360,49 +358,13 @@ private class FakeAuthRepository : AuthRepositoryContract {
                     email = "ada@example.com",
                     fullName = "Ada Lovelace",
                     birthDate = "1995-12-09",
-                    isVerified = true,
-                    planCode = "free",
-                    subscriptionStatus = "inactive",
-                    isPro = false
+                    isVerified = true
                 )
             )
         )
     }
 
-    override suspend fun getBillingStatus(token: String): NetworkResult<BillingStatusResponse> {
-        delay(25)
-        return NetworkResult.Success(
-            BillingStatusResponse(
-                planCode = "free",
-                subscriptionStatus = "inactive",
-                priceRub = 100,
-                isPro = false
-            )
-        )
-    }
 
-    override suspend fun startBillingCheckout(token: String): NetworkResult<BillingCheckoutResponse> {
-        delay(25)
-        return NetworkResult.Success(
-            BillingCheckoutResponse(
-                paymentId = "payment-1",
-                confirmationUrl = "https://example.com/checkout",
-                status = "pending"
-            )
-        )
-    }
-
-    override suspend fun cancelBillingSubscription(token: String): NetworkResult<BillingStatusResponse> {
-        delay(25)
-        return NetworkResult.Success(
-            BillingStatusResponse(
-                planCode = "free",
-                subscriptionStatus = "canceled",
-                priceRub = 100,
-                isPro = false
-            )
-        )
-    }
 }
 
 private class FakeAccountSessionStore : AccountSessionStore {
@@ -425,14 +387,6 @@ private class FakeAccountSessionStore : AccountSessionStore {
     override fun getCurrentUserEmail(): String? = lastUser?.email
 
     override fun getCurrentUserName(): String? = lastUser?.fullName
-
-    override fun getCurrentPlanCode(): String? = lastUser?.planCode
-
-    override fun getCurrentPlanExpiresAt(): String? = lastUser?.planExpiresAt
-
-    override fun isCurrentUserPro(): Boolean = lastUser?.isPro == true
-
-    override fun saveBillingStatus(status: BillingStatusResponse) = Unit
 
     override fun getDailyRequestLimit(): Int? = null
 

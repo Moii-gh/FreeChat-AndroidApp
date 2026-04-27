@@ -39,6 +39,9 @@ alter table if exists users drop column if exists plan_expires_at;
 alter table if exists users add column if not exists bonus_requests integer not null default 0;
 alter table if exists users add column if not exists token_invalid_before timestamptz;
 
+drop table if exists billing_payments;
+drop table if exists subscriptions;
+
 
 do $$ begin
     create type file_category_enum as enum ('avatar', 'image', 'document', 'generated_image');

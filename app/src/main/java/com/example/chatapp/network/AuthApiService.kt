@@ -1,8 +1,6 @@
 package com.example.chatapp.network
 
 import com.example.chatapp.network.dto.AuthResponse
-import com.example.chatapp.network.dto.BillingCheckoutResponse
-import com.example.chatapp.network.dto.BillingStatusResponse
 import com.example.chatapp.network.dto.ChangePasswordRequest
 import com.example.chatapp.network.dto.TelegramAuthBeginResponse
 import com.example.chatapp.network.dto.TelegramBeginMigrationRequest
@@ -72,18 +70,5 @@ interface AuthApiService {
         @Header("Authorization") authorization: String
     ): Response<AuthResponse>
 
-    @GET("billing/status")
-    suspend fun getBillingStatus(
-        @Header("Authorization") authorization: String
-    ): Response<BillingStatusResponse>
 
-    @POST("billing/checkout")
-    suspend fun startBillingCheckout(
-        @Header("Authorization") authorization: String
-    ): Response<BillingCheckoutResponse>
-
-    @POST("billing/cancel")
-    suspend fun cancelBillingSubscription(
-        @Header("Authorization") authorization: String
-    ): Response<BillingStatusResponse>
 }

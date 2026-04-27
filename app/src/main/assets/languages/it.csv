@@ -89,32 +89,6 @@ auth_telegram_widget_unavailable;Pas de connexion ou Telegram Login Widget indis
 auth_terms;Conditions d'utilisation
 auth_welcome_subtitle;Confirmez Telegram pour créer un compte ou vous connecter à FreeChat en sécurité.
 auth_welcome_title;Se connecter ou s'inscrire
-billing_auto_renew_disabled;Renouvellement automatique désactivé.
-billing_cancel_auto_renew;Annuler le renouvellement automatique
-billing_checkout_url_missing;L'URL de paiement est manquante.
-billing_current_period_end;Fin de la période actuelle
-billing_hint_active_pro;Votre compte peut utiliser les modèles Pro côté serveur. Les renouvellements sont gérés par YooKassa.
-billing_hint_cancel_at_period_end;L'accès Pro reste actif jusqu'à la fin de la période payée. Le renouvellement automatique est désactivé.
-billing_hint_pending;Terminez le paiement dans le navigateur. L'accès s'active après le webhook YooKassa côté serveur.
-billing_hint_server_controlled;L'accès est contrôlé côté serveur.
-billing_hint_upgrade;Cela débloque les modèles supérieurs côté serveur. Le client ne choisit plus le modèle lui-même.
-billing_payment_page_opened;Page de paiement ouverte.
-billing_plan;Offre
-billing_plan_free;Gratuit
-billing_plan_pro;Pro
-billing_price;Prix
-billing_price_rub_30_days;%s RUB / 30 jours
-billing_refresh_status;Actualiser le statut
-billing_status;Statut
-billing_status_active;Actif
-billing_status_active_until_period_end;Actif jusqu'à la fin de la période
-billing_status_auto_renew_disabled;Renouvellement automatique désactivé
-billing_status_expired;Expiré
-billing_status_inactive;Inactif
-billing_status_payment_issue;Problème de paiement
-billing_status_pending_payment;Paiement en attente
-billing_status_unknown;Statut inconnu : %s
-billing_upgrade_for_rub;Passer à Pro pour %s RUB
 button_about;Informazioni su
 button_camera;Fotocamera
 button_cancel;Annulla
@@ -233,7 +207,6 @@ section_pinned;Fissati
 session_expired_sign_in;Session expirée. Connectez-vous à nouveau.
 session_missing_sign_in;Session introuvable. Connectez-vous à nouveau.
 settings_shared_links;Chats partagés
-settings_subscription;Abonnement Pro
 settings_title;Impostazioni
 share;Condividi
 share_empty_response;Réponse de partage vide

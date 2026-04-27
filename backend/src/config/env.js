@@ -68,13 +68,7 @@ const env = {
   aiProImageModel: process.env.AI_PRO_IMAGE_MODEL || "",
   aiProSearchModel: process.env.AI_PRO_SEARCH_MODEL || "",
   aiProTitleModel: process.env.AI_PRO_TITLE_MODEL || "",
-  aiProSummaryModel: process.env.AI_PRO_SUMMARY_MODEL || "",
-  yookassaShopId: process.env.YOOKASSA_SHOP_ID || "",
-  yookassaSecretKey: process.env.YOOKASSA_SECRET_KEY || "",
-  yookassaReturnUrl: process.env.YOOKASSA_RETURN_URL || "",
-  proSubscriptionPlanCode: process.env.PRO_SUBSCRIPTION_PLAN_CODE || "pro_100",
-  proSubscriptionPriceRub: Number(process.env.PRO_SUBSCRIPTION_PRICE_RUB || 100),
-  proSubscriptionPeriodDays: Number(process.env.PRO_SUBSCRIPTION_PERIOD_DAYS || 30)
+  aiProSummaryModel: process.env.AI_PRO_SUMMARY_MODEL || ""
 };
 
 if (env.isTest) {

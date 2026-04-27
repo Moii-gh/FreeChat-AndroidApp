@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.example.chatapp.network.dto.ApiUser
-import com.example.chatapp.network.dto.BillingStatusResponse
 
 private const val LEGACY_PREFS_NAME = "settings_prefs"
 private const val SECURE_PREFS_NAME = "secure_settings_prefs"
@@ -51,16 +50,13 @@ private fun createSecurePreferences(
 
 interface AccountSessionStore {
     fun saveAuthenticatedUser(user: ApiUser?, token: String?)
-    fun saveBillingStatus(status: BillingStatusResponse)
+
     fun isSignedIn(): Boolean
     fun clearSession()
     fun getAuthToken(): String?
     fun getCurrentUserId(): String?
     fun getCurrentUserEmail(): String?
     fun getCurrentUserName(): String?
-    fun getCurrentPlanCode(): String?
-    fun getCurrentPlanExpiresAt(): String?
-    fun isCurrentUserPro(): Boolean
     fun getDailyRequestLimit(): Int?
     fun getRemainingDailyRequests(): Int?
     fun getDailyQuotaResetsAt(): String?
@@ -90,10 +86,6 @@ class SharedPrefsAccountSessionStore(
                 putString(KEY_USER_EMAIL, nextEmail)
                 putString(KEY_USER_BIRTH_DATE, it.birthDate)
                 putBoolean(KEY_IS_VERIFIED, it.isVerified)
-                putString(KEY_PLAN_CODE, it.planCode)
-                putString(KEY_PLAN_EXPIRES_AT, it.planExpiresAt)
-                putBoolean(KEY_IS_PRO, it.isPro)
-                putString(KEY_SUBSCRIPTION_STATUS, it.subscriptionStatus)
             }
         }.apply()
 
@@ -103,18 +95,6 @@ class SharedPrefsAccountSessionStore(
         } else if (!nextEmail.isNullOrBlank()) {
             accountSettings.migrateLegacyDataIfNeeded()
         }
-    }
-
-    override fun saveBillingStatus(status: BillingStatusResponse) {
-        prefs.edit().apply {
-            putString(KEY_PLAN_CODE, status.planCode)
-            putString(KEY_PLAN_EXPIRES_AT, status.planExpiresAt)
-            putBoolean(KEY_IS_PRO, status.isPro)
-            putString(KEY_SUBSCRIPTION_STATUS, status.subscriptionStatus)
-            putNullableInt(KEY_DAILY_REQUEST_LIMIT, status.dailyRequestLimit)
-            putNullableInt(KEY_REMAINING_DAILY_REQUESTS, status.remainingDailyRequests)
-            putNullableString(KEY_DAILY_QUOTA_RESETS_AT, status.dailyQuotaResetsAt)
-        }.apply()
     }
 
     override fun isSignedIn(): Boolean {
@@ -131,10 +111,6 @@ class SharedPrefsAccountSessionStore(
             remove(KEY_USER_BIRTH_DATE)
             remove(KEY_IS_VERIFIED)
             remove(KEY_USER_PASSWORD)
-            remove(KEY_PLAN_CODE)
-            remove(KEY_PLAN_EXPIRES_AT)
-            remove(KEY_IS_PRO)
-            remove(KEY_SUBSCRIPTION_STATUS)
             remove(KEY_DAILY_REQUEST_LIMIT)
             remove(KEY_REMAINING_DAILY_REQUESTS)
             remove(KEY_REWARDED_REQUESTS)
@@ -149,12 +125,6 @@ class SharedPrefsAccountSessionStore(
     override fun getCurrentUserEmail(): String? = prefs.getString(KEY_USER_EMAIL, null)
 
     override fun getCurrentUserName(): String? = prefs.getString(KEY_USER_NAME, null)
-
-    override fun getCurrentPlanCode(): String? = prefs.getString(KEY_PLAN_CODE, null)
-
-    override fun getCurrentPlanExpiresAt(): String? = prefs.getString(KEY_PLAN_EXPIRES_AT, null)
-
-    override fun isCurrentUserPro(): Boolean = prefs.getBoolean(KEY_IS_PRO, false)
 
     override fun getDailyRequestLimit(): Int? =
         if (prefs.contains(KEY_DAILY_REQUEST_LIMIT)) prefs.getInt(KEY_DAILY_REQUEST_LIMIT, 0) else null
@@ -201,10 +171,6 @@ class SharedPrefsAccountSessionStore(
         const val KEY_USER_BIRTH_DATE = "user_birth_date"
         const val KEY_IS_VERIFIED = "is_verified"
         const val KEY_USER_PASSWORD = "user_password"
-        const val KEY_PLAN_CODE = "plan_code"
-        const val KEY_PLAN_EXPIRES_AT = "plan_expires_at"
-        const val KEY_IS_PRO = "is_pro"
-        const val KEY_SUBSCRIPTION_STATUS = "subscription_status"
         const val KEY_DAILY_REQUEST_LIMIT = "daily_request_limit"
         const val KEY_REMAINING_DAILY_REQUESTS = "remaining_daily_requests"
         const val KEY_REWARDED_REQUESTS = "rewarded_requests"

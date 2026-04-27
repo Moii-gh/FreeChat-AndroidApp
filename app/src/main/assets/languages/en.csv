@@ -89,32 +89,6 @@ auth_telegram_widget_unavailable;No connection or Telegram Login Widget is unava
 auth_terms;Terms of use
 auth_welcome_subtitle;Confirm Telegram to create a new account or safely sign in to FreeChat.
 auth_welcome_title;Sign in or sign up
-billing_auto_renew_disabled;Auto-renew disabled.
-billing_cancel_auto_renew;Cancel auto-renew
-billing_checkout_url_missing;Checkout URL is missing.
-billing_current_period_end;Current period end
-billing_hint_active_pro;Your account can use server-side pro models. Renewals are handled by YooKassa.
-billing_hint_cancel_at_period_end;Pro access remains active until the paid period ends. Auto-renew is disabled.
-billing_hint_pending;Complete payment in the browser. Access switches on after the YooKassa webhook reaches the server.
-billing_hint_server_controlled;Access is controlled on the server.
-billing_hint_upgrade;This unlocks higher-tier models on the server. The client no longer selects the model itself.
-billing_payment_page_opened;Payment page opened.
-billing_plan;Plan
-billing_plan_free;Free
-billing_plan_pro;Pro
-billing_price;Price
-billing_price_rub_30_days;%s RUB / 30 days
-billing_refresh_status;Refresh status
-billing_status;Status
-billing_status_active;Active
-billing_status_active_until_period_end;Active until period end
-billing_status_auto_renew_disabled;Auto-renew disabled
-billing_status_expired;Expired
-billing_status_inactive;Inactive
-billing_status_payment_issue;Payment issue
-billing_status_pending_payment;Pending payment
-billing_status_unknown;Unknown status: %s
-billing_upgrade_for_rub;Upgrade for %s RUB
 button_about;About
 button_camera;Camera
 button_cancel;Cancel
@@ -234,7 +208,6 @@ section_pinned;Pinned
 session_expired_sign_in;Session expired. Sign in again.
 session_missing_sign_in;Session not found. Sign in again.
 settings_shared_links;Shared chats
-settings_subscription;Pro subscription
 settings_title;Settings
 share;Share
 share_empty_response;Empty share response
