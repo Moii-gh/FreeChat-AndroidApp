@@ -16,7 +16,6 @@ const emailService = require("./utils/emailTransport");
 const { createAuthRouter } = require("./routes/authRoutes");
 const { createTelegramAuthRouter } = require("./routes/telegramAuthRoutes");
 const { createSyncRouter } = require("./routes/syncRoutes");
-const { createBillingRouter } = require("./routes/billingRoutes");
 const { createAiRouter } = require("./routes/aiRoutes");
 const { createChatShareRouter, createPublicShareRouter } = require("./routes/chatShareRoutes");
 const { createFileRouter } = require("./routes/fileRoutes");
@@ -88,15 +87,6 @@ function createApp(options = {}) {
   );
 
   app.use("/share", createPublicShareRouter({ chatShareModel: resolvedChatShareModel }));
-
-  app.use(
-    "/api/billing",
-    createBillingRouter({
-      userModel: resolvedUserModel,
-      aiUsageModel: resolvedAiUsageModel,
-      authenticate
-    })
-  );
 
   app.use(
     "/api/ai",

@@ -18,9 +18,7 @@ const USER_COLUMNS = `
   telegram_last_name,
   telegram_photo_url,
   auth_provider,
-  plan_code,
-  subscription_status,
-  plan_expires_at,
+  bonus_requests,
   token_invalid_before,
   avatar_file_id,
   created_at
@@ -46,15 +44,7 @@ function toPublicUser(row) {
     avatarUrl: row.avatar_url ?? null,
     avatarThumbUrl: row.avatar_thumb_url ?? null,
     authProvider: row.auth_provider,
-    planCode: row.plan_code ?? "free",
-    subscriptionStatus: row.subscription_status ?? "inactive",
-    planExpiresAt: row.plan_expires_at ?? null,
-    isPro: Boolean(
-      row.plan_code &&
-        row.plan_code !== "free" &&
-        row.plan_expires_at &&
-        new Date(row.plan_expires_at).getTime() > Date.now()
-    )
+    bonusRequests: row.bonus_requests ?? 0
   };
 }
 
@@ -366,21 +356,14 @@ async function updatePassword(userId, passwordHash, executor) {
   return result.rows[0];
 }
 
-async function updatePlanState(
-  userId,
-  { planCode, subscriptionStatus, planExpiresAt },
-  executor
-) {
+async function addBonusRequests(userId, amount, executor) {
   const result = await getExecutor(executor).query(
     `update users
-     set plan_code = $2,
-         subscription_status = $3,
-         plan_expires_at = $4
+     set bonus_requests = bonus_requests + $2
      where id = $1
      returning ${USER_COLUMNS}`,
-    [userId, planCode, subscriptionStatus, planExpiresAt]
+    [userId, amount]
   );
-
   return result.rows[0];
 }
 
@@ -399,5 +382,5 @@ module.exports = {
   verifyUser,
   attachTelegramIdentity,
   updatePassword,
-  updatePlanState
+  addBonusRequests
 };

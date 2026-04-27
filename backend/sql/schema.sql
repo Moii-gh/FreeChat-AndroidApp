@@ -18,9 +18,7 @@ create table if not exists users (
     telegram_last_name text,
     telegram_photo_url text,
     auth_provider text not null default 'legacy_email',
-    plan_code text not null default 'free',
-    subscription_status text not null default 'inactive',
-    plan_expires_at timestamptz,
+    bonus_requests integer not null default 0,
     token_invalid_before timestamptz,
     created_at timestamptz not null default now()
 );
@@ -35,9 +33,10 @@ alter table if exists users add column if not exists verification_attempt_count 
 alter table if exists users add column if not exists telegram_first_name text;
 alter table if exists users add column if not exists telegram_last_name text;
 alter table if exists users add column if not exists telegram_photo_url text;
-alter table if exists users add column if not exists plan_code text not null default 'free';
-alter table if exists users add column if not exists subscription_status text not null default 'inactive';
-alter table if exists users add column if not exists plan_expires_at timestamptz;
+alter table if exists users drop column if exists plan_code;
+alter table if exists users drop column if exists subscription_status;
+alter table if exists users drop column if exists plan_expires_at;
+alter table if exists users add column if not exists bonus_requests integer not null default 0;
 alter table if exists users add column if not exists token_invalid_before timestamptz;
 
 
@@ -147,35 +146,6 @@ create index if not exists idx_chat_share_links_owner_source
 create index if not exists idx_chat_share_links_active
     on chat_share_links(token_hash, expires_at)
     where revoked_at is null;
-
-create table if not exists subscriptions (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null unique references users(id) on delete cascade,
-    plan_code text not null,
-    status text not null check (status in ('inactive', 'pending', 'active', 'canceled', 'past_due', 'expired')),
-    payment_method_id text,
-    cancel_at_period_end boolean not null default false,
-    current_period_start timestamptz,
-    current_period_end timestamptz,
-    last_payment_id text,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-);
-
-create table if not exists billing_payments (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references users(id) on delete cascade,
-    provider text not null,
-    provider_payment_id text not null unique,
-    amount_value numeric(10, 2) not null,
-    currency text not null default 'RUB',
-    kind text not null,
-    status text not null,
-    payment_method_id text,
-    raw_payload jsonb,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-);
 
 do $$
 begin

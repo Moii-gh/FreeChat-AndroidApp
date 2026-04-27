@@ -9,6 +9,18 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
   const controller = createAiController({ userModel, aiUsageModel });
 
   router.use(authenticate);
+  router.get("/limits", controller.getLimits);
+  router.post(
+    "/reward-ad",
+    rateLimit({
+      windowMs: 30 * 1000, // 30 seconds
+      limit: 1, // maximum 1 reward per 30 seconds
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Подождите перед получением следующего бонуса." }
+    }),
+    controller.rewardAd
+  );
   router.post("/chat", validate(aiChatSchema), controller.chat);
   router.post(
     "/title",

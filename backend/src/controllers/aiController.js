@@ -1,6 +1,5 @@
 const { env } = require("../config/env");
 const { proxyAiRequest, generateTitle, generateSummary } = require("../services/aiService");
-const { isProUser } = require("../services/entitlementService");
 
 const MAX_CHAT_MESSAGES = 60;
 const MAX_ARRAY_ITEMS = 128;
@@ -19,10 +18,13 @@ function createBadRequestError(message) {
 
 function createQuotaResponse(snapshot) {
   return {
-    message: "Ежедневный лимит AI-запросов исчерпан",
-    dailyRequestLimit: snapshot.limit,
-    remainingDailyRequests: snapshot.remaining,
-    dailyQuotaResetsAt: snapshot.resetsAt
+    message: "Лимит AI-запросов исчерпан",
+    dailyLimit: snapshot.dailyLimit,
+    usedToday: snapshot.usedToday,
+    bonusRequests: snapshot.bonusRequests,
+    baseRemaining: snapshot.baseRemaining,
+    remaining: snapshot.totalRemaining,
+    resetAt: snapshot.resetAt
   };
 }
 
@@ -128,14 +130,12 @@ function createAiController({ aiUsageModel }) {
 
         validateChatRequestPayload(requestBody);
 
-        if (!isProUser(user)) {
-          const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
-            limit: env.dailyAiRequestLimit
-          });
+        const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
+          limit: env.dailyAiRequestLimit
+        });
 
-          if (snapshot.remaining <= 0) {
-            return res.status(429).json(createQuotaResponse(snapshot));
-          }
+        if (snapshot.totalRemaining <= 0) {
+          return res.status(429).json(createQuotaResponse(snapshot));
         }
 
         await proxyAiRequest({
@@ -144,27 +144,27 @@ function createAiController({ aiUsageModel }) {
           requestBody,
           res,
           onBeforeResponse: async ({ upstreamResponse }) => {
-            if (!upstreamResponse.ok || isProUser(user)) {
+            if (!upstreamResponse.ok) {
               return;
             }
 
-            const snapshot = await aiUsageModel.consumeDailyRequest(user.id, {
+            const updatedSnapshot = await aiUsageModel.consumeDailyRequest(user.id, {
               limit: env.dailyAiRequestLimit
             });
 
-            if (!snapshot.allowed) {
+            if (!updatedSnapshot.allowed) {
               try {
                 await upstreamResponse.body?.cancel?.();
               } catch (_error) {
                 // Ignore stream cancel failures.
               }
 
-              return res.status(429).json(createQuotaResponse(snapshot));
+              return res.status(429).json(createQuotaResponse(updatedSnapshot));
             }
 
-            res.setHeader("X-Daily-Request-Limit", String(snapshot.limit));
-            res.setHeader("X-Remaining-Daily-Requests", String(snapshot.remaining));
-            res.setHeader("X-Daily-Quota-Resets-At", snapshot.resetsAt);
+            res.setHeader("X-Daily-Request-Limit", String(updatedSnapshot.dailyLimit));
+            res.setHeader("X-Remaining-Requests", String(updatedSnapshot.totalRemaining));
+            res.setHeader("X-Daily-Quota-Resets-At", updatedSnapshot.resetAt);
           }
         });
       } catch (error) {
@@ -213,6 +213,57 @@ function createAiController({ aiUsageModel }) {
 
         const content = await generateSummary({ user, promptText });
         return res.status(200).json({ content });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    getLimits: async (req, res, next) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
+          limit: env.dailyAiRequestLimit
+        });
+
+        return res.status(200).json({
+          dailyLimit: snapshot.dailyLimit,
+          usedToday: snapshot.usedToday,
+          bonusRequests: snapshot.bonusRequests,
+          baseRemaining: snapshot.baseRemaining,
+          remaining: snapshot.totalRemaining,
+          resetAt: snapshot.resetAt
+        });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    rewardAd: async (req, res, next) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const { userModel } = require("../modelRegistry");
+        await userModel.addBonusRequests(user.id, 5);
+
+        const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
+          limit: env.dailyAiRequestLimit
+        });
+
+        return res.status(200).json({
+          dailyLimit: snapshot.dailyLimit,
+          usedToday: snapshot.usedToday,
+          bonusRequests: snapshot.bonusRequests,
+          baseRemaining: snapshot.baseRemaining,
+          remaining: snapshot.totalRemaining,
+          resetAt: snapshot.resetAt
+        });
       } catch (error) {
         return next(error);
       }

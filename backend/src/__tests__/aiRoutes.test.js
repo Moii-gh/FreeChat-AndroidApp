@@ -27,10 +27,12 @@ function createFakeAiUsageModel() {
       const usedCount = counts.get(userId) || 0;
       return {
         allowed: usedCount < limit,
-        limit,
-        usedCount,
-        remaining: Math.max(limit - usedCount, 0),
-        resetsAt: new Date(Date.now() + 60_000).toISOString()
+        dailyLimit: limit,
+        usedToday: usedCount,
+        bonusRequests: 0,
+        baseRemaining: Math.max(limit - usedCount, 0),
+        totalRemaining: Math.max(limit - usedCount, 0),
+        resetAt: new Date(Date.now() + 60_000).toISOString()
       };
     },
     async consumeDailyRequest(userId, { limit }) {
@@ -38,10 +40,12 @@ function createFakeAiUsageModel() {
       if (current >= limit) {
         return {
           allowed: false,
-          limit,
-          usedCount: current,
-          remaining: 0,
-          resetsAt: new Date(Date.now() + 60_000).toISOString()
+          dailyLimit: limit,
+          usedToday: current,
+          bonusRequests: 0,
+          baseRemaining: 0,
+          totalRemaining: 0,
+          resetAt: new Date(Date.now() + 60_000).toISOString()
         };
       }
 
@@ -49,10 +53,12 @@ function createFakeAiUsageModel() {
       counts.set(userId, next);
       return {
         allowed: true,
-        limit,
-        usedCount: next,
-        remaining: Math.max(limit - next, 0),
-        resetsAt: new Date(Date.now() + 60_000).toISOString()
+        dailyLimit: limit,
+        usedToday: next,
+        bonusRequests: 0,
+        baseRemaining: Math.max(limit - next, 0),
+        totalRemaining: Math.max(limit - next, 0),
+        resetAt: new Date(Date.now() + 60_000).toISOString()
       };
     }
   };
@@ -100,9 +106,7 @@ test("POST /api/ai/chat enforces the server-side daily quota for free users", as
       email: "free@example.com",
       full_name: "Free User",
       is_verified: true,
-      plan_code: "free",
-      subscription_status: "inactive",
-      plan_expires_at: null,
+      bonus_requests: 0,
       token_invalid_before: null
     });
     const app = createApp({ userModel, aiUsageModel, rateLimitEnabled: false });
@@ -128,7 +132,7 @@ test("POST /api/ai/chat enforces the server-side daily quota for free users", as
 
     assert.equal(firstResponse.status, 200);
     assert.equal(secondResponse.status, 429);
-    assert.equal(secondResponse.body.remainingDailyRequests, 0);
+    assert.equal(secondResponse.body.remaining, 0);
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -162,9 +166,7 @@ test("POST /api/ai/chat maps img-flux image size to aspect_ratio", async () => {
       email: "free@example.com",
       full_name: "Free User",
       is_verified: true,
-      plan_code: "free",
-      subscription_status: "inactive",
-      plan_expires_at: null,
+      bonus_requests: 0,
       token_invalid_before: null
     });
     const app = createApp({ userModel, aiUsageModel, rateLimitEnabled: false });
@@ -211,9 +213,7 @@ test("POST /api/ai/chat rejects oversized payloads", async () => {
       email: "free@example.com",
       full_name: "Free User",
       is_verified: true,
-      plan_code: "free",
-      subscription_status: "inactive",
-      plan_expires_at: null,
+      bonus_requests: 0,
       token_invalid_before: null
     });
     const app = createApp({ userModel, aiUsageModel, rateLimitEnabled: false });
