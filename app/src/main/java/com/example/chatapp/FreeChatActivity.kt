@@ -68,6 +68,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
         const val MAX_EXTRACTED_TEXT_CHARS = 120_000
         const val MAX_ATTACHMENT_CONTEXT_CHARS = 4_000
+        const val SUGGESTIONS_SHOW_DURATION_MS = 180L
+        const val SUGGESTIONS_HIDE_DURATION_MS = 120L
         const val TOP_ACTIONS_SPLIT_DURATION_MS = 260L
     }
 
@@ -180,10 +182,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.chipIcon.setColorFilter(android.graphics.Color.parseColor(iconTint))
         binding.etInput.hint = hint
         chatViewModel.currentMode = mode
+        setWelcomeActionButtonsVisible(mode == null)
 
-        if (mode == "create_image" && binding.etInput.text.isNullOrBlank()) {
-            updateInputText(imagePromptPrefix(), keepSuggestions = true)
-        } else if (mode == "search") {
+        if (mode == "search") {
             loadPopularNewsQueries()
         } else {
             syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
@@ -236,7 +237,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             hint = LocaleHelper.getString(this, "hint_create_image"),
             mode = "create_image"
         )
-        updateInputText(imagePromptPrefix(), keepSuggestions = true)
     }
 
     private fun activateIdeaSuggestions() {
@@ -266,6 +266,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (chatViewModel.currentMode == "search") {
             if (query.isBlank()) {
                 showPopularNewsQueries(chatViewModel.popularNewsQueries)
+            } else {
+                hideQuickSuggestions()
+            }
+            return
+        }
+
+        if (chatViewModel.currentMode == "create_image") {
+            if (query.isBlank()) {
+                showQuickSuggestions(QuickSuggestionCategory.IMAGE)
             } else {
                 hideQuickSuggestions()
             }
@@ -360,7 +369,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.suggestionsList.addView(row)
         }
 
-        binding.suggestionsContainer.isVisible = true
+        showSuggestionsContainerAnimated()
     }
 
     private fun loadPopularNewsQueries() {
@@ -439,7 +448,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.suggestionsList.addView(row)
         }
 
-        binding.suggestionsContainer.isVisible = true
+        showSuggestionsContainerAnimated()
     }
 
     private fun applyQuickSuggestion(category: QuickSuggestionCategory, suggestion: String) {
@@ -468,8 +477,46 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun hideQuickSuggestions() {
         activeSuggestionCategory = null
-        binding.suggestionsContainer.isGone = true
-        binding.suggestionsList.removeAllViews()
+        val container = binding.suggestionsContainer
+        container.animate().cancel()
+
+        if (!container.isVisible) {
+            binding.suggestionsList.removeAllViews()
+            return
+        }
+
+        val slideDistance = 8f * resources.displayMetrics.density
+        container.animate()
+            .translationY(slideDistance)
+            .alpha(0f)
+            .setDuration(SUGGESTIONS_HIDE_DURATION_MS)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction {
+                container.isGone = true
+                container.translationY = 0f
+                container.alpha = 1f
+                binding.suggestionsList.removeAllViews()
+            }
+            .start()
+    }
+
+    private fun showSuggestionsContainerAnimated() {
+        val container = binding.suggestionsContainer
+        container.animate().cancel()
+
+        if (!container.isVisible) {
+            val slideDistance = 12f * resources.displayMetrics.density
+            container.translationY = slideDistance
+            container.alpha = 0f
+            container.isVisible = true
+        }
+
+        container.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(SUGGESTIONS_SHOW_DURATION_MS)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .start()
     }
 
     private fun setupHelpers() {
@@ -662,6 +709,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun showWelcomeState() {
         resetTopActionsAnimation()
         binding.welcomeScreen.isVisible = true
+        setWelcomeActionButtonsVisible(chatViewModel.currentMode == null)
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isGone = true
         binding.topRightMain.isVisible = true
@@ -1310,7 +1358,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.contextChipContainer.isGone = true
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
         chatViewModel.currentMode = null
+        setWelcomeActionButtonsVisible(true)
         syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
+    }
+
+    private fun setWelcomeActionButtonsVisible(isVisible: Boolean) {
+        binding.btnCreateImage.isVisible = isVisible
+        binding.btnIdea.isVisible = isVisible
+        binding.btnCenterMore.isVisible = isVisible
     }
 
     private fun updateSendState() {

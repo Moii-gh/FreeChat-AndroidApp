@@ -287,6 +287,48 @@
                 android:orientation="vertical"/>
         </ScrollView>
 
+        <ScrollView
+            android:id="@+id/suggestionsContainer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            android:clipToPadding="false"
+            android:elevation="8dp"
+            android:fillViewport="false"
+            android:overScrollMode="never"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/bottomInputArea"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/welcomeScreen">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/suggestionsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="РџРѕРїСѓР»СЏСЂРЅС‹Рµ РЅРѕРІРѕСЃС‚Рё" />
+
+            <LinearLayout
+                android:id="@+id/suggestionsList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+            </LinearLayout>
+        </ScrollView>
+
         <!-- НИЖНЯЯ ПАНЕЛЬ ВВОДА -->
         <LinearLayout
             android:id="@+id/bottomInputArea"
@@ -299,7 +341,7 @@
             app:layout_constraintBottom_toBottomOf="parent">
 
             <LinearLayout
-                android:id="@+id/suggestionsContainer"
+                android:id="@+id/suggestionsContainerLegacy"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -307,7 +349,7 @@
                 android:visibility="gone">
 
                 <TextView
-                    android:id="@+id/suggestionsTitle"
+                    android:id="@+id/suggestionsTitleLegacy"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
@@ -318,7 +360,7 @@
                     tools:text="Популярные новости" />
 
                 <LinearLayout
-                    android:id="@+id/suggestionsList"
+                    android:id="@+id/suggestionsListLegacy"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
@@ -427,6 +469,7 @@
                     android:paddingVertical="4dp"
                     android:gravity="center_vertical"
                     android:visibility="gone"
+                    android:layout_marginStart="6dp"
                     android:layout_marginBottom="4dp">
 
                     <ImageView
