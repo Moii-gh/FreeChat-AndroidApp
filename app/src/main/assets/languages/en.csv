@@ -18,6 +18,7 @@ ai_summary_prompt;Make a short summary of the important facts from this part of 
 ai_system_prompt_shopping;You are a shopping assistant. Find options, compare characteristics, and note real limitations.
 ai_system_prompt_study;You are a study assistant. Explain step by step, check understanding, and help reinforce the material.
 ai_thinking;Thinking...
+popular_news_title;Popular news
 anonymous_mode_desc;Your chat will not be saved on the device.\nAfter closing the tab, all messages will disappear without a trace.
 anonymous_mode_title;Incognito mode
 app_brand;FreeChat

@@ -21,6 +21,8 @@
             android:id="@+id/topBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:padding="12dp"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -103,6 +105,8 @@
                 android:orientation="horizontal"
                 android:background="@drawable/pill_button_bg"
                 android:gravity="center_vertical"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:paddingHorizontal="4dp"
                 android:visibility="gone"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -122,6 +126,7 @@
                     android:id="@+id/btnMore"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
+                    android:layout_marginStart="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_more_vertical"
                     android:padding="8dp"
@@ -300,6 +305,17 @@
                 android:layout_marginBottom="8dp"
                 android:orientation="vertical"
                 android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/suggestionsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="Популярные новости" />
 
                 <LinearLayout
                     android:id="@+id/suggestionsList"

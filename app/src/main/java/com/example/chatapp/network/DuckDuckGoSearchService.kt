@@ -3,7 +3,9 @@ package com.example.chatapp.network
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 object DuckDuckGoSearchService {
@@ -91,6 +93,44 @@ object DuckDuckGoSearchService {
         } catch (e: Exception) {
             SearchResponse(context = "Ошибка при поиске: ${e.message}", sources = emptyList())
         }
+    }
+
+    fun trendingNews(maxResults: Int = 4): List<String> {
+        val seeds = listOf("новости", "сегодня новости", "популярные новости")
+        val suggestions = linkedSetOf<String>()
+
+        for (seed in seeds) {
+            if (suggestions.size >= maxResults) break
+            runCatching {
+                val encodedQuery = URLEncoder.encode(seed, "UTF-8")
+                val request = Request.Builder()
+                    .url("https://duckduckgo.com/ac/?q=$encodedQuery&kl=ru-ru")
+                    .header("User-Agent", "Mozilla/5.0 (Android)")
+                    .get()
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    if (!response.isSuccessful || body.isBlank()) {
+                        return@runCatching
+                    }
+
+                    val json = JSONArray(body)
+                    for (index in 0 until json.length()) {
+                        val phrase = json.optJSONObject(index)
+                            ?.optString("phrase")
+                            ?.trim()
+                            .orEmpty()
+                        if (phrase.isNotBlank()) {
+                            suggestions.add(phrase)
+                            if (suggestions.size >= maxResults) break
+                        }
+                    }
+                }
+            }
+        }
+
+        return suggestions.take(maxResults)
     }
 
     fun formatSources(sources: List<SearchSource>): String {

@@ -15,6 +15,7 @@ import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
 import com.example.chatapp.network.AiProvider
 import com.example.chatapp.network.AiProviderSettings
+import com.example.chatapp.network.DuckDuckGoSearchService
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.OpenAiDirectService
 import com.example.chatapp.network.dto.CreateChatShareResponse
@@ -70,6 +71,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     var isFirstMessage = true
     var isAnonymousChat = false
     var currentMode: String? = null
+    var popularNewsQueries: List<String> = emptyList()
+        private set
     var selectedFileUri: Uri? = null
     private var activeResponseJob: Job? = null
 
@@ -559,6 +562,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             refreshDailyQuota {
                 onDone()
             }
+        }
+    }
+
+    fun loadPopularNewsQueries(onUpdated: (List<String>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val queries = runCatching {
+                DuckDuckGoSearchService.trendingNews(maxResults = 4)
+            }.getOrDefault(emptyList())
+            popularNewsQueries = queries
+            onUpdated(queries)
         }
     }
 

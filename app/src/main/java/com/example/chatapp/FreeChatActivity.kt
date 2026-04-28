@@ -1,5 +1,9 @@
 package com.example.chatapp
 
+import android.animation.AnimatorSet
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -11,6 +15,8 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -62,6 +68,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
         const val MAX_EXTRACTED_TEXT_CHARS = 120_000
         const val MAX_ATTACHMENT_CONTEXT_CHARS = 4_000
+        const val TOP_ACTIONS_SPLIT_DURATION_MS = 260L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -79,6 +86,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var suppressSuggestionUpdates = false
     private var handledShareToken: String? = null
     private var adManager: RewardedAdManager? = null
+    private var topActionsAnimator: AnimatorSet? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -175,6 +183,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         if (mode == "create_image" && binding.etInput.text.isNullOrBlank()) {
             updateInputText(imagePromptPrefix(), keepSuggestions = true)
+        } else if (mode == "search") {
+            loadPopularNewsQueries()
         } else {
             syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
         }
@@ -253,6 +263,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
 
+        if (chatViewModel.currentMode == "search") {
+            if (query.isBlank()) {
+                showPopularNewsQueries(chatViewModel.popularNewsQueries)
+            } else {
+                hideQuickSuggestions()
+            }
+            return
+        }
+
         val normalized = query.trim().lowercase()
         val imagePrefix = imagePromptPrefix().trim().lowercase()
         val ideaPrefix = ideaPromptPrefix().trim().lowercase()
@@ -291,6 +310,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val density = resources.displayMetrics.density
 
         activeSuggestionCategory = category
+        binding.suggestionsTitle.isGone = true
+        binding.suggestionsContainer.background = null
+        binding.suggestionsContainer.setPadding(0, 0, 0, 0)
         binding.suggestionsList.removeAllViews()
 
         suggestions.forEachIndexed { index, suggestion ->
@@ -331,6 +353,85 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 setTextColor(Color.parseColor("#D1D1D6"))
                 textSize = 15f
                 setLineSpacing(0f, 1.05f)
+            }
+
+            row.addView(icon)
+            row.addView(textView)
+            binding.suggestionsList.addView(row)
+        }
+
+        binding.suggestionsContainer.isVisible = true
+    }
+
+    private fun loadPopularNewsQueries() {
+        hideQuickSuggestions()
+        chatViewModel.loadPopularNewsQueries { queries ->
+            runOnUiThread {
+                if (chatViewModel.currentMode == "search" && binding.etInput.text.isNullOrBlank()) {
+                    showPopularNewsQueries(queries)
+                }
+            }
+        }
+    }
+
+    private fun showPopularNewsQueries(queries: List<String>) {
+        val visibleQueries = queries.filter { it.isNotBlank() }.take(4)
+        if (visibleQueries.isEmpty() || chatViewModel.currentMode != "search" || currentPreviewUri != null || isSending) {
+            hideQuickSuggestions()
+            return
+        }
+
+        val density = resources.displayMetrics.density
+        activeSuggestionCategory = null
+        binding.suggestionsTitle.isVisible = true
+        binding.suggestionsTitle.text = LocaleHelper.getString(this, "popular_news_title")
+        binding.suggestionsContainer.setBackgroundResource(R.drawable.bg_popular_queries)
+        binding.suggestionsContainer.setPadding(
+            (12 * density).toInt(),
+            (12 * density).toInt(),
+            (12 * density).toInt(),
+            (12 * density).toInt()
+        )
+        binding.suggestionsList.removeAllViews()
+
+        visibleQueries.forEachIndexed { index, query ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    if (index < visibleQueries.lastIndex) {
+                        bottomMargin = (6 * density).toInt()
+                    }
+                }
+                setPadding((4 * density).toInt(), (8 * density).toInt(), (4 * density).toInt(), (8 * density).toInt())
+                isClickable = true
+                isFocusable = true
+                val selectable = TypedValue()
+                theme.resolveAttribute(android.R.attr.selectableItemBackground, selectable, true)
+                setBackgroundResource(selectable.resourceId)
+                setOnClickListener {
+                    updateInputText(query, keepSuggestions = false)
+                    binding.etInput.requestFocus()
+                }
+            }
+
+            val icon = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams((20 * density).toInt(), (20 * density).toInt()).apply {
+                    marginEnd = (12 * density).toInt()
+                }
+                setImageResource(R.drawable.ic_trending_up)
+                setColorFilter(Color.parseColor("#D1D1D6"))
+            }
+
+            val textView = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                text = query
+                setTextColor(Color.parseColor("#D1D1D6"))
+                textSize = 17f
+                maxLines = 2
             }
 
             row.addView(icon)
@@ -559,6 +660,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showWelcomeState() {
+        resetTopActionsAnimation()
         binding.welcomeScreen.isVisible = true
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isGone = true
@@ -575,6 +677,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showAnonymousWelcomeState() {
+        resetTopActionsAnimation()
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isVisible = true
         binding.messagesScrollView.isGone = true
@@ -587,12 +690,110 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
     }
 
-    private fun showMessagesState() {
+    private fun showMessagesState(animateTopActions: Boolean = false) {
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isVisible = true
-        binding.topRightMain.isGone = true
+        if (animateTopActions && binding.topRightMain.isVisible) {
+            animateTopActionsSplit()
+        } else {
+            resetTopActionsAnimation()
+            binding.topRightMain.isGone = true
+            binding.topRightChat.isVisible = true
+        }
+    }
+
+    private fun resetTopActionsAnimation() {
+        topActionsAnimator?.cancel()
+        topActionsAnimator = null
+        resetTopActionsTransforms()
+    }
+
+    private fun resetTopActionsTransforms() {
+        listOf(binding.topRightMain, binding.topRightChat, binding.btnNewChat, binding.btnMore).forEach { view ->
+            view.alpha = 1f
+            view.scaleX = 1f
+            view.scaleY = 1f
+            view.translationX = 0f
+        }
+    }
+
+    private fun animateTopActionsSplit() {
+        topActionsAnimator?.cancel()
+        binding.topRightMain.isVisible = true
         binding.topRightChat.isVisible = true
+
+        binding.topRightChat.alpha = 0f
+        binding.topRightChat.scaleX = 0.48f
+        binding.topRightChat.scaleY = 1f
+        binding.btnNewChat.alpha = 0f
+        binding.btnNewChat.translationX = dp(18f)
+        binding.btnNewChat.scaleX = 0.9f
+        binding.btnNewChat.scaleY = 0.9f
+        binding.btnMore.alpha = 0f
+        binding.btnMore.translationX = dp(-8f)
+        binding.btnMore.scaleX = 0.9f
+        binding.btnMore.scaleY = 0.9f
+
+        binding.topRightChat.post {
+            binding.topRightMain.pivotX = binding.topRightMain.width.toFloat()
+            binding.topRightMain.pivotY = binding.topRightMain.height / 2f
+            binding.topRightChat.pivotX = binding.topRightChat.width.toFloat()
+            binding.topRightChat.pivotY = binding.topRightChat.height / 2f
+
+            val expandedScale = if (binding.topRightMain.width > 0) {
+                binding.topRightChat.width.toFloat() / binding.topRightMain.width.toFloat()
+            } else {
+                2.1f
+            }
+
+            val stretch = ObjectAnimator.ofFloat(binding.topRightMain, View.SCALE_X, 1f, expandedScale).apply {
+                duration = 105L
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+
+            val reveal = AnimatorSet().apply {
+                playTogether(
+                    ObjectAnimator.ofFloat(binding.topRightMain, View.ALPHA, 1f, 0f),
+                    ObjectAnimator.ofFloat(binding.topRightChat, View.ALPHA, 0f, 1f),
+                    ObjectAnimator.ofFloat(binding.topRightChat, View.SCALE_X, 0.48f, 1f),
+                    ObjectAnimator.ofFloat(binding.btnNewChat, View.ALPHA, 0f, 1f),
+                    ObjectAnimator.ofFloat(binding.btnNewChat, View.TRANSLATION_X, dp(18f), 0f),
+                    ObjectAnimator.ofFloat(binding.btnNewChat, View.SCALE_X, 0.9f, 1f),
+                    ObjectAnimator.ofFloat(binding.btnNewChat, View.SCALE_Y, 0.9f, 1f),
+                    ObjectAnimator.ofFloat(binding.btnMore, View.ALPHA, 0f, 1f),
+                    ObjectAnimator.ofFloat(binding.btnMore, View.TRANSLATION_X, dp(-8f), 0f),
+                    ObjectAnimator.ofFloat(binding.btnMore, View.SCALE_X, 0.9f, 1f),
+                    ObjectAnimator.ofFloat(binding.btnMore, View.SCALE_Y, 0.9f, 1f)
+                )
+                duration = TOP_ACTIONS_SPLIT_DURATION_MS - stretch.duration
+                interpolator = OvershootInterpolator(1.15f)
+            }
+
+            topActionsAnimator = AnimatorSet().apply {
+                playSequentially(stretch, reveal)
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        binding.topRightMain.isGone = true
+                        topActionsAnimator = null
+                        resetTopActionsTransforms()
+                        binding.topRightChat.isVisible = true
+                    }
+
+                    override fun onAnimationCancel(animation: Animator) {
+                        binding.topRightMain.isGone = true
+                        topActionsAnimator = null
+                        resetTopActionsTransforms()
+                        binding.topRightChat.isVisible = true
+                    }
+                })
+                start()
+            }
+        }
+    }
+
+    private fun dp(value: Float): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
     }
 
     private fun startFreshChat() {
@@ -830,9 +1031,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val mimeType = attachmentPayload?.mimeType
         val userHistoryIndex = chatViewModel.chatHistory.size
 
+        val shouldAnimateTopActions = chatViewModel.isFirstMessage && binding.topRightMain.isVisible
         isSending = true
         hideQuickSuggestions()
-        showMessagesState()
+        showMessagesState(animateTopActions = shouldAnimateTopActions)
         refreshDailyQuotaUi()
 
         when {
