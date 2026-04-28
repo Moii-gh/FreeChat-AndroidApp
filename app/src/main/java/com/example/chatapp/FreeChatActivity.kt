@@ -887,6 +887,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     isSending = false
                     updateSendState()
+                    refreshDailyQuotaUi()
                     refreshChats()
                 }
             }
@@ -993,6 +994,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     isSending = false
                     updateSendState()
+                    refreshDailyQuotaUi()
                     refreshChats()
                 }
             }
@@ -1014,6 +1016,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     isSending = false
                     updateSendState()
+                    refreshDailyQuotaUi()
                     refreshChats()
                 }
             },
@@ -1022,6 +1025,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     isSending = false
                     updateSendState()
                     wrapper.updateContent(error, animate = false)
+                    refreshDailyQuotaUi()
                     toast(error)
                 }
             },
@@ -1133,9 +1137,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 val label = if (snapshot.isUnlimited) {
                     SpannableString("∞")
                 } else {
-                    val base = snapshot.remainingRequests ?: 0
+                    val base = snapshot.baseRemaining ?: 0
+                    val bonus = snapshot.bonusRequests
                     val textPrefix = LocaleHelper.getString(this, "label_limits_requests")
-                    val fullText = "$textPrefix: $base + 5"
+                    val fullText = "$textPrefix: $base + $bonus"
                     SpannableString(fullText).apply {
                         val plusIndex = fullText.indexOf("+")
                         if (plusIndex != -1) {

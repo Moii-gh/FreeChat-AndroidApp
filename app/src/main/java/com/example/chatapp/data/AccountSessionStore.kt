@@ -58,9 +58,11 @@ interface AccountSessionStore {
     fun getCurrentUserEmail(): String?
     fun getCurrentUserName(): String?
     fun getDailyRequestLimit(): Int?
+    fun getBaseRemainingDailyRequests(): Int?
+    fun getBonusRequests(): Int
     fun getRemainingDailyRequests(): Int?
     fun getDailyQuotaResetsAt(): String?
-    fun saveRemainingDailyRequests(value: Int?)
+    fun saveDailyQuota(dailyLimit: Int?, baseRemaining: Int?, bonusRequests: Int?, resetAt: String?)
     fun consumeDailyRequest()
     fun addDailyRequests(amount: Int)
 }
@@ -129,6 +131,11 @@ class SharedPrefsAccountSessionStore(
     override fun getDailyRequestLimit(): Int? =
         if (prefs.contains(KEY_DAILY_REQUEST_LIMIT)) prefs.getInt(KEY_DAILY_REQUEST_LIMIT, 0) else null
 
+    override fun getBaseRemainingDailyRequests(): Int? =
+        if (prefs.contains(KEY_REMAINING_DAILY_REQUESTS)) prefs.getInt(KEY_REMAINING_DAILY_REQUESTS, 0) else null
+
+    override fun getBonusRequests(): Int = prefs.getInt(KEY_REWARDED_REQUESTS, 0)
+
     override fun getRemainingDailyRequests(): Int? {
         val server = if (prefs.contains(KEY_REMAINING_DAILY_REQUESTS)) prefs.getInt(KEY_REMAINING_DAILY_REQUESTS, 0) else null
         val rewarded = prefs.getInt(KEY_REWARDED_REQUESTS, 0)
@@ -141,8 +148,18 @@ class SharedPrefsAccountSessionStore(
 
     override fun getDailyQuotaResetsAt(): String? = prefs.getString(KEY_DAILY_QUOTA_RESETS_AT, null)
 
-    override fun saveRemainingDailyRequests(value: Int?) {
-        prefs.edit().putNullableInt(KEY_REMAINING_DAILY_REQUESTS, value).apply()
+    override fun saveDailyQuota(
+        dailyLimit: Int?,
+        baseRemaining: Int?,
+        bonusRequests: Int?,
+        resetAt: String?
+    ) {
+        prefs.edit()
+            .putNullableInt(KEY_DAILY_REQUEST_LIMIT, dailyLimit)
+            .putNullableInt(KEY_REMAINING_DAILY_REQUESTS, baseRemaining)
+            .putNullableInt(KEY_REWARDED_REQUESTS, bonusRequests)
+            .putNullableString(KEY_DAILY_QUOTA_RESETS_AT, resetAt)
+            .apply()
     }
 
     override fun consumeDailyRequest() {

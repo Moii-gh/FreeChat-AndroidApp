@@ -390,11 +390,20 @@ private class FakeAccountSessionStore : AccountSessionStore {
 
     override fun getDailyRequestLimit(): Int? = null
 
+    override fun getBaseRemainingDailyRequests(): Int? = null
+
+    override fun getBonusRequests(): Int = 0
+
     override fun getRemainingDailyRequests(): Int? = null
 
     override fun getDailyQuotaResetsAt(): String? = null
 
-    override fun saveRemainingDailyRequests(value: Int?) = Unit
+    override fun saveDailyQuota(
+        dailyLimit: Int?,
+        baseRemaining: Int?,
+        bonusRequests: Int?,
+        resetAt: String?
+    ) = Unit
 
     override fun consumeDailyRequest() = Unit
 

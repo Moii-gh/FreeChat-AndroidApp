@@ -23,6 +23,7 @@ function createQuotaResponse(snapshot) {
     usedToday: snapshot.usedToday,
     bonusRequests: snapshot.bonusRequests,
     baseRemaining: snapshot.baseRemaining,
+    totalRemaining: snapshot.totalRemaining,
     remaining: snapshot.totalRemaining,
     resetAt: snapshot.resetAt
   };
@@ -234,7 +235,7 @@ function createAiController({ aiUsageModel }) {
           usedToday: snapshot.usedToday,
           bonusRequests: snapshot.bonusRequests,
           baseRemaining: snapshot.baseRemaining,
-          remaining: snapshot.totalRemaining,
+          totalRemaining: snapshot.totalRemaining,
           resetAt: snapshot.resetAt
         });
       } catch (error) {
@@ -261,7 +262,7 @@ function createAiController({ aiUsageModel }) {
           usedToday: snapshot.usedToday,
           bonusRequests: snapshot.bonusRequests,
           baseRemaining: snapshot.baseRemaining,
-          remaining: snapshot.totalRemaining,
+          totalRemaining: snapshot.totalRemaining,
           resetAt: snapshot.resetAt
         });
       } catch (error) {

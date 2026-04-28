@@ -47,6 +47,19 @@ object NetworkModule {
             .create(SyncApiService::class.java)
     }
 
+    fun createAiLimitsApiService(baseUrl: String, token: String): AiLimitsApiService {
+        return Retrofit.Builder()
+            .baseUrl(normalizedBaseUrl(baseUrl))
+            .client(
+                baseClientBuilder(timeoutSeconds = 20)
+                    .addInterceptor(authorizationInterceptor(token))
+                    .build()
+            )
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AiLimitsApiService::class.java)
+    }
+
     fun createChatShareApiService(baseUrl: String, token: String? = null): ChatShareApiService {
         val clientBuilder = baseClientBuilder(timeoutSeconds = 30)
         if (!token.isNullOrBlank()) {

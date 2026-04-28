@@ -38,7 +38,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     data class DailyQuotaSnapshot(
         val isUnlimited: Boolean,
-        val remainingRequests: Int?,
+        val baseRemaining: Int?,
+        val bonusRequests: Int,
+        val totalRemaining: Int?,
         val dailyRequestLimit: Int?,
         val resetsAt: String?
     )
@@ -483,7 +485,26 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        onUpdated(readDailyQuotaSnapshot())
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val service = NetworkModule.createAiLimitsApiService(
+                    com.example.chatapp.BuildConfig.APP_API_BASE_URL,
+                    token
+                )
+                val response = service.getLimits()
+                if (response.isSuccessful) {
+                    response.body()?.let { limits ->
+                        sessionStore.saveDailyQuota(
+                            dailyLimit = limits.dailyLimit,
+                            baseRemaining = limits.baseRemaining,
+                            bonusRequests = limits.bonusRequests,
+                            resetAt = limits.resetAt
+                        )
+                    }
+                }
+            }
+            onUpdated(readDailyQuotaSnapshot())
+        }
     }
 
     /** Расходует 1 запрос из лимита. Возвращает false если лимит исчерпан. */
@@ -493,9 +514,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             return true
         }
 
-        val current = snapshot.remainingRequests ?: return true
+        val current = snapshot.totalRemaining ?: return true
         if (current <= 0) return false
-        sessionStore.consumeDailyRequest()
         return true
     }
 
@@ -504,23 +524,53 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val snapshot = readDailyQuotaSnapshot()
         return when {
             snapshot.isUnlimited -> "∞"
-            snapshot.remainingRequests != null -> snapshot.remainingRequests.toString()
+            snapshot.totalRemaining != null -> snapshot.totalRemaining.toString()
             else -> "?"
         }
     }
 
     /** Добавляет запросы (награда за просмотр рекламы) */
     fun addLimits(amount: Int, onDone: () -> Unit) {
-        sessionStore.addDailyRequests(amount)
-        refreshDailyQuota {
+        val token = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (token.isBlank()) {
+            sessionStore.addDailyRequests(amount)
             onDone()
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val service = NetworkModule.createAiLimitsApiService(
+                    com.example.chatapp.BuildConfig.APP_API_BASE_URL,
+                    token
+                )
+                val response = service.rewardAd()
+                if (response.isSuccessful) {
+                    response.body()?.let { limits ->
+                        sessionStore.saveDailyQuota(
+                            dailyLimit = limits.dailyLimit,
+                            baseRemaining = limits.baseRemaining,
+                            bonusRequests = limits.bonusRequests,
+                            resetAt = limits.resetAt
+                        )
+                    }
+                }
+            }
+            refreshDailyQuota {
+                onDone()
+            }
         }
     }
 
     private fun readDailyQuotaSnapshot(): DailyQuotaSnapshot {
+        val baseRemaining = sessionStore.getBaseRemainingDailyRequests()
+        val bonusRequests = sessionStore.getBonusRequests()
+        val totalRemaining = baseRemaining?.plus(bonusRequests)
         return DailyQuotaSnapshot(
             isUnlimited = false,
-            remainingRequests = sessionStore.getRemainingDailyRequests(),
+            baseRemaining = baseRemaining,
+            bonusRequests = bonusRequests,
+            totalRemaining = totalRemaining,
             dailyRequestLimit = sessionStore.getDailyRequestLimit(),
             resetsAt = sessionStore.getDailyQuotaResetsAt()
         )
