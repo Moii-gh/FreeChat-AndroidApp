@@ -526,6 +526,7 @@ class ChatMessageRenderer(
          */
         fun createCodeBlockView(context: Context, codeContent: String, language: String): Pair<View, TextView> {
             val density = context.resources.displayMetrics.density
+            val displayLanguage = normalizeCodeLanguageLabel(language)
             val container = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 background = ContextCompat.getDrawable(context, R.drawable.bg_code_block)
@@ -536,12 +537,12 @@ class ChatMessageRenderer(
 
             val header = android.widget.RelativeLayout(context).apply {
                 background = ContextCompat.getDrawable(context, R.drawable.bg_code_header)
-                setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                setPadding((14 * density).toInt(), (9 * density).toInt(), (12 * density).toInt(), (9 * density).toInt())
             }
 
             val langText = TextView(context).apply {
-                text = language.ifEmpty { "CODE" }.uppercase()
-                setTextColor(Color.parseColor("#B3B3B3"))
+                text = displayLanguage
+                setTextColor(Color.parseColor("#C9D1D9"))
                 textSize = 12f
                 setTypeface(null, Typeface.BOLD)
                 layoutParams = android.widget.RelativeLayout.LayoutParams(
@@ -567,14 +568,14 @@ class ChatMessageRenderer(
 
                 val copyIcon = ImageView(context).apply {
                     setImageResource(R.drawable.ic_copy)
-                    setColorFilter(Color.parseColor("#B3B3B3"))
+                    setColorFilter(Color.parseColor("#C9D1D9"))
                     layoutParams = LinearLayout.LayoutParams((14 * density).toInt(), (14 * density).toInt()).apply {
                         marginEnd = (6 * density).toInt()
                     }
                 }
                 val copyText = TextView(context).apply {
                     text = LocaleHelper.getString(context, "code_copy")
-                    setTextColor(Color.parseColor("#B3B3B3"))
+                    setTextColor(Color.parseColor("#C9D1D9"))
                     textSize = 12f
                 }
 
@@ -587,7 +588,7 @@ class ChatMessageRenderer(
                     copyIcon.setColorFilter(Color.parseColor("#34C759"))
                     postDelayed({
                         copyText.text = LocaleHelper.getString(context, "code_copy")
-                        copyIcon.setColorFilter(Color.parseColor("#B3B3B3"))
+                        copyIcon.setColorFilter(Color.parseColor("#C9D1D9"))
                     }, 2000)
                 }
             }
@@ -595,19 +596,53 @@ class ChatMessageRenderer(
             container.addView(header)
 
             val codeText = TextView(context).apply {
-                text = ""
-                setTextColor(Color.parseColor("#E5E5EA"))
+                text = codeContent
+                setTextColor(Color.parseColor("#D6DEEB"))
                 textSize = 14f
                 typeface = Typeface.MONOSPACE
-                setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+                includeFontPadding = false
+                setLineSpacing((2 * density), 1.0f)
+                setHorizontallyScrolling(true)
+                setPadding((14 * density).toInt(), (13 * density).toInt(), (14 * density).toInt(), (13 * density).toInt())
                 setTextIsSelectable(true)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                minWidth = (context.resources.displayMetrics.widthPixels - (48 * density).toInt()).coerceAtLeast(0)
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
                 )
             }
 
-            container.addView(codeText)
+            val horizontalScroll = HorizontalScrollView(context).apply {
+                isHorizontalScrollBarEnabled = true
+                isFillViewport = true
+                overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                addView(codeText)
+            }
+
+            container.addView(horizontalScroll)
             return Pair(container, codeText)
+        }
+
+        private fun normalizeCodeLanguageLabel(language: String): String {
+            return when (language.trim().lowercase()) {
+                "kt", "kts", "kotlin" -> "Kotlin"
+                "java" -> "Java"
+                "js", "jsx", "javascript" -> "JavaScript"
+                "ts", "tsx", "typescript" -> "TypeScript"
+                "py", "python" -> "Python"
+                "html", "xhtml" -> "HTML"
+                "css", "scss", "sass" -> "CSS"
+                "xml", "svg", "xaml" -> "XML"
+                "json", "jsonc" -> "JSON"
+                "sql" -> "SQL"
+                "sh", "shell", "bash", "zsh", "powershell", "ps1" -> "Bash"
+                "" -> "Code"
+                else -> language.trim().replaceFirstChar { it.uppercase() }
+            }
         }
     }
 }

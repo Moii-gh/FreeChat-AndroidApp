@@ -595,10 +595,10 @@ class AssistantMessageWrapper(
                 }
                 is MarkdownTableRenderer.Chunk.Code -> {
                     val (codeContainer, codeTv) = ChatMessageRenderer.createCodeBlockView(
-                        context, "", chunk.language.ifEmpty { "CODE" }
+                        context, chunk.content, chunk.language
                     )
                     codeContainer.tag = codeTv
-                    codeTv.text = SyntaxHighlighter.highlight(chunk.content)
+                    codeTv.text = SyntaxHighlighter.highlight(chunk.content, chunk.language)
                     contentArea.addView(codeContainer)
                 }
                 is MarkdownTableRenderer.Chunk.Table -> {
