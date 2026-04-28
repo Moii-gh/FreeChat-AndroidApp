@@ -1,8 +1,10 @@
 package com.example.chatapp.util
 
 import android.content.res.Resources
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.Animation
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.animation.ScaleAnimation
@@ -54,7 +56,42 @@ fun View.stopPulse() {
     this.clearAnimation()
 }
 
+fun View.setPressAnimation(
+    pressedScale: Float = 0.94f,
+    pressedTranslationDp: Float = 1.5f
+) {
+    val pressedOffset = pressedTranslationDp * resources.displayMetrics.density
+
+    setOnTouchListener { view, event ->
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                view.animate().cancel()
+                view.animate()
+                    .scaleX(pressedScale)
+                    .scaleY(pressedScale)
+                    .translationY(pressedOffset)
+                    .setDuration(70L)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
+                    .start()
+            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> {
+                view.animate().cancel()
+                view.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .setDuration(150L)
+                    .setInterpolator(OvershootInterpolator(2f))
+                    .start()
+            }
+        }
+        false
+    }
+}
+
 fun View.setHapticClickListener(action: (View) -> Unit) {
+    setPressAnimation()
     this.setOnClickListener {
         it.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
         action(it)

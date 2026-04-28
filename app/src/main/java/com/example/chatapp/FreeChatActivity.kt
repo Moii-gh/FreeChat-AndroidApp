@@ -13,6 +13,7 @@ import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -573,6 +574,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupTopBar() {
+        setupMainButtonPressAnimations()
         binding.btnMenu.setHapticClickListener {
             binding.drawerLayout.openDrawer(GravityCompat.START)
         }
@@ -587,6 +589,58 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding.btnAddLimits.setHapticClickListener {
             adManager?.show()
+        }
+    }
+
+    private fun setupMainButtonPressAnimations() {
+        setupPressAnimation(binding.btnAddLimits, pressedScale = 0.96f, pressedOffset = dp(2f), pressedTranslationZ = -dp(2f))
+        setupPressAnimation(binding.btnMenu)
+        setupPressAnimation(binding.btnChat, target = binding.topRightMain)
+        setupPressAnimation(binding.btnNewChat)
+        setupPressAnimation(binding.btnMore)
+        setupPressAnimation(binding.btnCreateImage, pressedScale = 0.97f)
+        setupPressAnimation(binding.btnIdea, pressedScale = 0.97f)
+        setupPressAnimation(binding.btnCenterMore, pressedScale = 0.97f)
+        setupPressAnimation(binding.btnPlus)
+        setupPressAnimation(binding.btnSend)
+        setupPressAnimation(binding.btnCloseChip, pressedScale = 0.88f)
+        setupPressAnimation(binding.btnRemovePreview, pressedScale = 0.88f)
+    }
+
+    private fun setupPressAnimation(
+        touchSource: View,
+        target: View = touchSource,
+        pressedScale: Float = 0.92f,
+        pressedOffset: Float = 0f,
+        pressedTranslationZ: Float = 0f
+    ) {
+        touchSource.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    target.animate().cancel()
+                    target.animate()
+                        .scaleX(pressedScale)
+                        .scaleY(pressedScale)
+                        .translationY(pressedOffset)
+                        .translationZ(pressedTranslationZ)
+                        .setDuration(80L)
+                        .setInterpolator(AccelerateDecelerateInterpolator())
+                        .start()
+                }
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    target.animate().cancel()
+                    target.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .translationY(0f)
+                        .translationZ(0f)
+                        .setDuration(160L)
+                        .setInterpolator(OvershootInterpolator(2.2f))
+                        .start()
+                }
+            }
+            false
         }
     }
 

@@ -10,6 +10,8 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -137,6 +139,14 @@ class SpeechRecognizerManager(
         btnMic.setOnTouchListener { _, event ->
             when (event.action) {
                 android.view.MotionEvent.ACTION_DOWN -> {
+                    btnMic.animate().cancel()
+                    btnMic.animate()
+                        .scaleX(0.92f)
+                        .scaleY(0.92f)
+                        .setDuration(80L)
+                        .setInterpolator(AccelerateDecelerateInterpolator())
+                        .start()
+
                     if (!isSpeechAvailable || speechRecognizer == null || speechRecognizerIntent == null) {
                         Toast.makeText(
                             context,
@@ -171,6 +181,13 @@ class SpeechRecognizerManager(
                     true
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    btnMic.animate().cancel()
+                    btnMic.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(160L)
+                        .setInterpolator(OvershootInterpolator(2.2f))
+                        .start()
                     btnMic.clearColorFilter()
                     btnMic.stopPulse()
                     try {
