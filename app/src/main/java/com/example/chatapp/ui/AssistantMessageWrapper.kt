@@ -568,77 +568,50 @@ class AssistantMessageWrapper(
             displayReply
         }
 
-        // Парсинг текста + кода: разбиваем по ``` разделителю
-        val parts = cleanReply.split("```")
+        // Разбиваем текст на типизированные чанки: TEXT / CODE / TABLE
+        val chunks = MarkdownTableRenderer.splitIntoChunks(cleanReply)
         val markwon = io.noties.markwon.Markwon.create(context)
 
-        // Сколько блоков текста и кода мы собираемся показать
-        val textPartsCount = if (cleanReply.isEmpty()) 0 else parts.size
+        // Перестраиваем contentArea полностью (таблицы — самостоятельные View)
+        // imageContainer убираем временно, вернём в конце если нужен
+        val savedImageContainer = imageContainer
+        contentArea.removeAllViews()
 
-        for (i in parts.indices) {
-            val part = parts[i]
-            val isCode = (i % 2 != 0)
-
-            // Создаём view если не хватает
-            if (i >= contentArea.childCount) {
-                if (isCode) {
-                    val (codeContainer, codeTv) = ChatMessageRenderer.createCodeBlockView(context, "", "CODE")
+        chunks.forEach { chunk ->
+            when (chunk) {
+                is MarkdownTableRenderer.Chunk.Text -> {
+                    if (chunk.content.isNotEmpty()) {
+                        val tv = TextView(context).apply {
+                            setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                            textSize = 16f
+                            setLineSpacing(0f, 1.2f)
+                            setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
+                            setTextIsSelectable(true)
+                            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+                        }
+                        markwon.setMarkdown(tv, chunk.content)
+                        contentArea.addView(tv)
+                    }
+                }
+                is MarkdownTableRenderer.Chunk.Code -> {
+                    val (codeContainer, codeTv) = ChatMessageRenderer.createCodeBlockView(
+                        context, "", chunk.language.ifEmpty { "CODE" }
+                    )
                     codeContainer.tag = codeTv
+                    codeTv.text = SyntaxHighlighter.highlight(chunk.content)
                     contentArea.addView(codeContainer)
-                } else {
-                    val tv = TextView(context).apply {
-                        setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                        textSize = 16f
-                        setLineSpacing(0f, 1.2f)
-                        setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
-                        setTextIsSelectable(true)
-                        movementMethod = android.text.method.LinkMovementMethod.getInstance()
-                    }
-                    contentArea.addView(tv)
                 }
-            }
-
-            // Обновляем view
-            val view = contentArea.getChildAt(i)
-            if (isCode) {
-                val codeTv = view.tag as? TextView
-                if (codeTv != null) {
-                    val newlineIdx = part.indexOf('\n')
-                    var lang = "CODE"
-                    var fullCode = part
-                    if (newlineIdx != -1) {
-                        lang = part.substring(0, newlineIdx).trim()
-                        fullCode = part.substring(newlineIdx + 1)
-                    }
-                    if (lang.isEmpty()) lang = "CODE"
-                    codeTv.text = SyntaxHighlighter.highlight(fullCode)
-                }
-            } else {
-                val tv = view as? TextView
-                if (tv != null) {
-                    if (part.trim().isNotEmpty()) {
-                        markwon.setMarkdown(tv, part.trim())
-                    } else {
-                        tv.text = ""
-                    }
+                is MarkdownTableRenderer.Chunk.Table -> {
+                    val tableView = MarkdownTableRenderer.createTableView(
+                        context, chunk.parsed, chunk.raw
+                    )
+                    contentArea.addView(tableView)
                 }
             }
         }
 
-        // Удаляем лишние view, учитывая imageContainer если он добавлен в конец
-        val expectedViews = textPartsCount + if (hasImage) 1 else 0
-        while (contentArea.childCount > expectedViews) {
-            val view = contentArea.getChildAt(contentArea.childCount - 1)
-            if (view != imageContainer) {
-                contentArea.removeView(view)
-            } else if (!hasImage) {
-                contentArea.removeView(view)
-                imageContainer = null
-            } else {
-                break
-            }
-        }
-
+        // Восстанавливаем ссылку на imageContainer (был убран через removeAllViews)
+        imageContainer = savedImageContainer
         if (imageUrl != null) {
             ensureImageContainer()
             
