@@ -574,7 +574,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupTopBar() {
-        setupMainButtonPressAnimations()
         binding.btnMenu.setHapticClickListener {
             binding.drawerLayout.openDrawer(GravityCompat.START)
         }
@@ -590,6 +589,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnAddLimits.setHapticClickListener {
             adManager?.show()
         }
+        setupMainButtonPressAnimations()
     }
 
     private fun setupMainButtonPressAnimations() {
