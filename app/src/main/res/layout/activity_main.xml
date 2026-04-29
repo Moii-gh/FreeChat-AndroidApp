@@ -21,8 +21,11 @@
             android:id="@+id/topBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
             android:clipChildren="false"
             android:clipToPadding="false"
+            android:elevation="24dp"
+            android:translationZ="24dp"
             android:padding="12dp"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -277,11 +280,12 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:visibility="gone"
+            android:clipToPadding="false"
             android:fillViewport="true"
             android:paddingHorizontal="16dp"
             android:paddingTop="8dp"
             app:layout_constraintTop_toBottomOf="@id/topBar"
-            app:layout_constraintBottom_toTopOf="@id/bottomInputArea">
+            app:layout_constraintBottom_toBottomOf="parent">
 
             <LinearLayout
                 android:id="@+id/messagesContainer"
@@ -289,6 +293,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"/>
         </ScrollView>
+
+        <View
+            android:id="@+id/bottomInputScrim"
+            android:layout_width="0dp"
+            android:layout_height="170dp"
+            android:background="@drawable/bottom_input_scrim"
+            android:importantForAccessibility="no"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <ScrollView
             android:id="@+id/suggestionsContainer"
@@ -335,13 +350,21 @@
         <!-- НИЖНЯЯ ПАНЕЛЬ ВВОДА -->
         <LinearLayout
             android:id="@+id/bottomInputArea"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="10dp"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="12dp"
-            android:background="#000000"
-            app:layout_constraintBottom_toBottomOf="parent">
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="6dp"
+            android:background="@android:color/transparent"
+            android:elevation="24dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
             <LinearLayout
                 android:id="@+id/suggestionsContainerLegacy"

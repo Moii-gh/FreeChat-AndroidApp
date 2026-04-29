@@ -10,6 +10,19 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
 
   router.use(authenticate);
   router.get("/limits", controller.getLimits);
+  router.get(
+    "/trending",
+    rateLimit({
+      windowMs: 60 * 1000,
+      limit: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: {
+        message: "Слишком много запросов. Попробуйте позже."
+      }
+    }),
+    controller.trending
+  );
   router.post(
     "/reward-ad",
     rateLimit({

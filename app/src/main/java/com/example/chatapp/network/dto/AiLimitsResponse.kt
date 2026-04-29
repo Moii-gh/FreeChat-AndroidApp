@@ -11,3 +11,8 @@ data class AiLimitsResponse(
     val totalRemaining: Int,
     val resetAt: String?
 )
+
+@Keep
+data class AiTrendingResponse(
+    val queries: List<String> = emptyList()
+)

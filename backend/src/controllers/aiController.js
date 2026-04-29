@@ -1,5 +1,10 @@
 const { env } = require("../config/env");
-const { proxyAiRequest, generateTitle, generateSummary } = require("../services/aiService");
+const {
+  proxyAiRequest,
+  generateTitle,
+  generateSummary,
+  generateTrendingQueries
+} = require("../services/aiService");
 
 const MAX_CHAT_MESSAGES = 60;
 const MAX_ARRAY_ITEMS = 128;
@@ -214,6 +219,23 @@ function createAiController({ aiUsageModel }) {
 
         const content = await generateSummary({ user, promptText });
         return res.status(200).json({ content });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    trending: async (req, res, next) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(404).json({
+            message: "User not found"
+          });
+        }
+
+        const locale = String(req.query.locale || "ru").trim().slice(0, 16) || "ru";
+        const queries = await generateTrendingQueries({ user, locale });
+        return res.status(200).json({ queries });
       } catch (error) {
         return next(error);
       }

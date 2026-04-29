@@ -15,7 +15,6 @@ import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
 import com.example.chatapp.network.AiProvider
 import com.example.chatapp.network.AiProviderSettings
-import com.example.chatapp.network.DuckDuckGoSearchService
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.OpenAiDirectService
 import com.example.chatapp.network.dto.CreateChatShareResponse
@@ -566,10 +565,30 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadPopularNewsQueries(onUpdated: (List<String>) -> Unit) {
+        val token = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (token.isBlank() || aiProviderSettings.getProvider() != AiProvider.VSEGPT) {
+            popularNewsQueries = emptyList()
+            onUpdated(emptyList())
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             val queries = runCatching {
-                DuckDuckGoSearchService.trendingNews(maxResults = 4)
+                val service = NetworkModule.createAiLimitsApiService(
+                    com.example.chatapp.BuildConfig.APP_API_BASE_URL,
+                    token
+                )
+                val response = service.getTrendingQueries("ru")
+                if (response.isSuccessful) {
+                    response.body()?.queries.orEmpty()
+                } else {
+                    emptyList()
+                }
             }.getOrDefault(emptyList())
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .take(4)
             popularNewsQueries = queries
             onUpdated(queries)
         }

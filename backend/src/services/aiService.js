@@ -184,8 +184,63 @@ async function generateSummary({ user, promptText }) {
   return extractChoiceContent(data);
 }
 
+function parseJsonArrayText(value) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return [];
+  }
+
+  const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fencedMatch ? fencedMatch[1].trim() : text;
+  const arrayText = candidate.startsWith("[")
+    ? candidate
+    : candidate.slice(candidate.indexOf("["), candidate.lastIndexOf("]") + 1);
+
+  try {
+    const parsed = JSON.parse(arrayText);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+async function generateTrendingQueries({ user, locale = "ru" }) {
+  const selection = selectChatModel({
+    user,
+    currentMode: "search",
+    requestBody: { messages: [] }
+  });
+  assertConfigured(selection.upstreamUrl, selection.model, "AI trending search is not configured");
+
+  const data = await callAiJson({
+    upstreamUrl: selection.upstreamUrl,
+    body: {
+      model: selection.model,
+      stream: false,
+      temperature: 0.2,
+      max_tokens: 300,
+      messages: [
+        createMessagePayload(
+          "system",
+          "You are an online search assistant. Find current popular news/search topics right now. Return only a JSON array of 4 short search queries, no prose."
+        ),
+        createMessagePayload(
+          "user",
+          `Locale: ${locale}. Prefer concise queries users can tap to search.`
+        )
+      ]
+    }
+  });
+
+  return parseJsonArrayText(extractChoiceContent(data))
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
 module.exports = {
   proxyAiRequest,
   generateTitle,
-  generateSummary
+  generateSummary,
+  generateTrendingQueries
 };

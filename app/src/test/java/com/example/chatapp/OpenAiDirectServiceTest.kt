@@ -1,6 +1,5 @@
 package com.example.chatapp
 
-import com.example.chatapp.network.DuckDuckGoSearchService
 import com.example.chatapp.network.OpenAiDirectService
 import org.json.JSONArray
 import org.json.JSONObject
@@ -177,21 +176,6 @@ class OpenAiDirectServiceTest {
 
         assertTrue(text.contains("Answer from file"))
         assertTrue(text.contains("Файлы:\n1. report.pdf"))
-    }
-
-
-    @Test
-    fun `duckduckgo source list is formatted without model prompt instructions`() {
-        val sources = DuckDuckGoSearchService.formatSources(
-            listOf(
-                DuckDuckGoSearchService.SearchSource(
-                    title = "Example",
-                    url = "https://example.com"
-                )
-            )
-        )
-
-        assertEquals("Источники:\n1. [Example](https://example.com)", sources)
     }
 
     @Test

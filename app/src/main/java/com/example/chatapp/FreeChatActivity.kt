@@ -697,6 +697,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupInputArea() {
+        binding.messagesScrollView.setOnApplyWindowInsetsListener { _, insets ->
+            updateFloatingInputPadding()
+            insets
+        }
+        binding.bottomInputArea.viewTreeObserver.addOnGlobalLayoutListener {
+            updateFloatingInputPadding()
+        }
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
         binding.etInput.doAfterTextChanged { editable ->
             updateSendState()
@@ -725,6 +732,23 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnCloseChip.setHapticClickListener {
             clearInputContext()
         }
+    }
+
+    private fun updateFloatingInputPadding() {
+        val topPadding = dp(8f).toInt()
+        val bottomPadding = binding.bottomInputArea.height + dp(18f).toInt()
+        if (
+            binding.messagesScrollView.paddingTop == topPadding &&
+            binding.messagesScrollView.paddingBottom == bottomPadding
+        ) {
+            return
+        }
+        binding.messagesScrollView.setPadding(
+            binding.messagesScrollView.paddingLeft,
+            topPadding,
+            binding.messagesScrollView.paddingRight,
+            bottomPadding
+        )
     }
 
     private fun setupWelcomeActions() {
