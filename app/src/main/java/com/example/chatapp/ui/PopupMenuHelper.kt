@@ -322,9 +322,7 @@ class PopupMenuHelper(
 
         popupView.addView(createPopupMenuItem(R.drawable.ic_pen, LocaleHelper.getString(activity, "menu_edit_message"), Color.WHITE) {
             popupWindow.dismiss()
-            showEditUserMessageDialog(message) { newText ->
-                onEditUserMessage?.invoke(historyIndex, newText)
-            }
+            onEditUserMessage?.invoke(historyIndex, message)
         })
 
         popupView.addView(createPopupMenuItem(R.drawable.ic_copy, LocaleHelper.getString(activity, "menu_copy_text"), Color.WHITE) {

@@ -410,11 +410,60 @@
                 android:layout_marginBottom="4dp"
                 app:tint="#8E8E93"/>
 
-            <LinearLayout
-                android:id="@+id/inputCapsule"
+            <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:id="@+id/editMessageBanner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_gravity="top|center_horizontal"
+                    android:background="@drawable/edit_message_banner_bg"
+                    android:elevation="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="8dp"
+                    android:translationZ="8dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/ic_pen"
+                        app:tint="#F2F2F7" />
+
+                    <TextView
+                        android:id="@+id/tvEditMessageTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="16dp"
+                        android:text="Редактировать сообщение"
+                        android:textColor="#F2F2F7"
+                        android:textSize="12sp" />
+
+                    <ImageView
+                        android:id="@+id/btnCloseEditMessage"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:background="@drawable/edit_message_close_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp"
+                        android:src="@android:drawable/ic_menu_close_clear_cancel"
+                        app:tint="#F2F2F7" />
+                </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/inputCapsule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
                 android:orientation="vertical"
                 android:background="@drawable/input_capsule_bg"
                 android:paddingHorizontal="4dp"
@@ -525,7 +574,6 @@
                         android:focusable="true"/>
                 </LinearLayout>
 
-                <!-- Основной Ряд Ввода (Input, Mic, Send) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -588,6 +636,7 @@
                 </LinearLayout>
 
             </LinearLayout>
+            </FrameLayout>
             </LinearLayout>
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

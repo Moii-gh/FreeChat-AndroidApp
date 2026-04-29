@@ -83,6 +83,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var speechRecognizerManager: SpeechRecognizerManager
 
     private var currentPreviewUri: Uri? = null
+    private var retainedEditingAttachment: AttachmentPayload? = null
     private var currentAssistantMessage: AssistantMessageWrapper? = null
     private var isSending = false
     private var activeSuggestionCategory: QuickSuggestionCategory? = null
@@ -90,6 +91,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var handledShareToken: String? = null
     private var adManager: RewardedAdManager? = null
     private var topActionsAnimator: AnimatorSet? = null
+    private var editingMessageHistoryIndex: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,6 +148,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnSend.contentDescription = LocaleHelper.getString(this, "content_desc_send")
         binding.btnRemovePreview.contentDescription = LocaleHelper.getString(this, "content_desc_remove_attachment")
         binding.btnCloseChip.contentDescription = LocaleHelper.getString(this, "content_desc_clear_mode")
+        binding.tvEditMessageTitle.text = LocaleHelper.getString(this, "menu_edit_message")
 
         // Drawer texts
         findViewById<android.widget.TextView>(R.id.tvDrawerTitle)?.text = LocaleHelper.getString(this, "app_brand")
@@ -193,6 +196,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun showFilePreview(fileUri: Uri) {
+        retainedEditingAttachment = null
         currentPreviewUri = fileUri
         chatViewModel.selectedFileUri = fileUri
         val mimeType = contentResolver.getType(fileUri).orEmpty()
@@ -548,8 +552,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 }
             },
             onRegenerate = ::regenerateAssistantResponse,
-            onEditUserMessage = { historyIndex, newText ->
-                editUserMessage(historyIndex, newText)
+            onEditUserMessage = { historyIndex, message ->
+                beginEditingUserMessage(historyIndex, message)
             }
         )
 
@@ -604,6 +608,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupPressAnimation(binding.btnPlus)
         setupPressAnimation(binding.btnSend)
         setupPressAnimation(binding.btnCloseChip, pressedScale = 0.88f)
+        setupPressAnimation(binding.btnCloseEditMessage, pressedScale = 0.88f)
         setupPressAnimation(binding.btnRemovePreview, pressedScale = 0.88f)
     }
 
@@ -731,6 +736,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding.btnCloseChip.setHapticClickListener {
             clearInputContext()
+        }
+        binding.btnCloseEditMessage.setHapticClickListener {
+            cancelEditingUserMessage()
         }
     }
 
@@ -926,6 +934,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         chatViewModel.resetChatState()
         currentAssistantMessage = null
         isSending = false
+        clearEditingMessageState()
         binding.etInput.text?.clear()
         binding.messagesContainer.removeAllViews()
         clearInputContext()
@@ -1018,6 +1027,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             chatViewModel.currentChatTitle = chat.title
             chatViewModel.chatContextSummary = chat.summary
             chatViewModel.isFirstMessage = messages.none { it.role == "user" }
+            clearEditingMessageState()
+            binding.etInput.text?.clear()
+            clearPreview()
 
             binding.messagesContainer.removeAllViews()
             messages.forEach { message ->
@@ -1138,6 +1150,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (isSending) return
 
         val text = binding.etInput.text?.toString()?.trim().orEmpty()
+        val editingHistoryIndex = editingMessageHistoryIndex
+        if (editingHistoryIndex != null) {
+            editUserMessage(editingHistoryIndex, text)
+            return
+        }
+
         val previewUri = currentPreviewUri
         if (text.isBlank() && previewUri == null) return
 
@@ -1237,9 +1255,138 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
     }
 
+    private fun beginEditingUserMessage(historyIndex: Int, message: String) {
+        if (isSending || historyIndex !in 0 until chatViewModel.chatHistory.size) return
+
+        val historyMessage = chatViewModel.chatHistory[historyIndex]
+        editingMessageHistoryIndex = historyIndex
+        binding.tvEditMessageTitle.text = LocaleHelper.getString(this, "menu_edit_message")
+        setInputCapsuleTopOffset(dp(38f).toInt())
+        showEditMessagePanel()
+        clearPreview()
+        retainedEditingAttachment = attachmentPayloadFromHistory(historyMessage)
+        showRetainedAttachmentPreview(retainedEditingAttachment)
+        hideQuickSuggestions()
+        updateInputText(editableTextFromHistory(historyMessage, message), keepSuggestions = false)
+        binding.etInput.requestFocus()
+
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        updateFloatingInputPadding()
+    }
+
+    private fun showEditMessagePanel() {
+        binding.editMessageBanner.apply {
+            animate().cancel()
+            isVisible = true
+            alpha = 0f
+            translationY = dp(8f)
+            animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(180L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator(1.4f))
+                .start()
+        }
+    }
+
+    private fun clearEditingMessageState() {
+        editingMessageHistoryIndex = null
+        binding.editMessageBanner.animate().cancel()
+        binding.editMessageBanner.alpha = 1f
+        binding.editMessageBanner.translationY = 0f
+        binding.editMessageBanner.isGone = true
+        setInputCapsuleTopOffset(0)
+    }
+
+    private fun cancelEditingUserMessage() {
+        clearEditingMessageState()
+        retainedEditingAttachment = null
+        binding.etInput.text?.clear()
+        clearPreview()
+        updateSendState()
+        syncQuickSuggestions("")
+    }
+
+    private fun setInputCapsuleTopOffset(offsetPx: Int) {
+        val params = binding.inputCapsule.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        if (params.topMargin == offsetPx) return
+        params.topMargin = offsetPx
+        binding.inputCapsule.layoutParams = params
+    }
+
+    private fun editableTextFromHistory(message: JSONObject, fallback: String): String {
+        val rawContent = message.optNonBlankString("content") ?: fallback
+        val baseText = rawContent.substringBefore("\n\n[")
+        val attachmentPlaceholder = LocaleHelper.getString(this, "attachment_empty_text")
+        return if (baseText == attachmentPlaceholder) "" else baseText
+    }
+
+    private fun attachmentPayloadFromHistory(message: JSONObject): AttachmentPayload? {
+        val base64Data = message.optNonBlankString("base64")
+        val fileUri = message.optNonBlankString("imageUri")
+        val mimeType = message.optNonBlankString("mimeType")
+        val fileName = message.optNonBlankString("fileName")
+        val fileContext = message.optNonBlankString("fileContext")
+
+        if (base64Data == null && fileUri == null && mimeType == null && fileName == null && fileContext == null) {
+            return null
+        }
+
+        return AttachmentPayload(
+            fileUri = fileUri.orEmpty(),
+            mimeType = mimeType ?: resolveMimeTypeFromName(fileName),
+            fileName = fileName,
+            base64Data = base64Data,
+            attachmentContext = fileContext
+        )
+    }
+
+    private fun showRetainedAttachmentPreview(payload: AttachmentPayload?) {
+        if (payload == null) return
+
+        binding.previewContainer.isVisible = true
+        if (payload.mimeType.startsWith("image/", ignoreCase = true)) {
+            binding.previewImage.isVisible = true
+            binding.previewFileContainer.isGone = true
+            val imageSet = payload.base64Data?.let { base64 ->
+                runCatching {
+                    val bytes = Base64.decode(base64, Base64.DEFAULT)
+                    val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    binding.previewImage.setImageBitmap(bitmap)
+                }.isSuccess
+            } == true
+
+            if (!imageSet && payload.fileUri.isNotBlank()) {
+                runCatching { binding.previewImage.setImageURI(Uri.parse(payload.fileUri)) }
+            }
+        } else {
+            binding.previewImage.isGone = true
+            binding.previewImage.setImageDrawable(null)
+            binding.previewFileContainer.isVisible = true
+            binding.previewFileName.text = payload.fileName?.takeIf { it.isNotBlank() }
+                ?: LocaleHelper.getString(this, "label_file_analysis")
+        }
+        updateSendState()
+    }
+
+    private fun JSONObject.optNonBlankString(key: String): String? {
+        return optString(key, "").takeIf { it.isNotBlank() && it != "null" }
+    }
+
     private fun editUserMessage(historyIndex: Int, newText: String) {
-        if (isSending || newText.isBlank()) return
+        if (isSending) return
         if (historyIndex !in 0 until chatViewModel.chatHistory.size) return
+
+        val attachmentPayload = try {
+            currentPreviewUri?.let { buildAttachmentPayload(it) } ?: retainedEditingAttachment
+        } catch (e: IllegalArgumentException) {
+            toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
+            return
+        }
+
+        if (newText.isBlank() && attachmentPayload == null) return
+
         if (!chatViewModel.consumeLimit()) {
             refreshDailyQuotaUi()
             toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
@@ -1249,7 +1396,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         removeViewsFromUserMessage(historyIndex)
         chatViewModel.truncateHistoryFrom(historyIndex) {
             runOnUiThread {
-                submitEditedUserMessage(historyIndex, newText)
+                clearEditingMessageState()
+                binding.etInput.text?.clear()
+                retainedEditingAttachment = null
+                clearPreview()
+                submitEditedUserMessage(historyIndex, newText, attachmentPayload)
             }
         }
     }
@@ -1270,16 +1421,48 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
     }
 
-    private fun submitEditedUserMessage(historyIndex: Int, text: String) {
+    private fun renderUserDraftMessage(text: String, attachmentPayload: AttachmentPayload?, historyIndex: Int) {
+        if (attachmentPayload == null) {
+            messageRenderer.addUserMessage(text, historyIndex)
+            return
+        }
+
+        val mimeType = attachmentPayload.mimeType
+        val base64Data = attachmentPayload.base64Data
+        when {
+            mimeType.startsWith("image/", ignoreCase = true) && !base64Data.isNullOrBlank() -> {
+                messageRenderer.addUserMessageWithImageData(text, base64Data, mimeType, attachmentPayload.fileName, historyIndex)
+            }
+            mimeType.startsWith("image/", ignoreCase = true) && attachmentPayload.fileUri.isNotBlank() -> {
+                messageRenderer.addUserMessageWithImage(text, Uri.parse(attachmentPayload.fileUri), historyIndex)
+            }
+            !base64Data.isNullOrBlank() -> {
+                messageRenderer.addUserMessageWithFileData(text, base64Data, mimeType, attachmentPayload.fileName, historyIndex)
+            }
+            attachmentPayload.fileUri.isNotBlank() -> {
+                messageRenderer.addUserMessageWithFile(text, Uri.parse(attachmentPayload.fileUri), historyIndex)
+            }
+            else -> {
+                messageRenderer.addUserMessage(text, historyIndex)
+            }
+        }
+    }
+
+    private fun submitEditedUserMessage(historyIndex: Int, text: String, attachmentPayload: AttachmentPayload?) {
         isSending = true
         hideQuickSuggestions()
         showMessagesState()
         refreshDailyQuotaUi()
 
-        messageRenderer.addUserMessage(text, historyIndex)
+        renderUserDraftMessage(text, attachmentPayload, historyIndex)
 
         if (historyIndex == 0) {
-            chatViewModel.currentChatTitle = text.take(60)
+            chatViewModel.currentChatTitle = when {
+                text.isNotBlank() -> text.take(60)
+                !attachmentPayload?.fileName.isNullOrBlank() -> attachmentPayload?.fileName?.take(60).orEmpty()
+                attachmentPayload != null -> LocaleHelper.getString(this, "label_file_analysis")
+                else -> LocaleHelper.getString(this, "label_new_chat")
+            }
             chatViewModel.isFirstMessage = false
             chatViewModel.currentChatId?.let { chatId ->
                 chatViewModel.renameChat(chatId, chatViewModel.currentChatTitle) {
@@ -1299,11 +1482,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         chatViewModel.addToChatHistoryAndSend(
             content = text,
-            base64Data = null,
-            fileUri = null,
-            mimeType = null,
-            fileName = null,
-            fileContext = null,
+            base64Data = attachmentPayload?.base64Data,
+            fileUri = attachmentPayload?.fileUri?.takeIf { it.isNotBlank() },
+            mimeType = attachmentPayload?.mimeType,
+            fileName = attachmentPayload?.fileName,
+            fileContext = attachmentPayload?.attachmentContext,
             onError = { error ->
                 runOnUiThread {
                     isSending = false
@@ -1423,6 +1606,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun clearPreview() {
         currentPreviewUri = null
+        retainedEditingAttachment = null
         chatViewModel.selectedFileUri = null
         binding.previewContainer.isGone = true
         binding.previewImage.setImageDrawable(null)
@@ -1447,7 +1631,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun updateSendState() {
-        val hasInput = binding.etInput.text?.isNotBlank() == true || currentPreviewUri != null
+        val hasInput = binding.etInput.text?.isNotBlank() == true ||
+            currentPreviewUri != null ||
+            retainedEditingAttachment != null
         binding.btnSend.isEnabled = isSending || hasInput
 
         if (isSending) {
@@ -1648,6 +1834,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         return contentResolver.getType(uri)
             ?.takeIf { it.isNotBlank() }
             ?: fileName?.let { java.net.URLConnection.guessContentTypeFromName(it) }
+            ?: "application/octet-stream"
+    }
+
+    private fun resolveMimeTypeFromName(fileName: String?): String {
+        return fileName?.let { java.net.URLConnection.guessContentTypeFromName(it) }
             ?: "application/octet-stream"
     }
 
