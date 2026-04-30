@@ -40,6 +40,7 @@ import com.example.chatapp.speech.SpeechRecognizerManager
 import com.example.chatapp.ui.AssistantMessageWrapper
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.DrawerManager
+import com.example.chatapp.ui.FreeChatAttentionDrawable
 import com.example.chatapp.ui.PopupMenuHelper
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.viewmodel.ChatViewModel
@@ -79,6 +80,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val WELCOME_PROMPT_TYPE_STEP_MS = 26L
         const val WELCOME_PROMPT_CURSOR_BLINK_MS = 460L
         const val WELCOME_PROMPT_CURSOR = "|"
+        const val FREE_CHAT_ATTENTION_INTERVAL_MS = 10_000L
+        const val FREE_CHAT_ATTENTION_RESUME_DELAY_MS = 2_500L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -107,6 +110,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var welcomePromptCursorVisible = true
     private var isWelcomePromptCycleRunning = false
     private var editingMessageHistoryIndex: Int? = null
+    private val freeChatAttentionHandler = Handler(Looper.getMainLooper())
+    private var freeChatAttentionDrawable: FreeChatAttentionDrawable? = null
+    private var isFreeChatButtonInteracting = false
 
     private val welcomePromptRotationRunnable = object : Runnable {
         override fun run() {
@@ -126,6 +132,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             } else {
                 renderWelcomePrompt(showCursor = false)
             }
+        }
+    }
+
+    private val freeChatAttentionRunnable = object : Runnable {
+        override fun run() {
+            if (!isFreeChatButtonInteracting && binding.btnAddLimits.isShown) {
+                freeChatAttentionDrawable?.play(binding.btnAddLimits)
+            }
+            freeChatAttentionHandler.postDelayed(this, FREE_CHAT_ATTENTION_INTERVAL_MS)
         }
     }
 
@@ -218,6 +233,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     override fun onDestroy() {
         stopWelcomePromptCycle()
+        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
+        freeChatAttentionDrawable?.cancelAttention()
         speechRecognizerManager.destroy()
         adManager?.destroy()
         super.onDestroy()
@@ -738,7 +755,30 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnAddLimits.setHapticClickListener {
             adManager?.show()
         }
+        freeChatAttentionDrawable = FreeChatAttentionDrawable(resources.displayMetrics.density)
+        startFreeChatAttentionLoop()
         setupMainButtonPressAnimations()
+    }
+
+    private fun startFreeChatAttentionLoop() {
+        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
+        freeChatAttentionHandler.postDelayed(freeChatAttentionRunnable, FREE_CHAT_ATTENTION_INTERVAL_MS)
+    }
+
+    private fun pauseFreeChatAttention() {
+        isFreeChatButtonInteracting = true
+        freeChatAttentionDrawable?.isInteracting = true
+        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
+    }
+
+    private fun resumeFreeChatAttentionAfterInteraction() {
+        isFreeChatButtonInteracting = false
+        freeChatAttentionDrawable?.isInteracting = false
+        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
+        freeChatAttentionHandler.postDelayed(
+            freeChatAttentionRunnable,
+            FREE_CHAT_ATTENTION_INTERVAL_MS + FREE_CHAT_ATTENTION_RESUME_DELAY_MS
+        )
     }
 
     private fun setupMainButtonPressAnimations() {
@@ -767,6 +807,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         touchSource.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    if (touchSource === binding.btnAddLimits) {
+                        pauseFreeChatAttention()
+                    }
                     target.animate().cancel()
                     target.animate()
                         .scaleX(pressedScale)
@@ -779,6 +822,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 }
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_CANCEL -> {
+                    if (touchSource === binding.btnAddLimits) {
+                        resumeFreeChatAttentionAfterInteraction()
+                    }
                     target.animate().cancel()
                     target.animate()
                         .scaleX(1f)
