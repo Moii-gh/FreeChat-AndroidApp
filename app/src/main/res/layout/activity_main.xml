@@ -166,7 +166,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
                 android:orientation="horizontal"
-                android:background="@drawable/input_capsule_bg"
+                android:background="@drawable/welcome_button_bg"
                 android:paddingHorizontal="24dp"
                 android:gravity="center"
                 android:layout_marginBottom="12dp"
@@ -176,8 +176,7 @@
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_image"
-                    app:tint="#FFFFFF"/>
+                    android:src="@drawable/ic_image"/>
 
                 <TextView
                     android:id="@+id/tvBtnCreateImage"
@@ -200,7 +199,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
                     android:orientation="horizontal"
-                    android:background="@drawable/input_capsule_bg"
+                    android:background="@drawable/welcome_button_bg"
                     android:paddingHorizontal="24dp"
                     android:gravity="center"
                     android:clickable="true"
@@ -209,8 +208,7 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:src="@drawable/ic_idea"
-                        app:tint="#FFD60A"/>
+                        android:src="@drawable/ic_idea"/>
 
                     <TextView
                         android:id="@+id/tvBtnIdea"
@@ -227,7 +225,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
                     android:orientation="horizontal"
-                    android:background="@drawable/input_capsule_bg"
+                    android:background="@drawable/welcome_button_bg"
                     android:paddingHorizontal="16dp"
                     android:gravity="center"
                     android:layout_marginStart="12dp"

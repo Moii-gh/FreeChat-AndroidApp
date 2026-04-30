@@ -318,7 +318,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             QuickSuggestionCategory.IDEA -> R.drawable.ic_bulb_yellow
         }
         val tintColor = when (category) {
-            QuickSuggestionCategory.IMAGE -> Color.parseColor("#FFFFFF")
+            QuickSuggestionCategory.IMAGE -> Color.parseColor("#34C759")
             QuickSuggestionCategory.IDEA -> Color.parseColor("#FFD60A")
         }
         val density = resources.displayMetrics.density
