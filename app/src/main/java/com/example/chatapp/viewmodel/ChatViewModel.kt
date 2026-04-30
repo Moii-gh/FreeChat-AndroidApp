@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * ViewModel для главного экрана чата.
@@ -50,6 +51,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val attachmentData: String?,
         val mimeType: String?,
         val fileName: String?
+    )
+
+    private data class MessageMetadata(
+        val syncId: String,
+        val timestamp: Long,
+        val updatedAt: Long,
+        val editRevision: Int
     )
 
     private val repository = ChatRepository(application)
@@ -195,11 +203,95 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         if (chatId != null) {
             viewModelScope.launch {
                 repository.deleteMessagesFromIndex(chatId, fromIndex)
-                performSync()
+                chatContextSummary = ""
+                clearSummaryCache(chatId)
+                syncRepository.trySync()
+                cachedChats = repository.getAllChats()
                 onTruncated?.invoke()
             }
         } else {
             onTruncated?.invoke()
+        }
+    }
+
+    fun editUserMessageAndPrepareResponse(
+        historyIndex: Int,
+        content: String,
+        base64Data: String?,
+        fileUri: String?,
+        mimeType: String?,
+        fileName: String?,
+        fileContext: String?,
+        onPrepared: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (historyIndex !in 0 until chatHistory.size) {
+            onError("Message not found")
+            return
+        }
+
+        val existingMessage = chatHistory[historyIndex]
+        if (existingMessage.optString("role") != "user") {
+            onError("Only user messages can be edited")
+            return
+        }
+
+        val chatId = currentChatId
+        val syncId = existingMessage.optString("syncId").takeIf { it.isNotBlank() }
+            ?: UUID.randomUUID().toString()
+        existingMessage.put("syncId", syncId)
+        val storedContent = contentForUserMessage(content)
+
+        viewModelScope.launch {
+            try {
+                val result = if (chatId != null) {
+                    repository.updateUserMessageAndTombstoneTail(
+                        chatId = chatId,
+                        syncId = syncId,
+                        historyIndex = historyIndex,
+                        content = storedContent,
+                        imageUrl = fileUri,
+                        attachmentData = base64Data,
+                        attachmentMimeType = mimeType,
+                        attachmentFileName = fileName,
+                        attachmentContext = fileContext
+                    )
+                } else {
+                    val previous = ensureMessageMetadata(existingMessage)
+                    ChatRepository.MessageEditResult(
+                        syncId = syncId,
+                        timestamp = previous.timestamp,
+                        updatedAt = System.currentTimeMillis(),
+                        editRevision = previous.editRevision + 1
+                    )
+                }
+
+                applyEditedUserMessageToHistory(
+                    historyIndex = historyIndex,
+                    content = storedContent,
+                    base64Data = base64Data,
+                    fileUri = fileUri,
+                    mimeType = mimeType,
+                    fileName = fileName,
+                    fileContext = fileContext,
+                    metadata = MessageMetadata(
+                        syncId = result.syncId,
+                        timestamp = result.timestamp,
+                        updatedAt = result.updatedAt,
+                        editRevision = result.editRevision
+                    )
+                )
+
+                chatContextSummary = ""
+                clearSummaryCache(chatId)
+                if (chatId != null) {
+                    syncRepository.trySync()
+                    cachedChats = repository.getAllChats()
+                }
+                onPrepared()
+            } catch (e: Exception) {
+                onError(e.message ?: "Unable to edit message")
+            }
         }
     }
 
@@ -228,14 +320,21 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         onChunk: (String) -> Unit,
         onStreamComplete: () -> Unit
     ) {
+        val now = System.currentTimeMillis()
+        val userSyncId = UUID.randomUUID().toString()
         val userMessage = JSONObject().apply {
             put("role", "user")
-            put("content", if (content.isEmpty()) LocaleHelper.getString(getApplication(), "attachment_empty_text") else content)
+            put("content", contentForUserMessage(content))
             if (base64Data != null) put("base64", base64Data)
             if (fileUri != null) put("imageUri", fileUri)
             if (mimeType != null) put("mimeType", mimeType)
             if (fileName != null) put("fileName", fileName)
             if (fileContext != null) put("fileContext", fileContext)
+            put("syncId", userSyncId)
+            put("timestamp", now)
+            put("updatedAt", now)
+            put("editRevision", 0)
+            put("isDeleted", false)
         }
         chatHistory.add(userMessage)
 
@@ -254,7 +353,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     attachmentData = base64Data,
                     attachmentMimeType = mimeType,
                     attachmentFileName = fileName,
-                    attachmentContext = fileContext
+                    attachmentContext = fileContext,
+                    syncId = userSyncId,
+                    timestamp = now,
+                    updatedAt = now
                 )
             }
         }
@@ -315,6 +417,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                     override fun onComplete(fullText: String) {
                         val generatedImage = extractImageAttachment(fullText)
+                        val now = System.currentTimeMillis()
                         val assistantMessage = JSONObject().apply {
                             put("role", "assistant")
                             put("content", fullText)
@@ -322,9 +425,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             generatedImage.attachmentData?.let { put("base64", it) }
                             generatedImage.mimeType?.let { put("mimeType", it) }
                             generatedImage.fileName?.let { put("fileName", it) }
+                            put("syncId", UUID.randomUUID().toString())
+                            put("timestamp", now)
+                            put("updatedAt", now)
+                            put("editRevision", 0)
+                            put("isDeleted", false)
                         }
                         chatHistory.add(assistantMessage)
-                        saveCompletedResponse(fullText)
+                        saveCompletedResponse(fullText, assistantMessage)
                         onComplete()
                     }
 
@@ -378,7 +486,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
      * Если чат ещё не создан — создаёт его со всей историей.
      * После сохранения всех сообщений запускает синхронизацию с сервером.
      */
-    private fun saveCompletedResponse(fullText: String) {
+    private fun saveCompletedResponse(fullText: String, assistantHistoryMessage: JSONObject? = null) {
         val generatedImage = extractImageAttachment(fullText)
         val hasContent = fullText.isNotBlank() || !generatedImage.imageUrl.isNullOrBlank()
         if (!hasContent) {
@@ -392,6 +500,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     for (msg in chatHistory) {
                         val role = msg.getString("role")
                         val content = msg.getString("content")
+                        val metadata = ensureMessageMetadata(msg)
                         val imageUrl = msg.optString("imageUri").ifBlank {
                             msg.optString("imageUrl")
                         }.takeIf { it.isNotEmpty() }
@@ -406,7 +515,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                                 attachmentData = attachmentData,
                                 attachmentMimeType = attachmentMimeType,
                                 attachmentFileName = attachmentFileName,
-                                attachmentContext = msg.optString("fileContext").takeIf { it.isNotEmpty() }
+                                attachmentContext = msg.optString("fileContext").takeIf { it.isNotEmpty() },
+                                syncId = metadata.syncId,
+                                timestamp = metadata.timestamp,
+                                updatedAt = metadata.updatedAt,
+                                editRevision = metadata.editRevision
                             )
                         } else if (role == "assistant") {
                             val storedImage = extractImageAttachment(content)
@@ -417,7 +530,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                                 imageUrl = storedImageUrl,
                                 attachmentData = attachmentData ?: storedImage.attachmentData,
                                 attachmentMimeType = attachmentMimeType ?: storedImage.mimeType,
-                                attachmentFileName = attachmentFileName ?: storedImage.fileName
+                                attachmentFileName = attachmentFileName ?: storedImage.fileName,
+                                syncId = metadata.syncId,
+                                timestamp = metadata.timestamp,
+                                updatedAt = metadata.updatedAt,
+                                editRevision = metadata.editRevision
                             )
                         }
                     }
@@ -432,13 +549,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             currentChatId?.let { chatId ->
                 viewModelScope.launch {
+                    val metadata = ensureMessageMetadata(
+                        assistantHistoryMessage ?: chatHistory.lastOrNull() ?: JSONObject()
+                    )
                     repository.addAssistantMessage(
                         chatId = chatId,
                         content = contentForStorage(fullText, generatedImage.imageUrl),
                         imageUrl = generatedImage.imageUrl,
                         attachmentData = generatedImage.attachmentData,
                         attachmentMimeType = generatedImage.mimeType,
-                        attachmentFileName = generatedImage.fileName
+                        attachmentFileName = generatedImage.fileName,
+                        syncId = metadata.syncId,
+                        timestamp = metadata.timestamp,
+                        updatedAt = metadata.updatedAt,
+                        editRevision = metadata.editRevision
                     )
                     cachedChats = repository.getAllChats()
                     performSync()
@@ -658,6 +782,70 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val allContexts = (attachedFilesRegistry + restoredFileContexts).distinct()
         if (allContexts.isEmpty()) return ""
         return allContexts.joinToString("\n\n")
+    }
+
+    private fun contentForUserMessage(content: String): String {
+        return if (content.isEmpty()) {
+            LocaleHelper.getString(getApplication(), "attachment_empty_text")
+        } else {
+            content
+        }
+    }
+
+    private fun ensureMessageMetadata(message: JSONObject): MessageMetadata {
+        val syncId = message.optString("syncId").takeIf { it.isNotBlank() }
+            ?: UUID.randomUUID().toString().also { message.put("syncId", it) }
+        val timestamp = message.optLong("timestamp", 0L).takeIf { it > 0L }
+            ?: System.currentTimeMillis().also { message.put("timestamp", it) }
+        val updatedAt = message.optLong("updatedAt", 0L).takeIf { it > 0L }
+            ?: timestamp.also { message.put("updatedAt", it) }
+        val editRevision = message.optInt("editRevision", 0).coerceAtLeast(0)
+        message.put("editRevision", editRevision)
+        message.put("isDeleted", false)
+        return MessageMetadata(syncId, timestamp, updatedAt, editRevision)
+    }
+
+    private fun applyEditedUserMessageToHistory(
+        historyIndex: Int,
+        content: String,
+        base64Data: String?,
+        fileUri: String?,
+        mimeType: String?,
+        fileName: String?,
+        fileContext: String?,
+        metadata: MessageMetadata
+    ) {
+        while (chatHistory.size > historyIndex + 1) {
+            chatHistory.removeAt(chatHistory.lastIndex)
+        }
+
+        val message = chatHistory[historyIndex]
+        listOf("base64", "imageUri", "imageUrl", "mimeType", "fileName", "fileContext").forEach {
+            message.remove(it)
+        }
+
+        message.put("role", "user")
+        message.put("content", content)
+        base64Data?.let { message.put("base64", it) }
+        fileUri?.let { message.put("imageUri", it) }
+        mimeType?.let { message.put("mimeType", it) }
+        fileName?.let { message.put("fileName", it) }
+        fileContext?.let { message.put("fileContext", it) }
+        message.put("syncId", metadata.syncId)
+        message.put("timestamp", metadata.timestamp)
+        message.put("updatedAt", metadata.updatedAt)
+        message.put("editRevision", metadata.editRevision)
+        message.put("isDeleted", false)
+    }
+
+    private fun clearSummaryCache(chatId: String?) {
+        if (chatId.isNullOrBlank()) return
+        val context = getApplication<Application>()
+        val cacheKey = "chat_${accountSettings.currentAccountKey()}_${chatId}_hash"
+        context.getSharedPreferences("summary_cache", Context.MODE_PRIVATE)
+            .edit()
+            .remove(cacheKey)
+            .apply()
     }
 
     private fun extractImageAttachment(content: String): ImageAttachment {

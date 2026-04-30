@@ -24,7 +24,10 @@ const syncMessageSchema = z.object({
   attachmentData: z.string().max(MAX_ATTACHMENT_DATA_CHARS).nullable().optional(),
   attachmentMimeType: z.string().trim().max(255).nullable().optional(),
   attachmentFileName: z.string().trim().max(255).nullable().optional(),
-  attachmentContext: z.string().max(MAX_ATTACHMENT_CONTEXT_CHARS).nullable().optional()
+  attachmentContext: z.string().max(MAX_ATTACHMENT_CONTEXT_CHARS).nullable().optional(),
+  updatedAt: z.number().int().nonnegative().default(0),
+  isDeleted: z.boolean().default(false),
+  editRevision: z.number().int().nonnegative().default(0)
 }).strict();
 
 const syncPayloadSchema = z.object({

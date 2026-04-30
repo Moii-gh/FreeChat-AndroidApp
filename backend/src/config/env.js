@@ -20,6 +20,34 @@ function asBoolean(value, fallback = false) {
   return String(value).trim().toLowerCase() === "true";
 }
 
+const UNLIMITED_DAILY_AI_REQUEST_LIMIT = 2_147_483_647;
+
+function asDailyAiRequestLimit(value, fallback) {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (
+    normalized === "" ||
+    normalized === "0" ||
+    normalized === "-1" ||
+    normalized === "false" ||
+    normalized === "off" ||
+    normalized === "none" ||
+    normalized === "unlimited"
+  ) {
+    return UNLIMITED_DAILY_AI_REQUEST_LIMIT;
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return Math.min(Math.floor(parsed), UNLIMITED_DAILY_AI_REQUEST_LIMIT);
+}
+
 const env = {
   nodeEnv: process.env.NODE_ENV || "",
   isTest:
@@ -56,7 +84,7 @@ const env = {
   aiChatUrl: process.env.AI_CHAT_URL || "",
   aiImageUrl: process.env.AI_IMAGE_URL || "",
   aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS || 120000),
-  dailyAiRequestLimit: asNumber(process.env.DAILY_AI_REQUEST_LIMIT, 20),
+  dailyAiRequestLimit: asDailyAiRequestLimit(process.env.DAILY_AI_REQUEST_LIMIT, 20),
   aiTextModel: process.env.AI_TEXT_MODEL || "",
   aiVisionModel: process.env.AI_VISION_MODEL || "",
   aiImageModel: process.env.AI_IMAGE_MODEL || "",

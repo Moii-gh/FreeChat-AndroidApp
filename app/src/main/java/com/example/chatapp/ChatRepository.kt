@@ -1,6 +1,7 @@
 package com.example.chatapp
 
 import android.content.Context
+import androidx.room.withTransaction
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
@@ -19,6 +20,13 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class ChatRepository(context: Context) {
+
+    data class MessageEditResult(
+        val syncId: String,
+        val timestamp: Long,
+        val updatedAt: Long,
+        val editRevision: Int
+    )
 
     private val appContext = context.applicationContext
     private val db = AppDatabase.getDatabase(context)
@@ -66,6 +74,9 @@ class ChatRepository(context: Context) {
 
     suspend fun getMessages(chatId: String): List<MessageEntity> =
         dao.getMessagesByChatIdSync(chatId)
+
+    suspend fun getMessagesForSync(chatId: String): List<MessageEntity> =
+        dao.getMessagesByChatIdForSync(chatId)
 
     suspend fun createShareLink(chatId: String): Result<CreateChatShareResponse> = withContext(Dispatchers.IO) {
         runCatching {
@@ -201,18 +212,25 @@ class ChatRepository(context: Context) {
         attachmentData: String? = null,
         attachmentMimeType: String? = null,
         attachmentFileName: String? = null,
-        attachmentContext: String? = null
+        attachmentContext: String? = null,
+        syncId: String = UUID.randomUUID().toString(),
+        timestamp: Long = System.currentTimeMillis(),
+        updatedAt: Long = timestamp,
+        editRevision: Int = 0
     ): Long {
         val msg = MessageEntity(
             chatId = chatId,
             role = "user",
             content = content,
-            timestamp = System.currentTimeMillis(),
+            timestamp = timestamp,
             imageUrl = imageUrl,
             attachmentData = attachmentData,
             attachmentMimeType = attachmentMimeType,
             attachmentFileName = attachmentFileName,
-            attachmentContext = attachmentContext
+            attachmentContext = attachmentContext,
+            syncId = syncId,
+            updatedAt = updatedAt,
+            editRevision = editRevision
         )
         val id = dao.insertMessage(msg)
         dao.updateChatLastUpdated(chatId, System.currentTimeMillis())
@@ -225,17 +243,24 @@ class ChatRepository(context: Context) {
         imageUrl: String? = null,
         attachmentData: String? = null,
         attachmentMimeType: String? = null,
-        attachmentFileName: String? = null
+        attachmentFileName: String? = null,
+        syncId: String = UUID.randomUUID().toString(),
+        timestamp: Long = System.currentTimeMillis(),
+        updatedAt: Long = timestamp,
+        editRevision: Int = 0
     ): Long {
         val msg = MessageEntity(
             chatId = chatId,
             role = "assistant",
             content = content,
-            timestamp = System.currentTimeMillis(),
+            timestamp = timestamp,
             imageUrl = imageUrl,
             attachmentData = attachmentData,
             attachmentMimeType = attachmentMimeType,
-            attachmentFileName = attachmentFileName
+            attachmentFileName = attachmentFileName,
+            syncId = syncId,
+            updatedAt = updatedAt,
+            editRevision = editRevision
         )
         val id = dao.insertMessage(msg)
         dao.updateChatLastUpdated(chatId, System.currentTimeMillis())
@@ -243,7 +268,58 @@ class ChatRepository(context: Context) {
     }
 
     suspend fun deleteMessagesFromIndex(chatId: String, fromIndex: Int) {
-        dao.deleteMessagesFromIndex(chatId, fromIndex)
+        val now = System.currentTimeMillis()
+        db.withTransaction {
+            dao.tombstoneMessagesFromIndex(chatId, fromIndex, now)
+            dao.updateChatSummary(chatId, "")
+            dao.updateChatLastUpdated(chatId, now)
+        }
+    }
+
+    suspend fun updateUserMessageAndTombstoneTail(
+        chatId: String,
+        syncId: String,
+        historyIndex: Int,
+        content: String,
+        imageUrl: String?,
+        attachmentData: String?,
+        attachmentMimeType: String?,
+        attachmentFileName: String?,
+        attachmentContext: String?
+    ): MessageEditResult {
+        val now = System.currentTimeMillis()
+        return db.withTransaction {
+            val existing = dao.getMessageBySyncId(syncId)
+                ?: error("Message not found")
+            if (existing.chatId != chatId || existing.role != "user") {
+                error("Message cannot be edited")
+            }
+
+            val nextRevision = existing.editRevision + 1
+            dao.updateMessage(
+                existing.copy(
+                    content = content,
+                    imageUrl = imageUrl,
+                    attachmentData = attachmentData,
+                    attachmentMimeType = attachmentMimeType,
+                    attachmentFileName = attachmentFileName,
+                    attachmentContext = attachmentContext,
+                    updatedAt = now,
+                    isDeleted = false,
+                    editRevision = nextRevision
+                )
+            )
+            dao.tombstoneMessagesFromIndex(chatId, historyIndex + 1, now)
+            dao.updateChatSummary(chatId, "")
+            dao.updateChatLastUpdated(chatId, now)
+
+            MessageEditResult(
+                syncId = syncId,
+                timestamp = existing.timestamp,
+                updatedAt = now,
+                editRevision = nextRevision
+            )
+        }
     }
 
     suspend fun generateChatTitle(

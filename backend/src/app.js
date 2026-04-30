@@ -30,7 +30,7 @@ function createApp(options = {}) {
   const resolvedAiUsageModel = options.aiUsageModel || aiUsageModel;
   const resolvedChatShareModel = options.chatShareModel || chatShareModel;
   const resolvedEmailService = options.emailService || emailService;
-  const rateLimitEnabled = options.rateLimitEnabled !== false;
+  const rateLimitEnabled = options.rateLimitEnabled === true;
   const authenticate = createAuthenticate({ userModel: resolvedUserModel });
   const telegramConfig = options.telegramConfig || {
     isConfigured: Boolean(env.telegramBotToken && env.telegramBotUsername),

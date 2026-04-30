@@ -24,7 +24,10 @@ data class SyncMessageDto(
     val attachmentData: String? = null,
     val attachmentMimeType: String? = null,
     val attachmentFileName: String? = null,
-    val attachmentContext: String? = null
+    val attachmentContext: String? = null,
+    val updatedAt: Long = timestamp,
+    val isDeleted: Boolean = false,
+    val editRevision: Int = 0
 )
 
 @Keep

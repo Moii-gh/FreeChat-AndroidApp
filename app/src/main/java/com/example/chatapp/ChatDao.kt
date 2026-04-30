@@ -47,15 +47,43 @@ interface ChatDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessages(messages: List<MessageEntity>)
 
+    @Update
+    suspend fun updateMessage(message: MessageEntity)
+
     @Query("DELETE FROM messages WHERE chatId = :chatId")
     suspend fun deleteMessagesByChatId(chatId: String)
 
-    @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY timestamp ASC")
+    @Query("SELECT * FROM messages WHERE chatId = :chatId AND isDeleted = 0 ORDER BY timestamp ASC, id ASC")
     suspend fun getMessagesByChatIdSync(chatId: String): List<MessageEntity>
+
+    @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY timestamp ASC, id ASC")
+    suspend fun getMessagesByChatIdForSync(chatId: String): List<MessageEntity>
 
     @Query("SELECT * FROM messages WHERE syncId = :syncId")
     suspend fun getMessageBySyncId(syncId: String): MessageEntity?
 
-    @Query("DELETE FROM messages WHERE chatId = :chatId AND id IN (SELECT id FROM messages WHERE chatId = :chatId ORDER BY timestamp ASC LIMIT -1 OFFSET :fromIndex)")
-    suspend fun deleteMessagesFromIndex(chatId: String, fromIndex: Int)
+    @Query(
+        """
+        UPDATE messages
+        SET isDeleted = 1,
+            content = '',
+            imageUrl = NULL,
+            attachmentData = NULL,
+            attachmentMimeType = NULL,
+            attachmentFileName = NULL,
+            attachmentContext = NULL,
+            updatedAt = :updatedAt,
+            editRevision = editRevision + 1
+        WHERE chatId = :chatId
+          AND isDeleted = 0
+          AND id IN (
+              SELECT id
+              FROM messages
+              WHERE chatId = :chatId AND isDeleted = 0
+              ORDER BY timestamp ASC, id ASC
+              LIMIT -1 OFFSET :fromIndex
+          )
+        """
+    )
+    suspend fun tombstoneMessagesFromIndex(chatId: String, fromIndex: Int, updatedAt: Long): Int
 }

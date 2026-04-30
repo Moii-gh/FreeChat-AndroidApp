@@ -1,4 +1,3 @@
-const sharp = require("sharp");
 const fileType = require("file-type");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
@@ -17,7 +16,31 @@ function isPrivateCategory(category) {
   return category === "document";
 }
 
+let sharpModule;
+
+function getSharp() {
+  if (sharpModule !== undefined) {
+    return sharpModule;
+  }
+
+  try {
+    sharpModule = require("sharp");
+  } catch (error) {
+    console.error("Image processing is unavailable: sharp failed to load", error.message);
+    sharpModule = null;
+  }
+
+  return sharpModule;
+}
+
 async function validateAndProcessImage(buffer) {
+  const sharp = getSharp();
+  if (!sharp) {
+    const err = new Error("Image processing is unavailable on this server");
+    err.statusCode = 503;
+    throw err;
+  }
+
   try {
     const metadata = await sharp(buffer).metadata();
     if (!ALLOWED_IMAGE_TYPES.includes(`image/${metadata.format}`)) {

@@ -13,7 +13,11 @@ import androidx.room.PrimaryKey
         childColumns = ["chatId"],
         onDelete = ForeignKey.CASCADE
     )],
-    indices = [Index("chatId")]
+    indices = [
+        Index("chatId"),
+        Index(value = ["syncId"], unique = true),
+        Index(value = ["chatId", "isDeleted", "timestamp"])
+    ]
 )
 data class MessageEntity(
     @PrimaryKey(autoGenerate = true)
@@ -27,5 +31,8 @@ data class MessageEntity(
     val attachmentMimeType: String? = null,
     val attachmentFileName: String? = null,
     val attachmentContext: String? = null,
-    val syncId: String = java.util.UUID.randomUUID().toString()
+    val syncId: String = java.util.UUID.randomUUID().toString(),
+    val updatedAt: Long = timestamp,
+    val isDeleted: Boolean = false,
+    val editRevision: Int = 0
 )

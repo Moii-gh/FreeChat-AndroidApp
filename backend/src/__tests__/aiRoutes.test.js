@@ -288,3 +288,27 @@ test("POST /api/ai/chat rejects oversized payloads", async () => {
     restoreEnv();
   }
 });
+
+test("AI helper endpoints remain rate limited", async () => {
+  const userModel = createFakeUserModel();
+  const aiUsageModel = createFakeAiUsageModel();
+  const user = userModel.seed({
+    id: "user-1",
+    email: "free@example.com",
+    full_name: "Free User",
+    is_verified: true,
+    bonus_requests: 0,
+    token_invalid_before: null
+  });
+  const app = createApp({ userModel, aiUsageModel });
+
+  let lastResponse;
+  for (let index = 0; index < 31; index += 1) {
+    lastResponse = await request(app)
+      .post("/api/ai/title")
+      .set("Authorization", `Bearer ${createJwtToken(user)}`)
+      .send({});
+  }
+
+  assert.equal(lastResponse.status, 429);
+});

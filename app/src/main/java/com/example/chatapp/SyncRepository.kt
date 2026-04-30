@@ -2,12 +2,15 @@ package com.example.chatapp
 
 import android.content.Context
 import android.util.Log
+import androidx.room.withTransaction
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.SyncChatDto
 import com.example.chatapp.network.dto.SyncMessageDto
 import com.example.chatapp.network.dto.SyncPayload
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class SyncRepository(context: Context) {
@@ -17,8 +20,14 @@ class SyncRepository(context: Context) {
     private val baseUrl = BuildConfig.APP_API_BASE_URL
 
     suspend fun trySync() = withContext(Dispatchers.IO) {
-        val token = sessionStore.getAuthToken() ?: return@withContext
-        val ownerKey = currentOwnerKey() ?: return@withContext
+        syncMutex.withLock {
+            trySyncLocked()
+        }
+    }
+
+    private suspend fun trySyncLocked() {
+        val token = sessionStore.getAuthToken() ?: return
+        val ownerKey = currentOwnerKey() ?: return
 
         try {
             val syncApi = NetworkModule.createSyncApiService(baseUrl, token)
@@ -38,12 +47,14 @@ class SyncRepository(context: Context) {
             }
 
             val messagesPayload = mutableListOf<SyncMessageDto>()
+            val localRevisionSnapshot = mutableMapOf<String, Int>()
             for (chat in localChats) {
                 if (chat.isDeleted) {
                     continue
                 }
-                val msgs = dao.getMessagesByChatIdSync(chat.id)
+                val msgs = dao.getMessagesByChatIdForSync(chat.id)
                 messagesPayload.addAll(msgs.map {
+                    localRevisionSnapshot[it.syncId] = it.editRevision
                     SyncMessageDto(
                         syncId = it.syncId,
                         chatId = it.chatId,
@@ -54,7 +65,10 @@ class SyncRepository(context: Context) {
                         attachmentData = it.attachmentData,
                         attachmentMimeType = it.attachmentMimeType,
                         attachmentFileName = it.attachmentFileName,
-                        attachmentContext = it.attachmentContext
+                        attachmentContext = it.attachmentContext,
+                        updatedAt = it.updatedAt,
+                        isDeleted = it.isDeleted,
+                        editRevision = it.editRevision
                     )
                 })
             }
@@ -65,27 +79,15 @@ class SyncRepository(context: Context) {
             if (response.isSuccessful && response.body() != null) {
                 val remoteData = response.body()!!
 
-                // Upsert remote data to local DB
-                for (remoteChat in remoteData.chats) {
-                    val localChat = dao.getChatByIdForSync(remoteChat.id, ownerKey)
-                    if (localChat == null) {
-                        dao.insertChat(
-                            ChatEntity(
-                                id = remoteChat.id,
-                                ownerKey = ownerKey,
-                                title = remoteChat.title,
-                                timestamp = remoteChat.timestamp,
-                                isPinned = remoteChat.isPinned,
-                                lastUpdated = remoteChat.lastUpdated,
-                                summary = remoteChat.summary,
-                                isDeleted = remoteChat.isDeleted
-                            )
-                        )
-                    } else {
-                        // Resolve conflict: if remote is newer or same
-                        if (remoteChat.lastUpdated >= localChat.lastUpdated) {
-                            dao.updateChat(
-                                localChat.copy(
+                db.withTransaction {
+                    // Upsert remote data to local DB
+                    for (remoteChat in remoteData.chats) {
+                        val localChat = dao.getChatByIdForSync(remoteChat.id, ownerKey)
+                        if (localChat == null) {
+                            dao.insertChat(
+                                ChatEntity(
+                                    id = remoteChat.id,
+                                    ownerKey = ownerKey,
                                     title = remoteChat.title,
                                     timestamp = remoteChat.timestamp,
                                     isPinned = remoteChat.isPinned,
@@ -94,32 +96,66 @@ class SyncRepository(context: Context) {
                                     isDeleted = remoteChat.isDeleted
                                 )
                             )
+                        } else {
+                            // Resolve conflict: if remote is newer or same
+                            if (remoteChat.lastUpdated >= localChat.lastUpdated) {
+                                dao.updateChat(
+                                    localChat.copy(
+                                        title = remoteChat.title,
+                                        timestamp = remoteChat.timestamp,
+                                        isPinned = remoteChat.isPinned,
+                                        lastUpdated = remoteChat.lastUpdated,
+                                        summary = remoteChat.summary,
+                                        isDeleted = remoteChat.isDeleted
+                                    )
+                                )
+                            }
+                        }
+
+                        if (remoteChat.isDeleted) {
+                            dao.deleteMessagesByChatId(remoteChat.id)
                         }
                     }
 
-                    if (remoteChat.isDeleted) {
-                        dao.deleteMessagesByChatId(remoteChat.id)
-                    }
-                }
-
-                // Upsert messages
-                for (remoteMsg in remoteData.messages) {
-                    val localMsg = dao.getMessageBySyncId(remoteMsg.syncId)
-                    if (localMsg == null) {
-                        dao.insertMessage(
-                            MessageEntity(
-                                chatId = remoteMsg.chatId,
-                                role = remoteMsg.role,
-                                content = remoteMsg.content,
-                                timestamp = remoteMsg.timestamp,
-                                imageUrl = remoteMsg.imageUrl,
-                                attachmentData = remoteMsg.attachmentData,
-                                attachmentMimeType = remoteMsg.attachmentMimeType,
-                                attachmentFileName = remoteMsg.attachmentFileName,
-                                attachmentContext = remoteMsg.attachmentContext,
-                                syncId = remoteMsg.syncId
+                    // Upsert messages
+                    for (remoteMsg in remoteData.messages) {
+                        val localMsg = dao.getMessageBySyncId(remoteMsg.syncId)
+                        if (localMsg == null) {
+                            dao.insertMessage(
+                                MessageEntity(
+                                    chatId = remoteMsg.chatId,
+                                    role = remoteMsg.role,
+                                    content = remoteMsg.content,
+                                    timestamp = remoteMsg.timestamp,
+                                    imageUrl = remoteMsg.imageUrl,
+                                    attachmentData = remoteMsg.attachmentData,
+                                    attachmentMimeType = remoteMsg.attachmentMimeType,
+                                    attachmentFileName = remoteMsg.attachmentFileName,
+                                    attachmentContext = remoteMsg.attachmentContext,
+                                    syncId = remoteMsg.syncId,
+                                    updatedAt = remoteMsg.updatedAt,
+                                    isDeleted = remoteMsg.isDeleted,
+                                    editRevision = remoteMsg.editRevision
+                                )
                             )
-                        )
+                        } else if (shouldAdoptCanonicalMessage(localMsg, remoteMsg, localRevisionSnapshot)) {
+                            dao.updateMessage(
+                                localMsg.copy(
+                                    chatId = remoteMsg.chatId,
+                                    role = remoteMsg.role,
+                                    content = remoteMsg.content,
+                                    timestamp = remoteMsg.timestamp,
+                                    imageUrl = remoteMsg.imageUrl,
+                                    attachmentData = remoteMsg.attachmentData,
+                                    attachmentMimeType = remoteMsg.attachmentMimeType,
+                                    attachmentFileName = remoteMsg.attachmentFileName,
+                                    attachmentContext = remoteMsg.attachmentContext,
+                                    updatedAt = remoteMsg.updatedAt,
+                                    isDeleted = remoteMsg.isDeleted,
+                                    editRevision = remoteMsg.editRevision
+                                )
+                            )
+                        }
                     }
                 }
             } else {
@@ -135,5 +171,23 @@ class SyncRepository(context: Context) {
             ?: sessionStore.getCurrentUserEmail()?.takeIf { it.isNotBlank() }?.let {
                 "email_${it.lowercase().replace(Regex("[^a-z0-9]"), "_")}"
             }
+    }
+
+    private fun shouldAdoptCanonicalMessage(
+        local: MessageEntity,
+        remote: SyncMessageDto,
+        localRevisionSnapshot: Map<String, Int>
+    ): Boolean {
+        return MessageSyncConflictResolver.shouldAdoptCanonical(
+            localEditRevision = local.editRevision,
+            localUpdatedAt = local.updatedAt,
+            remoteEditRevision = remote.editRevision,
+            remoteUpdatedAt = remote.updatedAt,
+            snapshotEditRevision = localRevisionSnapshot[remote.syncId]
+        )
+    }
+
+    companion object {
+        private val syncMutex = Mutex()
     }
 }

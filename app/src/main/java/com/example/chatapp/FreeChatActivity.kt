@@ -1246,6 +1246,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                         message.attachmentMimeType?.let { put("mimeType", it) }
                         message.attachmentFileName?.let { put("fileName", it) }
                         message.attachmentContext?.let { put("fileContext", it) }
+                        put("syncId", message.syncId)
+                        put("timestamp", message.timestamp)
+                        put("updatedAt", message.updatedAt)
+                        put("editRevision", message.editRevision)
+                        put("isDeleted", message.isDeleted)
                     }
                 )
 
@@ -1596,16 +1601,30 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
 
-        removeViewsFromUserMessage(historyIndex)
-        chatViewModel.truncateHistoryFrom(historyIndex) {
-            runOnUiThread {
-                clearEditingMessageState()
-                binding.etInput.text?.clear()
-                retainedEditingAttachment = null
-                clearPreview()
-                submitEditedUserMessage(historyIndex, newText, attachmentPayload)
+        chatViewModel.editUserMessageAndPrepareResponse(
+            historyIndex = historyIndex,
+            content = newText,
+            base64Data = attachmentPayload?.base64Data,
+            fileUri = attachmentPayload?.fileUri?.takeIf { it.isNotBlank() },
+            mimeType = attachmentPayload?.mimeType,
+            fileName = attachmentPayload?.fileName,
+            fileContext = attachmentPayload?.attachmentContext,
+            onError = { error ->
+                runOnUiThread {
+                    toast(error)
+                }
+            },
+            onPrepared = {
+                runOnUiThread {
+                    removeViewsFromUserMessage(historyIndex)
+                    clearEditingMessageState()
+                    binding.etInput.text?.clear()
+                    retainedEditingAttachment = null
+                    clearPreview()
+                    submitEditedUserMessage(historyIndex, newText, attachmentPayload)
+                }
             }
-        }
+        )
     }
 
     private fun removeViewsFromUserMessage(historyIndex: Int) {
@@ -1683,35 +1702,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         currentAssistantMessage = wrapper
         updateSendState()
 
-        chatViewModel.addToChatHistoryAndSend(
-            content = text,
-            base64Data = attachmentPayload?.base64Data,
-            fileUri = attachmentPayload?.fileUri?.takeIf { it.isNotBlank() },
-            mimeType = attachmentPayload?.mimeType,
-            fileName = attachmentPayload?.fileName,
-            fileContext = attachmentPayload?.attachmentContext,
-            onError = { error ->
-                runOnUiThread {
-                    isSending = false
-                    updateSendState()
-                    wrapper.updateContent(error, animate = false)
-                    refreshDailyQuotaUi()
-                    toast(error)
-                }
-            },
-            onChunk = { chunk ->
-                runOnUiThread {
-                    wrapper.updateContent(chunk, animate = false)
-                }
-            },
-            onStreamComplete = {
-                runOnUiThread {
-                    isSending = false
-                    updateSendState()
-                    refreshDailyQuotaUi()
-                    refreshChats()
-                }
-            }
+        retryWithCurrentProvider(
+            wrapper = wrapper,
+            modeOverride = if (isImageRequest) "create_image" else null,
+            useModeOverride = isImageRequest
         )
     }
 

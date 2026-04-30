@@ -122,6 +122,9 @@ create table if not exists messages (
     attachment_mime_type text,
     attachment_file_name text,
     attachment_context text,
+    updated_at_ms bigint not null,
+    is_deleted boolean not null default false,
+    edit_revision integer not null default 0,
     created_at timestamptz not null default now()
 );
 
@@ -129,6 +132,24 @@ alter table if exists messages add column if not exists attachment_data text;
 alter table if exists messages add column if not exists attachment_mime_type text;
 alter table if exists messages add column if not exists attachment_file_name text;
 alter table if exists messages add column if not exists attachment_context text;
+alter table if exists messages add column if not exists updated_at_ms bigint;
+update messages set updated_at_ms = timestamp_ms where updated_at_ms is null;
+alter table if exists messages alter column updated_at_ms set not null;
+alter table if exists messages add column if not exists is_deleted boolean not null default false;
+alter table if exists messages add column if not exists edit_revision integer not null default 0;
+
+create index if not exists idx_messages_chat_active_order
+    on messages(chat_id, is_deleted, timestamp_ms);
+
+create index if not exists idx_chats_user_updated
+    on chats(user_id, is_deleted, last_updated_ms desc);
+
+-- Diagnostic only: potential legacy duplicates with different ids should be reviewed manually.
+-- select chat_id, role, left(content, 80) as content_sample, count(*)
+-- from messages
+-- where is_deleted = false
+-- group by chat_id, role, content, floor(timestamp_ms / 5000)
+-- having count(*) > 1;
 
 create table if not exists chat_share_links (
     id uuid primary key default gen_random_uuid(),
