@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_Chatapp)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
