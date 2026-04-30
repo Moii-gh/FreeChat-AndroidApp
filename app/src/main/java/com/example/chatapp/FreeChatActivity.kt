@@ -81,8 +81,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val WELCOME_PROMPT_TYPE_STEP_MS = 26L
         const val WELCOME_PROMPT_CURSOR_BLINK_MS = 460L
         const val WELCOME_PROMPT_CURSOR = "|"
-        const val FREE_CHAT_ATTENTION_INTERVAL_MS = 60_000L
-        const val FREE_CHAT_ATTENTION_RESUME_DELAY_MS = 2_500L
+        const val FREE_CHAT_ATTENTION_IDLE_DELAY_MS = 30_000L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -141,7 +140,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             if (!isFreeChatButtonInteracting && binding.btnAddLimits.isShown) {
                 freeChatAttentionDrawable?.play(binding.btnAddLimits)
             }
-            freeChatAttentionHandler.postDelayed(this, FREE_CHAT_ATTENTION_INTERVAL_MS)
         }
     }
 
@@ -195,6 +193,19 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         drawerManager.updateUserProfile()
         refreshDailyQuotaUi()
         applyTranslations()
+        scheduleFreeChatAttentionAfterIdle()
+    }
+
+    override fun onPause() {
+        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
+        freeChatAttentionDrawable?.cancelAttention()
+        super.onPause()
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        freeChatAttentionDrawable?.cancelAttention()
+        scheduleFreeChatAttentionAfterIdle()
     }
 
     private fun applyTranslations() {
@@ -758,13 +769,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             adManager?.show()
         }
         freeChatAttentionDrawable = FreeChatAttentionDrawable(resources.displayMetrics.density)
-        startFreeChatAttentionLoop()
+        scheduleFreeChatAttentionAfterIdle()
         setupMainButtonPressAnimations()
     }
 
-    private fun startFreeChatAttentionLoop() {
+    private fun scheduleFreeChatAttentionAfterIdle() {
+        if (!::binding.isInitialized || isFreeChatButtonInteracting) return
         freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
-        freeChatAttentionHandler.postDelayed(freeChatAttentionRunnable, FREE_CHAT_ATTENTION_INTERVAL_MS)
+        freeChatAttentionHandler.postDelayed(freeChatAttentionRunnable, FREE_CHAT_ATTENTION_IDLE_DELAY_MS)
     }
 
     private fun pauseFreeChatAttention() {
@@ -776,11 +788,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun resumeFreeChatAttentionAfterInteraction() {
         isFreeChatButtonInteracting = false
         freeChatAttentionDrawable?.isInteracting = false
-        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
-        freeChatAttentionHandler.postDelayed(
-            freeChatAttentionRunnable,
-            FREE_CHAT_ATTENTION_INTERVAL_MS + FREE_CHAT_ATTENTION_RESUME_DELAY_MS
-        )
+        scheduleFreeChatAttentionAfterIdle()
     }
 
     private fun setupMainButtonPressAnimations() {
@@ -1850,6 +1858,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun refreshDailyQuotaUi() {
         chatViewModel.refreshDailyQuota { snapshot ->
             runOnUiThread {
+                freeChatAttentionDrawable?.useLowQuotaPalette =
+                    !snapshot.isUnlimited && (snapshot.totalRemaining ?: Int.MAX_VALUE) < 5
                 val label = if (snapshot.isUnlimited) {
                     SpannableString("∞")
                 } else {

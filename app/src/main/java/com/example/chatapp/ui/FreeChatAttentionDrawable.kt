@@ -36,10 +36,37 @@ class FreeChatAttentionDrawable(
     }
     private val rect = RectF()
     private val gradientMatrix = Matrix()
+    private val defaultGradientColors = intArrayOf(
+        Color.TRANSPARENT,
+        Color.TRANSPARENT,
+        Color.parseColor("#8B5CFF"),
+        Color.parseColor("#FF5FCB"),
+        Color.parseColor("#D46CFF"),
+        Color.TRANSPARENT,
+        Color.TRANSPARENT
+    )
+    private val lowQuotaGradientColors = intArrayOf(
+        Color.TRANSPARENT,
+        Color.TRANSPARENT,
+        Color.parseColor("#FF3B30"),
+        Color.parseColor("#FF4FA3"),
+        Color.parseColor("#A855F7"),
+        Color.TRANSPARENT,
+        Color.TRANSPARENT
+    )
+    private val gradientStops = floatArrayOf(0f, 0.56f, 0.68f, 0.78f, 0.87f, 0.95f, 1f)
     private var borderGradient: SweepGradient? = null
     private var animator: ValueAnimator? = null
     private var hostView: View? = null
     private var progress = 0f
+
+    var useLowQuotaPalette: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            updateGradient(bounds)
+            invalidateSelf()
+        }
 
     var isInteracting: Boolean = false
         set(value) {
@@ -117,20 +144,16 @@ class FreeChatAttentionDrawable(
 
     override fun onBoundsChange(bounds: Rect) {
         super.onBoundsChange(bounds)
+        updateGradient(bounds)
+    }
+
+    private fun updateGradient(bounds: Rect) {
         if (bounds.width() > 0 && bounds.height() > 0) {
             borderGradient = SweepGradient(
                 bounds.exactCenterX(),
                 bounds.exactCenterY(),
-                intArrayOf(
-                    Color.TRANSPARENT,
-                    Color.TRANSPARENT,
-                    Color.parseColor("#8B5CFF"),
-                    Color.parseColor("#FF5FCB"),
-                    Color.parseColor("#D46CFF"),
-                    Color.TRANSPARENT,
-                    Color.TRANSPARENT
-                ),
-                floatArrayOf(0f, 0.56f, 0.68f, 0.78f, 0.87f, 0.95f, 1f)
+                if (useLowQuotaPalette) lowQuotaGradientColors else defaultGradientColors,
+                gradientStops
             )
         }
     }
