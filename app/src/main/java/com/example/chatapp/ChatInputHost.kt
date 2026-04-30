@@ -7,7 +7,7 @@ interface ChatInputHost {
         title: String,
         iconRes: Int,
         hint: String,
-        iconTint: String = "#34C759",
+        iconTint: String = "#FFFFFF",
         mode: String? = null
     )
 

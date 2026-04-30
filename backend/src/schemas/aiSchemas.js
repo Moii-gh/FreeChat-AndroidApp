@@ -4,6 +4,7 @@ const aiCurrentModeSchema = z.string().trim().min(1).max(64).optional().nullable
 
 const aiChatSchema = z.object({
   currentMode: aiCurrentModeSchema,
+  adultMode: z.boolean().optional(),
   request: z.record(z.any()).optional(),
   messages: z.array(z.any()).optional(),
   prompt: z.any().optional()

@@ -40,4 +40,14 @@ class AiProviderSettings(private val accountSettings: AccountScopedSettings) {
     fun setOpenAiApiKey(key: String) {
         accountSettings.saveString("openai_api_key", key.trim())
     }
+
+    fun isAdultModeEnabled(): Boolean =
+        accountSettings.getBoolean("adult_mode_enabled")
+
+    fun setAdultModeEnabled(enabled: Boolean) {
+        accountSettings.saveBoolean("adult_mode_enabled", enabled)
+        if (enabled) {
+            setProvider(AiProvider.VSEGPT)
+        }
+    }
 }

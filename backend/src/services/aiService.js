@@ -6,6 +6,25 @@ function createMessagePayload(role, content) {
   return { role, content };
 }
 
+const ADULT_MODE_SYSTEM_PROMPT =
+  "18+ style mode is enabled. Reply in a direct adult conversational tone. " +
+  "Use strong language and profanity naturally when it fits the user's tone, " +
+  "but keep the answer useful and do not target protected groups or encourage harm.";
+
+function withAdultModePrompt(requestBody, adultMode) {
+  if (!adultMode || !requestBody || !Array.isArray(requestBody.messages)) {
+    return requestBody;
+  }
+
+  return {
+    ...requestBody,
+    messages: [
+      createMessagePayload("system", ADULT_MODE_SYSTEM_PROMPT),
+      ...requestBody.messages
+    ]
+  };
+}
+
 async function callAiJson({ upstreamUrl, body }) {
   const response = await fetch(upstreamUrl, {
     method: "POST",
@@ -89,17 +108,18 @@ function normalizeImageRequestBody(requestBody, model) {
   return normalized;
 }
 
-async function proxyAiRequest({ user, currentMode, requestBody, res, onBeforeResponse }) {
+async function proxyAiRequest({ user, currentMode, adultMode = false, requestBody, res, onBeforeResponse }) {
   const selection = selectChatModel({
     user,
     currentMode,
-    requestBody
+    requestBody,
+    adultMode
   });
 
   assertConfigured(selection.upstreamUrl, selection.model, "AI service is not configured on the server");
 
   const upstreamRequestBody = {
-    ...normalizeImageRequestBody(requestBody, selection.model),
+    ...normalizeImageRequestBody(withAdultModePrompt(requestBody, adultMode), selection.model),
     model: selection.model
   };
 

@@ -29,7 +29,8 @@ object AiApiService {
         currentMode: String?,
         customInstructions: String,
         chatContextSummary: String,
-        filesContext: String = ""
+        filesContext: String = "",
+        adultMode: Boolean = false
     ): String? {
         val baseSystemPrompt = when (currentMode) {
             "search" -> "Пользователь включил поиск в сети. Используй online search-возможности выбранной модели, отвечай по актуальной информации и добавляй раздел \"Источники\" со ссылками."
@@ -40,6 +41,13 @@ object AiApiService {
 
         val parts = mutableListOf<String>()
         if (baseSystemPrompt != null) parts.add(baseSystemPrompt)
+        if (adultMode) {
+            parts.add(
+                "18+ style mode is enabled. Reply in a direct adult conversational tone. " +
+                    "Use strong language and profanity naturally when it fits the user's tone, " +
+                    "but keep the answer useful and do not target protected groups or encourage harm."
+            )
+        }
         if (customInstructions.isNotEmpty()) {
             parts.add("Инструкции пользователя:\n$customInstructions")
         }
@@ -153,6 +161,7 @@ object AiApiService {
         customInstructions: String,
         chatContextSummary: String,
         filesContext: String = "",
+        adultMode: Boolean = false,
         callback: StreamCallback
     ) {
         withContext(Dispatchers.IO) {
@@ -175,11 +184,13 @@ object AiApiService {
                     currentMode,
                     customInstructions,
                     chatContextSummary,
-                    filesContext
+                    filesContext,
+                    adultMode
                 )
                 val jsonInput = buildRequestBody(isImageGeneration, messagesToKeep, systemPrompt)
                 val payload = JSONObject().apply {
                     put("currentMode", currentMode)
+                    put("adultMode", adultMode)
                     put("request", JSONObject(jsonInput))
                 }.toString()
 

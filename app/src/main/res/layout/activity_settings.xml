@@ -231,6 +231,72 @@
                 android:src="@drawable/ic_chevron_right"/>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/itemAdultMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="58dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/tvAdultModeBadge"
+                android:layout_width="34dp"
+                android:layout_height="26dp"
+                android:background="@drawable/bg_adult_badge"
+                android:gravity="center"
+                android:text="18+"
+                android:textColor="#000000"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvLabelAdultMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="18+ mode"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/tvAdultModeValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="Adult replies"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchAdultMode"
+                android:layout_width="50dp"
+                android:layout_height="30dp"
+                android:minWidth="50dp"
+                android:minHeight="30dp"
+                android:paddingHorizontal="3dp"
+                android:paddingVertical="2dp"
+                android:showText="false"
+                android:splitTrack="false"
+                android:textOff=""
+                android:textOn=""
+                android:thumb="@drawable/bg_adult_switch_thumb"
+                app:track="@drawable/bg_adult_switch_track"
+                app:useMaterialThemeColors="false"/>
+        </LinearLayout>
+
         <!-- Ссылки -->
         <LinearLayout
             android:id="@+id/itemLinks"

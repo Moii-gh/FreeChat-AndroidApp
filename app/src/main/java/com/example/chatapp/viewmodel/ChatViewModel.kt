@@ -298,7 +298,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val customInstructions = accountSettings.getUserInstructions()
         val filesContext = buildFilesContext()
         val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
-        if (authToken.isBlank() && aiProviderSettings.getProvider() == AiProvider.VSEGPT) {
+        val adultMode = aiProviderSettings.isAdultModeEnabled()
+        val effectiveProvider = if (adultMode) AiProvider.VSEGPT else aiProviderSettings.getProvider()
+        if (authToken.isBlank() && effectiveProvider == AiProvider.VSEGPT) {
             onError(LocaleHelper.getString(getApplication(), "session_expired_sign_in"))
             return
         }
@@ -331,7 +333,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
-                when (aiProviderSettings.getProvider()) {
+                when (effectiveProvider) {
                     AiProvider.OPENAI -> {
                         val apiKey = aiProviderSettings.getOpenAiApiKey()
                         OpenAiDirectService.fetchStreamingResponse(
@@ -352,6 +354,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             customInstructions = customInstructions,
                             chatContextSummary = chatContextSummary,
                             filesContext = filesContext,
+                            adultMode = adultMode,
                             callback = streamCallback
                         )
                     }

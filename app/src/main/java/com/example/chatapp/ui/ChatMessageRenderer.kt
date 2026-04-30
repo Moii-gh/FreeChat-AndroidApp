@@ -585,7 +585,7 @@ class ChatMessageRenderer(
                 setOnClickListener {
                     FileUtils.copyToClipboard(context, codeContent)
                     copyText.text = LocaleHelper.getString(context, "code_copied")
-                    copyIcon.setColorFilter(Color.parseColor("#34C759"))
+                    copyIcon.setColorFilter(Color.parseColor("#FFFFFF"))
                     postDelayed({
                         copyText.text = LocaleHelper.getString(context, "code_copy")
                         copyIcon.setColorFilter(Color.parseColor("#C9D1D9"))

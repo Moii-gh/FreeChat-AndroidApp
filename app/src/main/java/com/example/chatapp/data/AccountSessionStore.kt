@@ -252,6 +252,14 @@ class AccountScopedSettings(
         prefs.edit().putString(scopedKey(key), value).apply()
     }
 
+    fun getBoolean(key: String, defaultValue: Boolean = false): Boolean {
+        return prefs.getBoolean(scopedKey(key), defaultValue)
+    }
+
+    fun saveBoolean(key: String, value: Boolean) {
+        prefs.edit().putBoolean(scopedKey(key), value).apply()
+    }
+
     fun currentAccountKey(): String {
         val userId = prefs.getString(SharedPrefsAccountSessionStore.KEY_USER_ID, null)
         if (!userId.isNullOrBlank()) {

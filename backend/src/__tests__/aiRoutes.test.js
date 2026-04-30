@@ -70,6 +70,7 @@ function setAiEnv(overrides = {}) {
     aiChatUrl: env.aiChatUrl,
     aiImageUrl: env.aiImageUrl,
     aiTextModel: env.aiTextModel,
+    aiAdultTextModel: env.aiAdultTextModel,
     aiImageModel: env.aiImageModel,
     dailyAiRequestLimit: env.dailyAiRequestLimit
   };
@@ -79,6 +80,7 @@ function setAiEnv(overrides = {}) {
     aiChatUrl: "https://ai.example.test/v1/chat/completions",
     aiImageUrl: "https://ai.example.test/v1/images/generations",
     aiTextModel: "test-model",
+    aiAdultTextModel: "x-ai/grok-4-fast-thinking",
     aiImageModel: "test-image-model",
     dailyAiRequestLimit: 1,
     ...overrides
@@ -133,6 +135,56 @@ test("POST /api/ai/chat enforces the server-side daily quota for free users", as
     assert.equal(firstResponse.status, 200);
     assert.equal(secondResponse.status, 429);
     assert.equal(secondResponse.body.remaining, 0);
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat adult mode selects Grok and prepends style prompt", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  let upstreamBody = null;
+  global.fetch = async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream"
+      }
+    });
+  };
+
+  try {
+    const userModel = createFakeUserModel();
+    const aiUsageModel = createFakeAiUsageModel();
+    const user = userModel.seed({
+      id: "user-1",
+      email: "free@example.com",
+      full_name: "Free User",
+      is_verified: true,
+      bonus_requests: 0,
+      token_invalid_before: null
+    });
+    const app = createApp({ userModel, aiUsageModel, rateLimitEnabled: false });
+
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", `Bearer ${createJwtToken(user)}`)
+      .send({
+        currentMode: null,
+        adultMode: true,
+        request: {
+          messages: [
+            { role: "user", content: "Hello" }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(upstreamBody.model, "x-ai/grok-4-fast-thinking");
+    assert.equal(upstreamBody.messages[0].role, "system");
+    assert.match(upstreamBody.messages[0].content, /18\+ style mode/);
   } finally {
     global.fetch = originalFetch;
     restoreEnv();

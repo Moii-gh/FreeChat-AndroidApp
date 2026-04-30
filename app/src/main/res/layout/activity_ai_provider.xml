@@ -99,7 +99,7 @@
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"
                 android:src="@drawable/ic_check"
-                app:tint="#34C759"
+                app:tint="#FFFFFF"
                 android:visibility="visible"/>
         </LinearLayout>
 
@@ -153,7 +153,7 @@
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"
                 android:src="@drawable/ic_check"
-                app:tint="#34C759"
+                app:tint="#FFFFFF"
                 android:visibility="gone"/>
         </LinearLayout>
 
@@ -273,7 +273,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="with tools"
-                    android:textColor="#34C759"
+                    android:textColor="#FFFFFF"
                     android:textSize="13sp"/>
             </LinearLayout>
 

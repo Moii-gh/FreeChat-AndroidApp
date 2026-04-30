@@ -147,6 +147,7 @@ function createAiController({ aiUsageModel }) {
         await proxyAiRequest({
           user,
           currentMode: validatedBody.currentMode || null,
+          adultMode: validatedBody.adultMode === true,
           requestBody,
           res,
           onBeforeResponse: async ({ upstreamResponse }) => {

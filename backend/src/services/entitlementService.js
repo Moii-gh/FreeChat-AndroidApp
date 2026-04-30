@@ -34,12 +34,13 @@ function getModelConfig() {
     vision: firstConfigured(env.aiVisionModel, env.aiTextModel),
     search: firstConfigured(env.aiSearchModel, env.aiTextModel),
     image: firstConfigured(env.aiImageModel),
+    adultText: firstConfigured(env.aiAdultTextModel, env.aiTextModel),
     title: firstConfigured(env.aiTitleModel, env.aiTextModel),
     summary: firstConfigured(env.aiSummaryModel, env.aiTextModel)
   };
 }
 
-function selectChatModel({ currentMode, requestBody }) {
+function selectChatModel({ currentMode, requestBody, adultMode = false }) {
   const config = getModelConfig();
   const hasVision = requestHasVision(requestBody);
 
@@ -47,6 +48,13 @@ function selectChatModel({ currentMode, requestBody }) {
     return {
       model: config.image,
       upstreamUrl: env.aiImageUrl
+    };
+  }
+
+  if (adultMode && !hasVision) {
+    return {
+      model: config.adultText,
+      upstreamUrl: env.aiChatUrl
     };
   }
 

@@ -177,7 +177,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_image"
-                    app:tint="#34C759"/>
+                    app:tint="#FFFFFF"/>
 
                 <TextView
                     android:id="@+id/tvBtnCreateImage"
@@ -552,13 +552,13 @@
                         android:layout_width="16dp"
                         android:layout_height="16dp"
                         android:src="@drawable/ic_book_new"
-                        app:tint="#34C759"/>
+                        app:tint="#FFFFFF"/>
 
                     <TextView
                         android:id="@+id/chipTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="#34C759"
+                        android:textColor="#FFFFFF"
                         android:textSize="13sp"
                         android:textStyle="bold"
                         android:layout_marginStart="6dp"

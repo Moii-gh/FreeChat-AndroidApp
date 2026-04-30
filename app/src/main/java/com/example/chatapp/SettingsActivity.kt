@@ -3,6 +3,7 @@ package com.example.chatapp
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.animation.OvershootInterpolator
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
@@ -13,6 +14,7 @@ import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.example.chatapp.util.setHapticClickListener
 
 class SettingsActivity : AppCompatActivity() {
@@ -72,6 +74,21 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, AiProviderActivity::class.java))
         }
 
+        findViewById<View>(R.id.itemAdultMode).setHapticClickListener {
+            val enabled = !aiProviderSettings.isAdultModeEnabled()
+            aiProviderSettings.setAdultModeEnabled(enabled)
+            animateAdultModeSwitch()
+            updateAdultModeUi()
+        }
+
+        findViewById<SwitchMaterial>(R.id.switchAdultMode).setOnCheckedChangeListener { _, isChecked ->
+            if (aiProviderSettings.isAdultModeEnabled() != isChecked) {
+                aiProviderSettings.setAdultModeEnabled(isChecked)
+                animateAdultModeSwitch()
+                updateAdultModeUi()
+            }
+        }
+
         findViewById<View>(R.id.itemLinks).setHapticClickListener {
             startActivity(Intent(this, SharedLinksActivity::class.java))
         }
@@ -108,6 +125,7 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.tvUserName).text = userName
         findViewById<TextView>(R.id.tvUserEmail).text = userEmail
+        updateAdultModeUi()
 
         val tvLetter = findViewById<TextView>(R.id.tvAvatarLetter)
         val ivAvatar = findViewById<ImageView>(R.id.ivAvatar)
@@ -151,6 +169,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
         findViewById<TextView>(R.id.tvLabelAiProvider)?.text = LocaleHelper.getString(this, "ai_provider_title")
         findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
+        findViewById<TextView>(R.id.tvLabelAdultMode)?.text = "18+ mode"
+        findViewById<TextView>(R.id.tvAdultModeValue)?.text = "Adult replies"
 
         findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
         findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")
@@ -159,6 +179,33 @@ class SettingsActivity : AppCompatActivity() {
             "app_version",
             BuildConfig.VERSION_NAME
         )
+    }
+
+    private fun updateAdultModeUi() {
+        val enabled = aiProviderSettings.isAdultModeEnabled()
+        val switch = findViewById<SwitchMaterial>(R.id.switchAdultMode)
+        if (switch.isChecked != enabled) {
+            switch.isChecked = enabled
+        }
+        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
+        findViewById<TextView>(R.id.tvAdultModeValue)?.text =
+            if (enabled) "On" else "Adult replies"
+    }
+
+    private fun animateAdultModeSwitch() {
+        findViewById<SwitchMaterial>(R.id.switchAdultMode)?.animate()
+            ?.scaleX(0.94f)
+            ?.scaleY(0.94f)
+            ?.setDuration(70L)
+            ?.withEndAction {
+                findViewById<SwitchMaterial>(R.id.switchAdultMode)?.animate()
+                    ?.scaleX(1f)
+                    ?.scaleY(1f)
+                    ?.setInterpolator(OvershootInterpolator(2.2f))
+                    ?.setDuration(180L)
+                    ?.start()
+            }
+            ?.start()
     }
 
     private fun showEditProfileDialog() {
