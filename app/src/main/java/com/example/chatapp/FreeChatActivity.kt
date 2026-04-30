@@ -80,7 +80,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val WELCOME_PROMPT_TYPE_STEP_MS = 26L
         const val WELCOME_PROMPT_CURSOR_BLINK_MS = 460L
         const val WELCOME_PROMPT_CURSOR = "|"
-        const val FREE_CHAT_ATTENTION_INTERVAL_MS = 10_000L
+        const val FREE_CHAT_ATTENTION_INTERVAL_MS = 60_000L
         const val FREE_CHAT_ATTENTION_RESUME_DELAY_MS = 2_500L
     }
 
