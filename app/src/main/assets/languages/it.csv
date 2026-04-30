@@ -267,6 +267,14 @@ toast_share_links_revoked;Liens partagés désactivés
 toast_share_revoke_error;Échec de la désactivation des liens partagés
 untitled_chat;Sans titre
 welcome_question;Come posso aiutarti?
+welcome_prompt_1;Come posso aiutarti?
+welcome_prompt_2;Cosa vuoi sapere?
+welcome_prompt_3;Come ti senti oggi?
+welcome_prompt_4;Ti ascolto
+welcome_prompt_5;Scopriamolo insieme
+welcome_prompt_6;Chiedimi pure
+welcome_prompt_7;Da dove iniziamo?
+welcome_prompt_8;Pronto ad aiutarti
 
 ai_provider_title;AI Provider
 ai_provider_section;AI Provider

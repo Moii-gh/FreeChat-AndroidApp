@@ -8,6 +8,8 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.TypedValue
@@ -72,6 +74,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val SUGGESTIONS_SHOW_DURATION_MS = 180L
         const val SUGGESTIONS_HIDE_DURATION_MS = 120L
         const val TOP_ACTIONS_SPLIT_DURATION_MS = 260L
+        const val WELCOME_PROMPT_ROTATION_MS = 5_000L
+        const val WELCOME_PROMPT_ANIMATION_MS = 260L
+        const val WELCOME_PROMPT_TYPE_STEP_MS = 26L
+        const val WELCOME_PROMPT_CURSOR_BLINK_MS = 460L
+        const val WELCOME_PROMPT_CURSOR = "|"
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -91,7 +98,47 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var handledShareToken: String? = null
     private var adManager: RewardedAdManager? = null
     private var topActionsAnimator: AnimatorSet? = null
+    private val welcomePromptHandler = Handler(Looper.getMainLooper())
+    private var welcomePromptAnimator: AnimatorSet? = null
+    private var welcomePrompts: List<String> = emptyList()
+    private var welcomePromptIndex = 0
+    private var welcomePromptText = ""
+    private var welcomePromptVisibleChars = 0
+    private var welcomePromptCursorVisible = true
+    private var isWelcomePromptCycleRunning = false
     private var editingMessageHistoryIndex: Int? = null
+
+    private val welcomePromptRotationRunnable = object : Runnable {
+        override fun run() {
+            if (!isWelcomePromptCycleRunning || welcomePrompts.isEmpty()) return
+            showNextWelcomePrompt()
+            welcomePromptHandler.postDelayed(this, WELCOME_PROMPT_ROTATION_MS)
+        }
+    }
+
+    private val welcomePromptTypingRunnable = object : Runnable {
+        override fun run() {
+            if (!isWelcomePromptCycleRunning) return
+            if (welcomePromptVisibleChars < welcomePromptText.length) {
+                welcomePromptVisibleChars += 1
+                renderWelcomePrompt()
+                welcomePromptHandler.postDelayed(this, WELCOME_PROMPT_TYPE_STEP_MS)
+            } else {
+                renderWelcomePrompt(showCursor = false)
+            }
+        }
+    }
+
+    private val welcomePromptCursorRunnable = object : Runnable {
+        override fun run() {
+            if (!isWelcomePromptCycleRunning) return
+            welcomePromptCursorVisible = !welcomePromptCursorVisible
+            if (welcomePromptVisibleChars < welcomePromptText.length) {
+                renderWelcomePrompt()
+            }
+            welcomePromptHandler.postDelayed(this, WELCOME_PROMPT_CURSOR_BLINK_MS)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -134,7 +181,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun applyTranslations() {
-        binding.tvWelcomeTitle.text = LocaleHelper.getString(this, "welcome_question")
+        refreshWelcomePrompts()
+        if (binding.welcomeScreen.isVisible) {
+            startWelcomePromptCycle(resetIndex = false)
+        }
         binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
         binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
         binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
@@ -167,9 +217,104 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun onDestroy() {
+        stopWelcomePromptCycle()
         speechRecognizerManager.destroy()
         adManager?.destroy()
         super.onDestroy()
+    }
+
+    private fun refreshWelcomePrompts() {
+        val prompts = LocaleHelper.getStringList(this, "welcome_prompt")
+            .ifEmpty { listOf(LocaleHelper.getString(this, "welcome_question")) }
+        welcomePrompts = prompts
+        if (welcomePromptIndex >= welcomePrompts.size) {
+            welcomePromptIndex = 0
+        }
+    }
+
+    private fun startWelcomePromptCycle(resetIndex: Boolean) {
+        refreshWelcomePrompts()
+        if (welcomePrompts.isEmpty()) return
+
+        if (resetIndex) {
+            welcomePromptIndex = 0
+        }
+
+        isWelcomePromptCycleRunning = true
+        welcomePromptHandler.removeCallbacks(welcomePromptRotationRunnable)
+        welcomePromptHandler.removeCallbacks(welcomePromptTypingRunnable)
+        welcomePromptHandler.removeCallbacks(welcomePromptCursorRunnable)
+        welcomePromptAnimator?.cancel()
+
+        binding.tvWelcomeTitle.alpha = 1f
+        binding.tvWelcomeTitle.translationY = 0f
+        typeWelcomePrompt(welcomePrompts[welcomePromptIndex])
+        welcomePromptHandler.postDelayed(welcomePromptRotationRunnable, WELCOME_PROMPT_ROTATION_MS)
+        welcomePromptHandler.postDelayed(welcomePromptCursorRunnable, WELCOME_PROMPT_CURSOR_BLINK_MS)
+    }
+
+    private fun stopWelcomePromptCycle() {
+        isWelcomePromptCycleRunning = false
+        welcomePromptAnimator?.cancel()
+        welcomePromptAnimator = null
+        welcomePromptHandler.removeCallbacks(welcomePromptRotationRunnable)
+        welcomePromptHandler.removeCallbacks(welcomePromptTypingRunnable)
+        welcomePromptHandler.removeCallbacks(welcomePromptCursorRunnable)
+    }
+
+    private fun showNextWelcomePrompt() {
+        if (welcomePrompts.isEmpty()) return
+        welcomePromptIndex = (welcomePromptIndex + 1) % welcomePrompts.size
+        val nextPrompt = welcomePrompts[welcomePromptIndex]
+
+        welcomePromptAnimator?.cancel()
+        welcomePromptHandler.removeCallbacks(welcomePromptTypingRunnable)
+
+        val fadeOut = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.ALPHA, 1f, 0f)
+        val slideOut = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.TRANSLATION_Y, 0f, -8.dpToPx())
+        val fadeIn = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.ALPHA, 0f, 1f)
+        val slideIn = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.TRANSLATION_Y, 10.dpToPx(), 0f)
+
+        welcomePromptAnimator = AnimatorSet().apply {
+            playTogether(fadeOut, slideOut)
+            duration = WELCOME_PROMPT_ANIMATION_MS
+            interpolator = AccelerateDecelerateInterpolator()
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!isWelcomePromptCycleRunning) return
+                    typeWelcomePrompt(nextPrompt)
+                    AnimatorSet().apply {
+                        playTogether(fadeIn, slideIn)
+                        duration = WELCOME_PROMPT_ANIMATION_MS
+                        interpolator = AccelerateDecelerateInterpolator()
+                        start()
+                    }
+                }
+            })
+            start()
+        }
+    }
+
+    private fun typeWelcomePrompt(prompt: String) {
+        welcomePromptText = prompt
+        welcomePromptVisibleChars = 0
+        welcomePromptCursorVisible = true
+        renderWelcomePrompt()
+        welcomePromptHandler.postDelayed(welcomePromptTypingRunnable, WELCOME_PROMPT_TYPE_STEP_MS)
+    }
+
+    private fun renderWelcomePrompt(showCursor: Boolean = true) {
+        val visibleText = welcomePromptText.take(welcomePromptVisibleChars)
+        val cursor = if (showCursor && welcomePromptCursorVisible) WELCOME_PROMPT_CURSOR else ""
+        binding.tvWelcomeTitle.text = visibleText + cursor
+    }
+
+    private fun Int.dpToPx(): Float {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            toFloat(),
+            resources.displayMetrics
+        )
     }
 
     override fun setInputContext(
@@ -795,6 +940,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun showWelcomeState() {
         resetTopActionsAnimation()
         binding.welcomeScreen.isVisible = true
+        startWelcomePromptCycle(resetIndex = true)
         setWelcomeActionButtonsVisible(chatViewModel.currentMode == null)
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isGone = true
@@ -803,7 +949,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         updateTopBarIcons()
 
-        binding.tvWelcomeTitle.text = LocaleHelper.getString(this, "welcome_question")
         binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
         binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
         binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
@@ -811,6 +956,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showAnonymousWelcomeState() {
+        stopWelcomePromptCycle()
         resetTopActionsAnimation()
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isVisible = true
@@ -825,6 +971,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showMessagesState(animateTopActions: Boolean = false) {
+        stopWelcomePromptCycle()
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isVisible = true

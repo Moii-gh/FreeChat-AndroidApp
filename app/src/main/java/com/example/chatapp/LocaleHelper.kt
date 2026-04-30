@@ -63,6 +63,20 @@ object LocaleHelper {
         return tid
     }
 
+    fun getStringList(context: Context, keyPrefix: String): List<String> {
+        val langCode = getSelectedLanguage(context)
+        val localized = getPrefixedStrings(getTranslations(context, langCode), keyPrefix)
+        if (localized.isNotEmpty()) return localized
+
+        logMissingTranslation(langCode, "${keyPrefix}_*")
+
+        val defaults = getPrefixedStrings(getTranslations(context, DEFAULT_LANGUAGE), keyPrefix)
+        if (defaults.isNotEmpty()) return defaults
+
+        logMissingTranslation(DEFAULT_LANGUAGE, "${keyPrefix}_*")
+        return emptyList()
+    }
+
     fun formatString(context: Context, tid: String, vararg args: Any): String {
         val template = getString(context, tid)
         return runCatching {
@@ -138,6 +152,18 @@ object LocaleHelper {
 
     private fun isSupportedLanguage(languageCode: String): Boolean {
         return languageCode in SUPPORTED_LANGUAGE_CODES
+    }
+
+    private fun getPrefixedStrings(translations: Map<String, String>, keyPrefix: String): List<String> {
+        val keyPattern = Regex("^${Regex.escape(keyPrefix)}_(\\d+)$")
+        return translations
+            .mapNotNull { (key, value) ->
+                val index = keyPattern.matchEntire(key)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                if (index != null && value.isNotBlank()) index to value else null
+            }
+            .sortedBy { it.first }
+            .map { it.second }
+            .distinct()
     }
 
     private fun decodeCsvText(text: String): String {

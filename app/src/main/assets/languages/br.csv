@@ -267,6 +267,14 @@ toast_share_links_revoked;Link condivisi disattivati
 toast_share_revoke_error;Disattivazione dei link non riuscita
 untitled_chat;Senza titolo
 welcome_question;Чым магу дапамагчы?
+welcome_prompt_1;Чым магу дапамагчы?
+welcome_prompt_2;Што хочаце даведацца?
+welcome_prompt_3;Як ваш настрой?
+welcome_prompt_4;Слухаю вас
+welcome_prompt_5;Давайце разбярэмся
+welcome_prompt_6;Задайце любое пытанне
+welcome_prompt_7;З чаго пачнем?
+welcome_prompt_8;Гатовы дапамагчы
 
 ai_provider_title;AI Provider
 ai_provider_section;AI Provider

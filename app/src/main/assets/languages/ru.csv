@@ -270,6 +270,14 @@ toast_share_links_revoked;Доступ по ссылкам отключен
 toast_share_revoke_error;Не удалось отключить ссылки
 untitled_chat;Без названия
 welcome_question;Чем могу помочь?
+welcome_prompt_1;Чем могу помочь?
+welcome_prompt_2;Что хотите узнать?
+welcome_prompt_3;Как у вас настроение?
+welcome_prompt_4;Слушаю вас
+welcome_prompt_5;Давайте разберемся
+welcome_prompt_6;Задайте любой вопрос
+welcome_prompt_7;С чего начнем?
+welcome_prompt_8;Готов помочь
 
 ai_provider_title;AI Провайдер
 ai_provider_section;Провайдер ИИ

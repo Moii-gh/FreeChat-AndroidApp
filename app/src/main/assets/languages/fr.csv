@@ -267,6 +267,14 @@ toast_share_links_revoked;Спільні посилання вимкнено
 toast_share_revoke_error;Не вдалося вимкнути спільні посилання
 untitled_chat;Без назви
 welcome_question;Comment puis-je vous aider?
+welcome_prompt_1;Comment puis-je vous aider?
+welcome_prompt_2;Que voulez-vous savoir?
+welcome_prompt_3;Comment allez-vous?
+welcome_prompt_4;Je vous écoute
+welcome_prompt_5;Voyons cela ensemble
+welcome_prompt_6;Posez votre question
+welcome_prompt_7;Par quoi commencer?
+welcome_prompt_8;Prêt à aider
 
 ai_provider_title;AI Provider
 ai_provider_section;AI Provider

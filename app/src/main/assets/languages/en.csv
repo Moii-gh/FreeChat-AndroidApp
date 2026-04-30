@@ -270,6 +270,14 @@ toast_share_links_revoked;Shared links disabled
 toast_share_revoke_error;Failed to disable shared links
 untitled_chat;Untitled
 welcome_question;What can I help you with?
+welcome_prompt_1;What can I help you with?
+welcome_prompt_2;What would you like to know?
+welcome_prompt_3;How are you feeling today?
+welcome_prompt_4;I'm listening
+welcome_prompt_5;Let's figure it out
+welcome_prompt_6;Ask me anything
+welcome_prompt_7;What should we work on?
+welcome_prompt_8;Ready when you are
 
 ai_provider_title;AI Provider
 ai_provider_section;AI Provider
