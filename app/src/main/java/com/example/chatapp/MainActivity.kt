@@ -13,6 +13,7 @@ import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.navigation.AuthNavGraph
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.telegram.TelegramNativeLoginClient
+import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.auth.theme.ChatAppTheme
 import com.example.chatapp.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
                 AuthNavGraph(viewModel = authViewModel)
             }
         }
+        LaunchLogoAnimator.show(this)
 
         handleTelegramLoginRedirect(intent)
     }

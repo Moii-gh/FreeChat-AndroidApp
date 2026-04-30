@@ -41,6 +41,7 @@ import com.example.chatapp.ui.AssistantMessageWrapper
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.DrawerManager
 import com.example.chatapp.ui.FreeChatAttentionDrawable
+import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.PopupMenuHelper
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.viewmodel.ChatViewModel
@@ -164,6 +165,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        LaunchLogoAnimator.show(this)
 
         setupHelpers()
         setupTopBar()
