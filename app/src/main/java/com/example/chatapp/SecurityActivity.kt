@@ -1,14 +1,17 @@
 package com.example.chatapp
 
+import android.app.Dialog
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.InputType
+import android.view.Gravity
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.data.AuthRepository
@@ -98,51 +101,88 @@ class SecurityActivity : AppCompatActivity() {
             return
         }
 
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 32, 48, 16)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_change_password, null)
+        val currentPasswordField = dialogView.findViewById<EditText>(R.id.etCurrentPassword)
+        val newPasswordField = dialogView.findViewById<EditText>(R.id.etNewPassword)
+        val confirmPasswordField = dialogView.findViewById<EditText>(R.id.etConfirmPassword)
+        val cancelButton = dialogView.findViewById<TextView>(R.id.btnCancelChangePassword)
+        val saveButton = dialogView.findViewById<TextView>(R.id.btnSaveChangePassword)
+        val closeButton = dialogView.findViewById<View>(R.id.btnCloseChangePassword)
+
+        currentPasswordField.hint = "Текущий пароль"
+        newPasswordField.hint = "Новый пароль"
+        confirmPasswordField.hint = "Повторите пароль"
+        cancelButton.text = LocaleHelper.getString(this, "button_cancel")
+        saveButton.text = LocaleHelper.getString(this, "button_save")
+        closeButton.contentDescription = LocaleHelper.getString(this, "button_cancel")
+
+        listOf(currentPasswordField, newPasswordField, confirmPasswordField).forEach { field ->
+            field.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                val scale = if (hasFocus) 1.015f else 1f
+                view.animate()
+                    .scaleX(scale)
+                    .scaleY(scale)
+                    .setDuration(160L)
+                    .start()
+            }
         }
 
-        val currentPasswordField = createPasswordInput(LocaleHelper.getString(this, "password_current_hint"))
-        val newPasswordField = createPasswordInput(LocaleHelper.getString(this, "password_new_hint"))
-        val confirmPasswordField = createPasswordInput(LocaleHelper.getString(this, "password_confirm_new_hint"))
+        val dialog = Dialog(this).apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            setContentView(dialogView)
+            setCanceledOnTouchOutside(true)
+        }
 
-        container.addView(currentPasswordField)
-        container.addView(newPasswordField)
-        container.addView(confirmPasswordField)
+        closeButton.setOnClickListener {
+            dialog.dismiss()
+        }
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+        saveButton.setOnClickListener {
+            val currentPassword = currentPasswordField.text.toString().trim()
+            val newPassword = newPasswordField.text.toString().trim()
+            val confirmPassword = confirmPasswordField.text.toString().trim()
 
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(LocaleHelper.getString(this, "dialog_change_password"))
-            .setView(container)
-            .setNegativeButton(LocaleHelper.getString(this, "button_cancel"), null)
-            .setPositiveButton(LocaleHelper.getString(this, "button_save"), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val currentPassword = currentPasswordField.text.toString().trim()
-                val newPassword = newPasswordField.text.toString().trim()
-                val confirmPassword = confirmPasswordField.text.toString().trim()
-
-                when {
-                    currentPassword.isEmpty() -> toast(LocaleHelper.getString(this, "password_error_current_required"))
-                    newPassword.length < 6 -> toast(LocaleHelper.getString(this, "password_error_new_too_short"))
-                    newPassword != confirmPassword -> toast(LocaleHelper.getString(this, "password_error_mismatch"))
-                    else -> {
-                        changePassword(token, currentPassword, newPassword, dialog)
-                    }
+            when {
+                currentPassword.isEmpty() -> toast(LocaleHelper.getString(this, "password_error_current_required"))
+                newPassword.length < 6 -> toast(LocaleHelper.getString(this, "password_error_new_too_short"))
+                newPassword != confirmPassword -> toast(LocaleHelper.getString(this, "password_error_mismatch"))
+                else -> {
+                    changePassword(token, currentPassword, newPassword, dialog)
                 }
             }
         }
 
         dialog.show()
+        dialog.window?.let { window ->
+            val horizontalMargin = dp(48)
+            val maxWidth = dp(734)
+            val targetWidth = (resources.displayMetrics.widthPixels - horizontalMargin).coerceAtMost(maxWidth)
+
+            window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            window.setDimAmount(0.58f)
+            window.setGravity(Gravity.CENTER)
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.setLayout(targetWidth, WindowManager.LayoutParams.WRAP_CONTENT)
+        }
+
+        dialogView.alpha = 0f
+        dialogView.scaleX = 0.96f
+        dialogView.scaleY = 0.96f
+        dialogView.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(220L)
+            .start()
     }
 
     private fun changePassword(
         token: String,
         currentPassword: String,
         newPassword: String,
-        dialog: AlertDialog
+        dialog: Dialog
     ) {
         lifecycleScope.launch {
             when (
@@ -168,14 +208,8 @@ class SecurityActivity : AppCompatActivity() {
         }
     }
 
-    private fun createPasswordInput(hint: String): EditText {
-        return EditText(this).apply {
-            this.hint = hint
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#8E8E93"))
-            setPadding(0, 24, 0, 24)
-        }
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 
     private fun toast(message: String) {
