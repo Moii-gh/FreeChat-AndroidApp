@@ -1,5 +1,6 @@
 package com.example.chatapp
 
+import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -13,6 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 class AiModeActivity : AppCompatActivity() {
 
     private lateinit var modesContainer: LinearLayout
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
 
     data class ModeItem(val title: String, val desc: String)
 

@@ -250,7 +250,7 @@
                 android:layout_height="26dp"
                 android:background="@drawable/bg_adult_badge"
                 android:gravity="center"
-                android:text="18+"
+                android:text="@string/adult_badge"
                 android:textColor="#000000"
                 android:textSize="12sp"
                 android:textStyle="bold"/>
@@ -266,7 +266,7 @@
                     android:id="@+id/tvLabelAdultMode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="18+ mode"
+                    android:text="@string/adult_mode_title"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"/>
 
@@ -275,7 +275,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="1dp"
-                    android:text="Adult replies"
+                    android:text="@string/adult_replies_title"
                     android:textColor="#8E8E93"
                     android:textSize="12sp"/>
             </LinearLayout>

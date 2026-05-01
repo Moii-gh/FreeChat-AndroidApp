@@ -1,6 +1,6 @@
 package com.example.chatapp
 
-import android.content.Intent
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -18,6 +18,10 @@ class LanguageActivity : AppCompatActivity() {
     private lateinit var tvTitle: TextView
     private lateinit var tvSelectLabel: TextView
     private var selectedLanguageCode: String = "en"
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,13 +42,7 @@ class LanguageActivity : AppCompatActivity() {
         // Back button
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
 
-        // Save button (checkmark)
         findViewById<View>(R.id.btnSave).setOnClickListener {
-            LocaleHelper.setSelectedLanguage(this, selectedLanguageCode)
-            updateUiText() // Update the title instantly
-            
-            // Return to settings and tell it to recreate/refresh
-            setResult(RESULT_OK)
             finish()
         }
     }
@@ -94,13 +92,8 @@ class LanguageActivity : AppCompatActivity() {
                 params.bottomMargin = 8.dpToPxInt()
                 layoutParams = params
 
-                isClickable = true
-                isFocusable = true
-                
-                setOnClickListener {
-                    selectedLanguageCode = code
-                    populateLanguages() // Re-render buttons
-                }
+                isClickable = false
+                isFocusable = false
             }
 
             languageContainer.addView(button)

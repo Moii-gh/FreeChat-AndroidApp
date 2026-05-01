@@ -115,7 +115,11 @@ object FileUtils {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             context.startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(context, "${LocaleHelper.getString(context, "toast_open_attachment_error")}: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                LocaleHelper.formatString(context, "toast_open_attachment_error_with_message", e.message.orEmpty()),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -209,7 +213,11 @@ object FileUtils {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             context.startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(context, "${LocaleHelper.getString(context, "toast_open_attachment_error")}: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                LocaleHelper.formatString(context, "toast_open_attachment_error_with_message", e.message.orEmpty()),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -304,7 +312,11 @@ object FileUtils {
             zos.close()
             fos.close()
 
-            Toast.makeText(context, "${LocaleHelper.getString(context, "toast_doc_saved")}: \n${file.absolutePath}", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                context,
+                LocaleHelper.formatString(context, "toast_doc_saved_with_path", file.absolutePath),
+                Toast.LENGTH_LONG
+            ).show()
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, LocaleHelper.getString(context, "toast_doc_error"), Toast.LENGTH_SHORT).show()

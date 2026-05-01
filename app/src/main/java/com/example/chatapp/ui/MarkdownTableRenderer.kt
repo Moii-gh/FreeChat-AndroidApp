@@ -377,17 +377,17 @@ object MarkdownTableRenderer {
 
         val copyBtn = buildSmallButton(
             context = context,
-            label = "Скопировать",
+            label = LocaleHelper.getString(context, "code_copy"),
             iconRes = R.drawable.ic_copy,
             density = density
         ) {
             FileUtils.copyToClipboard(context, rawMarkdown)
-            Toast.makeText(context, "Таблица скопирована", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_table_copied"), Toast.LENGTH_SHORT).show()
         }
 
         val xmlBtn = buildSmallButton(
             context = context,
-            label = "XML",
+            label = LocaleHelper.getString(context, "table_export_xml_label"),
             iconRes = R.drawable.ic_download_simple,
             density = density
         ) {
@@ -469,7 +469,11 @@ object MarkdownTableRenderer {
 
         if (success) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Toast.makeText(context, "XML сохранён в Загрузки: $fileName", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    LocaleHelper.formatString(context, "toast_xml_saved_with_name", fileName),
+                    Toast.LENGTH_LONG
+                ).show()
             }
         } else {
             // Если MediaStore не сработал — пробуем share-intent как запасной вариант

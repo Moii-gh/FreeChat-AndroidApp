@@ -1,5 +1,6 @@
 package com.example.chatapp
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -25,6 +26,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
     private lateinit var accountSettings: AccountScopedSettings
     private lateinit var aiProviderSettings: AiProviderSettings
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
 
     private val pickImage = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -169,8 +174,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
         findViewById<TextView>(R.id.tvLabelAiProvider)?.text = LocaleHelper.getString(this, "ai_provider_title")
         findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
-        findViewById<TextView>(R.id.tvLabelAdultMode)?.text = "18+ mode"
-        findViewById<TextView>(R.id.tvAdultModeValue)?.text = "Adult replies"
+        findViewById<TextView>(R.id.tvLabelAdultMode)?.text = LocaleHelper.getString(this, "adult_mode_title")
+        findViewById<TextView>(R.id.tvAdultModeValue)?.text = LocaleHelper.getString(this, "adult_replies_title")
 
         findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
         findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")

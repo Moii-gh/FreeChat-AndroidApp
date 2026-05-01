@@ -65,7 +65,7 @@
                     android:id="@+id/tvAppName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FreeChat"
+                    android:text="@string/app_brand"
                     android:textColor="#FFFFFF"
                     android:textSize="18sp"
                     android:textStyle="normal"
@@ -268,7 +268,7 @@
                 android:id="@+id/tvAnonymousDesc"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Этот чат не будет отображаться в вашей истории переписки и будет стерт после перезахода в приложение"
+                android:text="@string/anonymous_mode_desc"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:gravity="center"
@@ -446,7 +446,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:layout_marginEnd="16dp"
-                        android:text="Редактировать сообщение"
+                        android:text="@string/menu_edit_message"
                         android:textColor="#F2F2F7"
                         android:textSize="12sp" />
 

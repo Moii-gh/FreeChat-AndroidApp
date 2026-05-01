@@ -3,14 +3,16 @@ package com.example.chatapp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.w3c.dom.Element
 import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 
 class SecurityLocalizationTest {
 
     @Test
     fun `security localization keys exist for every supported language`() {
         val languageMaps = LocaleHelper.SUPPORTED_LANGUAGE_CODES.associateWith { code ->
-            readCsv(languageFile(code))
+            readStrings(stringsFile(code))
         }
 
         languageMaps.forEach { (code, translations) ->
@@ -21,7 +23,7 @@ class SecurityLocalizationTest {
 
     @Test
     fun `security localization placeholders match english`() {
-        val english = readCsv(languageFile("en"))
+        val english = readStrings(stringsFile("en"))
         val expectedPlaceholders = REQUIRED_KEYS.associateWith { key ->
             PLACEHOLDER_REGEX.findAll(english.getValue(key)).map { it.value }.toList()
         }
@@ -29,7 +31,7 @@ class SecurityLocalizationTest {
         LocaleHelper.SUPPORTED_LANGUAGE_CODES
             .filterNot { it == "en" }
             .forEach { code ->
-                val translations = readCsv(languageFile(code))
+                val translations = readStrings(stringsFile(code))
                 REQUIRED_KEYS.forEach { key ->
                     val actual = PLACEHOLDER_REGEX.findAll(translations.getValue(key)).map { it.value }.toList()
                     assertEquals("$code:$key placeholders differ", expectedPlaceholders.getValue(key), actual)
@@ -37,24 +39,26 @@ class SecurityLocalizationTest {
             }
     }
 
-    private fun languageFile(code: String): File {
+    private fun stringsFile(code: String): File {
+        val valuesDirectory = if (code == "en") "values" else "values-$code"
         return listOf(
-            File("src/main/assets/languages/$code.csv"),
-            File("app/src/main/assets/languages/$code.csv")
+            File("src/main/res/$valuesDirectory/strings.xml"),
+            File("app/src/main/res/$valuesDirectory/strings.xml")
         ).first { it.exists() }
     }
 
-    private fun readCsv(file: File): Map<String, String> {
+    private fun readStrings(file: File): Map<String, String> {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val strings = document.getElementsByTagName("string")
         val keys = linkedMapOf<String, String>()
-        file.readLines(Charsets.UTF_8).drop(1).forEach { line ->
-            val separatorIndex = line.indexOf(';')
-            if (separatorIndex > 0) {
-                val key = line.substring(0, separatorIndex)
-                val value = line.substring(separatorIndex + 1)
-                require(!keys.containsKey(key)) { "Duplicate localization key '$key' in ${file.name}" }
-                keys[key] = value
-            }
+
+        for (index in 0 until strings.length) {
+            val element = strings.item(index) as Element
+            val key = element.getAttribute("name")
+            require(!keys.containsKey(key)) { "Duplicate localization key '$key' in ${file.path}" }
+            keys[key] = element.textContent
         }
+
         return keys
     }
 

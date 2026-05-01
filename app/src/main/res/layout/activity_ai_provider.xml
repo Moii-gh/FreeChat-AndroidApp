@@ -36,7 +36,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="AI Provider"
+                android:text="@string/ai_provider_title"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:textStyle="bold"/>
@@ -50,7 +50,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"
-            android:text="AI Provider"
+            android:text="@string/ai_provider_section"
             android:textColor="#8E8E93"
             android:textSize="13sp"
             android:textAllCaps="true"
@@ -79,7 +79,7 @@
                     android:id="@+id/tvVsegptTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="VseGPT (сервер)"
+                    android:text="@string/ai_provider_vsegpt_title"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"/>
 
@@ -88,7 +88,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Requests go through our server. No API key needed."
+                    android:text="@string/ai_provider_vsegpt_desc"
                     android:textColor="#8E8E93"
                     android:textSize="13sp"/>
             </LinearLayout>
@@ -133,7 +133,7 @@
                     android:id="@+id/tvOpenaiTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="OpenAI API"
+                    android:text="@string/ai_provider_openai_title"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"/>
 
@@ -142,7 +142,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Direct connection to OpenAI. Requires your API key."
+                    android:text="@string/ai_provider_openai_desc"
                     android:textColor="#8E8E93"
                     android:textSize="13sp"/>
             </LinearLayout>
@@ -172,7 +172,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginBottom="8dp"
-                android:text="API KEY"
+                android:text="@string/ai_provider_api_key_section"
                 android:textColor="#8E8E93"
                 android:textSize="13sp"
                 android:textAllCaps="true"
@@ -191,7 +191,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:paddingHorizontal="12dp"
-                    android:hint="sk-..."
+                    android:hint="@string/ai_provider_api_key_placeholder"
                     android:textColor="#FFFFFF"
                     android:textColorHint="#555555"
                     android:textSize="15sp"
@@ -207,7 +207,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="6dp"
-                android:text="Get your key at platform.openai.com/api-keys"
+                android:text="@string/ai_provider_api_key_hint"
                 android:textColor="#636366"
                 android:textSize="12sp"/>
 
@@ -219,7 +219,7 @@
                 android:layout_marginTop="12dp"
                 android:background="@drawable/btn_edit_profile_bg"
                 android:gravity="center"
-                android:text="Save"
+                android:text="@string/button_save"
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -242,7 +242,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginBottom="8dp"
-                android:text="MODEL"
+                android:text="@string/ai_provider_model_section"
                 android:textColor="#8E8E93"
                 android:textSize="13sp"
                 android:textAllCaps="true"
@@ -260,7 +260,7 @@
                     android:id="@+id/tvModelName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="gpt-5.4-mini"
+                    android:text="@string/ai_provider_model_default"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"/>
 
@@ -272,7 +272,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="with tools"
+                    android:text="@string/ai_provider_with_tools"
                     android:textColor="#FFFFFF"
                     android:textSize="13sp"/>
             </LinearLayout>
@@ -290,7 +290,7 @@
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="12dp"
-                android:text="🔍 Web Search  •  🎨 Image Generation  •  ✏️ Image Editing\n\nThe model automatically decides when to use tools."
+                android:text="@string/ai_provider_tools_info"
                 android:textColor="#8E8E93"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="1.3"/>

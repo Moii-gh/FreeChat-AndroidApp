@@ -2,6 +2,7 @@ package com.example.chatapp
 
 import android.net.Uri
 import android.os.Bundle
+import android.content.Context
 import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,6 +39,10 @@ class MainActivity : ComponentActivity() {
             accountSessionStore = accountSessionStore,
             localize = { key -> LocaleHelper.getString(applicationContext, key) }
         )
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

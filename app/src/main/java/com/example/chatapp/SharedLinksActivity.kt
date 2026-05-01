@@ -27,6 +27,10 @@ class SharedLinksActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyStateContainer: LinearLayout
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_shared_links)

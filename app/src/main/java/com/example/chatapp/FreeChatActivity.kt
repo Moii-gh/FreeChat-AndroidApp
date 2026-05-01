@@ -5,6 +5,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.content.Intent
+import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -125,6 +126,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var biometricGateDialog: AlertDialog? = null
     private var isBiometricGateActive = false
     private var isChatUiInitialized = false
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
 
     private val welcomePromptRotationRunnable = object : Runnable {
         override fun run() {

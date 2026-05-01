@@ -288,6 +288,10 @@ private class FakeComposeAccountSessionStore : AccountSessionStore {
 
     override  fun getCurrentUserName(): String? = null
 
+    override fun getCurrentUserPassword(): String? = null
+
+    override fun saveRegistrationPassword(password: String) = Unit
+
     override fun getDailyRequestLimit(): Int? = null
 
     override fun getBaseRemainingDailyRequests(): Int? = null

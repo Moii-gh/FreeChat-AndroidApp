@@ -485,7 +485,7 @@ class AssistantMessageWrapper(
         runCatching {
             context.startActivity(intent)
         }.onFailure {
-            Toast.makeText(context, "Не удалось открыть ссылку", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
         }
     }
 

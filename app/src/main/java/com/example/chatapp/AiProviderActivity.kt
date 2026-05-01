@@ -1,5 +1,6 @@
 package com.example.chatapp
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -18,6 +19,10 @@ import com.example.chatapp.util.setHapticClickListener
 class AiProviderActivity : AppCompatActivity() {
 
     private lateinit var providerSettings: AiProviderSettings
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

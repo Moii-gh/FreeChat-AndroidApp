@@ -1,5 +1,6 @@
 package com.example.chatapp
 
+import android.content.Context
 import android.os.Bundle
 import android.transition.AutoTransition
 import android.transition.TransitionManager
@@ -32,6 +33,10 @@ class SecurityActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySecurityBinding
     private var lastRenderedState: SecurityUiState? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageManager.applyLocale(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
