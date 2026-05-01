@@ -21,6 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import android.view.animation.PathInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -33,6 +34,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isGone
@@ -126,6 +128,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var biometricGateDialog: AlertDialog? = null
     private var isBiometricGateActive = false
     private var isChatUiInitialized = false
+    private var navigationBarInsetBottom = 0
+    private var messagesBottomAnchorId = View.NO_ID
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -502,7 +506,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun syncQuickSuggestions(query: String) {
-        if (suppressSuggestionUpdates || currentPreviewUri != null || isSending) {
+        if (suppressSuggestionUpdates || currentPreviewUri != null || isSending || hasCompletedChatExchange()) {
             hideQuickSuggestions()
             return
         }
@@ -544,6 +548,21 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         } else {
             showQuickSuggestions(category)
         }
+    }
+
+    private fun hasCompletedChatExchange(): Boolean {
+        var hasUserMessage = false
+        var hasAssistantMessage = false
+        chatViewModel.chatHistory.forEach { message ->
+            when (message.optString("role")) {
+                "user" -> hasUserMessage = true
+                "assistant" -> hasAssistantMessage = true
+            }
+            if (hasUserMessage && hasAssistantMessage) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun showQuickSuggestions(category: QuickSuggestionCategory) {
@@ -726,6 +745,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         if (!container.isVisible) {
             binding.suggestionsList.removeAllViews()
+            updateFloatingInputPadding()
             return
         }
 
@@ -733,13 +753,17 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         container.animate()
             .translationY(slideDistance)
             .alpha(0f)
+            .scaleY(0.98f)
             .setDuration(SUGGESTIONS_HIDE_DURATION_MS)
-            .setInterpolator(AccelerateDecelerateInterpolator())
+            .setInterpolator(PathInterpolator(0.4f, 0f, 1f, 1f))
             .withEndAction {
                 container.isGone = true
                 container.translationY = 0f
+                container.scaleY = 1f
                 container.alpha = 1f
                 binding.suggestionsList.removeAllViews()
+                resetSuggestionsContainerHeight()
+                updateFloatingInputPadding()
             }
             .start()
     }
@@ -747,20 +771,66 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun showSuggestionsContainerAnimated() {
         val container = binding.suggestionsContainer
         container.animate().cancel()
+        constrainSuggestionsContainerHeight()
 
         if (!container.isVisible) {
             val slideDistance = 12f * resources.displayMetrics.density
             container.translationY = slideDistance
+            container.scaleY = 0.96f
             container.alpha = 0f
             container.isVisible = true
         }
 
+        container.pivotY = container.height.toFloat()
         container.animate()
             .translationY(0f)
+            .scaleY(1f)
             .alpha(1f)
             .setDuration(SUGGESTIONS_SHOW_DURATION_MS)
-            .setInterpolator(AccelerateDecelerateInterpolator())
+            .setInterpolator(PathInterpolator(0.2f, 0f, 0f, 1f))
+            .withStartAction {
+                updateFloatingInputPadding()
+                keepLatestMessageReadable()
+            }
+            .withEndAction {
+                updateFloatingInputPadding()
+                keepLatestMessageReadable()
+            }
             .start()
+    }
+
+    private fun constrainSuggestionsContainerHeight() {
+        val container = binding.suggestionsContainer
+        val rootHeight = binding.root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+        val topLimit = binding.topBar.bottom + dp(12f).toInt()
+        val bottomLimit = binding.bottomInputArea.top - dp(8f).toInt()
+        val availableHeight = (bottomLimit - topLimit).coerceAtLeast(dp(96f).toInt())
+        val maxHeight = minOf(availableHeight, (rootHeight * 0.38f).toInt())
+        val width = binding.root.width - binding.suggestionsContainer.paddingLeft -
+            binding.suggestionsContainer.paddingRight - dp(32f).toInt()
+        val widthSpec = View.MeasureSpec.makeMeasureSpec(width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
+        val heightSpec = View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST)
+        container.measure(widthSpec, heightSpec)
+        val targetHeight = container.measuredHeight.coerceAtMost(maxHeight)
+
+        container.layoutParams = container.layoutParams.apply {
+            height = if (targetHeight > 0) targetHeight else ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        container.isVerticalScrollBarEnabled = container.measuredHeight >= maxHeight
+    }
+
+    private fun resetSuggestionsContainerHeight() {
+        binding.suggestionsContainer.layoutParams = binding.suggestionsContainer.layoutParams.apply {
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        binding.suggestionsContainer.isVerticalScrollBarEnabled = false
+    }
+
+    private fun keepLatestMessageReadable() {
+        if (!binding.messagesScrollView.isVisible) return
+        binding.messagesScrollView.post {
+            binding.messagesScrollView.smoothScrollTo(0, binding.messagesContainer.bottom)
+        }
     }
 
     private fun setupHelpers() {
@@ -967,7 +1037,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupInputArea() {
-        binding.messagesScrollView.setOnApplyWindowInsetsListener { _, insets ->
+        binding.root.setOnApplyWindowInsetsListener { _, insets ->
+            navigationBarInsetBottom = insets.systemWindowInsetBottom
+            updateBottomInputSystemInset()
             updateFloatingInputPadding()
             insets
         }
@@ -1008,8 +1080,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun updateFloatingInputPadding() {
+        updateMessagesViewportAnchor()
         val topPadding = dp(8f).toInt()
-        val bottomPadding = binding.bottomInputArea.height + dp(18f).toInt()
+        val bottomPadding = dp(10f).toInt()
         if (
             binding.messagesScrollView.paddingTop == topPadding &&
             binding.messagesScrollView.paddingBottom == bottomPadding
@@ -1022,6 +1095,38 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.messagesScrollView.paddingRight,
             bottomPadding
         )
+    }
+
+    private fun updateBottomInputSystemInset() {
+        val targetBottomMargin = navigationBarInsetBottom + dp(10f).toInt()
+        val inputParams = binding.bottomInputArea.layoutParams as ViewGroup.MarginLayoutParams
+        if (inputParams.bottomMargin != targetBottomMargin) {
+            inputParams.bottomMargin = targetBottomMargin
+            binding.bottomInputArea.layoutParams = inputParams
+        }
+
+        val scrimParams = binding.bottomInputScrim.layoutParams
+        val targetScrimHeight = navigationBarInsetBottom + dp(170f).toInt()
+        if (scrimParams.height != targetScrimHeight) {
+            scrimParams.height = targetScrimHeight
+            binding.bottomInputScrim.layoutParams = scrimParams
+        }
+    }
+
+    private fun updateMessagesViewportAnchor() {
+        val targetAnchorId = if (binding.suggestionsContainer.isVisible) {
+            R.id.suggestionsContainer
+        } else {
+            R.id.bottomInputArea
+        }
+        if (messagesBottomAnchorId == targetAnchorId) return
+
+        val params = binding.messagesScrollView.layoutParams as ConstraintLayout.LayoutParams
+        params.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+        params.bottomToTop = targetAnchorId
+        params.bottomMargin = dp(8f).toInt()
+        binding.messagesScrollView.layoutParams = params
+        messagesBottomAnchorId = targetAnchorId
     }
 
     private fun setupWelcomeActions() {

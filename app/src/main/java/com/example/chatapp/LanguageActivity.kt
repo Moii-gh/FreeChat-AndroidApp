@@ -18,6 +18,7 @@ class LanguageActivity : AppCompatActivity() {
     private lateinit var languageContainer: LinearLayout
     private lateinit var tvTitle: TextView
     private lateinit var tvSelectLabel: TextView
+    private var appliedLanguageCode: String = "en"
     private var selectedLanguageCode: String = "en"
 
     override fun attachBaseContext(newBase: Context) {
@@ -35,7 +36,8 @@ class LanguageActivity : AppCompatActivity() {
         tvSelectLabel = findViewById(R.id.tvSelectLabel)
 
         // Load current language
-        selectedLanguageCode = LocaleHelper.getSelectedLanguage(this)
+        appliedLanguageCode = LocaleHelper.getSelectedLanguage(this)
+        selectedLanguageCode = appliedLanguageCode
 
         updateUiText()
         populateLanguages()
@@ -44,6 +46,9 @@ class LanguageActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
 
         findViewById<View>(R.id.btnSave).setOnClickListener {
+            if (selectedLanguageCode != appliedLanguageCode) {
+                LocaleHelper.setSelectedLanguage(this@LanguageActivity, selectedLanguageCode)
+            }
             finish()
         }
     }
@@ -97,9 +102,8 @@ class LanguageActivity : AppCompatActivity() {
                 isFocusable = true
                 setHapticClickListener {
                     if (selectedLanguageCode != code) {
-                        LocaleHelper.setSelectedLanguage(this@LanguageActivity, code)
-                        selectedLanguageCode = LocaleHelper.getSelectedLanguage(this@LanguageActivity)
-                        recreate()
+                        selectedLanguageCode = code
+                        populateLanguages()
                     }
                 }
             }
