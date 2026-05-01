@@ -315,7 +315,7 @@ class AssistantMessageWrapper(
         }
 
         val button = TextView(context).apply {
-            text = "Источники (${sources.size})"
+            text = LocaleHelper.formatString(context, "sources_count", sources.size)
             setTextColor(Color.parseColor("#CCCCCC"))
             textSize = 13f
             gravity = Gravity.CENTER
@@ -375,7 +375,7 @@ class AssistantMessageWrapper(
         }
 
         val title = TextView(context).apply {
-            text = "Источники"
+            text = LocaleHelper.getString(context, "sources_title")
             setTextColor(Color.WHITE)
             textSize = 20f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -402,7 +402,7 @@ class AssistantMessageWrapper(
         }
 
         val collapseButton = TextView(context).apply {
-            text = "Свернуть"
+            text = LocaleHelper.getString(context, "button_collapse")
             setTextColor(Color.parseColor("#CCCCCC"))
             textSize = 13f
             gravity = Gravity.CENTER

@@ -113,6 +113,7 @@
     <string name="button_camera">Camera</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_change_password">Change password</string>
+    <string name="button_collapse">Collapse</string>
     <string name="button_confirm">Confirm</string>
     <string name="button_continue">Continue</string>
     <string name="button_create_idea">Create an idea</string>
@@ -179,6 +180,7 @@
     <string name="language_name_fr">French</string>
     <string name="language_name_go">Georgian</string>
     <string name="language_name_it">Italian</string>
+    <string name="language_name_ka">Georgian</string>
     <string name="language_name_ru">Russian</string>
     <string name="language_name_uk">Ukrainian</string>
     <string name="main_panel_input">Ask a question</string>
@@ -272,6 +274,7 @@
     <string name="session_missing_sign_in">Session not found. Sign in again.</string>
     <string name="settings_shared_links">Shared chats</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_value_on">On</string>
     <string name="share">Share</string>
     <string name="share_empty_response">Empty share response</string>
     <string name="share_image">Share image</string>
@@ -304,6 +307,8 @@
     <string name="speech_error_timeout">Silence</string>
     <string name="speech_listening">Listening...</string>
     <string name="speech_speak_now">Speak now...</string>
+    <string name="sources_count">Sources (%d)</string>
+    <string name="sources_title">Sources</string>
     <string name="toast_ad_loading">Ad is still loading, please wait...</string>
     <string name="toast_chat_empty">Chat is empty</string>
     <string name="toast_copied">Copied</string>

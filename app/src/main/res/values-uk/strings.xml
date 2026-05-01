@@ -113,6 +113,7 @@
     <string name="button_camera">Камера</string>
     <string name="button_cancel">Скасувати</string>
     <string name="button_change_password">Змінити пароль</string>
+    <string name="button_collapse">Згорнути</string>
     <string name="button_confirm">Підтвердити</string>
     <string name="button_continue">Продовжити</string>
     <string name="button_create_idea">Придумати ідею</string>
@@ -179,6 +180,7 @@
     <string name="language_name_fr">Французька</string>
     <string name="language_name_go">Грузинська</string>
     <string name="language_name_it">Італійська</string>
+    <string name="language_name_ka">Грузинська</string>
     <string name="language_name_ru">Російська</string>
     <string name="language_name_uk">Українська</string>
     <string name="main_panel_input">Поставте запитання</string>
@@ -272,6 +274,7 @@
     <string name="session_missing_sign_in">Сесію не знайдено. Увійдіть знову.</string>
     <string name="settings_shared_links">Спільні чати</string>
     <string name="settings_title">Налаштування</string>
+    <string name="settings_value_on">Увімкнено</string>
     <string name="share">Поділитися</string>
     <string name="share_empty_response">Порожня відповідь для посилання</string>
     <string name="share_image">Поділитися зображенням</string>
@@ -304,6 +307,8 @@
     <string name="speech_error_timeout">Таймаут</string>
     <string name="speech_listening">Слухаю...</string>
     <string name="speech_speak_now">Говоріть...</string>
+    <string name="sources_count">Джерела (%d)</string>
+    <string name="sources_title">Джерела</string>
     <string name="toast_ad_loading">Реклама ще завантажується, зачекайте кілька секунд...</string>
     <string name="toast_chat_empty">Чат порожній</string>
     <string name="toast_copied">Скопійовано</string>

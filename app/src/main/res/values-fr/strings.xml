@@ -113,6 +113,7 @@
     <string name="button_camera">Fotocamera</string>
     <string name="button_cancel">Annulla</string>
     <string name="button_change_password">Cambia password</string>
+    <string name="button_collapse">Réduire</string>
     <string name="button_confirm">Confirmer</string>
     <string name="button_continue">Continuer</string>
     <string name="button_create_idea">Genera un\'idea</string>
@@ -179,6 +180,7 @@
     <string name="language_name_fr">Français</string>
     <string name="language_name_go">Géorgien</string>
     <string name="language_name_it">Italien</string>
+    <string name="language_name_ka">Géorgien</string>
     <string name="language_name_ru">Russe</string>
     <string name="language_name_uk">Ukrainien</string>
     <string name="main_panel_input">Fai una domanda</string>
@@ -272,6 +274,7 @@
     <string name="session_missing_sign_in">Session introuvable. Connectez-vous à nouveau.</string>
     <string name="settings_shared_links">Chats partagés</string>
     <string name="settings_title">Impostazioni</string>
+    <string name="settings_value_on">Activé</string>
     <string name="share">Condividi</string>
     <string name="share_empty_response">Réponse de partage vide</string>
     <string name="share_image">Condividi immagine</string>
@@ -304,6 +307,8 @@
     <string name="speech_error_timeout">Silenzio</string>
     <string name="speech_listening">Ascolto...</string>
     <string name="speech_speak_now">Parla...</string>
+    <string name="sources_count">Sources (%d)</string>
+    <string name="sources_title">Sources</string>
     <string name="toast_ad_loading">La pubblicità sta ancora caricando, attendi...</string>
     <string name="toast_chat_empty">La chat è vuota</string>
     <string name="toast_copied">Copiato</string>

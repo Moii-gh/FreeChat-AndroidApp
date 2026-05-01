@@ -113,6 +113,7 @@
     <string name="button_camera">Камера</string>
     <string name="button_cancel">Адмена</string>
     <string name="button_change_password">Змяніць пароль</string>
+    <string name="button_collapse">Riduci</string>
     <string name="button_confirm">Conferma</string>
     <string name="button_continue">Continua</string>
     <string name="button_create_idea">Прыдумаць ідэю</string>
@@ -179,6 +180,7 @@
     <string name="language_name_fr">Francese</string>
     <string name="language_name_go">Georgiano</string>
     <string name="language_name_it">Italiano</string>
+    <string name="language_name_ka">Georgiano</string>
     <string name="language_name_ru">Russo</string>
     <string name="language_name_uk">Ucraino</string>
     <string name="main_panel_input">Задайце пытанне</string>
@@ -272,6 +274,7 @@
     <string name="session_missing_sign_in">Sessione non trovata. Accedi di nuovo.</string>
     <string name="settings_shared_links">Chat condivise</string>
     <string name="settings_title">Налады</string>
+    <string name="settings_value_on">Attivo</string>
     <string name="share">Абмяняцца</string>
     <string name="share_empty_response">Risposta di condivisione vuota</string>
     <string name="share_image">Абмяняцца малюнкам</string>
@@ -304,6 +307,8 @@
     <string name="speech_error_timeout">Цішыня</string>
     <string name="speech_listening">Слухаю...</string>
     <string name="speech_speak_now">Гаварыце...</string>
+    <string name="sources_count">Fonti (%d)</string>
+    <string name="sources_title">Fonti</string>
     <string name="toast_ad_loading">Рэклама яшчэ загружаецца, пачакайце...</string>
     <string name="toast_chat_empty">Чат пусты</string>
     <string name="toast_copied">Скапіравана</string>

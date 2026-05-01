@@ -2,7 +2,6 @@ package com.example.chatapp
 
 import android.content.Context
 import android.util.Log
-import java.util.Locale
 
 object LocaleHelper {
 
@@ -15,11 +14,11 @@ object LocaleHelper {
     )
 
     fun getSelectedLanguage(context: Context): String {
-        return LanguageManager.getAppLanguage()
+        return LanguageManager.getAppLanguage(context)
     }
 
     fun setSelectedLanguage(context: Context, languageCode: String) {
-        Log.i(TAG, "Manual app language selection is disabled; using device locale.")
+        LanguageManager.setAppLanguage(context, languageCode)
     }
 
     fun getString(context: Context, tid: String): String {
@@ -62,22 +61,12 @@ object LocaleHelper {
     }
 
     fun getLanguageDisplayName(context: Context, languageCode: String): String {
-        val locale = when (LanguageManager.toSupportedLanguage(languageCode)) {
-            "en" -> Locale.ENGLISH
-            "ru" -> Locale("ru")
-            "fr" -> Locale.FRENCH
-            "it" -> Locale.ITALIAN
-            "uk" -> Locale("uk")
-            "ka" -> Locale("ka")
-            else -> Locale.ENGLISH
-        }
-        return locale.getDisplayLanguage(LanguageManager.getAppLocale()).replaceFirstChar {
-            if (it.isLowerCase()) it.titlecase(LanguageManager.getAppLocale()) else it.toString()
-        }
+        val language = LanguageManager.toSupportedLanguage(languageCode)
+        return getString(context, "language_name_$language")
     }
 
-    fun getSelectedLocale(context: Context): Locale {
-        return LanguageManager.getAppLocale()
+    fun getSelectedLocale(context: Context): java.util.Locale {
+        return LanguageManager.getAppLocale(context)
     }
 
     fun clearCache() = Unit

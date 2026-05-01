@@ -10,6 +10,18 @@ import javax.xml.parsers.DocumentBuilderFactory
 class SecurityLocalizationTest {
 
     @Test
+    fun `all localization files use the same keys`() {
+        val englishKeys = readStrings(stringsFile("en")).keys
+
+        LocaleHelper.SUPPORTED_LANGUAGE_CODES
+            .filterNot { it == "en" }
+            .forEach { code ->
+                val localizedKeys = readStrings(stringsFile(code)).keys
+                assertEquals("$code localization keys differ from English", englishKeys, localizedKeys)
+            }
+    }
+
+    @Test
     fun `security localization keys exist for every supported language`() {
         val languageMaps = LocaleHelper.SUPPORTED_LANGUAGE_CODES.associateWith { code ->
             readStrings(stringsFile(code))

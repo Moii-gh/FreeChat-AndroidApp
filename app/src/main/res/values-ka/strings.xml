@@ -113,6 +113,7 @@
     <string name="button_camera">კამერა</string>
     <string name="button_cancel">გაუქმება</string>
     <string name="button_change_password">პაროლის შეცვლა</string>
+    <string name="button_collapse">ჩაკეცვა</string>
     <string name="button_confirm">დადასტურება</string>
     <string name="button_continue">გაგრძელება</string>
     <string name="button_create_idea">იდეა მოიფიქროთ</string>
@@ -179,6 +180,7 @@
     <string name="language_name_fr">ფრანგული</string>
     <string name="language_name_go">ქართული</string>
     <string name="language_name_it">იტალიური</string>
+    <string name="language_name_ka">ქართული</string>
     <string name="language_name_ru">რუსული</string>
     <string name="language_name_uk">უკრაინული</string>
     <string name="main_panel_input">დასვით კითხვა</string>
@@ -272,6 +274,7 @@
     <string name="session_missing_sign_in">სესია ვერ მოიძებნა. შედით ხელახლა.</string>
     <string name="settings_shared_links">გაზიარებული ჩატები</string>
     <string name="settings_title">პარამეტრები</string>
+    <string name="settings_value_on">ჩართულია</string>
     <string name="share">გაზიარება</string>
     <string name="share_empty_response">გაზიარების ცარიელი პასუხი</string>
     <string name="share_image">სურათის გაზიარება</string>
@@ -304,6 +307,8 @@
     <string name="speech_error_timeout">სიჩუმე</string>
     <string name="speech_listening">ვუსმენ...</string>
     <string name="speech_speak_now">ილაპარაკეთ...</string>
+    <string name="sources_count">წყაროები (%d)</string>
+    <string name="sources_title">წყაროები</string>
     <string name="toast_ad_loading">რეკლამა ჯერ იტვირთება, მოიცადეთ...</string>
     <string name="toast_chat_empty">ჩატი ცარიელია</string>
     <string name="toast_copied">კოპირებულია</string>

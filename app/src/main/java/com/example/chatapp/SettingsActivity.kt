@@ -26,6 +26,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
     private lateinit var accountSettings: AccountScopedSettings
     private lateinit var aiProviderSettings: AiProviderSettings
+    private var appliedLanguageCode: String? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -52,6 +53,7 @@ class SettingsActivity : AppCompatActivity() {
         accountSettings = AccountScopedSettings(this)
         accountSettings.migrateLegacyDataIfNeeded()
         aiProviderSettings = AiProviderSettings(accountSettings)
+        appliedLanguageCode = LocaleHelper.getSelectedLanguage(this)
 
         updateProfileUi()
 
@@ -117,6 +119,12 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        val currentLanguageCode = LocaleHelper.getSelectedLanguage(this)
+        if (appliedLanguageCode != null && appliedLanguageCode != currentLanguageCode) {
+            recreate()
+            return
+        }
+        appliedLanguageCode = currentLanguageCode
         updateProfileUi()
         applyTranslations()
     }
@@ -194,7 +202,8 @@ class SettingsActivity : AppCompatActivity() {
         }
         findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
         findViewById<TextView>(R.id.tvAdultModeValue)?.text =
-            if (enabled) "On" else "Adult replies"
+            if (enabled) LocaleHelper.getString(this, "settings_value_on")
+            else LocaleHelper.getString(this, "adult_replies_title")
     }
 
     private fun animateAdultModeSwitch() {

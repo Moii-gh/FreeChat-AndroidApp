@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.chatapp.util.setHapticClickListener
 
 class LanguageActivity : AppCompatActivity() {
 
@@ -92,8 +93,15 @@ class LanguageActivity : AppCompatActivity() {
                 params.bottomMargin = 8.dpToPxInt()
                 layoutParams = params
 
-                isClickable = false
-                isFocusable = false
+                isClickable = true
+                isFocusable = true
+                setHapticClickListener {
+                    if (selectedLanguageCode != code) {
+                        LocaleHelper.setSelectedLanguage(this@LanguageActivity, code)
+                        selectedLanguageCode = LocaleHelper.getSelectedLanguage(this@LanguageActivity)
+                        recreate()
+                    }
+                }
             }
 
             languageContainer.addView(button)
