@@ -4,7 +4,27 @@
     android:viewportWidth="24"
     android:viewportHeight="24"
     android:tint="#8E8E93">
+
+    <!-- Верхняя часть микрофона с пустотой внутри -->
     <path
         android:fillColor="@android:color/white"
-        android:pathData="M12,14c1.66,0 2.99,-1.34 2.99,-3L15,5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6c0,1.66 1.34,3 3,3zM17.3,11c0,3 -2.54,5.1 -5.3,5.1S6.7,14 6.7,11L5,11c0,3.41 2.72,6.23 6,6.72L11,21h2v-3.28c3.28,-0.48 6,-3.3 6,-6.72h-1.7z"/>
+        android:fillType="evenOdd"
+        android:pathData="M12,2C9.79,2 8,3.79 8,6v5c0,2.21 1.79,4 4,4s4,-1.79 4,-4V6c0,-2.21 -1.79,-4 -4,-4z
+                          M12,3.5c1.38,0 2.5,1.12 2.5,2.5v5c0,1.38 -1.12,2.5 -2.5,2.5S9.5,12.38 9.5,11V6c0,-1.38 1.12,-2.5 2.5,-2.5z"/>
+
+    <!-- Нижняя дуга -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M18,11c0,3.31 -2.69,6 -6,6s-6,-2.69 -6,-6H4c0,4.42 3.58,8 8,8s8,-3.58 8,-8h-2z"/>
+
+    <!-- Ножка -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M11,18h2v3h-2z"/>
+
+    <!-- Нижняя палочка -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M8.5,21h7v1.5h-7z"/>
+
 </vector>

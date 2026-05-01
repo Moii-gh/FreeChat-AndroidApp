@@ -173,7 +173,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"
@@ -200,7 +200,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"
@@ -242,7 +242,7 @@
             android:paddingVertical="8dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <TextView
                 android:id="@+id/tvAdultModeBadge"
@@ -307,7 +307,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"
@@ -334,7 +334,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"
@@ -361,7 +361,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"
@@ -387,7 +387,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"
@@ -420,7 +420,7 @@
             android:paddingHorizontal="16dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:background="@android:color/transparent">
 
             <ImageView
                 android:layout_width="26dp"

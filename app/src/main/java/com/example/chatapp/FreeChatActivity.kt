@@ -1014,6 +1014,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         findViewById<ImageView>(R.id.currentChatItem).setOnClickListener {
             binding.drawerLayout.closeDrawer(GravityCompat.START)
+            openTelegramBot()
         }
 
         val defaultHeaderContent = findViewById<LinearLayout>(R.id.defaultHeaderContent)
@@ -1034,6 +1035,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         searchField.doAfterTextChanged { query ->
             filterChats(query?.toString().orEmpty())
         }
+    }
+
+    private fun openTelegramBot() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/FreeChatAI_Robot"))
+        runCatching { startActivity(intent) }
+            .onFailure { toast(LocaleHelper.getString(this, "toast_open_link_error")) }
     }
 
     private fun setupInputArea() {

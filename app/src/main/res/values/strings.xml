@@ -154,6 +154,7 @@
     <string name="content_desc_new_chat">New chat</string>
     <string name="content_desc_remove_attachment">Remove attachment</string>
     <string name="content_desc_send">Send</string>
+    <string name="content_desc_telegram_bot">Open Telegram bot</string>
     <string name="dialog_change_password">Change password</string>
     <string name="dialog_rename_hint">New name</string>
     <string name="export_sender_bot">Bot</string>

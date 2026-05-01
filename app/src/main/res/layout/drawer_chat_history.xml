@@ -107,8 +107,8 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@drawable/ic_telegram_outline"
-                    android:padding="6dp"
-                    app:tint="#FFFFFF"
+                    android:padding="3dp"
+                    android:contentDescription="@string/content_desc_telegram_bot"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
                     android:focusable="true"/>
