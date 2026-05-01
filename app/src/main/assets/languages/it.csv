@@ -184,14 +184,56 @@ panel_create_image;Immagine
 panel_purchase_research;Ricerca acquisti
 panel_search;Cerca
 panel_study_training;Studio
-password_confirm_new_hint;Confirmer le nouveau mot de passe
-password_current_hint;Mot de passe actuel
-password_error_current_required;Saisissez le mot de passe actuel
-password_error_mismatch;Les mots de passe ne correspondent pas
-password_error_new_too_short;Le nouveau mot de passe doit contenir au moins 6 caractères
-password_new_hint;Nouveau mot de passe
-password_securely_stored;Le mot de passe est stocké en sécurité
-password_sign_in_again;Connectez-vous à nouveau
+password_confirm_new_hint;Conferma la nuova password
+password_current_hint;Password attuale
+password_error_current_required;Inserisci la password attuale
+password_error_mismatch;Le password non corrispondono
+password_error_new_too_short;La nuova password deve contenere almeno 6 caratteri
+password_new_hint;Nuova password
+password_securely_stored;La password è archiviata in modo sicuro
+password_sign_in_again;Accedi di nuovo
+password_error_confirm_required;Ripeti la nuova password
+password_error_current_incorrect;La password attuale non è corretta
+password_error_new_complexity;Usa lettere e numeri
+password_error_new_required;Inserisci una nuova password
+password_requirement_letters_digits;Minimo 6 caratteri, con almeno una lettera e un numero.
+security_biometric_auth_failed;Verifica biometrica non riuscita. Riprova.
+security_biometric_disabled;Accesso con impronta disattivato
+security_biometric_enabled;Accesso con impronta attivato
+security_biometric_no_hardware;La biometria non è disponibile su questo dispositivo
+security_biometric_not_enrolled;Aggiungi prima un'impronta nelle impostazioni Android
+security_biometric_prompt_subtitle;Conferma che sei tu per attivare l'accesso con impronta
+security_biometric_prompt_title;Attiva impronta
+security_biometric_required_message;Lo sblocco con impronta è attivo. Ripeti la verifica o usa l'accesso all'account.
+security_biometric_required_title;Sblocca FreeChat
+security_biometric_retry;Riprova
+security_biometric_status_absent;Assente
+security_biometric_status_enabled;Attivato
+security_biometric_title;Aggiungi impronta digitale
+security_biometric_unlock_subtitle;Conferma che sei tu per aprire FreeChat
+security_biometric_unlock_title;Sblocca FreeChat
+security_biometric_unavailable;La biometria non è disponibile al momento
+security_biometric_use_login;Usa accesso
+security_encryption_description;FreeChat protegge i dati locali dell'app con gli strumenti di sicurezza Android. È una protezione a livello di applicazione e non modifica l'archiviazione lato server.
+security_encryption_title;La crittografia delle password è attiva per impostazione predefinita
+security_faq_action_ask_ai;→ Chiedi all'IA
+security_faq_action_answer;Risposta
+security_faq_action_view;Vedi
+security_faq_answer_label;↓ Risposta:
+security_faq_data_protection_answer;Proteggiamo i dati su più livelli: limitiamo l'accesso solo alle parti necessarie del sistema, usiamo le funzioni di sicurezza locali di Android e non mostriamo dettagli sensibili ad altri utenti.
+security_faq_data_storage_answer;Le impostazioni dell'app e le preferenze di sicurezza locali sono archiviate sul tuo dispositivo. Le funzioni di account e chat possono usare il servizio dell'app solo quando necessario.
+security_faq_data_storage_title;Dove sono archiviati i tuoi dati?
+security_faq_safe_password_ai_question;Come posso creare una password sicura per FreeChat?
+security_faq_safe_password_answer;Usa una password lunga, unica e non riutilizzata in altri servizi. Mescola lettere e numeri ed evita nomi, compleanni o sequenze semplici.
+security_faq_safe_password_title;Come rendere sicura la password?
+security_faq_telegram_answer;L'accesso tramite Telegram è un passaggio di autorizzazione comodo. Aiuta a confermare che l'account appartiene a te senza aggiungere schermate di accesso inutili.
+security_faq_telegram_title;Perché accedere tramite Telegram?
+security_faq_title;Come proteggiamo i tuoi dati?
+security_password_change_success;Password modificata localmente
+security_password_mask;********************
+security_password_not_set;Non impostata localmente
+security_password_unavailable;La password non è disponibile su questo dispositivo
+security_your_password_label;La tua password:
 profile_and_settings;Profilo e impostazioni
 prompt_idea_prefix;Trouve quelques idées
 quick_suggestion_idea_1;Trouve des idées pour mes prochaines vacances

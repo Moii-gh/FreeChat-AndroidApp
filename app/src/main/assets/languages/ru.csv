@@ -194,6 +194,48 @@ password_error_new_too_short;Новый пароль должен быть не 
 password_new_hint;Новый пароль
 password_securely_stored;Пароль хранится безопасно
 password_sign_in_again;Войдите снова
+password_error_confirm_required;Повторите новый пароль
+password_error_current_incorrect;Старый пароль указан неверно
+password_error_new_complexity;Используйте буквы и цифры
+password_error_new_required;Введите новый пароль
+password_requirement_letters_digits;Минимум 6 символов, хотя бы одна буква и одна цифра.
+security_biometric_auth_failed;Проверка биометрии не прошла. Попробуйте снова.
+security_biometric_disabled;Вход по отпечатку отключен
+security_biometric_enabled;Вход по отпечатку включен
+security_biometric_no_hardware;На этом устройстве биометрия недоступна
+security_biometric_not_enrolled;Сначала добавьте отпечаток в настройках Android
+security_biometric_prompt_subtitle;Подтвердите, что это вы, чтобы включить доступ по отпечатку
+security_biometric_prompt_title;Включить отпечаток
+security_biometric_required_message;Вход по отпечатку включен. Повторите проверку или используйте вход в аккаунт.
+security_biometric_required_title;Разблокировать FreeChat
+security_biometric_retry;Повторить
+security_biometric_status_absent;Отсутствует
+security_biometric_status_enabled;Включено
+security_biometric_title;Добавить отпечаток пальца
+security_biometric_unlock_subtitle;Подтвердите, что это вы, чтобы открыть FreeChat
+security_biometric_unlock_title;Разблокировать FreeChat
+security_biometric_unavailable;Биометрия сейчас недоступна
+security_biometric_use_login;Войти другим способом
+security_encryption_description;FreeChat защищает локальные данные приложения средствами безопасности Android. Это защита на уровне приложения, она не меняет хранение данных на сервере.
+security_encryption_title;Шифрование паролей по умолчанию включено
+security_faq_action_ask_ai;→ Спросить ИИ
+security_faq_action_answer;Ответ
+security_faq_action_view;Посмотреть
+security_faq_answer_label;↓ Ответ:
+security_faq_data_protection_answer;Мы защищаем данные на нескольких уровнях: ограничиваем доступ только нужным частям системы, используем локальные средства безопасности Android и не показываем чувствительные детали другим пользователям.
+security_faq_data_storage_answer;Настройки приложения и локальные параметры безопасности хранятся на вашем устройстве. Функции аккаунта и чатов могут использовать сервис приложения только там, где это нужно для работы функции.
+security_faq_data_storage_title;Где хранятся ваши данные?
+security_faq_safe_password_ai_question;Как создать безопасный пароль для FreeChat?
+security_faq_safe_password_answer;Используйте длинный уникальный пароль, который не повторяется в других сервисах. Смешивайте буквы и цифры, избегайте имен, дат рождения и простых последовательностей.
+security_faq_safe_password_title;Как сделать пароль безопасным?
+security_faq_telegram_answer;Вход через Telegram используется как удобный шаг авторизации. Он помогает подтвердить, что аккаунт принадлежит вам, без лишних экранов входа.
+security_faq_telegram_title;Почему вход через Telegram?
+security_faq_title;Как мы защищаем ваши данные?
+security_password_change_success;Пароль изменен локально
+security_password_mask;********************
+security_password_not_set;Локально не задан
+security_password_unavailable;Пароль недоступен на этом устройстве
+security_your_password_label;Ваш пароль:
 profile_and_settings;Профиль и настройки
 prompt_idea_prefix;Придумай несколько идей
 quick_suggestion_idea_1;Придумай несколько идей для моего следующего отпуска

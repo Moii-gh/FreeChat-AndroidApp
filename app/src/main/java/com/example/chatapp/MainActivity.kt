@@ -20,6 +20,11 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        const val EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN =
+            "com.example.chatapp.EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN"
+    }
+
     private val accountSessionStore by lazy {
         SharedPrefsAccountSessionStore(applicationContext)
     }
@@ -82,6 +87,9 @@ class MainActivity : ComponentActivity() {
             val shareUri = intent?.data?.takeIf { ChatShareDeepLink.extractToken(it) != null }
             if (shareUri != null) {
                 data = shareUri
+            }
+            if (intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, false) == true) {
+                putExtra(FreeChatActivity.EXTRA_SKIP_BIOMETRIC_ONCE, true)
             }
         }
     }

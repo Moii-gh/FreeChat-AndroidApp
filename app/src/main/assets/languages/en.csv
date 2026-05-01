@@ -194,6 +194,48 @@ password_error_new_too_short;New password must be at least 6 characters
 password_new_hint;New password
 password_securely_stored;Password is stored securely
 password_sign_in_again;Sign in again
+password_error_confirm_required;Repeat the new password
+password_error_current_incorrect;Current password is incorrect
+password_error_new_complexity;Use letters and numbers
+password_error_new_required;Enter a new password
+password_requirement_letters_digits;Minimum 6 characters, with at least one letter and one number.
+security_biometric_auth_failed;Biometric check failed. Try again.
+security_biometric_disabled;Fingerprint sign-in is disabled
+security_biometric_enabled;Fingerprint sign-in is enabled
+security_biometric_no_hardware;Biometrics are not available on this device
+security_biometric_not_enrolled;Add a fingerprint in Android settings first
+security_biometric_prompt_subtitle;Confirm that it is you to enable fingerprint access
+security_biometric_prompt_title;Enable fingerprint
+security_biometric_required_message;Fingerprint unlock is enabled. Repeat the check or use account sign-in.
+security_biometric_required_title;Unlock FreeChat
+security_biometric_retry;Try again
+security_biometric_status_absent;Absent
+security_biometric_status_enabled;Enabled
+security_biometric_title;Add fingerprint
+security_biometric_unlock_subtitle;Confirm that it is you to open FreeChat
+security_biometric_unlock_title;Unlock FreeChat
+security_biometric_unavailable;Biometrics are unavailable right now
+security_biometric_use_login;Use sign-in
+security_encryption_description;FreeChat protects local app data with Android security tools. This is an app-level protection setting and does not change server-side storage.
+security_encryption_title;Password encryption is enabled by default
+security_faq_action_ask_ai;→ Ask AI
+security_faq_action_answer;Answer
+security_faq_action_view;View
+security_faq_answer_label;↓ Answer:
+security_faq_data_protection_answer;We protect data on several levels: limit access to only the necessary parts of the system, use local Android security features, and do not show sensitive details to other users.
+security_faq_data_storage_answer;App settings and local security preferences are stored on your device. Account and chat features may use the app service only where it is needed for the feature to work.
+security_faq_data_storage_title;Where is your data stored?
+security_faq_safe_password_ai_question;How can I create a secure password for FreeChat?
+security_faq_safe_password_answer;Use a password that is long, unique, and not reused in other services. Mix letters and numbers, and avoid names, birthdays, or simple sequences.
+security_faq_safe_password_title;How do I make my password secure?
+security_faq_telegram_answer;Telegram sign-in is used as a convenient authorization step. It helps confirm that the account belongs to you without adding extra login screens.
+security_faq_telegram_title;Why sign in through Telegram?
+security_faq_title;How do we protect your data?
+security_password_change_success;Password changed locally
+security_password_mask;********************
+security_password_not_set;Not set locally
+security_password_unavailable;Password is unavailable on this device
+security_your_password_label;Your password:
 profile_and_settings;Profile and settings
 prompt_idea_prefix;Brainstorm some ideas
 quick_suggestion_idea_1;Brainstorm ideas for my next vacation

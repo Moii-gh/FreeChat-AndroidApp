@@ -28,7 +28,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
@@ -50,6 +54,7 @@ import org.json.JSONObject
 import com.example.chatapp.util.setHapticClickListener
 import com.example.chatapp.util.OnSwipeTouchListener
 import com.example.chatapp.ads.RewardedAdManager
+import com.example.chatapp.viewmodel.AccountSecuritySettingsStore
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -69,7 +74,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val attachmentContext: String?
     )
 
-    private companion object {
+    companion object {
+        const val EXTRA_PREFILL_INPUT = "com.example.chatapp.EXTRA_PREFILL_INPUT"
+        const val EXTRA_SKIP_BIOMETRIC_ONCE = "com.example.chatapp.EXTRA_SKIP_BIOMETRIC_ONCE"
+
         const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
         const val MAX_EXTRACTED_TEXT_CHARS = 120_000
         const val MAX_ATTACHMENT_CONTEXT_CHARS = 4_000
@@ -113,6 +121,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private val freeChatAttentionHandler = Handler(Looper.getMainLooper())
     private var freeChatAttentionDrawable: FreeChatAttentionDrawable? = null
     private var isFreeChatButtonInteracting = false
+    private lateinit var securitySettingsStore: AccountSecuritySettingsStore
+    private var biometricGateDialog: AlertDialog? = null
+    private var isBiometricGateActive = false
+    private var isChatUiInitialized = false
 
     private val welcomePromptRotationRunnable = object : Runnable {
         override fun run() {
@@ -163,7 +175,58 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        LaunchLogoAnimator.show(this)
+        securitySettingsStore = AccountSecuritySettingsStore(applicationContext)
+        val shouldSkipBiometricOnce = intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE, false) == true
+        val shouldGateWithBiometrics = securitySettingsStore.isBiometricEnabled() && !shouldSkipBiometricOnce
+        if (shouldGateWithBiometrics) {
+            isBiometricGateActive = true
+            binding.root.alpha = 0f
+        }
+        LaunchLogoAnimator.show(this) {
+            if (shouldGateWithBiometrics) {
+                startBiometricUnlockGate()
+            }
+        }
+        if (!shouldGateWithBiometrics) {
+            initializeChatUi(intent)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (!isChatUiInitialized) {
+            return
+        }
+        handleSharedChatIntent(intent)
+        handlePrefillInputIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!isChatUiInitialized) return
+        drawerManager.updateUserProfile()
+        refreshDailyQuotaUi()
+        applyTranslations()
+        scheduleFreeChatAttentionAfterIdle()
+    }
+
+    override fun onPause() {
+        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
+        freeChatAttentionDrawable?.cancelAttention()
+        super.onPause()
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        if (!isChatUiInitialized) return
+        freeChatAttentionDrawable?.cancelAttention()
+        scheduleFreeChatAttentionAfterIdle()
+    }
+
+    private fun initializeChatUi(startIntent: Intent?) {
+        if (isChatUiInitialized) return
+        isChatUiInitialized = true
 
         setupHelpers()
         setupTopBar()
@@ -185,26 +248,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         showWelcomeState()
         loadChats()
-        handleSharedChatIntent(intent)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        drawerManager.updateUserProfile()
-        refreshDailyQuotaUi()
+        handleSharedChatIntent(startIntent)
+        handlePrefillInputIntent(startIntent)
         applyTranslations()
-        scheduleFreeChatAttentionAfterIdle()
-    }
-
-    override fun onPause() {
-        freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
-        freeChatAttentionDrawable?.cancelAttention()
-        super.onPause()
-    }
-
-    override fun onUserInteraction() {
-        super.onUserInteraction()
-        freeChatAttentionDrawable?.cancelAttention()
         scheduleFreeChatAttentionAfterIdle()
     }
 
@@ -435,6 +481,19 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         } else {
             hideQuickSuggestions()
         }
+    }
+
+    private fun handlePrefillInputIntent(intent: Intent?) {
+        val prefill = intent?.getStringExtra(EXTRA_PREFILL_INPUT)
+            ?.takeIf { it.isNotBlank() }
+            ?: return
+        intent.removeExtra(EXTRA_PREFILL_INPUT)
+        clearInputContext()
+        updateInputText(prefill, keepSuggestions = false)
+        binding.etInput.requestFocus()
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun syncQuickSuggestions(query: String) {
@@ -2143,6 +2202,98 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         } else {
             text
         }
+    }
+
+    private fun startBiometricUnlockGate() {
+        if (!isBiometricGateActive || isFinishing || isDestroyed) return
+        when (biometricAvailability()) {
+            BiometricManager.BIOMETRIC_SUCCESS -> showBiometricUnlockPrompt()
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+                showBiometricGateDialog("security_biometric_not_enrolled")
+            }
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+                showBiometricGateDialog("security_biometric_no_hardware")
+            }
+            else -> {
+                showBiometricGateDialog("security_biometric_unavailable")
+            }
+        }
+    }
+
+    private fun showBiometricUnlockPrompt() {
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(LocaleHelper.getString(this, "security_biometric_unlock_title"))
+            .setSubtitle(LocaleHelper.getString(this, "security_biometric_unlock_subtitle"))
+            .setNegativeButtonText(LocaleHelper.getString(this, "button_cancel"))
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .build()
+
+        BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    unlockAfterBiometric()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    if (!isBiometricGateActive) return
+                    val messageKey = when (errorCode) {
+                        BiometricPrompt.ERROR_NEGATIVE_BUTTON,
+                        BiometricPrompt.ERROR_USER_CANCELED,
+                        BiometricPrompt.ERROR_CANCELED -> "security_biometric_required_message"
+                        else -> "security_biometric_auth_failed"
+                    }
+                    showBiometricGateDialog(messageKey)
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    toast(LocaleHelper.getString(this@FreeChatActivity, "security_biometric_auth_failed"))
+                }
+            }
+        ).authenticate(promptInfo)
+    }
+
+    private fun unlockAfterBiometric() {
+        isBiometricGateActive = false
+        biometricGateDialog?.dismiss()
+        biometricGateDialog = null
+        initializeChatUi(intent)
+        binding.root.animate()
+            .alpha(1f)
+            .setDuration(180L)
+            .start()
+    }
+
+    private fun showBiometricGateDialog(messageKey: String) {
+        if (!isBiometricGateActive || isFinishing || isDestroyed) return
+        biometricGateDialog?.dismiss()
+        biometricGateDialog = AlertDialog.Builder(this)
+            .setTitle(LocaleHelper.getString(this, "security_biometric_required_title"))
+            .setMessage(LocaleHelper.getString(this, messageKey))
+            .setPositiveButton(LocaleHelper.getString(this, "security_biometric_retry")) { _, _ ->
+                startBiometricUnlockGate()
+            }
+            .setNegativeButton(LocaleHelper.getString(this, "security_biometric_use_login")) { _, _ ->
+                SharedPrefsAccountSessionStore(applicationContext).clearSession()
+                startActivity(
+                    Intent(this, MainActivity::class.java).apply {
+                        putExtra(MainActivity.EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, true)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                )
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun biometricAvailability(): Int {
+        return BiometricManager.from(this)
+            .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
     }
 
     private fun toast(message: String) {

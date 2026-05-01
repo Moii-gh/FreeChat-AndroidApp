@@ -22,7 +22,7 @@ object LaunchLogoAnimator {
     private const val EXIT_DURATION_MS = 260L
     private const val EXIT_DELAY_MS = 120L
 
-    fun show(activity: Activity) {
+    fun show(activity: Activity, onFinished: (() -> Unit)? = null) {
         val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
 
         val overlay = FrameLayout(activity).apply {
@@ -81,6 +81,7 @@ object LaunchLogoAnimator {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     root.removeView(overlay)
+                    onFinished?.invoke()
                 }
             })
         }

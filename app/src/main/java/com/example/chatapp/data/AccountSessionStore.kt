@@ -57,6 +57,8 @@ interface AccountSessionStore {
     fun getCurrentUserId(): String?
     fun getCurrentUserEmail(): String?
     fun getCurrentUserName(): String?
+    fun getCurrentUserPassword(): String?
+    fun saveRegistrationPassword(password: String)
     fun getDailyRequestLimit(): Int?
     fun getBaseRemainingDailyRequests(): Int?
     fun getBonusRequests(): Int
@@ -127,6 +129,12 @@ class SharedPrefsAccountSessionStore(
     override fun getCurrentUserEmail(): String? = prefs.getString(KEY_USER_EMAIL, null)
 
     override fun getCurrentUserName(): String? = prefs.getString(KEY_USER_NAME, null)
+
+    override fun getCurrentUserPassword(): String? = prefs.getString(KEY_USER_PASSWORD, null)
+
+    override fun saveRegistrationPassword(password: String) {
+        prefs.edit().putString(KEY_USER_PASSWORD, password).apply()
+    }
 
     override fun getDailyRequestLimit(): Int? =
         if (prefs.contains(KEY_DAILY_REQUEST_LIMIT)) prefs.getInt(KEY_DAILY_REQUEST_LIMIT, 0) else null

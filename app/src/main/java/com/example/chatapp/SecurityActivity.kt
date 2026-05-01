@@ -1,216 +1,263 @@
 package com.example.chatapp
 
-import android.app.Dialog
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.text.InputType
-import android.view.Gravity
-import android.view.View
-import android.view.Window
-import android.view.WindowManager
-import android.widget.EditText
+import android.transition.AutoTransition
+import android.transition.TransitionManager
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.example.chatapp.data.AuthRepository
-import com.example.chatapp.data.NetworkResult
-import com.example.chatapp.data.SharedPrefsAccountSessionStore
-import com.example.chatapp.network.NetworkModule
-import com.example.chatapp.network.dto.ChangePasswordRequest
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.chatapp.databinding.ActivitySecurityBinding
+import com.example.chatapp.util.setHapticClickListener
+import com.example.chatapp.viewmodel.SecurityBiometricAvailability
+import com.example.chatapp.viewmodel.SecurityEvent
+import com.example.chatapp.viewmodel.SecurityFaqItem
+import com.example.chatapp.viewmodel.SecurityUiState
+import com.example.chatapp.viewmodel.SecurityViewModel
 import kotlinx.coroutines.launch
 
 class SecurityActivity : AppCompatActivity() {
 
-    private lateinit var etPassword: EditText
-    private lateinit var btnShowPassword: TextView
-    private lateinit var sessionStore: SharedPrefsAccountSessionStore
-    private lateinit var authRepository: AuthRepository
-    private var isMasked = true
+    private val viewModel: SecurityViewModel by viewModels {
+        SecurityViewModel.Factory(applicationContext)
+    }
+
+    private lateinit var binding: ActivitySecurityBinding
+    private var lastRenderedState: SecurityUiState? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_security)
+        binding = ActivitySecurityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        window.statusBarColor = Color.TRANSPARENT
+        window.statusBarColor = ContextCompat.getColor(this, R.color.security_background)
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.security_background)
 
-        sessionStore = SharedPrefsAccountSessionStore(this)
-        authRepository = AuthRepository(
-            service = NetworkModule.createAuthApiService(BuildConfig.APP_API_BASE_URL)
-        )
-
-        etPassword = findViewById(R.id.etPassword)
-        btnShowPassword = findViewById(R.id.btnShowPassword)
-
-        renderPasswordField()
-        bindTranslations()
-
-        findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
-
-        btnShowPassword.setOnClickListener {
-            isMasked = !isMasked
-            renderPasswordField()
-        }
-
-        findViewById<View>(R.id.btnChangePassword).setOnClickListener {
-            showChangePasswordDialog()
-        }
-
-        findViewById<View>(R.id.btnSavePassword).setOnClickListener {
-            showChangePasswordDialog()
-        }
+        bindActions()
+        collectState()
+        viewModel.setBiometricAvailability(resolveBiometricAvailability())
     }
 
-    private fun bindTranslations() {
-        findViewById<TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "button_security")
-        findViewById<TextView>(R.id.tvPasswordLabel)?.text = LocaleHelper.getString(this, "label_your_password")
-        findViewById<TextView>(R.id.btnChangePassword)?.text = LocaleHelper.getString(this, "button_change_password")
-        findViewById<TextView>(R.id.btnSavePassword)?.text = LocaleHelper.getString(this, "button_save")
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshPassword()
+        viewModel.setBiometricAvailability(resolveBiometricAvailability())
+        render(viewModel.uiState.value)
     }
 
-    private fun renderPasswordField() {
-        val signedIn = sessionStore.isSignedIn()
-        val maskedValue = if (signedIn) "********" else LocaleHelper.getString(this, "password_sign_in_again")
-        val visibleValue = if (signedIn) {
-            LocaleHelper.getString(this, "password_securely_stored")
-        } else {
-            LocaleHelper.getString(this, "password_sign_in_again")
+    private fun bindActions() {
+        binding.btnBack.setHapticClickListener { finish() }
+        binding.btnShowPassword.setHapticClickListener { viewModel.togglePasswordVisibility() }
+        binding.faqDataProtectionRow.setHapticClickListener {
+            viewModel.toggleFaq(SecurityFaqItem.DATA_PROTECTION)
         }
-
-        etPassword.setText(if (isMasked) maskedValue else visibleValue)
-        etPassword.inputType = if (isMasked) {
-            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        } else {
-            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        binding.faqSafePasswordRow.setHapticClickListener {
+            viewModel.toggleFaq(SecurityFaqItem.SAFE_PASSWORD)
         }
-        etPassword.setSelection(etPassword.text.length)
-        etPassword.isEnabled = false
-
-        btnShowPassword.text = if (isMasked) {
-            LocaleHelper.getString(this, "button_show_password")
-        } else {
-            LocaleHelper.getString(this, "button_hide_password")
+        binding.faqDataStorageRow.setHapticClickListener {
+            viewModel.toggleFaq(SecurityFaqItem.DATA_STORAGE)
         }
+        binding.faqTelegramRow.setHapticClickListener {
+            viewModel.toggleFaq(SecurityFaqItem.TELEGRAM_LOGIN)
+        }
+        binding.encryptionCard.setHapticClickListener { viewModel.toggleEncryptionExplanation() }
+        binding.biometricCard.setHapticClickListener { viewModel.onBiometricClicked() }
     }
 
-    private fun showChangePasswordDialog() {
-        val token = sessionStore.getAuthToken()
-        if (token.isNullOrBlank()) {
-            Toast.makeText(this, LocaleHelper.getString(this, "session_missing_sign_in"), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val dialogView = layoutInflater.inflate(R.layout.dialog_change_password, null)
-        val currentPasswordField = dialogView.findViewById<EditText>(R.id.etCurrentPassword)
-        val newPasswordField = dialogView.findViewById<EditText>(R.id.etNewPassword)
-        val confirmPasswordField = dialogView.findViewById<EditText>(R.id.etConfirmPassword)
-        val cancelButton = dialogView.findViewById<TextView>(R.id.btnCancelChangePassword)
-        val saveButton = dialogView.findViewById<TextView>(R.id.btnSaveChangePassword)
-        val closeButton = dialogView.findViewById<View>(R.id.btnCloseChangePassword)
-
-        currentPasswordField.hint = "Текущий пароль"
-        newPasswordField.hint = "Новый пароль"
-        confirmPasswordField.hint = "Повторите пароль"
-        cancelButton.text = LocaleHelper.getString(this, "button_cancel")
-        saveButton.text = LocaleHelper.getString(this, "button_save")
-        closeButton.contentDescription = LocaleHelper.getString(this, "button_cancel")
-
-        listOf(currentPasswordField, newPasswordField, confirmPasswordField).forEach { field ->
-            field.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
-                val scale = if (hasFocus) 1.015f else 1f
-                view.animate()
-                    .scaleX(scale)
-                    .scaleY(scale)
-                    .setDuration(160L)
-                    .start()
-            }
-        }
-
-        val dialog = Dialog(this).apply {
-            requestWindowFeature(Window.FEATURE_NO_TITLE)
-            setContentView(dialogView)
-            setCanceledOnTouchOutside(true)
-        }
-
-        closeButton.setOnClickListener {
-            dialog.dismiss()
-        }
-        cancelButton.setOnClickListener {
-            dialog.dismiss()
-        }
-        saveButton.setOnClickListener {
-            val currentPassword = currentPasswordField.text.toString().trim()
-            val newPassword = newPasswordField.text.toString().trim()
-            val confirmPassword = confirmPasswordField.text.toString().trim()
-
-            when {
-                currentPassword.isEmpty() -> toast(LocaleHelper.getString(this, "password_error_current_required"))
-                newPassword.length < 6 -> toast(LocaleHelper.getString(this, "password_error_new_too_short"))
-                newPassword != confirmPassword -> toast(LocaleHelper.getString(this, "password_error_mismatch"))
-                else -> {
-                    changePassword(token, currentPassword, newPassword, dialog)
-                }
-            }
-        }
-
-        dialog.show()
-        dialog.window?.let { window ->
-            val horizontalMargin = dp(48)
-            val maxWidth = dp(734)
-            val targetWidth = (resources.displayMetrics.widthPixels - horizontalMargin).coerceAtMost(maxWidth)
-
-            window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            window.setDimAmount(0.58f)
-            window.setGravity(Gravity.CENTER)
-            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            window.setLayout(targetWidth, WindowManager.LayoutParams.WRAP_CONTENT)
-        }
-
-        dialogView.alpha = 0f
-        dialogView.scaleX = 0.96f
-        dialogView.scaleY = 0.96f
-        dialogView.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(220L)
-            .start()
-    }
-
-    private fun changePassword(
-        token: String,
-        currentPassword: String,
-        newPassword: String,
-        dialog: Dialog
-    ) {
+    private fun collectState() {
         lifecycleScope.launch {
-            when (
-                val result = authRepository.changePassword(
-                    token = token,
-                    request = ChangePasswordRequest(
-                        currentPassword = currentPassword,
-                        newPassword = newPassword
-                    )
-                )
-            ) {
-                is NetworkResult.Success -> {
-                    toast(result.data.message)
-                    dialog.dismiss()
-                    isMasked = true
-                    renderPasswordField()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { render(it) }
                 }
-
-                is NetworkResult.Error -> {
-                    toast(result.message)
+                launch {
+                    viewModel.events.collect { handleEvent(it) }
                 }
             }
         }
     }
 
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
+    private fun render(state: SecurityUiState) {
+        val shouldAnimate = lastRenderedState != null &&
+            (
+                lastRenderedState?.expandedFaqItems != state.expandedFaqItems ||
+                    lastRenderedState?.isEncryptionExpanded != state.isEncryptionExpanded
+                )
+        if (shouldAnimate) {
+            TransitionManager.beginDelayedTransition(
+                binding.securityContent,
+                AutoTransition().apply { duration = 180L }
+            )
+        }
+
+        renderStaticText(state)
+        renderPasswordCard(state)
+        renderFaq(state)
+        renderEncryption(state)
+        renderBiometric(state)
+        lastRenderedState = state
     }
+
+    private fun renderStaticText(state: SecurityUiState) {
+        binding.tvToolbarTitle.text = text("button_security")
+        binding.btnBack.contentDescription = text("content_desc_back")
+        binding.tvPasswordLabel.text = text("security_your_password_label")
+        binding.tvFaqDataProtectionTitle.text = text("security_faq_title")
+        binding.tvFaqSafePasswordTitle.text = text("security_faq_safe_password_title")
+        binding.tvFaqDataStorageTitle.text = text("security_faq_data_storage_title")
+        binding.tvFaqTelegramTitle.text = text("security_faq_telegram_title")
+        binding.tvFaqDataProtectionAnswerLabel.text = text("security_faq_answer_label")
+        binding.tvFaqSafePasswordAnswerLabel.text = text("security_faq_answer_label")
+        binding.tvFaqDataStorageAnswerLabel.text = text("security_faq_answer_label")
+        binding.tvFaqTelegramAnswerLabel.text = text("security_faq_answer_label")
+        binding.tvFaqDataProtectionAnswer.text = text("security_faq_data_protection_answer")
+        binding.tvFaqSafePasswordAnswer.text = text("security_faq_safe_password_answer")
+        binding.tvFaqDataStorageAnswer.text = text("security_faq_data_storage_answer")
+        binding.tvFaqTelegramAnswer.text = text("security_faq_telegram_answer")
+        binding.tvEncryptionTitle.text = text("security_encryption_title")
+        binding.tvEncryptionDescription.text = text("security_encryption_description")
+        binding.tvBiometricTitle.text = text("security_biometric_title")
+        binding.tvAppVersion.text = LocaleHelper.formatString(
+            this,
+            "app_version",
+            BuildConfig.VERSION_NAME
+        )
+        binding.encryptionCard.contentDescription = text("security_encryption_title")
+        binding.biometricCard.contentDescription = text("security_biometric_title")
+        binding.btnShowPassword.contentDescription = text(
+            if (state.isPasswordVisible) "button_hide_password" else "button_show_password"
+        )
+    }
+
+    private fun renderPasswordCard(state: SecurityUiState) {
+        binding.tvPasswordValue.text = when {
+            state.hasRegistrationPassword && state.isPasswordVisible -> state.registrationPasswordPreview
+            state.hasRegistrationPassword -> text("security_password_mask")
+            else -> text("security_password_unavailable")
+        }
+        binding.btnShowPassword.setImageResource(
+            if (state.isPasswordVisible) R.drawable.ic_security_eye else R.drawable.ic_security_eye_off
+        )
+    }
+
+    private fun renderFaq(state: SecurityUiState) {
+        renderFaqItem(
+            expanded = SecurityFaqItem.DATA_PROTECTION in state.expandedFaqItems,
+            actionView = binding.tvFaqDataProtectionAction,
+            arrowView = binding.ivFaqDataProtectionArrow,
+            answerGroup = binding.faqDataProtectionAnswerGroup
+        )
+        renderFaqItem(
+            expanded = SecurityFaqItem.SAFE_PASSWORD in state.expandedFaqItems,
+            actionView = binding.tvFaqSafePasswordAction,
+            arrowView = binding.ivFaqSafePasswordArrow,
+            answerGroup = binding.faqSafePasswordAnswerGroup
+        )
+        renderFaqItem(
+            expanded = SecurityFaqItem.DATA_STORAGE in state.expandedFaqItems,
+            actionView = binding.tvFaqDataStorageAction,
+            arrowView = binding.ivFaqDataStorageArrow,
+            answerGroup = binding.faqDataStorageAnswerGroup
+        )
+        renderFaqItem(
+            expanded = SecurityFaqItem.TELEGRAM_LOGIN in state.expandedFaqItems,
+            actionView = binding.tvFaqTelegramAction,
+            arrowView = binding.ivFaqTelegramArrow,
+            answerGroup = binding.faqTelegramAnswerGroup
+        )
+    }
+
+    private fun renderFaqItem(
+        expanded: Boolean,
+        actionView: TextView,
+        arrowView: ImageView,
+        answerGroup: android.view.View
+    ) {
+        actionView.text = text(
+            if (expanded) "security_faq_action_answer" else "security_faq_action_view"
+        )
+        arrowView.animate().rotation(if (expanded) 180f else 0f).setDuration(180L).start()
+        answerGroup.isVisible = expanded
+    }
+
+    private fun renderEncryption(state: SecurityUiState) {
+        binding.tvEncryptionDescription.isVisible = state.isEncryptionExpanded
+    }
+
+    private fun renderBiometric(state: SecurityUiState) {
+        binding.tvBiometricStatus.text = when {
+            state.isBiometricEnabled -> text("security_biometric_status_enabled")
+            else -> text("security_biometric_status_absent")
+        }
+    }
+
+    private fun handleEvent(event: SecurityEvent) {
+        when (event) {
+            is SecurityEvent.ShowMessage -> toast(text(event.key))
+            SecurityEvent.RequestBiometricPrompt -> showBiometricPrompt()
+        }
+    }
+
+    private fun showBiometricPrompt() {
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(text("security_biometric_prompt_title"))
+            .setSubtitle(text("security_biometric_prompt_subtitle"))
+            .setNegativeButtonText(text("button_cancel"))
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .build()
+
+        BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    viewModel.onBiometricAuthenticationSucceeded()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    if (
+                        errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON &&
+                        errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+                        errorCode != BiometricPrompt.ERROR_CANCELED
+                    ) {
+                        viewModel.onBiometricAuthenticationFailed()
+                    }
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    viewModel.onBiometricAuthenticationFailed()
+                }
+            }
+        ).authenticate(promptInfo)
+    }
+
+    private fun resolveBiometricAvailability(): SecurityBiometricAvailability {
+        return when (
+            BiometricManager.from(this)
+                .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        ) {
+            BiometricManager.BIOMETRIC_SUCCESS -> SecurityBiometricAvailability.AVAILABLE
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> SecurityBiometricAvailability.NO_HARDWARE
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> SecurityBiometricAvailability.HARDWARE_UNAVAILABLE
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> SecurityBiometricAvailability.NONE_ENROLLED
+            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED,
+            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> SecurityBiometricAvailability.UNSUPPORTED
+            else -> SecurityBiometricAvailability.UNKNOWN
+        }
+    }
+
+    private fun text(key: String): String = LocaleHelper.getString(this, key)
 
     private fun toast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

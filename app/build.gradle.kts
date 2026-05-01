@@ -170,6 +170,7 @@ dependencies {
 
     implementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation("androidx.activity:activity-ktx:1.9.2")
+    implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.browser:browser:1.8.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

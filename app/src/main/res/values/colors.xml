@@ -7,4 +7,18 @@
     <color name="chatgpt_green">#FFFFFF</color>
     <color name="chatgpt_yellow">#F2C94C</color>
     <color name="chatgpt_purple">#AB68FF</color>
+    <color name="security_background">#000000</color>
+    <color name="security_surface">#1F1F1F</color>
+    <color name="security_surface_high">#262626</color>
+    <color name="security_surface_pressed">#303030</color>
+    <color name="security_stroke">#3A3A3C</color>
+    <color name="security_stroke_soft">#4A4A4C</color>
+    <color name="security_text_primary">#F7F7F7</color>
+    <color name="security_text_secondary">#CFCFD2</color>
+    <color name="security_text_muted">#8E8E93</color>
+    <color name="security_text_inverse">#202020</color>
+    <color name="security_error">#FF8A8A</color>
+    <color name="security_success">#A6E3A1</color>
+    <color name="security_button_primary">#F7F7F7</color>
+    <color name="security_transparent">#00000000</color>
 </resources>

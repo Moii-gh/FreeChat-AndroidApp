@@ -124,6 +124,7 @@ class AuthViewModelTest {
 
         assertEquals("jwt-token", viewModel.uiState.value.authToken)
         assertEquals("Ada Lovelace", accountStore.lastUser?.fullName)
+        assertEquals("123456", accountStore.savedPassword)
         assertNotNull(repository.lastCompleteRegistrationRequest)
     }
 
@@ -370,6 +371,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
 private class FakeAccountSessionStore : AccountSessionStore {
     var lastUser: ApiUser? = null
     var lastToken: String? = null
+    var savedPassword: String? = null
 
     override fun saveAuthenticatedUser(user: ApiUser?, token: String?) {
         lastUser = user
@@ -387,6 +389,12 @@ private class FakeAccountSessionStore : AccountSessionStore {
     override fun getCurrentUserEmail(): String? = lastUser?.email
 
     override fun getCurrentUserName(): String? = lastUser?.fullName
+
+    override fun getCurrentUserPassword(): String? = savedPassword
+
+    override fun saveRegistrationPassword(password: String) {
+        savedPassword = password
+    }
 
     override fun getDailyRequestLimit(): Int? = null
 
