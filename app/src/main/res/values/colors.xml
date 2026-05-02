@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#000000</color>
-    <color name="white">#FFFFFF</color>
-    <color name="surface_dark">#212121</color> <color name="surface_dark_highlight">#2F2F2F</color>
-    <color name="text_hint">#8E8E93</color>
-    <color name="chatgpt_green">#FFFFFF</color>
-    <color name="chatgpt_yellow">#F2C94C</color>
-    <color name="chatgpt_purple">#AB68FF</color>
+    <color name="surface_dark_highlight">#2F2F2F</color>
     <color name="security_background">#000000</color>
     <color name="security_surface">#1F1F1F</color>
     <color name="security_surface_high">#262626</color>
@@ -16,9 +11,5 @@
     <color name="security_text_primary">#F7F7F7</color>
     <color name="security_text_secondary">#CFCFD2</color>
     <color name="security_text_muted">#8E8E93</color>
-    <color name="security_text_inverse">#202020</color>
-    <color name="security_error">#FF8A8A</color>
-    <color name="security_success">#A6E3A1</color>
-    <color name="security_button_primary">#F7F7F7</color>
     <color name="security_transparent">#00000000</color>
 </resources>
