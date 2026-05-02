@@ -368,7 +368,14 @@ fun VkLoginButton(
         loading = loading,
         onClick = onClick,
         modifier = modifier,
-        testTag = testTag
+        testTag = testTag,
+        containerBrush = Brush.horizontalGradient(
+            colors = listOf(
+                Color.White,
+                Color(0xFFEAF6FF),
+                Color(0xFFDDE6EC)
+            )
+        )
     )
 }
 
@@ -380,14 +387,22 @@ private fun SocialLoginButton(
     loading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    testTag: String? = null
+    testTag: String? = null,
+    containerColor: Color = AppTextPrimary,
+    containerBrush: Brush? = null
 ) {
+    val activeGradientModifier = if (containerBrush != null && enabled && !loading) {
+        Modifier.background(brush = containerBrush, shape = AuthPillShape)
+    } else {
+        Modifier
+    }
+
     Button(
         onClick = onClick,
         enabled = enabled && !loading,
         shape = AuthPillShape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = AppTextPrimary,
+            containerColor = if (containerBrush != null) Color.Transparent else containerColor,
             contentColor = AppBlack,
             disabledContainerColor = AppButtonDisabled,
             disabledContentColor = AppTextSecondary
@@ -395,6 +410,7 @@ private fun SocialLoginButton(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
+            .then(activeGradientModifier)
             .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
     ) {
         if (loading) {
