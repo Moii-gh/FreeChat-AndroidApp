@@ -94,7 +94,7 @@ class AnimatedAvatarBorderDrawable(
                 Color.TRANSPARENT,
                 Color.TRANSPARENT
             ),
-            floatArrayOf(0f, 0.18f, 0.31f, 0.4f, 0.52f, 0.66f, 1f)
+            floatArrayOf(0f, 0.18f, 0.31f, 0.4f, 0.52f, 0.66f, 0.82f, 1f)
         )
     }
 
