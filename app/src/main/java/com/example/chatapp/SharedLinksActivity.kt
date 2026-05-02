@@ -7,11 +7,12 @@ import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.PathInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -115,9 +116,7 @@ class SharedLinksActivity : AppCompatActivity() {
         cancelButton.text = LocaleHelper.getString(this, "button_cancel")
         confirmButton.text = LocaleHelper.getString(this, "button_delete")
 
-        card.alpha = 0f
-        card.scaleX = 0.94f
-        card.scaleY = 0.94f
+        prepareDeleteDialogAnimation(card)
 
         cancelButton.setHapticClickListener {
             dialog.dismiss()
@@ -134,17 +133,33 @@ class SharedLinksActivity : AppCompatActivity() {
                 setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 setDimAmount(0.58f)
                 addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                setGravity(Gravity.CENTER)
+                setWindowAnimations(0)
                 setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             }
-            card.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(180L)
-                .setInterpolator(DecelerateInterpolator(1.8f))
-                .start()
+            card.post {
+                animateDeleteDialogIn(card)
+            }
         }
         dialog.show()
+    }
+
+    private fun prepareDeleteDialogAnimation(card: View) {
+        card.alpha = 0f
+        card.scaleX = 0.9f
+        card.scaleY = 0.9f
+        card.translationY = 18f * resources.displayMetrics.density
+    }
+
+    private fun animateDeleteDialogIn(card: View) {
+        card.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .translationY(0f)
+            .setDuration(260L)
+            .setInterpolator(PathInterpolator(0.16f, 1f, 0.3f, 1f))
+            .start()
     }
 
     private fun deleteLink(item: ChatShareItemDto) {
