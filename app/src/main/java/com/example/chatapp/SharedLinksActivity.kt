@@ -101,7 +101,7 @@ class SharedLinksActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmation(item: ChatShareItemDto) {
-        val dialog = Dialog(this)
+        val dialog = Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_delete_shared_link, null)
@@ -128,15 +128,22 @@ class SharedLinksActivity : AppCompatActivity() {
 
         dialog.setContentView(dialogView)
         dialog.setCanceledOnTouchOutside(true)
-        dialog.setOnShowListener {
-            dialog.window?.apply {
-                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                setDimAmount(0.58f)
-                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                setGravity(Gravity.CENTER)
-                setWindowAnimations(0)
-                setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setDimAmount(0.58f)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setGravity(Gravity.CENTER)
+            setWindowAnimations(0)
+            attributes = attributes.apply {
+                width = ViewGroup.LayoutParams.MATCH_PARENT
+                height = ViewGroup.LayoutParams.MATCH_PARENT
             }
+        }
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             card.post {
                 animateDeleteDialogIn(card)
             }
