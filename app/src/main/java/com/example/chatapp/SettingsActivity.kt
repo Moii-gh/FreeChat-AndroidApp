@@ -14,6 +14,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
+import com.example.chatapp.ui.AnimatedAvatarBorderDrawable
+import com.example.chatapp.ui.AnimatedProfileCardDrawable
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.example.chatapp.util.setHapticClickListener
@@ -27,6 +29,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var accountSettings: AccountScopedSettings
     private lateinit var aiProviderSettings: AiProviderSettings
     private var appliedLanguageCode: String? = null
+    private var avatarBorderDrawable: AnimatedAvatarBorderDrawable? = null
+    private var profileCardDrawable: AnimatedProfileCardDrawable? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -48,6 +52,7 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         window.statusBarColor = Color.TRANSPARENT
+        setupProfileVisualEffects()
 
         sessionStore = SharedPrefsAccountSessionStore(this)
         accountSettings = AccountScopedSettings(this)
@@ -119,6 +124,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        startProfileVisualEffects()
         val currentLanguageCode = LocaleHelper.getSelectedLanguage(this)
         if (appliedLanguageCode != null && appliedLanguageCode != currentLanguageCode) {
             recreate()
@@ -127,6 +133,29 @@ class SettingsActivity : AppCompatActivity() {
         appliedLanguageCode = currentLanguageCode
         updateProfileUi()
         applyTranslations()
+    }
+
+    override fun onPause() {
+        stopProfileVisualEffects()
+        super.onPause()
+    }
+
+    private fun setupProfileVisualEffects() {
+        val density = resources.displayMetrics.density
+        profileCardDrawable = AnimatedProfileCardDrawable(density)
+        avatarBorderDrawable = AnimatedAvatarBorderDrawable(density)
+        findViewById<View>(R.id.profileCard).background = profileCardDrawable
+        findViewById<View>(R.id.avatarGlowContainer).background = avatarBorderDrawable
+    }
+
+    private fun startProfileVisualEffects() {
+        profileCardDrawable?.start()
+        avatarBorderDrawable?.start()
+    }
+
+    private fun stopProfileVisualEffects() {
+        profileCardDrawable?.stop()
+        avatarBorderDrawable?.stop()
     }
 
     private fun updateProfileUi() {
