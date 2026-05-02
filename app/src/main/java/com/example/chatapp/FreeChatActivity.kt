@@ -1,4 +1,4 @@
-﻿package com.example.chatapp
+package com.example.chatapp
 
 import android.animation.AnimatorSet
 import android.animation.Animator
@@ -1182,6 +1182,41 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.bottomInputArea.viewTreeObserver.addOnGlobalLayoutListener {
             updateFloatingInputPadding()
         }
+        
+        // Initial intro animation
+        binding.bottomInputArea.translationY = dp(100f)
+        binding.bottomInputArea.alpha = 0f
+        binding.bottomInputScrim.alpha = 0f
+        
+        binding.bottomInputArea.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(500)
+            .setStartDelay(150)
+            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
+            .start()
+            
+        binding.bottomInputScrim.animate()
+            .alpha(0.6f)
+            .setDuration(500)
+            .setStartDelay(150)
+            .start()
+
+        binding.etInput.setOnFocusChangeListener { _, hasFocus ->
+            val targetTranslation = if (hasFocus) -dp(6f) else 0f
+            
+            binding.bottomInputArea.animate()
+                .translationY(targetTranslation)
+                .setDuration(300)
+                .setInterpolator(android.view.animation.OvershootInterpolator(1.1f))
+                .start()
+                
+            binding.bottomInputScrim.animate()
+                .alpha(if (hasFocus) 1.0f else 0.6f)
+                .setDuration(300)
+                .start()
+        }
+
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
         binding.etInput.doAfterTextChanged { editable ->
             updateSendState()
@@ -1218,10 +1253,18 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun updateFloatingInputPadding() {
         updateMessagesViewportAnchor()
         val topPadding = dp(8f).toInt()
-        val bottomPadding = dp(10f).toInt()
+        
+        val inputHeight = binding.bottomInputArea.height
+        val dynamicBottomPadding = if (inputHeight > 0) {
+            inputHeight + dp(24f).toInt()
+        } else {
+            dp(120f).toInt()
+        }
+        val finalBottomPadding = dynamicBottomPadding + navigationBarInsetBottom
+
         if (
             binding.messagesScrollView.paddingTop == topPadding &&
-            binding.messagesScrollView.paddingBottom == bottomPadding
+            binding.messagesScrollView.paddingBottom == finalBottomPadding
         ) {
             return
         }
@@ -1229,7 +1272,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.messagesScrollView.paddingLeft,
             topPadding,
             binding.messagesScrollView.paddingRight,
-            bottomPadding
+            finalBottomPadding
         )
     }
 
@@ -1242,7 +1285,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
 
         val scrimParams = binding.bottomInputScrim.layoutParams
-        val targetScrimHeight = navigationBarInsetBottom + dp(170f).toInt()
+        val targetScrimHeight = navigationBarInsetBottom + dp(180f).toInt()
         if (scrimParams.height != targetScrimHeight) {
             scrimParams.height = targetScrimHeight
             binding.bottomInputScrim.layoutParams = scrimParams
@@ -1250,19 +1293,27 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun updateMessagesViewportAnchor() {
-        val targetAnchorId = if (binding.suggestionsContainer.isVisible) {
-            R.id.suggestionsContainer
-        } else {
-            R.id.bottomInputArea
-        }
-        if (messagesBottomAnchorId == targetAnchorId) return
-
         val params = binding.messagesScrollView.layoutParams as ConstraintLayout.LayoutParams
-        params.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
-        params.bottomToTop = targetAnchorId
-        params.bottomMargin = dp(8f).toInt()
-        binding.messagesScrollView.layoutParams = params
-        messagesBottomAnchorId = targetAnchorId
+        if (params.bottomToBottom != ConstraintLayout.LayoutParams.PARENT_ID) {
+            params.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            params.bottomMargin = 0
+            binding.messagesScrollView.layoutParams = params
+        }
+        
+        val welcomeParams = binding.welcomeScreen.layoutParams as ConstraintLayout.LayoutParams
+        if (welcomeParams.bottomToBottom != ConstraintLayout.LayoutParams.PARENT_ID) {
+            welcomeParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            welcomeParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            binding.welcomeScreen.layoutParams = welcomeParams
+        }
+        
+        val anonWelcomeParams = binding.anonymousWelcomeScreen.layoutParams as ConstraintLayout.LayoutParams
+        if (anonWelcomeParams.bottomToBottom != ConstraintLayout.LayoutParams.PARENT_ID) {
+            anonWelcomeParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            anonWelcomeParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            binding.anonymousWelcomeScreen.layoutParams = anonWelcomeParams
+        }
     }
 
     private fun setupWelcomeActions() {
@@ -1297,6 +1348,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         adManager?.initialize()
     }
+
 
     private fun showWelcomeState() {
         resetTopActionsAnimation()

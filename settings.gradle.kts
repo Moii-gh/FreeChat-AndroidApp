@@ -27,6 +27,7 @@ dependencyResolutionManagement {
             url = uri("https://artifactory-external.vkpartner.ru/artifactory/vk-id-captcha/android/")
         }
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
