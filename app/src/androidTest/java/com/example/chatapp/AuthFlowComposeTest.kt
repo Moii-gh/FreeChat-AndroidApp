@@ -27,6 +27,7 @@ import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
 import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
+import com.example.chatapp.network.dto.VkNativeLoginRequest
 import com.example.chatapp.ui.auth.components.AuthTestTags
 import com.example.chatapp.ui.auth.screens.AboutYouScreen
 import com.example.chatapp.ui.auth.screens.BirthDatePickerScreen
@@ -254,6 +255,30 @@ private class FakeComposeAuthRepository : AuthRepositoryContract {
                     telegramId = "424242",
                     telegramUsername = "ada",
                     authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun completeVkNativeLogin(
+        request: VkNativeLoginRequest
+    ): NetworkResult<AuthResponse> {
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "VK login complete",
+                token = "jwt",
+                user = ApiUser(
+                    id = "user-vk",
+                    email = null,
+                    fullName = "Ada",
+                    birthDate = null,
+                    isVerified = true,
+                    vkId = request.userId,
+                    vkFirstName = "Ada",
+                    vkLastName = "Lovelace",
+                    vkPhotoUrl = "https://vk.test/ada.jpg",
+                    vkEmail = "ada@vk.test",
+                    authProvider = "vk"
                 )
             )
         )
