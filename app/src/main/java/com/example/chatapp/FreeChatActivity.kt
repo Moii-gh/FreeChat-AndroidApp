@@ -1,9 +1,10 @@
-package com.example.chatapp
+﻿package com.example.chatapp
 
 import android.animation.AnimatorSet
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.Context
 import android.graphics.Color
@@ -1001,7 +1002,27 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                 imm.hideSoftInputFromWindow(binding.etInput.windowToken, 0)
             }
-            override fun onDrawerClosed(drawerView: View) {}
+            override fun onDrawerClosed(drawerView: View) {
+                // Reset search bar state when drawer closes
+                val sc = findViewById<LinearLayout>(R.id.drawerSearchContainer) ?: return
+                if (sc.visibility == View.VISIBLE) {
+                    val sf = findViewById<EditText>(R.id.etDrawerSearch)
+                    val dhc = findViewById<LinearLayout>(R.id.defaultHeaderContent)
+                    val csb = findViewById<ImageView>(R.id.btnCloseDrawerSearch)
+                    sf?.setText("")
+                    sf?.alpha = 0f
+                    csb?.alpha = 0f
+                    sc.gravity = android.view.Gravity.CENTER
+                    sc.setPadding(0, 0, 0, 0)
+                    val lp = sc.layoutParams
+                    lp.width = sc.height
+                    sc.layoutParams = lp
+                    sc.visibility = View.INVISIBLE
+                    dhc?.alpha = 1f
+                    dhc?.visibility = View.VISIBLE
+                    drawerManager.populateChats(chatViewModel.cachedChats)
+                }
+            }
             override fun onDrawerStateChanged(newState: Int) {}
         })
 
@@ -1020,16 +1041,124 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val defaultHeaderContent = findViewById<LinearLayout>(R.id.defaultHeaderContent)
         val searchContainer = findViewById<LinearLayout>(R.id.drawerSearchContainer)
         val searchField = findViewById<EditText>(R.id.etDrawerSearch)
+        val closeSearchBtn = findViewById<ImageView>(R.id.btnCloseDrawerSearch)
+
+        fun expandSearchBar() {
+            searchContainer.visibility = View.VISIBLE
+            searchContainer.measure(
+                View.MeasureSpec.makeMeasureSpec(defaultHeaderContent.width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(searchContainer.height, View.MeasureSpec.EXACTLY)
+            )
+            val targetWidth = defaultHeaderContent.width
+            val startWidth = searchContainer.height // circle = height
+            val interpolator = AccelerateDecelerateInterpolator()
+
+            // Animate header fade out
+            defaultHeaderContent.animate()
+                .alpha(0f)
+                .setDuration(180)
+                .setInterpolator(interpolator)
+                .withEndAction { defaultHeaderContent.isGone = true }
+                .start()
+
+            // Animate width from circle to full
+            val widthAnimator = ValueAnimator.ofInt(startWidth, targetWidth).apply {
+                duration = 320
+                this.interpolator = interpolator
+                addUpdateListener { anim ->
+                    val lp = searchContainer.layoutParams
+                    lp.width = anim.animatedValue as Int
+                    searchContainer.layoutParams = lp
+                    // Update gravity/padding based on progress
+                    val fraction = anim.animatedFraction
+                    if (fraction > 0.5f) {
+                        searchContainer.gravity = android.view.Gravity.CENTER_VERTICAL
+                    }
+                }
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationStart(animation: Animator) {
+                        // Fade in content elements as bar expands
+                        searchField.animate()
+                            .alpha(1f)
+                            .setStartDelay(160)
+                            .setDuration(180)
+                            .start()
+                        closeSearchBtn.animate()
+                            .alpha(1f)
+                            .setStartDelay(200)
+                            .setDuration(160)
+                            .start()
+                    }
+                    override fun onAnimationEnd(animation: Animator) {
+                        val lp = searchContainer.layoutParams as? android.widget.FrameLayout.LayoutParams
+                        if (lp != null) {
+                            lp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                            searchContainer.layoutParams = lp
+                        }
+                        searchContainer.setPadding(
+                            (14 * resources.displayMetrics.density).toInt(), 0,
+                            (14 * resources.displayMetrics.density).toInt(), 0
+                        )
+                        searchField.requestFocus()
+                        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                            as android.view.inputmethod.InputMethodManager
+                        imm.showSoftInput(searchField, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                    }
+                })
+            }
+            widthAnimator.start()
+        }
+
+        fun collapseSearchBar() {
+            val targetWidth = searchContainer.height // collapse back to circle
+            val startWidth = searchContainer.width
+            val interpolator = AccelerateDecelerateInterpolator()
+
+            // Fade out content elements first
+            searchField.animate().alpha(0f).setDuration(120).setStartDelay(0).start()
+            closeSearchBtn.animate().alpha(0f).setDuration(120).setStartDelay(0).start()
+
+            // Animate width collapse
+            val widthAnimator = ValueAnimator.ofInt(startWidth, targetWidth).apply {
+                duration = 300
+                this.interpolator = interpolator
+                startDelay = 80
+                addUpdateListener { anim ->
+                    val lp = searchContainer.layoutParams
+                    lp.width = anim.animatedValue as Int
+                    searchContainer.layoutParams = lp
+                    if (anim.animatedFraction > 0.5f) {
+                        searchContainer.gravity = android.view.Gravity.CENTER
+                        searchContainer.setPadding(0, 0, 0, 0)
+                    }
+                }
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        searchContainer.visibility = View.INVISIBLE
+                        searchContainer.gravity = android.view.Gravity.CENTER
+                        // Restore header
+                        defaultHeaderContent.alpha = 0f
+                        defaultHeaderContent.isVisible = true
+                        defaultHeaderContent.animate()
+                            .alpha(1f)
+                            .setDuration(200)
+                            .setInterpolator(AccelerateDecelerateInterpolator())
+                            .start()
+                    }
+                })
+            }
+            widthAnimator.start()
+        }
 
         findViewById<ImageView>(R.id.btnDrawerSearch).setOnClickListener {
-            defaultHeaderContent.isGone = true
-            searchContainer.isVisible = true
-            searchField.requestFocus()
+            expandSearchBar()
         }
-        findViewById<ImageView>(R.id.btnCloseDrawerSearch).setOnClickListener {
+        closeSearchBtn.setOnClickListener {
             searchField.setText("")
-            searchContainer.isGone = true
-            defaultHeaderContent.isVisible = true
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+            imm.hideSoftInputFromWindow(searchField.windowToken, 0)
+            collapseSearchBar()
             drawerManager.populateChats(chatViewModel.cachedChats)
         }
         searchField.doAfterTextChanged { query ->

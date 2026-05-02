@@ -1,10 +1,13 @@
 package com.example.chatapp
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.chatapp.data.AccountScopedSettings
@@ -28,6 +31,7 @@ class PersonalizationActivity : AppCompatActivity() {
         accountSettings = AccountScopedSettings(this)
 
         etInstructions.setText(accountSettings.getUserInstructions())
+        animateInstructionsInputExpansion()
         
         // Translate UI
         findViewById<android.widget.TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "label_personalization")
@@ -44,4 +48,31 @@ class PersonalizationActivity : AppCompatActivity() {
             finish()
         }
     }
+
+    private fun animateInstructionsInputExpansion() {
+        etInstructions.post {
+            val params = etInstructions.layoutParams as LinearLayout.LayoutParams
+            val expandedHeight = etInstructions.height
+            val collapsedHeight = 92.dp
+
+            if (expandedHeight <= collapsedHeight) return@post
+
+            params.weight = 0f
+            params.height = collapsedHeight
+            etInstructions.layoutParams = params
+
+            ValueAnimator.ofInt(collapsedHeight, expandedHeight).apply {
+                duration = 520L
+                interpolator = AccelerateDecelerateInterpolator()
+                addUpdateListener { animator ->
+                    params.height = animator.animatedValue as Int
+                    etInstructions.layoutParams = params
+                }
+                start()
+            }
+        }
+    }
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).toInt()
 }
