@@ -3,31 +3,38 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+
     <path
         android:fillColor="#26FFD60A"
         android:pathData="M12,3.1c-3.48,0 -6.3,2.66 -6.3,5.94c0,2.18 1.08,3.86 2.73,5.14c0.72,0.56 1.17,1.39 1.17,2.3v0.37h4.8v-0.37c0,-0.91 0.45,-1.74 1.17,-2.3c1.65,-1.28 2.73,-2.96 2.73,-5.14c0,-3.28 -2.82,-5.94 -6.3,-5.94z" />
+
     <path
         android:fillColor="#00000000"
         android:pathData="M12,3.1c-3.48,0 -6.3,2.66 -6.3,5.94c0,2.18 1.08,3.86 2.73,5.14c0.72,0.56 1.17,1.39 1.17,2.3v0.37h4.8v-0.37c0,-0.91 0.45,-1.74 1.17,-2.3c1.65,-1.28 2.73,-2.96 2.73,-5.14c0,-3.28 -2.82,-5.94 -6.3,-5.94z"
         android:strokeWidth="1.75"
         android:strokeColor="#FFD60A"
         android:strokeLineJoin="round" />
+
     <path
         android:fillColor="#00000000"
         android:pathData="M9.55,18.65h4.9M10.1,21h3.8"
         android:strokeWidth="1.65"
         android:strokeColor="#FFD60A"
         android:strokeLineCap="round" />
+
+    <!-- Знак вопроса чуть выше -->
     <path
         android:fillColor="#00000000"
-        android:pathData="M10.15,8.85c0.43,-0.72 1.06,-1.08 1.85,-1.08c1.08,0 1.95,0.75 1.95,1.78c0,0.76 -0.42,1.24 -1.08,1.72c-0.57,0.42 -0.87,0.82 -0.87,1.48v0.22"
+        android:pathData="M10.4,8.35c0.38,-0.68 1.04,-1.08 1.88,-1.08c1.16,0 2.02,0.78 2.02,1.8c0,0.8 -0.46,1.28 -1.15,1.77c-0.61,0.43 -0.91,0.77 -0.91,1.4v0.32"
         android:strokeWidth="1.55"
         android:strokeColor="#FFF4A3"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
+
     <path
         android:fillColor="#FFF4A3"
-        android:pathData="M12,15.1m-0.62,0a0.62,0.62 0,1 1,1.24 0a0.62,0.62 0,1 1,-1.24 0" />
+        android:pathData="M12.28,14.35m-0.65,0a0.65,0.65 0,1 1,1.3 0a0.65,0.65 0,1 1,-1.3 0" />
+
     <path
         android:fillColor="#00000000"
         android:pathData="M12,1.6v-0.6M4.65,4.05L4.2,3.6M19.35,4.05l0.45,-0.45M3.15,10.05h-0.65M21.5,10.05h-0.65"
