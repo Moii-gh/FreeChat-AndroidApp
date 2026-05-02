@@ -288,9 +288,9 @@
     <string name="shared_link_copied">Link copied</string>
     <string name="shared_link_created_at">Created: %s</string>
     <string name="shared_link_delete_error">Failed to delete link</string>
-    <string name="shared_link_delete_message">Delete this link? People who have it will lose access to the chat copy.</string>
+    <string name="shared_link_delete_message">This link will no longer be available. This action cannot be undone.</string>
     <string name="shared_link_delete_old_error">Could not delete old link</string>
-    <string name="shared_link_delete_title">Delete link</string>
+    <string name="shared_link_delete_title">Delete link?</string>
     <string name="shared_link_deleted">Link deleted</string>
     <string name="shared_link_expired_copy_error">This link is expired and cannot be copied</string>
     <string name="shared_link_unknown_date">Date unknown</string>

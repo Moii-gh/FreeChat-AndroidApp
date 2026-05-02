@@ -287,9 +287,9 @@
     <string name="shared_link_copied">Ссылка скопирована</string>
     <string name="shared_link_created_at">Создано: %s</string>
     <string name="shared_link_delete_error">Ошибка удаления ссылки</string>
-    <string name="shared_link_delete_message">Удалить эту ссылку? Люди, у которых она есть, потеряют доступ к копии чата.</string>
+    <string name="shared_link_delete_message">Эта ссылка больше не будет доступна. Отменить действие будет нельзя</string>
     <string name="shared_link_delete_old_error">Невозможно удалить старую ссылку</string>
-    <string name="shared_link_delete_title">Удаление ссылки</string>
+    <string name="shared_link_delete_title">Удалить ссылку?</string>
     <string name="shared_link_deleted">Ссылка удалена</string>
     <string name="shared_link_expired_copy_error">Ссылка устарела и не может быть скопирована</string>
     <string name="shared_link_unknown_date">Дата неизвестна</string>

@@ -3,15 +3,20 @@ package com.example.chatapp
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.app.Dialog
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -95,14 +100,51 @@ class SharedLinksActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmation(item: ChatShareItemDto) {
-        AlertDialog.Builder(this)
-            .setTitle(LocaleHelper.getString(this, "shared_link_delete_title"))
-            .setMessage(LocaleHelper.getString(this, "shared_link_delete_message"))
-            .setPositiveButton(LocaleHelper.getString(this, "button_delete")) { _, _ ->
-                deleteLink(item)
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_delete_shared_link, null)
+        val card = dialogView.findViewById<View>(R.id.deleteDialogCard)
+        val title = dialogView.findViewById<TextView>(R.id.tvDeleteDialogTitle)
+        val message = dialogView.findViewById<TextView>(R.id.tvDeleteDialogMessage)
+        val cancelButton = dialogView.findViewById<TextView>(R.id.btnDeleteDialogCancel)
+        val confirmButton = dialogView.findViewById<TextView>(R.id.btnDeleteDialogConfirm)
+
+        title.text = LocaleHelper.getString(this, "shared_link_delete_title")
+        message.text = LocaleHelper.getString(this, "shared_link_delete_message")
+        cancelButton.text = LocaleHelper.getString(this, "button_cancel")
+        confirmButton.text = LocaleHelper.getString(this, "button_delete")
+
+        card.alpha = 0f
+        card.scaleX = 0.94f
+        card.scaleY = 0.94f
+
+        cancelButton.setHapticClickListener {
+            dialog.dismiss()
+        }
+        confirmButton.setHapticClickListener {
+            dialog.dismiss()
+            deleteLink(item)
+        }
+
+        dialog.setContentView(dialogView)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.setOnShowListener {
+            dialog.window?.apply {
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                setDimAmount(0.58f)
+                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             }
-            .setNegativeButton(LocaleHelper.getString(this, "button_cancel"), null)
-            .show()
+            card.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(180L)
+                .setInterpolator(DecelerateInterpolator(1.8f))
+                .start()
+        }
+        dialog.show()
     }
 
     private fun deleteLink(item: ChatShareItemDto) {
