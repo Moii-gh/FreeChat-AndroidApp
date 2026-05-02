@@ -78,6 +78,8 @@ const env = {
   telegramWidgetPublicBaseUrl: process.env.TELEGRAM_WIDGET_PUBLIC_BASE_URL || "",
   telegramWidgetMaxAgeSeconds: Number(process.env.TELEGRAM_WIDGET_MAX_AGE_SECONDS || 300),
   telegramLoginClientId: process.env.TELEGRAM_LOGIN_CLIENT_ID || "",
+  vkIdClientId: process.env.VKID_CLIENT_ID || "",
+  vkIdUserInfoUrl: process.env.VKID_USER_INFO_URL || "https://id.vk.ru/oauth2/user_info",
   chatSharePublicBaseUrl: process.env.CHAT_SHARE_PUBLIC_BASE_URL || "",
   chatShareStoreUrl: process.env.CHAT_SHARE_STORE_URL || "",
   aiApiKey: process.env.AI_API_KEY || "",

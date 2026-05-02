@@ -17,6 +17,11 @@ const USER_COLUMNS = `
   telegram_first_name,
   telegram_last_name,
   telegram_photo_url,
+  vk_user_id,
+  vk_first_name,
+  vk_last_name,
+  vk_photo_url,
+  vk_email,
   auth_provider,
   bonus_requests,
   token_invalid_before,
@@ -40,6 +45,11 @@ function toPublicUser(row) {
     telegramFirstName: row.telegram_first_name ?? null,
     telegramLastName: row.telegram_last_name ?? null,
     telegramPhotoUrl: row.telegram_photo_url ?? null,
+    vkId: row.vk_user_id ? String(row.vk_user_id) : null,
+    vkFirstName: row.vk_first_name ?? null,
+    vkLastName: row.vk_last_name ?? null,
+    vkPhotoUrl: row.vk_photo_url ?? null,
+    vkEmail: row.vk_email ?? null,
     avatarFileId: row.avatar_file_id ?? null,
     avatarUrl: row.avatar_url ?? null,
     avatarThumbUrl: row.avatar_thumb_url ?? null,
@@ -87,6 +97,22 @@ async function findByTelegramUserId(telegramUserId, executor) {
      left join files f on u.avatar_file_id = f.id
      where u.telegram_user_id = $1`,
     [String(telegramUserId)]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function findByVkUserId(vkUserId, executor) {
+  if (!vkUserId) {
+    return null;
+  }
+
+  const result = await getExecutor(executor).query(
+    `select u.*, f.url as avatar_url, f.thumb_url as avatar_thumb_url
+     from users u
+     left join files f on u.avatar_file_id = f.id
+     where u.vk_user_id = $1`,
+    [String(vkUserId)]
   );
 
   return result.rows[0] || null;
@@ -205,6 +231,47 @@ async function createTelegramWidgetUser(
   return result.rows[0];
 }
 
+async function createVkUser(
+  {
+    fullName,
+    vkUserId,
+    vkFirstName,
+    vkLastName,
+    vkPhotoUrl,
+    vkEmail
+  },
+  executor
+) {
+  const result = await getExecutor(executor).query(
+    `insert into users (
+      email,
+      password_hash,
+      full_name,
+      birth_date,
+      is_verified,
+      verification_code_hash,
+      vk_user_id,
+      vk_first_name,
+      vk_last_name,
+      vk_photo_url,
+      vk_email,
+      auth_provider
+    )
+    values (null, null, $1, null, true, null, $2, $3, $4, $5, $6, 'vk')
+    returning ${USER_COLUMNS}`,
+    [
+      fullName,
+      String(vkUserId),
+      vkFirstName || null,
+      vkLastName || null,
+      vkPhotoUrl || null,
+      vkEmail || null
+    ]
+  );
+
+  return result.rows[0];
+}
+
 async function updateTelegramWidgetProfile(
   userId,
   { telegramUsername, telegramFirstName, telegramLastName, telegramPhotoUrl },
@@ -226,6 +293,33 @@ async function updateTelegramWidgetProfile(
       telegramFirstName || null,
       telegramLastName || null,
       telegramPhotoUrl || null
+    ]
+  );
+
+  return result.rows[0];
+}
+
+async function updateVkProfile(
+  userId,
+  { vkFirstName, vkLastName, vkPhotoUrl, vkEmail },
+  executor
+) {
+  const result = await getExecutor(executor).query(
+    `update users
+     set vk_first_name = $2,
+         vk_last_name = $3,
+         vk_photo_url = $4,
+         vk_email = $5,
+         auth_provider = 'vk',
+         is_verified = true
+     where id = $1
+     returning ${USER_COLUMNS}`,
+    [
+      userId,
+      vkFirstName || null,
+      vkLastName || null,
+      vkPhotoUrl || null,
+      vkEmail || null
     ]
   );
 
@@ -372,10 +466,13 @@ module.exports = {
   findById,
   findByEmail,
   findByTelegramUserId,
+  findByVkUserId,
   createUser,
   createTelegramUser,
   createTelegramWidgetUser,
+  createVkUser,
   updateTelegramWidgetProfile,
+  updateVkProfile,
   updateUnverifiedUser,
   updateVerificationChallenge,
   incrementVerificationAttempts,

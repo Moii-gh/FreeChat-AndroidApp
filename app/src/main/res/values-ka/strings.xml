@@ -57,6 +57,7 @@
     <string name="auth_birth_date_placeholder">დაბადების თარიღი</string>
     <string name="auth_bot_code_placeholder">კოდი ბოტიდან</string>
     <string name="auth_continue_with_telegram">Telegram-ით გაგრძელება</string>
+    <string name="auth_continue_with_vk">VK-ით გაგრძელება</string>
     <string name="auth_create_account">ანგარიშის შექმნა</string>
     <string name="auth_error_birth_date_required">აირჩიეთ დაბადების თარიღი</string>
     <string name="auth_error_bot_link_not_ready">Telegram ბოტის ბმული ჯერ მზად არ არის</string>
@@ -74,12 +75,16 @@
     <string name="auth_error_telegram_nonce_mismatch">Telegram ID token-ის nonce არ ემთხვევა</string>
     <string name="auth_error_telegram_session_expired">Telegram Login-ის სესია ამოიწურა. სცადეთ კიდევ ერთხელ.</string>
     <string name="auth_error_telegram_token_exchange_failed">Telegram token-ის გაცვლა ვერ მოხერხდა: %s</string>
+    <string name="auth_error_vk_login_not_configured">VK ID არ არის კონფიგურირებული. მიუთითეთ VKID_CLIENT_ID და VKID_CLIENT_SECRET.</string>
     <string name="auth_error_verify_code_first">ჯერ Telegram-ის კოდი დაადასტურეთ</string>
     <string name="auth_full_name_placeholder">სრული სახელი</string>
     <string name="auth_info_login_canceled">Telegram-ით შესვლა გაუქმდა</string>
     <string name="auth_info_opening_telegram">Telegram იხსნება...</string>
+    <string name="auth_info_opening_vk">VK იხსნება...</string>
     <string name="auth_info_verifying_telegram_data">Telegram-ის მონაცემები მოწმდება...</string>
     <string name="auth_info_verifying_telegram_token">Telegram ID token მოწმდება...</string>
+    <string name="auth_info_verifying_vk_data">VK-ის მონაცემები მოწმდება...</string>
+    <string name="auth_info_vk_login_canceled">VK-ით შესვლა გაუქმდა</string>
     <string name="auth_open_telegram">Telegram-ის გახსნა</string>
     <string name="auth_opening_telegram">Telegram იხსნება...</string>
     <string name="auth_or">ან</string>
@@ -106,8 +111,10 @@
     <string name="auth_telegram_widget_subtitle">დაადასტურეთ შესვლა ოფიციალურ Telegram Login Widget-ში.</string>
     <string name="auth_telegram_widget_title">Telegram-ით შესვლა</string>
     <string name="auth_telegram_widget_unavailable">კავშირი არ არის ან Telegram Login Widget მიუწვდომელია</string>
+    <string name="auth_vk_login_not_completed">VK Login არ დასრულებულა</string>
+    <string name="auth_vk_login_open_error">VK Login-ის გახსნა ვერ მოხერხდა</string>
     <string name="auth_terms">გამოყენების პირობები</string>
-    <string name="auth_welcome_subtitle">დაადასტურეთ Telegram ახალი ანგარიშის შესაქმნელად ან FreeChat-ში უსაფრთხოდ შესასვლელად.</string>
+    <string name="auth_welcome_subtitle">აირჩიეთ მოსახერხებელი გზა ახალი ანგარიშის შესაქმნელად ან FreeChat-ში უსაფრთხოდ შესასვლელად.</string>
     <string name="auth_welcome_title">შესვლა ან რეგისტრაცია</string>
     <string name="button_about">ინფორმაცია იმის შესახებ</string>
     <string name="button_camera">კამერა</string>
@@ -154,6 +161,7 @@
     <string name="content_desc_new_chat">ახალი ჩატი</string>
     <string name="content_desc_remove_attachment">დანართის წაშლა</string>
     <string name="content_desc_send">გაგზავნა</string>
+    <string name="content_desc_telegram_bot">Telegram ბოტის გახსნა</string>
     <string name="dialog_change_password">პაროლის შეცვლა</string>
     <string name="dialog_rename_hint">ახალი სახელი</string>
     <string name="export_sender_bot">ბოტი</string>

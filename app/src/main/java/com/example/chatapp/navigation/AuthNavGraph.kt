@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -37,8 +38,14 @@ import com.example.chatapp.ui.auth.screens.TelegramCodeScreen
 import com.example.chatapp.ui.auth.screens.TelegramLoginWidgetScreen
 import com.example.chatapp.ui.auth.theme.AppBlack
 import com.example.chatapp.LocaleHelper
+import com.example.chatapp.network.dto.VkNativeLoginRequest
 import com.example.chatapp.viewmodel.AuthEvent
 import com.example.chatapp.viewmodel.AuthViewModel
+import com.vk.id.AccessToken
+import com.vk.id.VKID
+import com.vk.id.VKIDAuthFail
+import com.vk.id.auth.VKIDAuthCallback
+import com.vk.id.auth.VKIDAuthParams
 import kotlinx.coroutines.launch
 
 @Composable
@@ -51,6 +58,7 @@ fun AuthNavGraph(
     val snackbarScope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = context as? Activity
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
@@ -107,6 +115,44 @@ fun AuthNavGraph(
                         )
                     }
                 }
+
+                is AuthEvent.OpenVkLogin -> {
+                    runCatching {
+                        VKID.instance.authorize(
+                            lifecycleOwner = lifecycleOwner,
+                            callback = object : VKIDAuthCallback {
+                                override fun onAuth(accessToken: AccessToken) {
+                                    viewModel.completeVkNativeLogin(
+                                        VkNativeLoginRequest(
+                                            accessToken = accessToken.token,
+                                            idToken = accessToken.idToken,
+                                            userId = accessToken.userID.toString()
+                                        )
+                                    )
+                                }
+
+                                override fun onFail(fail: VKIDAuthFail) {
+                                    if (fail is VKIDAuthFail.Canceled) {
+                                        viewModel.onVkLoginCanceled()
+                                    } else {
+                                        viewModel.onVkLoginError(
+                                            fail.description.ifBlank {
+                                                LocaleHelper.getString(context, "auth_vk_login_not_completed")
+                                            }
+                                        )
+                                    }
+                                }
+                            },
+                            params = VKIDAuthParams {
+                                scopes = event.scopes.toSet()
+                            }
+                        )
+                    }.onFailure { error ->
+                        viewModel.onVkLoginError(
+                            error.message ?: LocaleHelper.getString(context, "auth_vk_login_open_error")
+                        )
+                    }
+                }
             }
         }
     }
@@ -128,6 +174,13 @@ fun AuthNavGraph(
                             clientId = BuildConfig.TELEGRAM_LOGIN_CLIENT_ID,
                             redirectUri = BuildConfig.TELEGRAM_LOGIN_REDIRECT_URI,
                             scopes = parseTelegramLoginScopes(BuildConfig.TELEGRAM_LOGIN_SCOPES)
+                        )
+                    },
+                    onContinueWithVk = {
+                        viewModel.beginVkLogin(
+                            isConfigured = BuildConfig.VKID_CLIENT_ID.isNotBlank() &&
+                                BuildConfig.VKID_CLIENT_SECRET.isNotBlank(),
+                            scopes = parseVkIdScopes(BuildConfig.VKID_SCOPES)
                         )
                     }
                 )
@@ -248,6 +301,11 @@ private fun buildTelegramWidgetUrl(apiBaseUrl: String): String {
 }
 
 private fun parseTelegramLoginScopes(raw: String): List<String> =
+    raw.split(",", " ")
+        .map(String::trim)
+        .filter(String::isNotEmpty)
+
+private fun parseVkIdScopes(raw: String): List<String> =
     raw.split(",", " ")
         .map(String::trim)
         .filter(String::isNotEmpty)

@@ -83,6 +83,14 @@ const telegramNativeLoginSchema = z.object({
   idToken: z.string().min(1, "Telegram ID token отсутствует")
 }).strict();
 
+const vkNativeLoginSchema = z.object({
+  accessToken: z.string().min(1, "VK access token отсутствует"),
+  idToken: z.string().min(1).optional(),
+  userId: z.union([z.string(), z.number()]).optional().transform((value) =>
+    value === undefined ? undefined : String(value)
+  )
+}).strict();
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -97,5 +105,6 @@ module.exports = {
   telegramBeginMigrationSchema,
   telegramCompleteMigrationSchema,
   telegramWidgetAuthSchema,
-  telegramNativeLoginSchema
+  telegramNativeLoginSchema,
+  vkNativeLoginSchema
 };

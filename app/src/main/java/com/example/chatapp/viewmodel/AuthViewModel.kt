@@ -14,6 +14,7 @@ import com.example.chatapp.network.dto.TelegramCompleteRegistrationRequest
 import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
+import com.example.chatapp.network.dto.VkNativeLoginRequest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -61,6 +62,7 @@ data class AuthUiState(
     val isOpeningTelegram: Boolean = false,
     val isVerifyingTelegramCode: Boolean = false,
     val isTelegramCodeVerified: Boolean = false,
+    val isVkLoginInProgress: Boolean = false,
     val errorMessage: String? = null,
     val infoMessage: String? = null,
     val authToken: String? = null,
@@ -100,6 +102,9 @@ sealed interface AuthEvent {
     data class OpenTelegramNativeLogin(
         val clientId: String,
         val redirectUri: String,
+        val scopes: List<String>
+    ) : AuthEvent
+    data class OpenVkLogin(
         val scopes: List<String>
     ) : AuthEvent
 }
@@ -191,6 +196,28 @@ class AuthViewModel(
     fun beginTelegramRegistration() {
         launchTelegramFlow(TelegramFlowMode.REGISTER) {
             repository.beginTelegramRegistration()
+        }
+    }
+
+    fun beginVkLogin(
+        isConfigured: Boolean,
+        scopes: List<String>
+    ) {
+        if (!isConfigured) {
+            setError(localize("auth_error_vk_login_not_configured"))
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    isVkLoginInProgress = true,
+                    errorMessage = null,
+                    infoMessage = localize("auth_info_opening_vk")
+                )
+            }
+            _events.emit(AuthEvent.OpenVkLogin(scopes))
         }
     }
 
@@ -359,6 +386,33 @@ class AuthViewModel(
         }
     }
 
+    fun completeVkNativeLogin(request: VkNativeLoginRequest) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    isVkLoginInProgress = true,
+                    errorMessage = null,
+                    infoMessage = localize("auth_info_verifying_vk_data")
+                )
+            }
+
+            when (val result = repository.completeVkNativeLogin(request)) {
+                is NetworkResult.Success -> handleAuthenticatedSuccess(result.data)
+                is NetworkResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isVkLoginInProgress = false,
+                            errorMessage = result.message,
+                            infoMessage = null
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun onTelegramWidgetError(message: String) {
         _uiState.update {
             it.copy(
@@ -375,6 +429,28 @@ class AuthViewModel(
                 isLoading = false,
                 errorMessage = null,
                 infoMessage = localize("auth_info_login_canceled")
+            )
+        }
+    }
+
+    fun onVkLoginError(message: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isVkLoginInProgress = false,
+                errorMessage = message,
+                infoMessage = null
+            )
+        }
+    }
+
+    fun onVkLoginCanceled() {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isVkLoginInProgress = false,
+                errorMessage = null,
+                infoMessage = localize("auth_info_vk_login_canceled")
             )
         }
     }
@@ -414,6 +490,7 @@ class AuthViewModel(
                     isLoading = true,
                     isOpeningTelegram = false,
                     isVerifyingTelegramCode = false,
+                    isVkLoginInProgress = false,
                     errorMessage = null,
                     infoMessage = null,
                     fullName = if (mode == TelegramFlowMode.REGISTER) "" else current.fullName,
@@ -512,6 +589,7 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 isLoading = false,
+                isVkLoginInProgress = false,
                 authToken = response.token,
                 authenticatedUser = response.user,
                 infoMessage = response.message,

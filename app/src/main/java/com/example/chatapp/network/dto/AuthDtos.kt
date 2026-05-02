@@ -89,6 +89,12 @@ data class TelegramNativeLoginRequest(
     val idToken: String
 )
 
+data class VkNativeLoginRequest(
+    val accessToken: String,
+    val idToken: String? = null,
+    val userId: String? = null
+)
+
 data class ApiUser(
     val id: String,
     val email: String?,
@@ -100,6 +106,11 @@ data class ApiUser(
     val telegramFirstName: String? = null,
     val telegramLastName: String? = null,
     val telegramPhotoUrl: String? = null,
+    val vkId: String? = null,
+    val vkFirstName: String? = null,
+    val vkLastName: String? = null,
+    val vkPhotoUrl: String? = null,
+    val vkEmail: String? = null,
     val authProvider: String? = null
 )
 

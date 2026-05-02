@@ -15,6 +15,7 @@ const {
 const emailService = require("./utils/emailTransport");
 const { createAuthRouter } = require("./routes/authRoutes");
 const { createTelegramAuthRouter } = require("./routes/telegramAuthRoutes");
+const { createVkAuthRouter } = require("./routes/vkAuthRoutes");
 const { createSyncRouter } = require("./routes/syncRoutes");
 const { createAiRouter } = require("./routes/aiRoutes");
 const { createChatShareRouter, createPublicShareRouter } = require("./routes/chatShareRoutes");
@@ -39,6 +40,11 @@ function createApp(options = {}) {
     loginClientId: env.telegramLoginClientId,
     publicBaseUrl: env.telegramWidgetPublicBaseUrl,
     widgetMaxAgeSeconds: env.telegramWidgetMaxAgeSeconds
+  };
+  const vkConfig = options.vkConfig || {
+    isConfigured: Boolean(env.vkIdClientId),
+    clientId: env.vkIdClientId,
+    userInfoUrl: env.vkIdUserInfoUrl
   };
 
   app.use(normalizeJsonContentType);
@@ -71,6 +77,16 @@ function createApp(options = {}) {
       challengeModel: resolvedTelegramChallengeModel,
       authNonceModel: resolvedAuthNonceModel,
       telegramConfig,
+      rateLimitEnabled
+    })
+  );
+
+  app.use(
+    "/api/vk-auth",
+    createVkAuthRouter({
+      userModel: resolvedUserModel,
+      authNonceModel: resolvedAuthNonceModel,
+      vkConfig,
       rateLimitEnabled
     })
   );

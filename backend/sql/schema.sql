@@ -17,6 +17,11 @@ create table if not exists users (
     telegram_first_name text,
     telegram_last_name text,
     telegram_photo_url text,
+    vk_user_id text unique,
+    vk_first_name text,
+    vk_last_name text,
+    vk_photo_url text,
+    vk_email text,
     auth_provider text not null default 'legacy_email',
     bonus_requests integer not null default 0,
     token_invalid_before timestamptz,
@@ -33,6 +38,14 @@ alter table if exists users add column if not exists verification_attempt_count 
 alter table if exists users add column if not exists telegram_first_name text;
 alter table if exists users add column if not exists telegram_last_name text;
 alter table if exists users add column if not exists telegram_photo_url text;
+alter table if exists users add column if not exists vk_user_id text unique;
+alter table if exists users add column if not exists vk_first_name text;
+alter table if exists users add column if not exists vk_last_name text;
+alter table if exists users add column if not exists vk_photo_url text;
+alter table if exists users add column if not exists vk_email text;
+create unique index if not exists idx_users_vk_user_id
+    on users(vk_user_id)
+    where vk_user_id is not null;
 alter table if exists users drop column if exists plan_code;
 alter table if exists users drop column if exists subscription_status;
 alter table if exists users drop column if exists plan_expires_at;

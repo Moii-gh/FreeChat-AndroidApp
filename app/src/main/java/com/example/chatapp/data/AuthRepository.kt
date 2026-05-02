@@ -13,6 +13,7 @@ import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
 import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
+import com.example.chatapp.network.dto.VkNativeLoginRequest
 import com.google.gson.Gson
 import retrofit2.Response
 import java.io.IOException
@@ -46,6 +47,10 @@ interface AuthRepositoryContract {
 
     suspend fun completeTelegramNativeLogin(
         request: TelegramNativeLoginRequest
+    ): NetworkResult<AuthResponse>
+
+    suspend fun completeVkNativeLogin(
+        request: VkNativeLoginRequest
     ): NetworkResult<AuthResponse>
 
     suspend fun changePassword(
@@ -110,6 +115,12 @@ class AuthRepository(
         request: TelegramNativeLoginRequest
     ): NetworkResult<AuthResponse> = handle {
         service.completeTelegramNativeLogin(request)
+    }
+
+    override suspend fun completeVkNativeLogin(
+        request: VkNativeLoginRequest
+    ): NetworkResult<AuthResponse> = handle {
+        service.completeVkNativeLogin(request)
     }
 
     override suspend fun changePassword(

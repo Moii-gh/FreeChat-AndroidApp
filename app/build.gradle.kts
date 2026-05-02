@@ -45,6 +45,10 @@ fun derivePublicBaseUrl(apiBaseUrl: String): String {
 
 val configuredChatSharePublicBaseUrl =
     envVars["CHAT_SHARE_PUBLIC_BASE_URL"] ?: derivePublicBaseUrl(configuredApiBaseUrl)
+val configuredVkIdClientId = envVars["VKID_CLIENT_ID"] ?: ""
+val configuredVkIdClientSecret = envVars["VKID_CLIENT_SECRET"] ?: ""
+val configuredVkIdScopes = envVars["VKID_SCOPES"] ?: "email"
+val vkIdManifestClientId = configuredVkIdClientId.ifBlank { "0" }
 
 android {
     namespace = "com.example.chatapp"
@@ -82,6 +86,9 @@ android {
         buildConfigField("String", "TELEGRAM_LOGIN_CLIENT_ID", telegramLoginClientId.toBuildConfigString())
         buildConfigField("String", "TELEGRAM_LOGIN_REDIRECT_URI", telegramLoginRedirectUri.toBuildConfigString())
         buildConfigField("String", "TELEGRAM_LOGIN_SCOPES", telegramLoginScopes.toBuildConfigString())
+        buildConfigField("String", "VKID_CLIENT_ID", configuredVkIdClientId.toBuildConfigString())
+        buildConfigField("String", "VKID_CLIENT_SECRET", configuredVkIdClientSecret.toBuildConfigString())
+        buildConfigField("String", "VKID_SCOPES", configuredVkIdScopes.toBuildConfigString())
         manifestPlaceholders["telegramLoginRedirectScheme"] = runCatching {
             URI(telegramLoginRedirectUri).scheme
         }.getOrNull().orEmpty().ifBlank { "https" }
@@ -97,6 +104,10 @@ android {
         manifestPlaceholders["chatShareHost"] = runCatching {
             URI(configuredChatSharePublicBaseUrl).host
         }.getOrNull().orEmpty().ifBlank { "example.com" }
+        manifestPlaceholders["VKIDClientID"] = vkIdManifestClientId
+        manifestPlaceholders["VKIDClientSecret"] = configuredVkIdClientSecret.ifBlank { "0" }
+        manifestPlaceholders["VKIDRedirectHost"] = "vk.ru"
+        manifestPlaceholders["VKIDRedirectScheme"] = "vk$vkIdManifestClientId"
 
     }
 
@@ -172,6 +183,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.2")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.browser:browser:1.8.0")
+    implementation("com.vk.id:vkid:2.6.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")

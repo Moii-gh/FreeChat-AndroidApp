@@ -15,6 +15,7 @@ import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
 import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
+import com.example.chatapp.network.dto.VkNativeLoginRequest
 import com.example.chatapp.viewmodel.AuthViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -162,6 +163,44 @@ class AuthViewModelTest {
         assertEquals("424242", accountStore.lastUser?.telegramId)
         assertNotNull(repository.lastNativeLoginRequest)
     }
+
+    @Test
+    fun `vk login reports missing configuration`() {
+        viewModel.beginVkLogin(isConfigured = false, scopes = listOf("email"))
+
+        assertEquals("auth_error_vk_login_not_configured", viewModel.uiState.value.errorMessage)
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `vk login starts sdk flow when configured`() = runTest(dispatcher) {
+        viewModel.beginVkLogin(isConfigured = true, scopes = listOf("email"))
+        runCurrent()
+
+        assertTrue(viewModel.uiState.value.isLoading)
+        assertTrue(viewModel.uiState.value.isVkLoginInProgress)
+        assertEquals("auth_info_opening_vk", viewModel.uiState.value.infoMessage)
+    }
+
+    @Test
+    fun `vk native login authenticates with access token`() = runTest(dispatcher) {
+        viewModel.completeVkNativeLogin(
+            VkNativeLoginRequest(
+                accessToken = "vk-access-token",
+                idToken = "vk-id-token",
+                userId = "777"
+            )
+        )
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isLoading)
+        assertTrue(viewModel.uiState.value.isVkLoginInProgress)
+        advanceUntilIdle()
+
+        assertEquals("jwt-token", viewModel.uiState.value.authToken)
+        assertFalse(viewModel.uiState.value.isVkLoginInProgress)
+        assertEquals("777", accountStore.lastUser?.vkId)
+        assertNotNull(repository.lastVkNativeLoginRequest)
+    }
 }
 
 private class FakeAuthRepository : AuthRepositoryContract {
@@ -200,6 +239,7 @@ private class FakeAuthRepository : AuthRepositoryContract {
     var lastCompleteMigrationRequest: TelegramCompleteMigrationRequest? = null
     var lastWidgetLoginRequest: TelegramWidgetLoginRequest? = null
     var lastNativeLoginRequest: TelegramNativeLoginRequest? = null
+    var lastVkNativeLoginRequest: VkNativeLoginRequest? = null
 
     override suspend fun beginTelegramRegistration(): NetworkResult<TelegramAuthBeginResponse> {
         delay(25)
@@ -336,6 +376,32 @@ private class FakeAuthRepository : AuthRepositoryContract {
                     telegramFirstName = "Ada Lovelace",
                     telegramPhotoUrl = "https://cdn.telegram.test/ada.jpg",
                     authProvider = "telegram"
+                )
+            )
+        )
+    }
+
+    override suspend fun completeVkNativeLogin(
+        request: VkNativeLoginRequest
+    ): NetworkResult<AuthResponse> {
+        lastVkNativeLoginRequest = request
+        delay(25)
+        return NetworkResult.Success(
+            AuthResponse(
+                message = "VK login complete",
+                token = "jwt-token",
+                user = ApiUser(
+                    id = "user-vk",
+                    email = null,
+                    fullName = "Ada Lovelace",
+                    birthDate = null,
+                    isVerified = true,
+                    vkId = request.userId,
+                    vkFirstName = "Ada",
+                    vkLastName = "Lovelace",
+                    vkPhotoUrl = "https://vk.test/ada.jpg",
+                    vkEmail = "ada@vk.test",
+                    authProvider = "vk"
                 )
             )
         )

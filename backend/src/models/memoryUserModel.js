@@ -22,6 +22,11 @@ function toPublicUser(row) {
     telegramFirstName: row.telegram_first_name ?? null,
     telegramLastName: row.telegram_last_name ?? null,
     telegramPhotoUrl: row.telegram_photo_url ?? null,
+    vkId: row.vk_user_id ? String(row.vk_user_id) : null,
+    vkFirstName: row.vk_first_name ?? null,
+    vkLastName: row.vk_last_name ?? null,
+    vkPhotoUrl: row.vk_photo_url ?? null,
+    vkEmail: row.vk_email ?? null,
     authProvider: row.auth_provider
   };
 }
@@ -41,6 +46,14 @@ async function findByTelegramUserId(telegramUserId) {
   }
 
   return users.find((user) => user.telegram_user_id === String(telegramUserId)) || null;
+}
+
+async function findByVkUserId(vkUserId) {
+  if (!vkUserId) {
+    return null;
+  }
+
+  return users.find((user) => user.vk_user_id === String(vkUserId)) || null;
 }
 
 async function createUser({
@@ -69,6 +82,11 @@ async function createUser({
     telegram_first_name: null,
     telegram_last_name: null,
     telegram_photo_url: null,
+    vk_user_id: null,
+    vk_first_name: null,
+    vk_last_name: null,
+    vk_photo_url: null,
+    vk_email: null,
     auth_provider: "email",
     token_invalid_before: null,
     created_at: nowIso()
@@ -102,6 +120,11 @@ async function createTelegramUser({
     telegram_first_name: null,
     telegram_last_name: null,
     telegram_photo_url: null,
+    vk_user_id: null,
+    vk_first_name: null,
+    vk_last_name: null,
+    vk_photo_url: null,
+    vk_email: null,
     auth_provider: "telegram",
     token_invalid_before: null,
     created_at: nowIso()
@@ -135,7 +158,50 @@ async function createTelegramWidgetUser({
     telegram_first_name: telegramFirstName || null,
     telegram_last_name: telegramLastName || null,
     telegram_photo_url: telegramPhotoUrl || null,
+    vk_user_id: null,
+    vk_first_name: null,
+    vk_last_name: null,
+    vk_photo_url: null,
+    vk_email: null,
     auth_provider: "telegram",
+    token_invalid_before: null,
+    created_at: nowIso()
+  };
+  users.push(user);
+  return user;
+}
+
+async function createVkUser({
+  fullName,
+  vkUserId,
+  vkFirstName,
+  vkLastName,
+  vkPhotoUrl,
+  vkEmail
+}) {
+  const user = {
+    id: crypto.randomUUID(),
+    email: null,
+    password_hash: null,
+    full_name: fullName,
+    birth_date: null,
+    is_verified: true,
+    verification_code_hash: null,
+    verification_code_expires_at: null,
+    verification_code_sent_at: null,
+    verification_attempt_count: 0,
+    telegram_user_id: null,
+    telegram_chat_id: null,
+    telegram_username: null,
+    telegram_first_name: null,
+    telegram_last_name: null,
+    telegram_photo_url: null,
+    vk_user_id: String(vkUserId),
+    vk_first_name: vkFirstName || null,
+    vk_last_name: vkLastName || null,
+    vk_photo_url: vkPhotoUrl || null,
+    vk_email: vkEmail || null,
+    auth_provider: "vk",
     token_invalid_before: null,
     created_at: nowIso()
   };
@@ -157,6 +223,21 @@ async function updateTelegramWidgetProfile(
   user.telegram_last_name = telegramLastName || null;
   user.telegram_photo_url = telegramPhotoUrl || null;
   user.auth_provider = "telegram";
+  user.is_verified = true;
+  return user;
+}
+
+async function updateVkProfile(userId, { vkFirstName, vkLastName, vkPhotoUrl, vkEmail }) {
+  const user = await findById(userId);
+  if (!user) {
+    return null;
+  }
+
+  user.vk_first_name = vkFirstName || null;
+  user.vk_last_name = vkLastName || null;
+  user.vk_photo_url = vkPhotoUrl || null;
+  user.vk_email = vkEmail || null;
+  user.auth_provider = "vk";
   user.is_verified = true;
   return user;
 }
@@ -240,6 +321,7 @@ async function attachTelegramIdentity(
   user.telegram_user_id = String(telegramUserId);
   user.telegram_chat_id = String(telegramChatId);
   user.telegram_username = telegramUsername || null;
+  user.vk_user_id = user.vk_user_id || null;
   user.auth_provider = authProvider;
   user.is_verified = true;
   return user;
@@ -261,10 +343,13 @@ module.exports = {
   findById,
   findByEmail,
   findByTelegramUserId,
+  findByVkUserId,
   createUser,
   createTelegramUser,
   createTelegramWidgetUser,
+  createVkUser,
   updateTelegramWidgetProfile,
+  updateVkProfile,
   updateUnverifiedUser,
   updateVerificationChallenge,
   incrementVerificationAttempts,

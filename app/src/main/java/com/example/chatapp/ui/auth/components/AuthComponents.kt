@@ -1,6 +1,7 @@
 package com.example.chatapp.ui.auth.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,7 +34,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,8 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -339,6 +341,47 @@ fun TelegramLoginButton(
     modifier: Modifier = Modifier,
     testTag: String? = null
 ) {
+    SocialLoginButton(
+        text = text,
+        iconRes = R.drawable.ic_telegram_outline,
+        enabled = enabled,
+        loading = loading,
+        onClick = onClick,
+        modifier = modifier,
+        testTag = testTag
+    )
+}
+
+@Composable
+fun VkLoginButton(
+    text: String,
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    testTag: String? = null
+) {
+    SocialLoginButton(
+        text = text,
+        iconRes = R.drawable.ic_vk,
+        enabled = enabled,
+        loading = loading,
+        onClick = onClick,
+        modifier = modifier,
+        testTag = testTag
+    )
+}
+
+@Composable
+private fun SocialLoginButton(
+    text: String,
+    iconRes: Int,
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    testTag: String? = null
+) {
     Button(
         onClick = onClick,
         enabled = enabled && !loading,
@@ -362,7 +405,7 @@ fun TelegramLoginButton(
             )
         } else {
             Icon(
-                painter = painterResource(id = R.drawable.ic_telegram_outline),
+                painter = painterResource(id = iconRes),
                 contentDescription = null,
                 tint = AppBlack,
                 modifier = Modifier.size(20.dp)
@@ -428,23 +471,39 @@ fun SubtleTextButton(
 
 @Composable
 fun OrDivider() {
+    val dividerColor = AppTextMuted.copy(alpha = 0.55f)
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = AppStroke
-        )
+        DashedDivider(modifier = Modifier.weight(1f), color = dividerColor)
         Text(
             text = LocaleHelper.getString(androidx.compose.ui.platform.LocalContext.current, "auth_or"),
             style = MaterialTheme.typography.bodyMedium,
             color = AppTextMuted
         )
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = AppStroke
+        DashedDivider(modifier = Modifier.weight(1f), color = dividerColor)
+    }
+}
+
+@Composable
+private fun DashedDivider(
+    modifier: Modifier = Modifier,
+    color: Color
+) {
+    Canvas(
+        modifier = modifier.height(1.dp)
+    ) {
+        drawLine(
+            color = color,
+            start = Offset(0f, size.height / 2f),
+            end = Offset(size.width, size.height / 2f),
+            strokeWidth = 1.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(
+                floatArrayOf(8.dp.toPx(), 6.dp.toPx()),
+                0f
+            )
         )
     }
 }

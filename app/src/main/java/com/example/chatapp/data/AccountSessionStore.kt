@@ -81,6 +81,10 @@ class SharedPrefsAccountSessionStore(
             ?: user?.telegramUsername
                 ?.takeIf { it.isNotBlank() }
                 ?.let { "@$it" }
+            ?: user?.vkEmail?.trim()?.lowercase()
+            ?: user?.vkId
+                ?.takeIf { it.isNotBlank() }
+                ?.let { "vk_$it" }
 
         prefs.edit().apply {
             token?.let { putString(KEY_AUTH_TOKEN, it) }

@@ -11,6 +11,7 @@ import com.example.chatapp.network.dto.TelegramVerifyCodeRequest
 import com.example.chatapp.network.dto.TelegramVerifyCodeResponse
 import com.example.chatapp.network.dto.TelegramNativeLoginRequest
 import com.example.chatapp.network.dto.TelegramWidgetLoginRequest
+import com.example.chatapp.network.dto.VkNativeLoginRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -57,6 +58,11 @@ interface AuthApiService {
     @POST("telegram-auth/native-login")
     suspend fun completeTelegramNativeLogin(
         @Body request: TelegramNativeLoginRequest
+    ): Response<AuthResponse>
+
+    @POST("vk-auth/native-login")
+    suspend fun completeVkNativeLogin(
+        @Body request: VkNativeLoginRequest
     ): Response<AuthResponse>
 
     @POST("change-password")

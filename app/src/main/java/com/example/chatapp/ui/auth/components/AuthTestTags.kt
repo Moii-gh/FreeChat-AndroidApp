@@ -2,6 +2,7 @@ package com.example.chatapp.ui.auth.components
 
 object AuthTestTags {
     const val TELEGRAM_CONTINUE_BUTTON = "telegram_continue_button"
+    const val VK_CONTINUE_BUTTON = "vk_continue_button"
     const val LOGIN_BUTTON = "login_button"
     const val LEGACY_ACCOUNT_BUTTON = "legacy_account_button"
     const val LEGACY_EMAIL_FIELD = "legacy_email_field"
