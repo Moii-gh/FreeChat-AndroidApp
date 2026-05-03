@@ -65,6 +65,13 @@
         </LinearLayout>
     </FrameLayout>
 
+    <View
+        android:id="@+id/drawerTopScrim"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@drawable/drawer_top_scrim"
+        android:alpha="1.0" />
+
     <FrameLayout
         android:id="@+id/drawerHeaderContainer"
         android:layout_width="match_parent"
@@ -72,7 +79,7 @@
         android:paddingHorizontal="16dp"
         android:paddingTop="14dp"
         android:paddingBottom="14dp"
-        android:background="@drawable/bg_drawer_header"
+        android:background="@android:color/transparent"
         android:clipChildren="false">
 
         <!-- Основной контент: FreeChat + Иконки -->
