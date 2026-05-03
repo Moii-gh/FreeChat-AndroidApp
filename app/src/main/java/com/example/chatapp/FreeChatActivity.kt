@@ -130,6 +130,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var isBiometricGateActive = false
     private var isChatUiInitialized = false
     private var navigationBarInsetBottom = 0
+    private var systemWindowInsetTop = 0
     private var messagesBottomAnchorId = View.NO_ID
 
     override fun attachBaseContext(newBase: Context) {
@@ -1175,9 +1176,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun setupInputArea() {
         binding.root.setOnApplyWindowInsetsListener { _, insets ->
             navigationBarInsetBottom = insets.systemWindowInsetBottom
+            systemWindowInsetTop = insets.systemWindowInsetTop
             updateBottomInputSystemInset()
+            updateTopInputSystemInset()
             updateFloatingInputPadding()
             insets
+        }
+        binding.topBar.viewTreeObserver.addOnGlobalLayoutListener {
+            updateFloatingInputPadding()
         }
         binding.bottomInputArea.viewTreeObserver.addOnGlobalLayoutListener {
             updateFloatingInputPadding()
@@ -1252,7 +1258,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun updateFloatingInputPadding() {
         updateMessagesViewportAnchor()
-        val topPadding = dp(8f).toInt()
+        
+        val topBarHeight = binding.topBar.height
+        val dynamicTopPadding = if (topBarHeight > 0) {
+            topBarHeight + dp(8f).toInt()
+        } else {
+            dp(64f).toInt()
+        }
+        val finalTopPadding = dynamicTopPadding + systemWindowInsetTop
         
         val inputHeight = binding.bottomInputArea.height
         val dynamicBottomPadding = if (inputHeight > 0) {
@@ -1263,14 +1276,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val finalBottomPadding = dynamicBottomPadding + navigationBarInsetBottom
 
         if (
-            binding.messagesScrollView.paddingTop == topPadding &&
+            binding.messagesScrollView.paddingTop == finalTopPadding &&
             binding.messagesScrollView.paddingBottom == finalBottomPadding
         ) {
             return
         }
         binding.messagesScrollView.setPadding(
             binding.messagesScrollView.paddingLeft,
-            topPadding,
+            finalTopPadding,
             binding.messagesScrollView.paddingRight,
             finalBottomPadding
         )
@@ -1289,6 +1302,25 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (scrimParams.height != targetScrimHeight) {
             scrimParams.height = targetScrimHeight
             binding.bottomInputScrim.layoutParams = scrimParams
+        }
+    }
+
+    private fun updateTopInputSystemInset() {
+        val targetTopMargin = systemWindowInsetTop
+        val topBarParams = binding.topBar.layoutParams as ViewGroup.MarginLayoutParams
+        if (topBarParams.topMargin != targetTopMargin) {
+            topBarParams.topMargin = targetTopMargin
+            binding.topBar.layoutParams = topBarParams
+        }
+
+        val topScrim = binding.root.findViewById<View>(R.id.topInputScrim)
+        if (topScrim != null) {
+            val topScrimParams = topScrim.layoutParams
+            val targetTopScrimHeight = systemWindowInsetTop + dp(100f).toInt()
+            if (topScrimParams.height != targetTopScrimHeight) {
+                topScrimParams.height = targetTopScrimHeight
+                topScrim.layoutParams = topScrimParams
+            }
         }
     }
 

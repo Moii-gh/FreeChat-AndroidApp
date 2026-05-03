@@ -203,6 +203,4 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.3")
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.3")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.3")
-
-    implementation("com.github.Dimezis:BlurView:version-2.0.5")
 }
