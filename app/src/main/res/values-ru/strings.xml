@@ -358,6 +358,7 @@
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Цифровой помощник</string>
+    <string name="digital_assistant_short_title">Ассистент [beta]</string>
     <string name="digital_assistant_description">Показывает FreeChat поверх других приложений и позволяет задавать вопросы по текущему экрану.</string>
     <string name="digital_assistant_enable">Включить цифрового помощника</string>
     <string name="digital_assistant_permissions_explanation">FreeChat можно выбрать помощником Android по умолчанию. Разрешения overlay и уведомлений нужны только для резервного запуска; захват экрана запрашивается только после нажатия “Спросить об экране”.</string>

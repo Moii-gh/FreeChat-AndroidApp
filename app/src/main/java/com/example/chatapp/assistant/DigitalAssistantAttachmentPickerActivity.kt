@@ -31,12 +31,12 @@ class DigitalAssistantAttachmentPickerActivity : AppCompatActivity() {
         }
     }
 
-    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        handlePickedUri(uri)
+    private val imageMultiPickerLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        handlePickedUris(uris)
     }
 
-    private val filePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        handlePickedUri(uri)
+    private val fileMultiPickerLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        handlePickedUris(uris)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,8 +66,8 @@ class DigitalAssistantAttachmentPickerActivity : AppCompatActivity() {
     private fun launchPicker(source: String) {
         when (source) {
             SOURCE_CAMERA -> launchCamera()
-            SOURCE_PHOTO -> imagePickerLauncher.launch("image/*")
-            SOURCE_FILES -> filePickerLauncher.launch("*/*")
+            SOURCE_PHOTO -> imageMultiPickerLauncher.launch("image/*")
+            SOURCE_FILES -> fileMultiPickerLauncher.launch("*/*")
             else -> {
                 finishAndRestoreAssistant()
             }
@@ -90,24 +90,34 @@ class DigitalAssistantAttachmentPickerActivity : AppCompatActivity() {
             finishAndRestoreAssistant()
             return
         }
+        handlePickedUris(listOf(uri))
+    }
+
+    private fun handlePickedUris(uris: List<Uri>) {
+        if (uris.isEmpty()) {
+            finishAndRestoreAssistant()
+            return
+        }
 
         lifecycleScope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    val payload = ChatAttachmentHelper(this@DigitalAssistantAttachmentPickerActivity)
-                        .buildAttachmentPayload(uri)
-                        ?: error(LocaleHelper.getString(this@DigitalAssistantAttachmentPickerActivity, "attachment_read_error"))
-                    AssistantAttachment(
-                        mimeType = payload.mimeType,
-                        fileName = payload.fileName ?: "assistant_attachment_${System.currentTimeMillis()}",
-                        base64Data = payload.base64Data.orEmpty(),
-                        cacheFilePath = payload.fileUri,
-                        attachmentContext = payload.attachmentContext
-                    )
+                    val helper = ChatAttachmentHelper(this@DigitalAssistantAttachmentPickerActivity)
+                    uris.mapIndexed { index, uri ->
+                        val payload = helper.buildAttachmentPayload(uri)
+                            ?: error(LocaleHelper.getString(this@DigitalAssistantAttachmentPickerActivity, "attachment_read_error"))
+                        AssistantAttachment(
+                            mimeType = payload.mimeType,
+                            fileName = payload.fileName ?: "assistant_attachment_${System.currentTimeMillis()}_$index",
+                            base64Data = payload.base64Data.orEmpty(),
+                            cacheFilePath = payload.fileUri,
+                            attachmentContext = payload.attachmentContext
+                        )
+                    }
                 }
-            }.onSuccess { attachment ->
+            }.onSuccess { attachments ->
                 DigitalAssistantRuntime.get(this@DigitalAssistantAttachmentPickerActivity)
-                    .setScreenAttachment(attachment)
+                    .setScreenAttachments(attachments)
             }.onFailure { error ->
                 Toast.makeText(
                     this@DigitalAssistantAttachmentPickerActivity,

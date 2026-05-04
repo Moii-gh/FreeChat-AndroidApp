@@ -55,12 +55,26 @@ class DigitalAssistantHandoffStore(private val context: Context) {
         return token
     }
 
-    fun saveChat(chatId: String): String {
+    fun saveChat(chatId: String, draftText: String = "", attachment: AssistantAttachment? = null): String {
         val token = UUID.randomUUID().toString()
         val tokenDir = File(dir, token).apply { mkdirs() }
+        val copiedAttachment = attachment?.cacheFilePath?.let { sourcePath ->
+            val source = File(sourcePath)
+            if (source.exists()) {
+                val target = File(tokenDir, attachment.fileName)
+                source.copyTo(target, overwrite = true)
+                target.absolutePath
+            } else {
+                null
+            }
+        }
         File(tokenDir, HANDOFF_FILE).writeText(
             JSONObject().apply {
                 put("chatId", chatId)
+                put("draftText", draftText)
+                copiedAttachment?.let { put("attachmentPath", it) }
+                attachment?.mimeType?.let { put("attachmentMimeType", it) }
+                attachment?.fileName?.let { put("attachmentFileName", it) }
             }.toString(),
             Charsets.UTF_8
         )
@@ -81,7 +95,7 @@ class DigitalAssistantHandoffStore(private val context: Context) {
                 attachmentFileName = json.optString("attachmentFileName").takeIf { it.isNotBlank() }
             )
         }.getOrNull().also {
-            if (it?.chatId != null) {
+            if (it?.chatId != null && it.attachmentPath == null) {
                 tokenDir.deleteRecursively()
             }
         }
@@ -108,4 +122,3 @@ class DigitalAssistantHandoffStore(private val context: Context) {
         }
     }
 }
-

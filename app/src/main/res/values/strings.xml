@@ -358,6 +358,7 @@
     <string name="welcome_prompt_8">Ready when you are</string>
     <string name="welcome_question">What can I help you with?</string>
     <string name="digital_assistant_title">Digital assistant</string>
+    <string name="digital_assistant_short_title">Assistant [beta]</string>
     <string name="digital_assistant_description">Shows FreeChat over other apps and lets you ask questions about the current screen.</string>
     <string name="digital_assistant_enable">Enable digital assistant</string>
     <string name="digital_assistant_permissions_explanation">FreeChat can be selected as the default Android assistant. Overlay and notification permissions are used only for fallback; screen capture is requested only after you tap Ask about screen.</string>

@@ -11,230 +11,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:alpha="0"
-        android:background="#73000000"
+        android:background="#A6000000"
         android:clickable="true"
         android:focusable="false" />
-
-    <LinearLayout
-        android:id="@+id/responseCard"
-        android:layout_width="match_parent"
-        android:layout_height="284dp"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:alpha="0"
-        android:background="@drawable/bg_da_response_card"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:elevation="20dp"
-        android:orientation="vertical"
-        android:paddingStart="22dp"
-        android:paddingTop="15dp"
-        android:paddingEnd="22dp"
-        android:paddingBottom="14dp"
-        android:translationY="34dp"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:id="@+id/responseHeader"
-            android:layout_width="match_parent"
-            android:layout_height="30dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/assistantTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:text="@string/app_brand"
-                android:textColor="#FFFFFFFF"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <ImageView
-                android:id="@+id/assistantChevron"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:layout_marginStart="1dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_chevron_right"
-                android:tint="#FFFFFFFF" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/userBubble"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/bg_da_user_bubble"
-            android:includeFontPadding="false"
-            android:maxWidth="228dp"
-            android:paddingStart="16dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp"
-            android:textColor="#FFFFFFFF"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/screenBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/bg_da_action_pill"
-            android:gravity="center"
-            android:includeFontPadding="false"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:text="@string/digital_assistant_screen_analysis"
-            android:textColor="#202020"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
-        <ScrollView
-            android:id="@+id/responseScroll"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="12dp"
-            android:layout_weight="1"
-            android:fadingEdgeLength="18dp"
-            android:fillViewport="false"
-            android:overScrollMode="never"
-            android:requiresFadingEdge="vertical">
-
-            <LinearLayout
-                android:id="@+id/responseContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/answerText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:includeFontPadding="false"
-                    android:lineSpacingExtra="2dp"
-                    android:textColor="#F2F2F2"
-                    android:textSize="14sp" />
-
-                <LinearLayout
-                    android:id="@+id/typingDots"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:visibility="gone">
-
-                    <View
-                        android:id="@+id/typingDot1"
-                        android:layout_width="4dp"
-                        android:layout_height="4dp"
-                        android:background="@drawable/bg_da_typing_dot" />
-
-                    <View
-                        android:id="@+id/typingDot2"
-                        android:layout_width="4dp"
-                        android:layout_height="4dp"
-                        android:layout_marginStart="4dp"
-                        android:background="@drawable/bg_da_typing_dot" />
-
-                    <View
-                        android:id="@+id/typingDot3"
-                        android:layout_width="4dp"
-                        android:layout_height="4dp"
-                        android:layout_marginStart="4dp"
-                        android:background="@drawable/bg_da_typing_dot" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/answerActions"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:contentDescription="@null"
-                        android:padding="5dp"
-                        android:src="@drawable/ic_thumb_up"
-                        android:tint="#8E8E93" />
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:contentDescription="@null"
-                        android:padding="5dp"
-                        android:src="@drawable/ic_thumb_down"
-                        android:tint="#8E8E93" />
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:contentDescription="@null"
-                        android:padding="5dp"
-                        android:src="@drawable/ic_share"
-                        android:tint="#8E8E93" />
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:contentDescription="@null"
-                        android:padding="5dp"
-                        android:src="@drawable/ic_more_vertical"
-                        android:tint="#8E8E93" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/errorActions"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:id="@+id/retryButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_da_action_pill"
-                        android:gravity="center"
-                        android:includeFontPadding="false"
-                        android:minWidth="86dp"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="@string/digital_assistant_retry"
-                        android:textColor="#202020"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/openFromErrorButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_da_action_pill"
-                        android:gravity="center"
-                        android:includeFontPadding="false"
-                        android:minWidth="116dp"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="@string/digital_assistant_open_freechat"
-                        android:textColor="#202020"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </LinearLayout>
-        </ScrollView>
-    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/actionsColumn"
@@ -299,158 +78,229 @@
             android:textSize="13sp" />
     </LinearLayout>
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/bottomPanel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="352dp"
         android:layout_gravity="bottom"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
         android:alpha="0"
-        android:background="@android:color/transparent"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:elevation="22dp"
-        android:orientation="vertical"
-        android:paddingStart="0dp"
-        android:paddingTop="0dp"
-        android:paddingEnd="0dp"
-        android:paddingBottom="0dp"
-        android:scaleX="0.82"
-        android:scaleY="0.82"
-        android:translationY="42dp">
+        android:background="@drawable/bg_da_bottom_panel"
+        android:clipChildren="true"
+        android:clipToOutline="true"
+        android:clipToPadding="true"
+        android:elevation="24dp"
+        android:scaleX="0.98"
+        android:scaleY="0.98"
+        android:translationY="52dp">
 
         <LinearLayout
-            android:id="@+id/inputRow"
+            android:id="@+id/sheetContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="bottom"
-            android:orientation="horizontal">
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:orientation="vertical">
 
-            <ImageButton
-                android:id="@+id/addButton"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginEnd="10dp"
-                android:layout_marginBottom="4dp"
-                android:background="@drawable/circle_button_bg"
-                android:contentDescription="@string/content_desc_add_attachment"
-                android:padding="8dp"
-                android:src="@drawable/ic_plus"
-                android:tint="#8E8E93" />
+            <View
+                android:id="@+id/dragHandle"
+                android:layout_width="34dp"
+                android:layout_height="2dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="7dp"
+                android:background="@drawable/bg_da_drag_handle" />
+
+            <TextView
+                android:id="@+id/assistantTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_marginStart="28dp"
+                android:layout_marginTop="13dp"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text="FreeChat | Ассистент"
+                android:textColor="#FFFFFFFF"
+                android:textSize="14sp" />
+
+            <FrameLayout
+                android:id="@+id/messagesFrame"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1"
+                android:clipChildren="true"
+                android:clipToPadding="true">
+
+                <ScrollView
+                    android:id="@+id/responseScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:fillViewport="false"
+                    android:overScrollMode="never"
+                    android:scrollbarStyle="insideOverlay"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/responseContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipChildren="false"
+                        android:orientation="vertical"
+                        android:paddingStart="28dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="76dp" />
+                </ScrollView>
+
+                <View
+                    android:id="@+id/inputFade"
+                    android:layout_width="match_parent"
+                    android:layout_height="92dp"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/bg_da_message_fade"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </FrameLayout>
 
             <LinearLayout
-                android:id="@+id/inputCapsule"
-                android:layout_width="0dp"
+                android:id="@+id/inputRow"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/input_capsule_bg"
-                android:orientation="vertical"
-                android:paddingStart="4dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="4dp"
-                android:paddingBottom="4dp">
+                android:layout_marginStart="17dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginBottom="14dp"
+                android:gravity="bottom"
+                android:orientation="horizontal">
 
-                <FrameLayout
-                    android:id="@+id/previewContainer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="8dp"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:visibility="gone">
-
-                    <FrameLayout
-                        android:id="@+id/previewFrame"
-                        android:layout_width="64dp"
-                        android:layout_height="104dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false">
-
-                        <ImageView
-                            android:id="@+id/previewImage"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_da_preview"
-                            android:clipToOutline="true"
-                            android:contentDescription="@string/digital_assistant_screen_analysis"
-                            android:scaleType="centerCrop" />
-
-                        <ImageButton
-                            android:id="@+id/removePreview"
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="top|end"
-                            android:layout_marginTop="-7dp"
-                            android:layout_marginEnd="-7dp"
-                            android:background="@drawable/bg_da_preview_close"
-                            android:contentDescription="@string/digital_assistant_close"
-                            android:padding="3dp"
-                            android:src="@drawable/ic_assistant_close"
-                            android:tint="#FFFFFFFF" />
-                    </FrameLayout>
-                </FrameLayout>
+                <ImageButton
+                    android:id="@+id/addButton"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="7dp"
+                    android:layout_marginBottom="1dp"
+                    android:background="@drawable/bg_da_plus_button"
+                    android:contentDescription="@string/content_desc_add_attachment"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_plus"
+                    android:tint="#A0A0A0" />
 
                 <LinearLayout
-                    android:id="@+id/inputLine"
-                    android:layout_width="match_parent"
+                    android:id="@+id/inputCapsule"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:minHeight="32dp"
-                    android:gravity="bottom"
-                    android:orientation="horizontal">
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_da_input_field"
+                    android:minHeight="38dp"
+                    android:orientation="vertical"
+                    android:paddingStart="4dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="4dp"
+                    android:paddingBottom="4dp">
 
-                    <EditText
-                        android:id="@+id/inputField"
-                        android:layout_width="0dp"
+                    <FrameLayout
+                        android:id="@+id/previewContainer"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:gravity="center_vertical"
-                        android:hint="@string/main_panel_input"
-                        android:imeOptions="actionSend"
-                        android:includeFontPadding="false"
-                        android:inputType="textCapSentences|textMultiLine"
-                        android:maxLines="4"
-                        android:minHeight="32dp"
-                        android:minLines="1"
-                        android:paddingStart="10dp"
-                        android:paddingTop="6dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="6dp"
-                        android:textColor="#F2F2F2"
-                        android:textColorHint="#8E8E93"
-                        android:textCursorDrawable="@null"
-                        android:textSize="15sp" />
+                        android:layout_marginStart="5dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="8dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:visibility="gone">
 
-                    <ImageView
-                        android:id="@+id/micIcon"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginEnd="6dp"
-                        android:layout_marginBottom="2dp"
-                        android:contentDescription="@null"
-                        android:padding="6dp"
-                        android:src="@drawable/ic_mic"
-                        android:tint="#8E8E93" />
+                        <FrameLayout
+                            android:id="@+id/previewFrame"
+                            android:layout_width="64dp"
+                            android:layout_height="104dp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false">
 
-                    <ImageButton
-                        android:id="@+id/sendButton"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginBottom="2dp"
-                        android:background="@drawable/bg_da_send_button"
-                        android:contentDescription="@string/content_desc_send"
-                        android:enabled="false"
-                        android:padding="6dp"
-                        android:src="@drawable/ic_send_arrow_up"
-                        android:tint="#A8A8A8" />
+                            <ImageView
+                                android:id="@+id/previewImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_da_preview"
+                                android:clipToOutline="true"
+                                android:contentDescription="@string/digital_assistant_screen_analysis"
+                                android:scaleType="centerCrop" />
+
+                            <ImageButton
+                                android:id="@+id/removePreview"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="top|end"
+                                android:layout_marginTop="-7dp"
+                                android:layout_marginEnd="-7dp"
+                                android:background="@drawable/bg_da_preview_close"
+                                android:contentDescription="@string/digital_assistant_close"
+                                android:padding="3dp"
+                                android:src="@drawable/ic_assistant_close"
+                                android:tint="#FFFFFFFF" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/inputLine"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="bottom"
+                        android:minHeight="30dp"
+                        android:orientation="horizontal">
+
+                        <EditText
+                            android:id="@+id/inputField"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:gravity="center_vertical"
+                            android:hint="@string/main_panel_input"
+                            android:imeOptions="actionSend"
+                            android:includeFontPadding="false"
+                            android:inputType="textCapSentences|textMultiLine"
+                            android:maxLines="4"
+                            android:minHeight="30dp"
+                            android:minLines="1"
+                            android:paddingStart="10dp"
+                            android:paddingTop="5dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="5dp"
+                            android:textColor="#F3F3F3"
+                            android:textColorHint="#8E8E93"
+                            android:textCursorDrawable="@null"
+                            android:textSize="15sp" />
+
+                        <ImageView
+                            android:id="@+id/micIcon"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_marginEnd="3dp"
+                            android:layout_marginBottom="0dp"
+                            android:contentDescription="@null"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_mic"
+                            android:tint="#8E8E93" />
+
+                        <ImageButton
+                            android:id="@+id/sendButton"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginBottom="-1dp"
+                            android:background="@drawable/bg_da_send_button"
+                            android:contentDescription="@string/content_desc_send"
+                            android:enabled="false"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_send_arrow_up"
+                            android:tint="#1B1B1B" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/attachmentMenu"

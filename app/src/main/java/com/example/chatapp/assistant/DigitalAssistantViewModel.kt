@@ -22,6 +22,7 @@ class DigitalAssistantViewModel(context: Context) {
     private var sendJob: Job? = null
     private var lastSubmittedText: String = ""
     private var lastSubmittedAttachment: AssistantAttachment? = null
+    private var nextMessageId = 1L
     private var assistScreenshot: Bitmap? = null
     private var pendingAssistScreenshotRequest: PendingAssistScreenshotRequest? = null
 
@@ -90,10 +91,17 @@ class DigitalAssistantViewModel(context: Context) {
     }
 
     fun setScreenAttachment(attachment: AssistantAttachment) {
-        cleanupAttachment(state.attachment)
+        setScreenAttachments(listOf(attachment))
+    }
+
+    fun setScreenAttachments(attachments: List<AssistantAttachment>) {
+        val cleanAttachments = attachments.filter { it.base64Data.isNotBlank() }
+        if (cleanAttachments.isEmpty()) return
+        state.effectiveAttachments.forEach(::cleanupAttachment)
         updateState {
             copy(
-                attachment = attachment,
+                attachment = cleanAttachments.firstOrNull(),
+                attachments = cleanAttachments,
                 responseStatus = if (responseStatus == AssistantResponseStatus.ERROR) {
                     AssistantResponseStatus.IDLE
                 } else {
@@ -105,32 +113,50 @@ class DigitalAssistantViewModel(context: Context) {
     }
 
     fun clearAttachment() {
-        cleanupAttachment(state.attachment)
-        updateState { copy(attachment = null) }
+        state.effectiveAttachments.forEach(::cleanupAttachment)
+        updateState { copy(attachment = null, attachments = emptyList()) }
     }
 
     fun submit(rawText: String): Boolean {
         if (state.isGenerating) return false
-        val currentAttachment = state.attachment
+        val currentAttachments = state.effectiveAttachments
+        val currentAttachment = currentAttachments.firstOrNull()
         val text = rawText.trim().ifBlank {
-            if (currentAttachment != null) {
+            if (currentAttachments.isNotEmpty()) {
                 LocaleHelper.getString(application, "digital_assistant_default_screen_question")
             } else {
                 ""
             }
         }
-        if (text.isBlank() && currentAttachment == null) return false
+        if (text.isBlank() && currentAttachments.isEmpty()) return false
 
         lastSubmittedText = text
         lastSubmittedAttachment = currentAttachment
+        val userMessage = AssistantMessage(
+            id = nextMessageId++,
+            role = AssistantMessageRole.USER,
+            text = text,
+            isScreenAnalysis = currentAttachments.isNotEmpty(),
+            attachments = currentAttachments
+        )
+        val assistantMessageId = nextMessageId++
+        val assistantMessage = AssistantMessage(
+            id = assistantMessageId,
+            role = AssistantMessageRole.ASSISTANT,
+            text = "",
+            status = AssistantResponseStatus.LOADING,
+            isScreenAnalysis = currentAttachment != null
+        )
         updateState {
             copy(
                 attachment = null,
+                attachments = emptyList(),
                 responseStatus = AssistantResponseStatus.LOADING,
+                messages = messages + userMessage + assistantMessage,
                 userQuestion = text,
                 answerText = "",
                 errorText = null,
-                isScreenAnalysis = currentAttachment != null
+                isScreenAnalysis = currentAttachments.isNotEmpty()
             )
         }
 
@@ -143,26 +169,41 @@ class DigitalAssistantViewModel(context: Context) {
                         updateState { copy(activeChatId = chatId) }
                     },
                     onChunk = { chunk ->
-                        updateState { copy(answerText = chunk) }
+                        updateState {
+                            copy(
+                                answerText = chunk,
+                                messages = messages.replaceMessage(assistantMessageId) {
+                                    it.copy(text = chunk, status = AssistantResponseStatus.LOADING)
+                                }
+                            )
+                        }
                     }
                 )
             }.onSuccess { result ->
-                cleanupAttachment(currentAttachment)
+                currentAttachments.forEach(::cleanupAttachment)
                 lastSubmittedAttachment = null
                 updateState {
+                    val finalAnswer = result.fullAnswer.ifBlank { answerText }
                     copy(
                         responseStatus = AssistantResponseStatus.SUCCESS,
-                        answerText = result.fullAnswer.ifBlank { answerText },
+                        answerText = finalAnswer,
+                        messages = messages.replaceMessage(assistantMessageId) {
+                            it.copy(text = finalAnswer, status = AssistantResponseStatus.SUCCESS)
+                        },
                         activeChatId = result.chatId
                     )
                 }
             }.onFailure { error ->
-                cleanupAttachment(currentAttachment)
+                currentAttachments.forEach(::cleanupAttachment)
+                val message = error.message
+                    ?: LocaleHelper.getString(application, "digital_assistant_response_error")
                 updateState {
                     copy(
                         responseStatus = AssistantResponseStatus.ERROR,
-                        errorText = error.message
-                            ?: LocaleHelper.getString(application, "digital_assistant_response_error")
+                        errorText = message,
+                        messages = messages.replaceMessage(assistantMessageId) {
+                            it.copy(text = message, status = AssistantResponseStatus.ERROR)
+                        }
                     )
                 }
             }
@@ -182,7 +223,7 @@ class DigitalAssistantViewModel(context: Context) {
         val chatId = state.activeChatId
         val store = DigitalAssistantHandoffStore(context)
         return if (!chatId.isNullOrBlank()) {
-            store.saveChat(chatId)
+            store.saveChat(chatId, draftText, state.attachment)
         } else {
             store.saveDraft(draftText, state.attachment)
         }
@@ -192,7 +233,7 @@ class DigitalAssistantViewModel(context: Context) {
         repository.cancelActiveResponse()
         sendJob?.cancel()
         sendJob = null
-        cleanupAttachment(state.attachment)
+        state.effectiveAttachments.forEach(::cleanupAttachment)
         cleanupAttachment(lastSubmittedAttachment)
         cleanupAssistScreenshot()
         pendingAssistScreenshotRequest = null
@@ -202,7 +243,7 @@ class DigitalAssistantViewModel(context: Context) {
 
     fun resetIdleOnly() {
         if (state.isGenerating) return
-        cleanupAttachment(state.attachment)
+        state.effectiveAttachments.forEach(::cleanupAttachment)
         cleanupAssistScreenshot()
         pendingAssistScreenshotRequest = null
         updateState { DigitalAssistantState() }
@@ -212,6 +253,14 @@ class DigitalAssistantViewModel(context: Context) {
         state = state.reducer()
         listeners.forEach { it(state) }
     }
+
+    private inline fun List<AssistantMessage>.replaceMessage(
+        id: Long,
+        transform: (AssistantMessage) -> AssistantMessage
+    ): List<AssistantMessage> =
+        map { message ->
+            if (message.id == id) transform(message) else message
+        }
 
     private fun buildAssistScreenshotAttachment(bitmap: Bitmap): AssistantAttachment {
         val output = ByteArrayOutputStream()

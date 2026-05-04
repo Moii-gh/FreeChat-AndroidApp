@@ -26,9 +26,25 @@ enum class AssistantResponseStatus {
     ERROR
 }
 
+enum class AssistantMessageRole {
+    USER,
+    ASSISTANT
+}
+
+data class AssistantMessage(
+    val id: Long,
+    val role: AssistantMessageRole,
+    val text: String,
+    val status: AssistantResponseStatus = AssistantResponseStatus.SUCCESS,
+    val isScreenAnalysis: Boolean = false,
+    val attachments: List<AssistantAttachment> = emptyList()
+)
+
 data class DigitalAssistantState(
     val attachment: AssistantAttachment? = null,
+    val attachments: List<AssistantAttachment> = emptyList(),
     val responseStatus: AssistantResponseStatus = AssistantResponseStatus.IDLE,
+    val messages: List<AssistantMessage> = emptyList(),
     val userQuestion: String = "",
     val answerText: String = "",
     val errorText: String? = null,
@@ -37,4 +53,7 @@ data class DigitalAssistantState(
 ) {
     val isGenerating: Boolean
         get() = responseStatus == AssistantResponseStatus.LOADING
+
+    val effectiveAttachments: List<AssistantAttachment>
+        get() = attachments.ifEmpty { listOfNotNull(attachment) }
 }

@@ -508,10 +508,20 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val handoff = DigitalAssistantHandoffStore(this).consume(token) ?: return
         val chatId = handoff.chatId
         if (!chatId.isNullOrBlank()) {
-            openChat(chatId)
+            openChat(chatId) {
+                restoreAssistantHandoffDraft(handoff)
+            }
             return
         }
         clearInputContext()
+        restoreAssistantHandoffDraft(handoff)
+        binding.etInput.requestFocus()
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun restoreAssistantHandoffDraft(handoff: com.example.chatapp.assistant.DigitalAssistantHandoff) {
         if (handoff.draftText.isNotBlank()) {
             updateInputText(handoff.draftText, keepSuggestions = false)
         }
@@ -520,10 +530,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             grantUriPermission(packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             showFilePreview(uri)
         }
-        binding.etInput.requestFocus()
-        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
-            as android.view.inputmethod.InputMethodManager
-        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun syncQuickSuggestions(query: String) {
@@ -1520,7 +1526,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         drawerManager.populateChats(chats, trimmed)
     }
 
-    private fun openChat(chatId: String) {
+    private fun openChat(chatId: String, onOpened: (() -> Unit)? = null) {
         lifecycleScope.launch {
             val chat = chatViewModel.getChatById(chatId) ?: return@launch
             val messages = try {
@@ -1599,6 +1605,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             hideQuickSuggestions()
             refreshDrawerSelection()
             binding.drawerLayout.closeDrawer(GravityCompat.START)
+            onOpened?.invoke()
         }
     }
 
