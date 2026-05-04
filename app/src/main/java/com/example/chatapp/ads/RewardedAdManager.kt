@@ -1,9 +1,9 @@
 package com.example.chatapp.ads
 
 import android.app.Activity
-import android.util.Log
 import android.widget.Toast
 import com.example.chatapp.LocaleHelper
+import com.example.chatapp.util.SafeLog
 import com.yandex.mobile.ads.common.AdError
 import com.yandex.mobile.ads.common.AdRequestConfiguration
 import com.yandex.mobile.ads.common.AdRequestError
@@ -39,15 +39,14 @@ class RewardedAdManager(
                     override fun onAdLoaded(ad: RewardedAd) {
                         isLoading = false
                         rewardedAd = ad
-                        Log.d(TAG, "Rewarded ad loaded: adUnitId=$AD_UNIT_ID")
+                        SafeLog.d(TAG, "Rewarded ad loaded")
                     }
 
                     override fun onAdFailedToLoad(error: AdRequestError) {
                         isLoading = false
-                        Log.w(
+                        SafeLog.w(
                             TAG,
-                            "Rewarded ad failed to load: code=${error.code}, " +
-                                "description=${error.description}, adUnitId=${error.adUnitId}"
+                            "Rewarded ad failed to load: code=${error.code}"
                         )
                         // Тихо игнорируем — реклама необязательна
                     }
@@ -74,7 +73,7 @@ class RewardedAdManager(
                 override fun onAdShown() {}
 
                 override fun onAdFailedToShow(error: AdError) {
-                    Log.w(TAG, "Rewarded ad failed to show: description=${error.description}")
+                    SafeLog.w(TAG, "Rewarded ad failed to show")
                     destroyRewardedAd()
                     loadAd()
                 }
@@ -92,7 +91,7 @@ class RewardedAdManager(
             })
             show(activity)
         } ?: run {
-            Log.d(TAG, "Rewarded ad is not ready yet: isLoading=$isLoading, adUnitId=$AD_UNIT_ID")
+            SafeLog.d(TAG, "Rewarded ad is not ready yet: isLoading=$isLoading")
             Toast.makeText(activity, LocaleHelper.getString(activity, "toast_ad_loading"), Toast.LENGTH_SHORT).show()
             loadAd()
         }

@@ -75,7 +75,7 @@
     <string name="auth_error_telegram_nonce_mismatch">Nonce в Telegram ID token не совпадает</string>
     <string name="auth_error_telegram_session_expired">Сессия Telegram Login истекла. Попробуйте ещё раз.</string>
     <string name="auth_error_telegram_token_exchange_failed">Обмен Telegram token не удался: %s</string>
-    <string name="auth_error_vk_login_not_configured">VK ID не настроен. Укажите VKID_CLIENT_ID и VKID_CLIENT_SECRET.</string>
+    <string name="auth_error_vk_login_not_configured">Вход через VK временно недоступен. Нужна настройка на сервере.</string>
     <string name="auth_error_verify_code_first">Сначала подтвердите код из Telegram</string>
     <string name="auth_full_name_placeholder">Полное имя</string>
     <string name="auth_info_login_canceled">Вход через Telegram отменён</string>
@@ -276,8 +276,8 @@
     <string name="security_password_change_success">Пароль изменен локально</string>
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Локально не задан</string>
-    <string name="security_password_unavailable">Пароль недоступен на этом устройстве</string>
-    <string name="security_your_password_label">Ваш пароль:</string>
+    <string name="security_password_unavailable">Пароль не хранится в приложении</string>
+    <string name="security_your_password_label">Пароль:</string>
     <string name="session_expired_sign_in">Сессия истекла. Войдите снова.</string>
     <string name="session_missing_sign_in">Сессия не найдена. Войдите снова.</string>
     <string name="settings_shared_links">Отправленные чаты</string>

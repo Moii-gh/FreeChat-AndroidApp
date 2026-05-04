@@ -7,7 +7,7 @@ import com.example.chatapp.data.AccountScopedSettings
  * Поддерживаемые AI-провайдеры.
  *
  * VSEGPT  — все запросы уходят на наш бэкенд (текущее поведение).
- * OPENAI  — напрямую к OpenAI API с function-calling (tools).
+ * OPENAI  — напрямую к OpenAI API с вызовом инструментов.
  */
 enum class AiProvider(val code: String, val displayLabel: String) {
     VSEGPT("vsegpt", "VseGPT (сервер)"),

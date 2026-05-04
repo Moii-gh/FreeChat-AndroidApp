@@ -9,6 +9,7 @@ import com.example.chatapp.network.dto.ApiUser
 private const val LEGACY_PREFS_NAME = "settings_prefs"
 private const val SECURE_PREFS_NAME = "secure_settings_prefs"
 private const val KEY_SECURE_PREFS_MIGRATED = "__secure_prefs_migrated"
+private const val LEGACY_KEY_USER_PASSWORD = "user_password"
 
 private fun createSecurePreferences(
     context: Context,
@@ -43,6 +44,10 @@ private fun createSecurePreferences(
         if (legacyPrefs.all.isNotEmpty()) {
             legacyPrefs.edit().clear().apply()
         }
+    }
+
+    if (securePrefs.contains(LEGACY_KEY_USER_PASSWORD)) {
+        securePrefs.edit().remove(LEGACY_KEY_USER_PASSWORD).apply()
     }
 
     return securePrefs
@@ -134,10 +139,10 @@ class SharedPrefsAccountSessionStore(
 
     override fun getCurrentUserName(): String? = prefs.getString(KEY_USER_NAME, null)
 
-    override fun getCurrentUserPassword(): String? = prefs.getString(KEY_USER_PASSWORD, null)
+    override fun getCurrentUserPassword(): String? = null
 
     override fun saveRegistrationPassword(password: String) {
-        prefs.edit().putString(KEY_USER_PASSWORD, password).apply()
+        prefs.edit().remove(KEY_USER_PASSWORD).apply()
     }
 
     override fun getDailyRequestLimit(): Int? =
@@ -254,12 +259,12 @@ class AccountScopedSettings(
         prefs.edit().putString(scopedKey("user_instructions"), value).apply()
     }
 
-    /** Generic scoped string getter for arbitrary keys */
+    /** Возвращает строковую настройку текущего аккаунта. */
     fun getString(key: String): String {
         return prefs.getString(scopedKey(key), "") ?: ""
     }
 
-    /** Generic scoped string setter for arbitrary keys */
+    /** Сохраняет строковую настройку текущего аккаунта. */
     fun saveString(key: String, value: String) {
         prefs.edit().putString(scopedKey(key), value).apply()
     }

@@ -46,7 +46,6 @@ fun derivePublicBaseUrl(apiBaseUrl: String): String {
 val configuredChatSharePublicBaseUrl =
     envVars["CHAT_SHARE_PUBLIC_BASE_URL"] ?: derivePublicBaseUrl(configuredApiBaseUrl)
 val configuredVkIdClientId = envVars["VKID_CLIENT_ID"] ?: ""
-val configuredVkIdClientSecret = envVars["VKID_CLIENT_SECRET"] ?: ""
 val configuredVkIdScopes = envVars["VKID_SCOPES"] ?: "email"
 val vkIdManifestClientId = configuredVkIdClientId.ifBlank { "0" }
 
@@ -87,8 +86,9 @@ android {
         buildConfigField("String", "TELEGRAM_LOGIN_REDIRECT_URI", telegramLoginRedirectUri.toBuildConfigString())
         buildConfigField("String", "TELEGRAM_LOGIN_SCOPES", telegramLoginScopes.toBuildConfigString())
         buildConfigField("String", "VKID_CLIENT_ID", configuredVkIdClientId.toBuildConfigString())
-        buildConfigField("String", "VKID_CLIENT_SECRET", configuredVkIdClientSecret.toBuildConfigString())
         buildConfigField("String", "VKID_SCOPES", configuredVkIdScopes.toBuildConfigString())
+        // TODO: вернуть true только после server-side VK flow без секрета в APK.
+        buildConfigField("boolean", "VKID_NATIVE_LOGIN_ENABLED", "false")
         manifestPlaceholders["telegramLoginRedirectScheme"] = runCatching {
             URI(telegramLoginRedirectUri).scheme
         }.getOrNull().orEmpty().ifBlank { "https" }
@@ -105,7 +105,8 @@ android {
             URI(configuredChatSharePublicBaseUrl).host
         }.getOrNull().orEmpty().ifBlank { "example.com" }
         manifestPlaceholders["VKIDClientID"] = vkIdManifestClientId
-        manifestPlaceholders["VKIDClientSecret"] = configuredVkIdClientSecret.ifBlank { "0" }
+        // TODO: если VK SDK потребует секрет клиента, перенести обмен на backend и не встраивать секрет в APK.
+        manifestPlaceholders["VKIDClientSecret"] = "0"
         manifestPlaceholders["VKIDRedirectHost"] = "vk.ru"
         manifestPlaceholders["VKIDRedirectScheme"] = "vk$vkIdManifestClientId"
 
@@ -117,8 +118,8 @@ android {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
         }
         release {
-            buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", "true")
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
+            buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", "false")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

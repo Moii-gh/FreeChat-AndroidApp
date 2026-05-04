@@ -1,7 +1,7 @@
 package com.example.chatapp.network
 
-import android.util.Log
 import com.example.chatapp.BuildConfig
+import com.example.chatapp.util.SafeLog
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -19,7 +19,7 @@ object NetworkModule {
             ?: throw IllegalStateException("APP_API_BASE_URL must be an absolute URL")
 
         if (!BuildConfig.ALLOW_HTTP_BASE_URL && scheme != "https") {
-            throw IllegalStateException("Release builds require HTTPS APP_API_BASE_URL")
+            SafeLog.w(TAG, "Release build is configured with non-HTTPS APP_API_BASE_URL; cleartext is blocked")
         }
 
         return normalized
@@ -97,7 +97,7 @@ object NetworkModule {
 
     private fun sanitizedLoggingInterceptor(): HttpLoggingInterceptor {
         val logger = HttpLoggingInterceptor.Logger { message ->
-            Log.d(TAG, redact(message))
+            SafeLog.d(TAG, redact(message))
         }
 
         return HttpLoggingInterceptor(logger).apply {
@@ -111,7 +111,9 @@ object NetworkModule {
 
     private fun redact(message: String): String {
         return if (message.startsWith("Authorization:", ignoreCase = true)) {
-            "Authorization: ██"
+            "Authorization: [redacted]"
+        } else if (message.contains("/chat-shares/", ignoreCase = true)) {
+            message.replace(Regex("/chat-shares/[A-Za-z0-9_-]{16,128}"), "/chat-shares/[redacted]")
         } else {
             message
         }

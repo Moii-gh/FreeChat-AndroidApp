@@ -562,8 +562,7 @@ class AuthViewModel(
                         )
                     ) {
                         is NetworkResult.Success -> handleAuthenticatedSuccess(
-                            response = result.data,
-                            registrationPassword = state.password
+                            response = result.data
                         )
                         is NetworkResult.Error -> {
                             _uiState.update {
@@ -582,10 +581,9 @@ class AuthViewModel(
     }
 
     private suspend fun handleAuthenticatedSuccess(
-        response: AuthResponse,
-        registrationPassword: String? = null
+        response: AuthResponse
     ) {
-        persistAuthenticatedPayload(response, registrationPassword)
+        persistAuthenticatedPayload(response)
         _uiState.update {
             it.copy(
                 isLoading = false,
@@ -601,13 +599,9 @@ class AuthViewModel(
     }
 
     private fun persistAuthenticatedPayload(
-        response: AuthResponse,
-        registrationPassword: String?
+        response: AuthResponse
     ) {
         accountSessionStore.saveAuthenticatedUser(response.user, response.token)
-        registrationPassword
-            ?.takeIf { it.isNotBlank() }
-            ?.let(accountSessionStore::saveRegistrationPassword)
     }
 
     private fun setError(message: String) {

@@ -91,8 +91,8 @@ class SharedLinksActivity : AppCompatActivity() {
             Toast.makeText(this, LocaleHelper.getString(this, "shared_link_expired_copy_error"), Toast.LENGTH_SHORT).show()
             return
         }
-        // Use the HTTP landing page URL — it works in any messenger/browser
-        // and automatically redirects to freechat:// to open the app
+        // Копируем публичную landing-ссылку: она открывается в мессенджерах и браузере,
+        // а затем переводит пользователя в freechat:// внутри приложения.
         val url = "${BuildConfig.CHAT_SHARE_PUBLIC_BASE_URL.removeSuffix("/")}/share/${item.token}"
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("FreeChat Share", url)

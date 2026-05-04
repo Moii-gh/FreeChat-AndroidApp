@@ -2,6 +2,7 @@ package com.example.chatapp
 
 import android.app.Application
 import android.content.Context
+import com.example.chatapp.util.SafeLog
 import com.vk.id.VKID
 
 class ChatApp : Application() {
@@ -12,8 +13,12 @@ class ChatApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        if (BuildConfig.VKID_CLIENT_ID.isNotBlank() && BuildConfig.VKID_CLIENT_SECRET.isNotBlank()) {
-            VKID.init(this)
+        if (BuildConfig.VKID_NATIVE_LOGIN_ENABLED) {
+            runCatching {
+                VKID.init(this)
+            }.onFailure { error ->
+                SafeLog.w("ChatApp", "VK ID initialization failed", error)
+            }
         }
     }
 }

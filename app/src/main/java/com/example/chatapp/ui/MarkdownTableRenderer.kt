@@ -203,7 +203,7 @@ object MarkdownTableRenderer {
             .map { it.trim() }
     }
 
-    // ─────────── UI ───────────
+    // ─────────── Отрисовка таблицы ───────────
 
     /**
      * Создаёт полный UI-блок для одной таблицы:
@@ -236,7 +236,7 @@ object MarkdownTableRenderer {
             )
         }
 
-        // TableLayout внутри скролла
+        // Таблица внутри горизонтального скролла.
         val tableLayout = buildTableLayout(context, table, density)
         hScroll.addView(tableLayout)
         card.addView(hScroll)
@@ -349,8 +349,7 @@ object MarkdownTableRenderer {
         dividerColor: Int,
         density: Float
     ): GradientDrawable {
-        // Используем LayerDrawable эффект через простой GradientDrawable с stroke справа
-        // Для упрощения — просто solid, разделитель реализован через фон строки заголовка
+        // Оставляем цельный фон: разделитель уже реализован фоном строки заголовка.
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             setColor(fillColor)
@@ -464,7 +463,7 @@ object MarkdownTableRenderer {
             saveViaMediaStore(context, fileName, xmlContent)
         } else {
             shareXmlFallback(context, fileName, xmlContent)
-            true // fallback всегда "успешен" (открывает диалог)
+            true // Запасной вариант считается успешным, если открыт системный диалог.
         }
 
         if (success) {
@@ -476,7 +475,7 @@ object MarkdownTableRenderer {
                 ).show()
             }
         } else {
-            // Если MediaStore не сработал — пробуем share-intent как запасной вариант
+            // Если MediaStore не сработал, пробуем системный intent шаринга.
             shareXmlFallback(context, fileName, xmlContent)
         }
     }

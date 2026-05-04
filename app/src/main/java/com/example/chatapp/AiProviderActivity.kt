@@ -79,7 +79,7 @@ class AiProviderActivity : AppCompatActivity() {
         providerSettings.setOpenAiApiKey(key)
         Toast.makeText(this, LocaleHelper.getString(this, "ai_provider_key_saved"), Toast.LENGTH_SHORT).show()
 
-        // Hide keyboard
+        // Прячем клавиатуру после сохранения ключа.
         val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         imm.hideSoftInputFromWindow(etApiKey.windowToken, 0)
     }
@@ -88,19 +88,19 @@ class AiProviderActivity : AppCompatActivity() {
         val currentProvider = providerSettings.getProvider()
         val isOpenAi = currentProvider == AiProvider.OPENAI
 
-        // Update checkmarks
+        // Обновляем отметки выбранного провайдера.
         findViewById<ImageView>(R.id.ivVsegptCheck).visibility =
             if (!isOpenAi) View.VISIBLE else View.GONE
         findViewById<ImageView>(R.id.ivOpenaiCheck).visibility =
             if (isOpenAi) View.VISIBLE else View.GONE
 
-        // Show/hide OpenAI sections
+        // Показываем настройки OpenAI только для прямого режима.
         findViewById<LinearLayout>(R.id.openaiKeySection).visibility =
             if (isOpenAi) View.VISIBLE else View.GONE
         findViewById<LinearLayout>(R.id.openaiModelInfoSection).visibility =
             if (isOpenAi) View.VISIBLE else View.GONE
 
-        // Populate API key field (masked)
+        // Не показываем сохраненный ключ целиком.
         val existingKey = providerSettings.getOpenAiApiKey()
         val etApiKey = findViewById<EditText>(R.id.etApiKey)
         if (existingKey.isNotBlank() && etApiKey.text.isNullOrBlank()) {

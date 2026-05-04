@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import coil.load
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.example.chatapp.util.SafeLog
 import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.dpToPx
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -628,7 +629,9 @@ class AssistantMessageWrapper(
                         val imageBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
                         val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         imageViewResult?.setImageBitmap(bitmap)
-                    } catch (e: Exception) { e.printStackTrace() }
+                    } catch (e: Exception) {
+                        SafeLog.w("AssistantMessageWrapper", "Could not decode inline image", e)
+                    }
                 }
             } else if (isLocalImageUrl(imageUrl)) {
                 if (currentImageUrl != imageUrl) {

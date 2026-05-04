@@ -33,14 +33,14 @@ class PersonalizationActivity : AppCompatActivity() {
         etInstructions.setText(accountSettings.getUserInstructions())
         animateInstructionsInputExpansion()
         
-        // Translate UI
+        // Обновляем тексты под текущую локаль.
         findViewById<android.widget.TextView>(R.id.tvToolbarTitle)?.text = LocaleHelper.getString(this, "label_personalization")
         findViewById<android.widget.TextView>(R.id.tvInstructionsLabel)?.text = LocaleHelper.getString(this, "label_personalization_instructions")
 
-        // Back button
+        // Кнопка назад.
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
 
-        // Save button (checkmark)
+        // Кнопка сохранения.
         findViewById<View>(R.id.btnSave).setOnClickListener {
             val text = etInstructions.text.toString().trim()
             accountSettings.saveUserInstructions(text)

@@ -6,6 +6,5 @@ class ChatViewModelLimitLogicTest {
 
     @Test
     fun `dummy test`() {
-        // Obsolete limits logic was removed
     }
 }

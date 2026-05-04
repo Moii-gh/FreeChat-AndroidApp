@@ -75,7 +75,7 @@
     <string name="auth_error_telegram_nonce_mismatch">Telegram ID token-ის nonce არ ემთხვევა</string>
     <string name="auth_error_telegram_session_expired">Telegram Login-ის სესია ამოიწურა. სცადეთ კიდევ ერთხელ.</string>
     <string name="auth_error_telegram_token_exchange_failed">Telegram token-ის გაცვლა ვერ მოხერხდა: %s</string>
-    <string name="auth_error_vk_login_not_configured">VK ID არ არის კონფიგურირებული. მიუთითეთ VKID_CLIENT_ID და VKID_CLIENT_SECRET.</string>
+    <string name="auth_error_vk_login_not_configured">VK შესვლა დროებით მიუწვდომელია. საჭიროა სერვერის მხარეს დაყენება.</string>
     <string name="auth_error_verify_code_first">ჯერ Telegram-ის კოდი დაადასტურეთ</string>
     <string name="auth_full_name_placeholder">სრული სახელი</string>
     <string name="auth_info_login_canceled">Telegram-ით შესვლა გაუქმდა</string>
@@ -276,8 +276,8 @@
     <string name="security_password_change_success">პაროლი ლოკალურად შეიცვალა</string>
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">ლოკალურად არ არის დაყენებული</string>
-    <string name="security_password_unavailable">პაროლი ამ მოწყობილობაზე ხელმისაწვდომი არ არის</string>
-    <string name="security_your_password_label">თქვენი პაროლი:</string>
+    <string name="security_password_unavailable">პაროლი აპში არ ინახება</string>
+    <string name="security_your_password_label">პაროლი:</string>
     <string name="session_expired_sign_in">სესია ამოიწურა. შედით ხელახლა.</string>
     <string name="session_missing_sign_in">სესია ვერ მოიძებნა. შედით ხელახლა.</string>
     <string name="settings_shared_links">გაზიარებული ჩატები</string>

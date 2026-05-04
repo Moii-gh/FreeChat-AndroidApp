@@ -1,6 +1,7 @@
 package com.example.chatapp.network
 
-import android.util.Log
+import com.example.chatapp.BuildConfig
+import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit
  * Прямой клиент OpenAI API.
  *
  * Для поиска используется встроенный OpenAI Web Search через Responses API.
- * Для изображений остаются function-calling tools:
+ * Для изображений остаются инструменты вызова функций:
  *  • generate_image
  *  • edit_image
  *  • придумать название чата (generate_chat_title)
@@ -62,7 +63,7 @@ object OpenAiDirectService {
         val fileName: String?
     )
 
-    // ──────── Tool definitions ────────
+    // ──────── Описания инструментов ────────
 
     private val toolsArray: JSONArray by lazy {
         JSONArray().apply {
@@ -115,7 +116,7 @@ object OpenAiDirectService {
         })
     }
 
-    // ──────── Streaming chat ────────
+    // ──────── Потоковый чат ────────
 
     suspend fun fetchStreamingResponse(
         apiKey: String,
@@ -280,7 +281,7 @@ object OpenAiDirectService {
     }
 
     private fun executeToolCall(apiKey: String, functionName: String, args: JSONObject, messages: JSONArray): String {
-        Log.d(TAG, "Tool call: $functionName, args: $args")
+        SafeLog.d(TAG, "OpenAI tool call: $functionName")
         return when (functionName) {
             "generate_image" -> {
                 val prompt = args.optString("prompt", "")
@@ -1186,7 +1187,7 @@ object OpenAiDirectService {
                 "Ошибка при редактировании изображения: $responseBody"
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Image Edit Error", e)
+            SafeLog.e(TAG, "Image edit request failed", e)
             "Сетевая ошибка при редактировании изображения: ${e.message}"
         }
     }
@@ -1250,7 +1251,7 @@ private fun generateImage(apiKey: String, prompt: String): String {
         return "$successText\n\n![$altText](data:$mimeType;base64,$b64Json)"
     }
 
-    // ──────── Non-streaming request (for initial tool detection) ────────
+    // ──────── Обычный запрос для первичного обнаружения инструментов ────────
 
     private fun executeNonStreamingRequest(apiKey: String, messages: JSONArray): JSONObject {
         val body = JSONObject().apply {
@@ -1279,7 +1280,7 @@ private fun generateImage(apiKey: String, prompt: String): String {
         return JSONObject(responseBody)
     }
 
-    // ──────── Streaming request ────────
+    // ──────── Потоковый запрос ────────
 
     private suspend fun executeStreamingRequest(
         apiKey: String,
@@ -1354,7 +1355,7 @@ private fun generateImage(apiKey: String, prompt: String): String {
         }
     }
 
-    // ──────── Title generation ────────
+    // ──────── Генерация названия ────────
 
     suspend fun generateTitle(apiKey: String, firstUserMessage: String): String? =
         withContext(Dispatchers.IO) {
@@ -1390,7 +1391,7 @@ private fun generateImage(apiKey: String, prompt: String): String {
                 val response = createOpenAiClient().newCall(request).execute()
                 val responseBody = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "generateTitle error: ${response.code} $responseBody")
+                    SafeLog.w(TAG, "generateTitle failed: HTTP ${response.code}")
                     return@runCatching null
                 }
                 JSONObject(responseBody)
@@ -1405,7 +1406,7 @@ private fun generateImage(apiKey: String, prompt: String): String {
             }.getOrNull()
         }
 
-    // ──────── Summarization ────────
+    // ──────── Суммаризация ────────
 
     suspend fun summarizeMessages(
         apiKey: String,
@@ -1462,7 +1463,7 @@ private fun generateImage(apiKey: String, prompt: String): String {
         }.getOrNull()
     }
 
-    // ──────── Helpers ────────
+    // ──────── Вспомогательные методы ────────
 
     private fun buildOpenAiSystemPrompt(
         currentMode: String?,
@@ -1629,7 +1630,12 @@ private fun generateImage(apiKey: String, prompt: String): String {
             .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(120, TimeUnit.SECONDS)
             .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
+                redactHeader("Authorization")
+                level = if (BuildConfig.DEBUG) {
+                    HttpLoggingInterceptor.Level.BASIC
+                } else {
+                    HttpLoggingInterceptor.Level.NONE
+                }
             })
             .build()
     }

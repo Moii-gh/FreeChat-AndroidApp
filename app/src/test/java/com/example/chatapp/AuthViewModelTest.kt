@@ -125,7 +125,7 @@ class AuthViewModelTest {
 
         assertEquals("jwt-token", viewModel.uiState.value.authToken)
         assertEquals("Ada Lovelace", accountStore.lastUser?.fullName)
-        assertEquals("123456", accountStore.savedPassword)
+        assertEquals(null, accountStore.savedPassword)
         assertNotNull(repository.lastCompleteRegistrationRequest)
     }
 

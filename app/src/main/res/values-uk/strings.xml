@@ -75,7 +75,7 @@
     <string name="auth_error_telegram_nonce_mismatch">Nonce у Telegram ID token не збігається</string>
     <string name="auth_error_telegram_session_expired">Сесія Telegram Login закінчилася. Спробуйте ще раз.</string>
     <string name="auth_error_telegram_token_exchange_failed">Обмін Telegram token не вдався: %s</string>
-    <string name="auth_error_vk_login_not_configured">VK ID не налаштовано. Вкажіть VKID_CLIENT_ID і VKID_CLIENT_SECRET.</string>
+    <string name="auth_error_vk_login_not_configured">Вхід через VK тимчасово недоступний. Потрібне налаштування на сервері.</string>
     <string name="auth_error_verify_code_first">Спочатку підтвердьте код із Telegram</string>
     <string name="auth_full_name_placeholder">Повне ім\'я</string>
     <string name="auth_info_login_canceled">Вхід через Telegram скасовано</string>
@@ -276,8 +276,8 @@
     <string name="security_password_change_success">Пароль змінено локально</string>
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Локально не задано</string>
-    <string name="security_password_unavailable">Пароль недоступний на цьому пристрої</string>
-    <string name="security_your_password_label">Ваш пароль:</string>
+    <string name="security_password_unavailable">Пароль не зберігається в застосунку</string>
+    <string name="security_your_password_label">Пароль:</string>
     <string name="session_expired_sign_in">Сесія закінчилася. Увійдіть знову.</string>
     <string name="session_missing_sign_in">Сесію не знайдено. Увійдіть знову.</string>
     <string name="settings_shared_links">Спільні чати</string>

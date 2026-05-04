@@ -33,7 +33,6 @@ enum class SecurityBiometricAvailability {
 
 data class SecurityUiState(
     val hasRegistrationPassword: Boolean = false,
-    val registrationPasswordPreview: String = "",
     val isPasswordVisible: Boolean = false,
     val expandedFaqItems: Set<SecurityFaqItem> = emptySet(),
     val isEncryptionExpanded: Boolean = false,
@@ -76,12 +75,8 @@ class SecurityViewModel(
     private val settingsStore: SecuritySettingsStore
 ) : ViewModel() {
 
-    private var registrationPassword: String = settingsStore.getRegistrationPassword()
-
     private val _uiState = MutableStateFlow(
         SecurityUiState(
-            hasRegistrationPassword = registrationPassword.isNotBlank(),
-            registrationPasswordPreview = registrationPassword,
             isBiometricEnabled = settingsStore.isBiometricEnabled()
         )
     )
@@ -91,16 +86,20 @@ class SecurityViewModel(
     val events: SharedFlow<SecurityEvent> = _events.asSharedFlow()
 
     fun togglePasswordVisibility() {
-        _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
+        _uiState.update {
+            if (it.hasRegistrationPassword) {
+                it.copy(isPasswordVisible = !it.isPasswordVisible)
+            } else {
+                it.copy(isPasswordVisible = false)
+            }
+        }
     }
 
     fun refreshPassword() {
-        registrationPassword = settingsStore.getRegistrationPassword()
         _uiState.update {
             it.copy(
-                hasRegistrationPassword = registrationPassword.isNotBlank(),
-                registrationPasswordPreview = registrationPassword,
-                isPasswordVisible = if (registrationPassword.isBlank()) false else it.isPasswordVisible
+                hasRegistrationPassword = false,
+                isPasswordVisible = false
             )
         }
     }

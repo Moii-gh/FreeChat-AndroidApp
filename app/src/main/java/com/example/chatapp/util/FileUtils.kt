@@ -18,6 +18,8 @@ import java.util.Locale
  * операции с base64-изображениями (copy/share), открытие URI.
  */
 object FileUtils {
+    private const val MAX_CACHE_FILE_BYTES = 20 * 1024 * 1024
+    private const val CACHE_SHARE_DIR = "shared_files"
 
     /** Извлекает имя файла из content:// URI через ContentResolver */
     fun getFileName(context: Context, uri: Uri): String {
@@ -30,7 +32,7 @@ object FileUtils {
                 }
             }
         } catch (e: SecurityException) {
-            e.printStackTrace()
+            SafeLog.w("FileUtils", "No permission to read file name", e)
             uri.path?.let { path ->
                 val fallback = path.substringAfterLast('/', "")
                 name = if (fallback.isNotBlank() && !fallback.startsWith("document")) {
@@ -40,7 +42,7 @@ object FileUtils {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.w("FileUtils", "Could not read file name", e)
         }
         return name
     }
@@ -52,12 +54,19 @@ object FileUtils {
 
     fun saveBase64FileToCache(context: Context, base64Str: String, fileName: String?): Uri? {
         return try {
+            if (estimatedDecodedSize(base64Str) > MAX_CACHE_FILE_BYTES) {
+                return null
+            }
             val bytes = android.util.Base64.decode(base64Str, android.util.Base64.DEFAULT)
-            val file = File(context.cacheDir, safeFileName(fileName))
+            if (bytes.size > MAX_CACHE_FILE_BYTES) {
+                return null
+            }
+            val cacheDir = File(context.cacheDir, CACHE_SHARE_DIR).apply { mkdirs() }
+            val file = File(cacheDir, safeFileName(fileName))
             file.writeBytes(bytes)
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.w("FileUtils", "Could not save base64 file to cache", e)
             null
         }
     }
@@ -85,7 +94,7 @@ object FileUtils {
 
         return runCatching {
             val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
-                input.readBytes()
+                input.readBytesLimited(MAX_CACHE_FILE_BYTES)
             } ?: return null
             val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
             base64 to mimeType
@@ -237,6 +246,27 @@ object FileUtils {
         }
     }
 
+    private fun estimatedDecodedSize(base64: String): Int {
+        val compactLength = base64.count { !it.isWhitespace() }
+        return (compactLength * 3) / 4
+    }
+
+    private fun java.io.InputStream.readBytesLimited(maxBytes: Int): ByteArray {
+        val output = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0
+        while (true) {
+            val read = read(buffer)
+            if (read == -1) break
+            total += read
+            if (total > maxBytes) {
+                throw IllegalArgumentException("File is too large")
+            }
+            output.write(buffer, 0, read)
+        }
+        return output.toByteArray()
+    }
+
     /**
      * Экспорт истории чата в формат DOCX (Open XML).
      * Создает zip-архив с минимальной DOCX-структурой.
@@ -318,7 +348,7 @@ object FileUtils {
                 Toast.LENGTH_LONG
             ).show()
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.w("FileUtils", "DOCX export failed", e)
             Toast.makeText(context, LocaleHelper.getString(context, "toast_doc_error"), Toast.LENGTH_SHORT).show()
         }
     }

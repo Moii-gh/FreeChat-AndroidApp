@@ -52,6 +52,7 @@ import com.example.chatapp.ui.FreeChatAttentionDrawable
 import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.PopupMenuHelper
 import com.example.chatapp.util.FileUtils
+import com.example.chatapp.util.SafeLog
 import com.example.chatapp.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -285,13 +286,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnCloseChip.contentDescription = LocaleHelper.getString(this, "content_desc_clear_mode")
         binding.tvEditMessageTitle.text = LocaleHelper.getString(this, "menu_edit_message")
 
-        // Drawer texts
+        // Тексты бокового меню.
         findViewById<android.widget.TextView>(R.id.tvDrawerTitle)?.text = LocaleHelper.getString(this, "app_brand")
         findViewById<android.widget.TextView>(R.id.tvDrawerNewChat)?.text = LocaleHelper.getString(this, "button_new_chat")
         findViewById<android.widget.EditText>(R.id.etDrawerSearch)?.hint = LocaleHelper.getString(this, "panel_search")
-        drawerManager.populateChats(chatViewModel.cachedChats) // Automatically re-renders chat titles correctly
+        drawerManager.populateChats(chatViewModel.cachedChats) // Названия чатов перерисуются с нужной локалью.
 
-        // Also restore the correct hint based on the current mode
+        // Восстанавливаем подсказку поля ввода с учетом текущего режима.
         when (chatViewModel.currentMode) {
             "create_image" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_create_image")
             "search" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_panel_search")
@@ -1004,7 +1005,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 imm.hideSoftInputFromWindow(binding.etInput.windowToken, 0)
             }
             override fun onDrawerClosed(drawerView: View) {
-                // Reset search bar state when drawer closes
+                // Сбрасываем поиск при закрытии бокового меню.
                 val sc = findViewById<LinearLayout>(R.id.drawerSearchContainer) ?: return
                 if (sc.visibility == View.VISIBLE) {
                     val sf = findViewById<EditText>(R.id.etDrawerSearch)
@@ -1051,10 +1052,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 View.MeasureSpec.makeMeasureSpec(searchContainer.height, View.MeasureSpec.EXACTLY)
             )
             val targetWidth = defaultHeaderContent.width
-            val startWidth = searchContainer.height // circle = height
+            val startWidth = searchContainer.height // Круг равен высоте.
             val interpolator = AccelerateDecelerateInterpolator()
 
-            // Animate header fade out
+            // Плавно скрываем заголовок.
             defaultHeaderContent.animate()
                 .alpha(0f)
                 .setDuration(180)
@@ -1062,7 +1063,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 .withEndAction { defaultHeaderContent.isGone = true }
                 .start()
 
-            // Animate width from circle to full
+            // Расширяем поле поиска из круглой кнопки до полной ширины.
             val widthAnimator = ValueAnimator.ofInt(startWidth, targetWidth).apply {
                 duration = 320
                 this.interpolator = interpolator
@@ -1070,7 +1071,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     val lp = searchContainer.layoutParams
                     lp.width = anim.animatedValue as Int
                     searchContainer.layoutParams = lp
-                    // Update gravity/padding based on progress
+                    // Центрируем поле после середины анимации.
                     val fraction = anim.animatedFraction
                     if (fraction > 0.5f) {
                         searchContainer.gravity = android.view.Gravity.CENTER_VERTICAL
@@ -1078,7 +1079,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 }
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationStart(animation: Animator) {
-                        // Fade in content elements as bar expands
+                        // Показываем содержимое по мере расширения поля.
                         searchField.animate()
                             .alpha(1f)
                             .setStartDelay(160)
@@ -1111,15 +1112,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
 
         fun collapseSearchBar() {
-            val targetWidth = searchContainer.height // collapse back to circle
+            val targetWidth = searchContainer.height // Сжимаем обратно до круга.
             val startWidth = searchContainer.width
             val interpolator = AccelerateDecelerateInterpolator()
 
-            // Fade out content elements first
+            // Сначала скрываем содержимое.
             searchField.animate().alpha(0f).setDuration(120).setStartDelay(0).start()
             closeSearchBtn.animate().alpha(0f).setDuration(120).setStartDelay(0).start()
 
-            // Animate width collapse
+            // Затем сжимаем поле обратно в кнопку.
             val widthAnimator = ValueAnimator.ofInt(startWidth, targetWidth).apply {
                 duration = 300
                 this.interpolator = interpolator
@@ -1137,7 +1138,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     override fun onAnimationEnd(animation: Animator) {
                         searchContainer.visibility = View.INVISIBLE
                         searchContainer.gravity = android.view.Gravity.CENTER
-                        // Restore header
+                        // Возвращаем заголовок.
                         defaultHeaderContent.alpha = 0f
                         defaultHeaderContent.isVisible = true
                         defaultHeaderContent.animate()
@@ -1188,26 +1189,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.bottomInputArea.viewTreeObserver.addOnGlobalLayoutListener {
             updateFloatingInputPadding()
         }
+        binding.bottomInputArea.alpha = 1f
+        binding.bottomInputArea.translationY = 0f
+        binding.bottomInputScrim.alpha = 0.6f
         
-        // Initial intro animation
-        binding.bottomInputArea.translationY = dp(100f)
-        binding.bottomInputArea.alpha = 0f
-        binding.bottomInputScrim.alpha = 0f
-        
-        binding.bottomInputArea.animate()
-            .translationY(0f)
-            .alpha(1f)
-            .setDuration(500)
-            .setStartDelay(150)
-            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
-            .start()
-            
-        binding.bottomInputScrim.animate()
-            .alpha(0.6f)
-            .setDuration(500)
-            .setStartDelay(150)
-            .start()
-
         binding.etInput.setOnFocusChangeListener { _, hasFocus ->
             val targetTranslation = if (hasFocus) -dp(6f) else 0f
             
@@ -1600,8 +1585,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             val messages = try {
                 chatViewModel.getMessages(chatId)
             } catch (e: android.database.sqlite.SQLiteBlobTooBigException) {
-                e.printStackTrace()
-                // Auto-delete the corrupted chat to prevent infinite crashes
+                SafeLog.w("FreeChatActivity", "Chat database row is too large", e)
+                // Удаляем поврежденный чат, чтобы пользователь не попадал в бесконечный цикл падений.
                 chatViewModel.deleteChat(chatId) {
                     runOnUiThread {
                         toast(LocaleHelper.getString(this@FreeChatActivity, "toast_error") + ": Chat corrupted and was deleted")
@@ -1610,7 +1595,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 }
                 return@launch
             } catch (e: Exception) {
-                e.printStackTrace()
+                SafeLog.w("FreeChatActivity", "Could not open chat", e)
                 return@launch
             }
 
@@ -2137,8 +2122,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val wrapperIndex = binding.messagesContainer.indexOfChild(wrapper.container)
         if (wrapperIndex < 0) return
 
-        // Считаем, какой по счёту это assistant-блок (0-indexed).
-        // Assistant rootContainer отличается от user views шириной MATCH_PARENT.
+        // Считаем порядковый номер блока ассистента, начиная с нуля.
+        // Контейнер ассистента отличается от пользовательских сообщений шириной MATCH_PARENT.
         var assistantOrdinal = 0
         for (i in 0 until binding.messagesContainer.childCount) {
             val child = binding.messagesContainer.getChildAt(i)
@@ -2149,9 +2134,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
         }
 
-        // В chatHistory сообщения идут парами: [user, assistant, user, assistant, ...].
-        // Assistant #K находится в chatHistory по индексу (2*K + 1).
-        // Обрезаем начиная с этой позиции — т.е. сохраняем user-сообщение перед ним.
+        // В истории сообщения идут парами: пользователь, ассистент, пользователь, ассистент.
+        // Блок ассистента с номером K находится по индексу (2 * K + 1).
+        // Обрезаем начиная с этой позиции, оставляя пользовательское сообщение перед ним.
         val historyTruncateIndex = assistantOrdinal * 2 + 1
         // Защита: если индекс выходит за границы, обрезаем просто последнее сообщение
         val safeTruncateIndex = historyTruncateIndex.coerceAtMost(chatViewModel.chatHistory.size)
@@ -2496,20 +2481,20 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         return extension in setOf(
             // Текстовые
             "txt", "md", "markdown", "csv", "tsv", "log", "rtf",
-            // Web
+            // Веб-форматы
             "json", "xml", "html", "htm", "css", "js", "jsx", "ts", "tsx",
             "svg", "graphql", "gql",
-            // JVM
+            // JVM-файлы
             "kt", "kts", "java", "gradle", "groovy", "scala",
             // Скриптовые
             "py", "rb", "php", "pl", "pm", "lua", "r",
             // Системные
             "c", "cpp", "h", "hpp", "cs", "swift", "go", "rs", "dart",
-            // Shell / config
+            // Shell и конфиги
             "sh", "bash", "zsh", "bat", "cmd", "ps1", "psm1",
             "env", "ini", "cfg", "conf", "properties", "toml",
             "yaml", "yml", "dockerfile",
-            // SQL / Data
+            // SQL и данные
             "sql", "proto", "graphql",
             // Разметка / документация
             "tex", "latex", "rst", "adoc", "org",

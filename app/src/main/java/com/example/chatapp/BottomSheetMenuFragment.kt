@@ -63,7 +63,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
 
         val activity = activity as? ChatInputHost
 
-        // Translate the UI text elements
+        // Обновляем тексты нижнего меню под текущую локаль.
         val context = requireContext()
         view.findViewById<android.widget.TextView>(R.id.tvBtnCamera)?.text = LocaleHelper.getString(context, "button_camera")
         view.findViewById<android.widget.TextView>(R.id.tvBtnPhoto)?.text = LocaleHelper.getString(context, "button_photo")

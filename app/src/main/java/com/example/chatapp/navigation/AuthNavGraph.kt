@@ -178,8 +178,7 @@ fun AuthNavGraph(
                     },
                     onContinueWithVk = {
                         viewModel.beginVkLogin(
-                            isConfigured = BuildConfig.VKID_CLIENT_ID.isNotBlank() &&
-                                BuildConfig.VKID_CLIENT_SECRET.isNotBlank(),
+                            isConfigured = BuildConfig.VKID_NATIVE_LOGIN_ENABLED,
                             scopes = parseVkIdScopes(BuildConfig.VKID_SCOPES)
                         )
                     }

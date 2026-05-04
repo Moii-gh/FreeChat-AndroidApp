@@ -1,6 +1,5 @@
 package com.example.chatapp.viewmodel
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -8,17 +7,16 @@ import org.junit.Test
 class SecurityViewModelTest {
 
     @Test
-    fun `registration password is shown only from the account store`() {
+    fun `registration password is not exposed from the account store`() {
         val viewModel = SecurityViewModel(FakeSecuritySettingsStore(savedRegistrationPassword = "abc123"))
 
         val initialState = viewModel.uiState.value
-        assertTrue(initialState.hasRegistrationPassword)
-        assertEquals("abc123", initialState.registrationPasswordPreview)
+        assertFalse(initialState.hasRegistrationPassword)
         assertFalse(initialState.isPasswordVisible)
 
         viewModel.togglePasswordVisibility()
 
-        assertTrue(viewModel.uiState.value.isPasswordVisible)
+        assertFalse(viewModel.uiState.value.isPasswordVisible)
     }
 
     @Test
@@ -27,7 +25,6 @@ class SecurityViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.hasRegistrationPassword)
-        assertEquals("", state.registrationPasswordPreview)
 
         viewModel.togglePasswordVisibility()
         viewModel.refreshPassword()

@@ -144,10 +144,10 @@ class SecurityActivity : AppCompatActivity() {
 
     private fun renderPasswordCard(state: SecurityUiState) {
         binding.tvPasswordValue.text = when {
-            state.hasRegistrationPassword && state.isPasswordVisible -> state.registrationPasswordPreview
             state.hasRegistrationPassword -> text("security_password_mask")
             else -> text("security_password_unavailable")
         }
+        binding.btnShowPassword.isVisible = state.hasRegistrationPassword
         binding.btnShowPassword.setImageResource(
             if (state.isPasswordVisible) R.drawable.ic_security_eye else R.drawable.ic_security_eye_off
         )

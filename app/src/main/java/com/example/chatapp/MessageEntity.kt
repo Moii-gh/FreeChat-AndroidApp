@@ -23,7 +23,7 @@ data class MessageEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val chatId: String,
-    val role: String,        // "user", "assistant", "system"
+    val role: String,        // Роль сообщения: "user", "assistant" или "system".
     val content: String,
     val timestamp: Long,
     val imageUrl: String? = null,

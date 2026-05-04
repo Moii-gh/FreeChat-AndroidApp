@@ -75,7 +75,7 @@
     <string name="auth_error_telegram_nonce_mismatch">Le nonce du token ID Telegram ne correspond pas</string>
     <string name="auth_error_telegram_session_expired">La session Telegram Login a expiré. Réessayez.</string>
     <string name="auth_error_telegram_token_exchange_failed">Échec de l\'échange du token Telegram : %s</string>
-    <string name="auth_error_vk_login_not_configured">VK ID n\'est pas configuré. Définissez VKID_CLIENT_ID et VKID_CLIENT_SECRET.</string>
+    <string name="auth_error_vk_login_not_configured">La connexion VK est temporairement indisponible. Une configuration côté serveur est requise.</string>
     <string name="auth_error_verify_code_first">Confirmez d\'abord le code Telegram</string>
     <string name="auth_full_name_placeholder">Nom complet</string>
     <string name="auth_info_login_canceled">Connexion Telegram annulée</string>
@@ -276,8 +276,8 @@
     <string name="security_password_change_success">Password modificata localmente</string>
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Non impostata localmente</string>
-    <string name="security_password_unavailable">La password non è disponibile su questo dispositivo</string>
-    <string name="security_your_password_label">La tua password:</string>
+    <string name="security_password_unavailable">La password non viene salvata nell\'app</string>
+    <string name="security_your_password_label">Password:</string>
     <string name="session_expired_sign_in">Session expirée. Connectez-vous à nouveau.</string>
     <string name="session_missing_sign_in">Session introuvable. Connectez-vous à nouveau.</string>
     <string name="settings_shared_links">Chats partagés</string>

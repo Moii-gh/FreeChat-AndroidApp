@@ -1,7 +1,7 @@
 package com.example.chatapp
 
 import android.content.Context
-import android.util.Log
+import com.example.chatapp.util.SafeLog
 
 object LocaleHelper {
 
@@ -24,12 +24,12 @@ object LocaleHelper {
     fun getString(context: Context, tid: String): String {
         val resourceId = context.resources.getIdentifier(tid, "string", context.packageName)
         if (resourceId == 0) {
-            Log.w(TAG, "Missing string resource: key='$tid'")
+            SafeLog.w(TAG, "Missing string resource: key='$tid'")
             return tid
         }
         return runCatching { context.getString(resourceId) }
             .getOrElse {
-                Log.w(TAG, "Failed to load string resource '$tid': ${it.message}")
+                SafeLog.w(TAG, "Failed to load string resource '$tid': ${it.message}")
                 tid
             }
     }
@@ -50,7 +50,7 @@ object LocaleHelper {
 
         return runCatching { context.getString(resourceId, *args) }
             .getOrElse {
-                Log.w(TAG, "Failed to format string resource '$tid': ${it.message}")
+                SafeLog.w(TAG, "Failed to format string resource '$tid': ${it.message}")
                 getString(context, tid)
             }
     }

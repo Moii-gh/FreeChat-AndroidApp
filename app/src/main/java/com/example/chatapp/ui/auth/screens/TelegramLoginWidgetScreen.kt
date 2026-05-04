@@ -151,6 +151,7 @@ private fun TelegramWidgetWebView(
 
                 configureTelegramWebView(
                     context = context,
+                    widgetUrl = widgetUrl,
                     onPageLoadingChanged = onPageLoadingChanged,
                     onPageError = onPageError,
                     onAuthPayload = onAuthPayload
@@ -172,18 +173,22 @@ private fun TelegramWidgetWebView(
 @SuppressLint("SetJavaScriptEnabled")
 private fun WebView.configureTelegramWebView(
     context: Context,
+    widgetUrl: String,
     onPageLoadingChanged: (Boolean) -> Unit,
     onPageError: (String) -> Unit,
     onAuthPayload: (String) -> Unit
 ) {
+    val widgetUri = runCatching { Uri.parse(widgetUrl) }.getOrNull()
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
     settings.javaScriptCanOpenWindowsAutomatically = true
     settings.setSupportMultipleWindows(true)
-    settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+    settings.allowFileAccess = false
+    settings.allowContentAccess = false
+    settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
     overScrollMode = WebView.OVER_SCROLL_NEVER
 
-    // Android forwards the signed Telegram payload to ViewModel; backend is the only trust boundary.
+    // Мост принимает только подписанный payload; проверка доверия остается на backend.
     addJavascriptInterface(
         TelegramAuthBridge(onAuthPayload, onPageError),
         "AndroidTelegramAuth"
@@ -194,7 +199,16 @@ private fun WebView.configureTelegramWebView(
             view: WebView?,
             request: WebResourceRequest?
         ): Boolean {
-            return openTelegramScheme(context, request?.url)
+            val targetUri = request?.url
+            if (openTelegramScheme(context, targetUri)) {
+                return true
+            }
+            if (request?.isForMainFrame == true && !isAllowedTelegramWidgetNavigation(widgetUri, targetUri)) {
+                onPageLoadingChanged(false)
+                onPageError(LocaleHelper.getString(context, "auth_telegram_widget_server_open_error"))
+                return true
+            }
+            return false
         }
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -247,7 +261,9 @@ private fun WebView.configureTelegramWebView(
                 settings.domStorageEnabled = true
                 settings.javaScriptCanOpenWindowsAutomatically = true
                 settings.setSupportMultipleWindows(false)
-                settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 addJavascriptInterface(
                     TelegramAuthBridge(onAuthPayload, onPageError),
                     "AndroidTelegramAuth"
@@ -261,6 +277,10 @@ private fun WebView.configureTelegramWebView(
                         if (openTelegramScheme(context, uri)) {
                             return true
                         }
+                        if (!isAllowedTelegramWidgetNavigation(widgetUri, uri)) {
+                            onPageError(LocaleHelper.getString(context, "auth_telegram_widget_server_open_error"))
+                            return true
+                        }
                         mainWebView.loadUrl(uri.toString())
                         return true
                     }
@@ -272,6 +292,23 @@ private fun WebView.configureTelegramWebView(
             return true
         }
     }
+}
+
+private fun isAllowedTelegramWidgetNavigation(widgetUri: Uri?, uri: Uri?): Boolean {
+    val scheme = uri?.scheme?.lowercase().orEmpty()
+    if (scheme != "https" && !(BuildConfig.DEBUG && scheme == "http")) {
+        return false
+    }
+
+    val host = uri?.host?.lowercase().orEmpty()
+    val widgetHost = widgetUri?.host?.lowercase().orEmpty()
+    return host.isNotBlank() && (
+        host == widgetHost ||
+            host == "oauth.telegram.org" ||
+            host == "telegram.org" ||
+            host == "t.me" ||
+            host == "web.telegram.org"
+        )
 }
 
 private fun openTelegramScheme(context: Context, uri: Uri?): Boolean {

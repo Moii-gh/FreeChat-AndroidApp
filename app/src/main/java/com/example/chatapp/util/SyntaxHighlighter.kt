@@ -7,8 +7,8 @@ import android.text.style.ForegroundColorSpan
 import java.util.regex.Pattern
 
 /**
- * Lightweight syntax highlighting for assistant code blocks.
- * The fallback intentionally keeps unknown languages readable without guessing.
+ * Легкая подсветка синтаксиса для блоков кода ассистента.
+ * Для неизвестных языков текст остается читаемым без попыток угадать формат.
  */
 object SyntaxHighlighter {
 

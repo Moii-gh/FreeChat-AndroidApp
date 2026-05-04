@@ -35,14 +35,14 @@ class LanguageActivity : AppCompatActivity() {
         tvTitle = findViewById(R.id.tvTitle)
         tvSelectLabel = findViewById(R.id.tvSelectLabel)
 
-        // Load current language
+        // Загружаем текущий язык.
         appliedLanguageCode = LocaleHelper.getSelectedLanguage(this)
         selectedLanguageCode = appliedLanguageCode
 
         updateUiText()
         populateLanguages()
 
-        // Back button
+        // Кнопка назад.
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
 
         findViewById<View>(R.id.btnSave).setOnClickListener {
@@ -70,10 +70,10 @@ class LanguageActivity : AppCompatActivity() {
                 textSize = 15f
                 gravity = Gravity.CENTER
                 
-                // Colors based on selection state
+                // Цвет зависит от выбранного языка.
                 if (isSelected) {
                     setTextColor(Color.parseColor("#1C1C1E"))
-                    // Light beige/pinkish background
+                    // Светлый фон выбранного пункта.
                     val bg = GradientDrawable().apply {
                         cornerRadius = 28f.dpToPx()
                         setColor(Color.parseColor("#E6D7D7"))
@@ -81,7 +81,7 @@ class LanguageActivity : AppCompatActivity() {
                     background = bg
                 } else {
                     setTextColor(Color.parseColor("#8E8E93"))
-                    // Dark background with border
+                    // Темный фон с обводкой для остальных пунктов.
                     val bg = GradientDrawable().apply {
                         cornerRadius = 28f.dpToPx()
                         setColor(Color.parseColor("#252525"))
@@ -90,7 +90,7 @@ class LanguageActivity : AppCompatActivity() {
                     background = bg
                 }
 
-                // Layout params
+                // Размеры элемента списка.
                 val params = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     56.dpToPxInt()
@@ -112,7 +112,7 @@ class LanguageActivity : AppCompatActivity() {
         }
     }
 
-    // Extensions for DP to PX conversion
+    // Конвертация dp в px.
     private fun Float.dpToPx(): Float {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,

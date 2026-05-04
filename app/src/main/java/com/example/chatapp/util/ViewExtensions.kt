@@ -134,7 +134,7 @@ open class OnSwipeTouchListener(context: android.content.Context) : View.OnTouch
                     }
                 }
             } catch (exception: Exception) {
-                exception.printStackTrace()
+                SafeLog.w("SwipeTouch", "Swipe handling failed", exception)
             }
             return false
         }

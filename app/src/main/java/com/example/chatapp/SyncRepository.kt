@@ -1,13 +1,13 @@
 package com.example.chatapp
 
 import android.content.Context
-import android.util.Log
 import androidx.room.withTransaction
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.SyncChatDto
 import com.example.chatapp.network.dto.SyncMessageDto
 import com.example.chatapp.network.dto.SyncPayload
+import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -32,7 +32,7 @@ class SyncRepository(context: Context) {
         try {
             val syncApi = NetworkModule.createSyncApiService(baseUrl, token)
 
-            // Gather local state
+            // Собираем локальное состояние.
             val localChats = dao.getAllChatsForSync(ownerKey)
             val chatsPayload = localChats.map {
                 SyncChatDto(
@@ -80,7 +80,7 @@ class SyncRepository(context: Context) {
                 val remoteData = response.body()!!
 
                 db.withTransaction {
-                    // Upsert remote data to local DB
+                    // Сохраняем серверные чаты в локальную БД.
                     for (remoteChat in remoteData.chats) {
                         val localChat = dao.getChatByIdForSync(remoteChat.id, ownerKey)
                         if (localChat == null) {
@@ -97,7 +97,7 @@ class SyncRepository(context: Context) {
                                 )
                             )
                         } else {
-                            // Resolve conflict: if remote is newer or same
+                            // При равной версии доверяем серверу как каноничному состоянию.
                             if (remoteChat.lastUpdated >= localChat.lastUpdated) {
                                 dao.updateChat(
                                     localChat.copy(
@@ -117,7 +117,7 @@ class SyncRepository(context: Context) {
                         }
                     }
 
-                    // Upsert messages
+                    // Сохраняем серверные сообщения.
                     for (remoteMsg in remoteData.messages) {
                         val localMsg = dao.getMessageBySyncId(remoteMsg.syncId)
                         if (localMsg == null) {
@@ -159,10 +159,10 @@ class SyncRepository(context: Context) {
                     }
                 }
             } else {
-                Log.e("SyncRepository", "Sync failed: ${response.code()}")
+                SafeLog.w("SyncRepository", "Sync failed: HTTP ${response.code()}")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLog.w("SyncRepository", "Sync failed with exception", e)
         }
     }
 
