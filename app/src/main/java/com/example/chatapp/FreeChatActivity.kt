@@ -12,16 +12,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import android.view.animation.PathInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
@@ -47,6 +44,7 @@ import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.speech.SpeechRecognizerManager
 import com.example.chatapp.ui.AssistantMessageWrapper
 import com.example.chatapp.ui.ChatMessageRenderer
+import com.example.chatapp.ui.ChatUiAnimationHelper
 import com.example.chatapp.ui.DrawerManager
 import com.example.chatapp.ui.FreeChatAttentionDrawable
 import com.example.chatapp.ui.LaunchLogoAnimator
@@ -71,21 +69,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         IDEA
     }
 
-    private data class AttachmentPayload(
-        val fileUri: String,
-        val mimeType: String,
-        val fileName: String?,
-        val base64Data: String?,
-        val attachmentContext: String?
-    )
-
     companion object {
         const val EXTRA_PREFILL_INPUT = "com.example.chatapp.EXTRA_PREFILL_INPUT"
         const val EXTRA_SKIP_BIOMETRIC_ONCE = "com.example.chatapp.EXTRA_SKIP_BIOMETRIC_ONCE"
 
-        const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
-        const val MAX_EXTRACTED_TEXT_CHARS = 120_000
-        const val MAX_ATTACHMENT_CONTEXT_CHARS = 4_000
         const val SUGGESTIONS_SHOW_DURATION_MS = 180L
         const val SUGGESTIONS_HIDE_DURATION_MS = 120L
         const val TOP_ACTIONS_SPLIT_DURATION_MS = 260L
@@ -104,6 +91,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var popupMenuHelper: PopupMenuHelper
     private lateinit var messageRenderer: ChatMessageRenderer
     private lateinit var speechRecognizerManager: SpeechRecognizerManager
+    private val attachmentHelper by lazy { ChatAttachmentHelper(this) }
 
     private var currentPreviewUri: Uri? = null
     private var retainedEditingAttachment: AttachmentPayload? = null
@@ -951,40 +939,23 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         pressedOffset: Float = 0f,
         pressedTranslationZ: Float = 0f
     ) {
-        touchSource.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    if (touchSource === binding.btnAddLimits) {
-                        pauseFreeChatAttention()
-                    }
-                    target.animate().cancel()
-                    target.animate()
-                        .scaleX(pressedScale)
-                        .scaleY(pressedScale)
-                        .translationY(pressedOffset)
-                        .translationZ(pressedTranslationZ)
-                        .setDuration(80L)
-                        .setInterpolator(AccelerateDecelerateInterpolator())
-                        .start()
+        ChatUiAnimationHelper.installPressAnimation(
+            touchSource = touchSource,
+            target = target,
+            pressedScale = pressedScale,
+            pressedOffset = pressedOffset,
+            pressedTranslationZ = pressedTranslationZ,
+            onPressStart = {
+                if (touchSource === binding.btnAddLimits) {
+                    pauseFreeChatAttention()
                 }
-                MotionEvent.ACTION_UP,
-                MotionEvent.ACTION_CANCEL -> {
-                    if (touchSource === binding.btnAddLimits) {
-                        resumeFreeChatAttentionAfterInteraction()
-                    }
-                    target.animate().cancel()
-                    target.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .translationY(0f)
-                        .translationZ(0f)
-                        .setDuration(160L)
-                        .setInterpolator(OvershootInterpolator(2.2f))
-                        .start()
+            },
+            onPressEnd = {
+                if (touchSource === binding.btnAddLimits) {
+                    resumeFreeChatAttentionAfterInteraction()
                 }
             }
-            false
-        }
+        )
     }
 
     private fun setupDrawer() {
@@ -1421,86 +1392,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun resetTopActionsTransforms() {
-        listOf(binding.topRightMain, binding.topRightChat, binding.btnNewChat, binding.btnMore).forEach { view ->
-            view.alpha = 1f
-            view.scaleX = 1f
-            view.scaleY = 1f
-            view.translationX = 0f
-        }
+        ChatUiAnimationHelper.resetTopActionTransforms(
+            binding.topRightMain,
+            binding.topRightChat,
+            binding.btnNewChat,
+            binding.btnMore
+        )
     }
 
     private fun animateTopActionsSplit() {
         topActionsAnimator?.cancel()
-        binding.topRightMain.isVisible = true
-        binding.topRightChat.isVisible = true
-
-        binding.topRightChat.alpha = 0f
-        binding.topRightChat.scaleX = 0.48f
-        binding.topRightChat.scaleY = 1f
-        binding.btnNewChat.alpha = 0f
-        binding.btnNewChat.translationX = dp(18f)
-        binding.btnNewChat.scaleX = 0.9f
-        binding.btnNewChat.scaleY = 0.9f
-        binding.btnMore.alpha = 0f
-        binding.btnMore.translationX = dp(-8f)
-        binding.btnMore.scaleX = 0.9f
-        binding.btnMore.scaleY = 0.9f
-
-        binding.topRightChat.post {
-            binding.topRightMain.pivotX = binding.topRightMain.width.toFloat()
-            binding.topRightMain.pivotY = binding.topRightMain.height / 2f
-            binding.topRightChat.pivotX = binding.topRightChat.width.toFloat()
-            binding.topRightChat.pivotY = binding.topRightChat.height / 2f
-
-            val expandedScale = if (binding.topRightMain.width > 0) {
-                binding.topRightChat.width.toFloat() / binding.topRightMain.width.toFloat()
-            } else {
-                2.1f
-            }
-
-            val stretch = ObjectAnimator.ofFloat(binding.topRightMain, View.SCALE_X, 1f, expandedScale).apply {
-                duration = 105L
-                interpolator = AccelerateDecelerateInterpolator()
-            }
-
-            val reveal = AnimatorSet().apply {
-                playTogether(
-                    ObjectAnimator.ofFloat(binding.topRightMain, View.ALPHA, 1f, 0f),
-                    ObjectAnimator.ofFloat(binding.topRightChat, View.ALPHA, 0f, 1f),
-                    ObjectAnimator.ofFloat(binding.topRightChat, View.SCALE_X, 0.48f, 1f),
-                    ObjectAnimator.ofFloat(binding.btnNewChat, View.ALPHA, 0f, 1f),
-                    ObjectAnimator.ofFloat(binding.btnNewChat, View.TRANSLATION_X, dp(18f), 0f),
-                    ObjectAnimator.ofFloat(binding.btnNewChat, View.SCALE_X, 0.9f, 1f),
-                    ObjectAnimator.ofFloat(binding.btnNewChat, View.SCALE_Y, 0.9f, 1f),
-                    ObjectAnimator.ofFloat(binding.btnMore, View.ALPHA, 0f, 1f),
-                    ObjectAnimator.ofFloat(binding.btnMore, View.TRANSLATION_X, dp(-8f), 0f),
-                    ObjectAnimator.ofFloat(binding.btnMore, View.SCALE_X, 0.9f, 1f),
-                    ObjectAnimator.ofFloat(binding.btnMore, View.SCALE_Y, 0.9f, 1f)
-                )
-                duration = TOP_ACTIONS_SPLIT_DURATION_MS - stretch.duration
-                interpolator = OvershootInterpolator(1.15f)
-            }
-
-            topActionsAnimator = AnimatorSet().apply {
-                playSequentially(stretch, reveal)
-                addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        binding.topRightMain.isGone = true
-                        topActionsAnimator = null
-                        resetTopActionsTransforms()
-                        binding.topRightChat.isVisible = true
-                    }
-
-                    override fun onAnimationCancel(animation: Animator) {
-                        binding.topRightMain.isGone = true
-                        topActionsAnimator = null
-                        resetTopActionsTransforms()
-                        binding.topRightChat.isVisible = true
-                    }
-                })
-                start()
-            }
-        }
+        ChatUiAnimationHelper.animateTopActionsSplit(
+            topRightMain = binding.topRightMain,
+            topRightChat = binding.topRightChat,
+            btnNewChat = binding.btnNewChat,
+            btnMore = binding.btnMore,
+            durationMs = TOP_ACTIONS_SPLIT_DURATION_MS,
+            density = resources.displayMetrics.density,
+            onAnimatorReady = { animator -> topActionsAnimator = animator },
+            onFinished = { topActionsAnimator = null }
+        )
     }
 
     private fun dp(value: Float): Float {
@@ -1728,6 +1639,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             ?: LocaleHelper.getString(this, fallbackKey)
     }
 
+    // Отправка и streaming остаются здесь: метод одновременно управляет UI, лимитами, ViewModel и текущим состоянием экрана.
     private fun sendMessage() {
         if (isSending) return
 
@@ -1742,7 +1654,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (text.isBlank() && previewUri == null) return
 
         val attachmentPayload = try {
-            buildAttachmentPayload(previewUri)
+            attachmentHelper.buildAttachmentPayload(previewUri)
         } catch (e: IllegalArgumentException) {
             toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
             return
@@ -1846,10 +1758,17 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setInputCapsuleTopOffset(dp(38f).toInt())
         showEditMessagePanel()
         clearPreview()
-        retainedEditingAttachment = attachmentPayloadFromHistory(historyMessage)
+        retainedEditingAttachment = MessageInputHelper.attachmentPayloadFromHistory(historyMessage)
         showRetainedAttachmentPreview(retainedEditingAttachment)
         hideQuickSuggestions()
-        updateInputText(editableTextFromHistory(historyMessage, message), keepSuggestions = false)
+        updateInputText(
+            MessageInputHelper.editableTextFromHistory(
+                message = historyMessage,
+                fallback = message,
+                attachmentPlaceholder = LocaleHelper.getString(this, "attachment_empty_text")
+            ),
+            keepSuggestions = false
+        )
         binding.etInput.requestFocus()
 
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
@@ -1897,33 +1816,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.inputCapsule.layoutParams = params
     }
 
-    private fun editableTextFromHistory(message: JSONObject, fallback: String): String {
-        val rawContent = message.optNonBlankString("content") ?: fallback
-        val baseText = rawContent.substringBefore("\n\n[")
-        val attachmentPlaceholder = LocaleHelper.getString(this, "attachment_empty_text")
-        return if (baseText == attachmentPlaceholder) "" else baseText
-    }
-
-    private fun attachmentPayloadFromHistory(message: JSONObject): AttachmentPayload? {
-        val base64Data = message.optNonBlankString("base64")
-        val fileUri = message.optNonBlankString("imageUri")
-        val mimeType = message.optNonBlankString("mimeType")
-        val fileName = message.optNonBlankString("fileName")
-        val fileContext = message.optNonBlankString("fileContext")
-
-        if (base64Data == null && fileUri == null && mimeType == null && fileName == null && fileContext == null) {
-            return null
-        }
-
-        return AttachmentPayload(
-            fileUri = fileUri.orEmpty(),
-            mimeType = mimeType ?: resolveMimeTypeFromName(fileName),
-            fileName = fileName,
-            base64Data = base64Data,
-            attachmentContext = fileContext
-        )
-    }
-
     private fun showRetainedAttachmentPreview(payload: AttachmentPayload?) {
         if (payload == null) return
 
@@ -1952,16 +1844,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         updateSendState()
     }
 
-    private fun JSONObject.optNonBlankString(key: String): String? {
-        return optString(key, "").takeIf { it.isNotBlank() && it != "null" }
-    }
-
     private fun editUserMessage(historyIndex: Int, newText: String) {
         if (isSending) return
         if (historyIndex !in 0 until chatViewModel.chatHistory.size) return
 
         val attachmentPayload = try {
-            currentPreviewUri?.let { buildAttachmentPayload(it) } ?: retainedEditingAttachment
+            currentPreviewUri?.let { attachmentHelper.buildAttachmentPayload(it) } ?: retainedEditingAttachment
         } catch (e: IllegalArgumentException) {
             toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
             return
@@ -2252,273 +2140,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
     }
 
-    private fun buildAttachmentPayload(uri: Uri?): AttachmentPayload? {
-        if (uri == null) return null
-
-        val fileName = com.example.chatapp.util.FileUtils.getFileName(this, uri)
-            .takeIf { it.isNotBlank() }
-        val mimeType = resolveMimeType(uri, fileName)
-        val bytes = readAttachmentBytes(uri)
-        val isImage = mimeType.startsWith("image/", ignoreCase = true)
-
-        val extractedText = if (!isImage) {
-            extractTextFromFile(bytes, mimeType, fileName)
-        } else {
-            null
-        }
-
-        val attachmentContext = if (extractedText != null) {
-            buildAttachmentContext(fileName, mimeType, extractedText)
-        } else {
-            null
-        }
-
-        val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
-
-        return AttachmentPayload(
-            fileUri = uri.toString(),
-            mimeType = mimeType,
-            fileName = fileName,
-            base64Data = base64Data,
-            attachmentContext = attachmentContext
-        )
-    }
-
-    private fun buildAttachmentContext(
-        fileName: String?,
-        mimeType: String,
-        extractedText: String
-    ): String {
-        val preview = extractedText.trim().take(MAX_ATTACHMENT_CONTEXT_CHARS)
-        return buildString {
-            append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_file_summary"))
-            if (!fileName.isNullOrBlank()) append(": ").append(fileName)
-            append("\n").append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_mime")).append(": ").append(mimeType)
-            append("\n").append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_preview")).append(":\n").append(preview)
-            if (extractedText.length > preview.length) {
-                append("\n\n").append(LocaleHelper.getString(this@FreeChatActivity, "attachment_context_truncated"))
-            }
-        }
-    }
-
-    /**
-     * Извлекает текстовое содержимое файла.
-     * Поддерживает: текстовые файлы, DOCX, а также эвристику для неизвестных форматов.
-     */
-    private fun extractTextFromFile(bytes: ByteArray, mimeType: String, fileName: String?): String? {
-        val extension = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
-
-        // 1. DOCX — ZIP-архив с XML внутри
-        if (isDocxFile(mimeType, extension)) {
-            val docxText = extractDocxText(bytes)
-            if (!docxText.isNullOrBlank()) return truncateText(docxText)
-        }
-
-        // 2. Явно текстовые файлы по MIME/расширению
-        if (isTextLikeAttachment(mimeType, fileName)) {
-            return decodeAttachmentText(bytes)
-        }
-
-        // 3. Эвристика: пробуем декодировать как UTF-8 и проверяем читаемость
-        val heuristicText = tryDecodeAsText(bytes)
-        if (heuristicText != null) return truncateText(heuristicText)
-
-        return null
-    }
-
-    private fun isDocxFile(mimeType: String, extension: String): Boolean {
-        return extension == "docx" ||
-            mimeType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ignoreCase = true)
-    }
-
-    /**
-     * Извлекает текст из DOCX (ZIP → word/document.xml → strip XML tags).
-     */
-    private fun extractDocxText(bytes: ByteArray): String? {
-        return runCatching {
-            val zipInput = java.util.zip.ZipInputStream(java.io.ByteArrayInputStream(bytes))
-            var entry = zipInput.nextEntry
-            var documentXml: String? = null
-            while (entry != null) {
-                if (entry.name == "word/document.xml") {
-                    documentXml = zipInput.bufferedReader(Charsets.UTF_8).readText()
-                    break
-                }
-                zipInput.closeEntry()
-                entry = zipInput.nextEntry
-            }
-            zipInput.close()
-
-            if (documentXml == null) return@runCatching null
-
-            // Заменяем теги абзацев/переносов на переводы строк
-            val withBreaks = documentXml
-                .replace(Regex("<w:p[\\s>]"), "\n")
-                .replace(Regex("<w:br[^>]*>"), "\n")
-                .replace(Regex("<w:tab[^>]*>"), "\t")
-
-            // Убираем все XML-теги
-            val text = withBreaks.replace(Regex("<[^>]+>"), "")
-                .replace("&amp;", "&")
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replace("&quot;", "\"")
-                .replace("&apos;", "'")
-                .lines()
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .joinToString("\n")
-
-            text.ifBlank { null }
-        }.getOrNull()
-    }
-
-    /**
-     * Эвристика: пробуем прочитать байты как UTF-8.
-     * Если большинство символов печатаемые — считаем файл текстовым.
-     */
-    private fun tryDecodeAsText(bytes: ByteArray): String? {
-        if (bytes.isEmpty()) return null
-        // Проверяем первые 8KB для скорости
-        val sampleSize = minOf(bytes.size, 8192)
-        val sample = bytes.copyOf(sampleSize)
-        val text = sample.toString(Charsets.UTF_8)
-
-        var printable = 0
-        var nonPrintable = 0
-        for (ch in text) {
-            if (ch.isLetterOrDigit() || ch.isWhitespace() || ch in "!@#\$%^&*()_+-=[]{}|;':\",./<>?`~\\") {
-                printable++
-            } else if (ch.code < 32 && ch != '\n' && ch != '\r' && ch != '\t') {
-                nonPrintable++
-            }
-        }
-        // Если меньше 5% непечатных — считаем текстом
-        val total = printable + nonPrintable
-        if (total == 0) return null
-        val ratio = nonPrintable.toFloat() / total
-        if (ratio > 0.05f) return null
-
-        // Всё ОК — декодируем полный файл
-        return decodeAttachmentText(bytes)
-    }
-
-    private fun resolveMimeType(uri: Uri, fileName: String?): String {
-        return contentResolver.getType(uri)
-            ?.takeIf { it.isNotBlank() }
-            ?: fileName?.let { java.net.URLConnection.guessContentTypeFromName(it) }
-            ?: "application/octet-stream"
-    }
-
-    private fun resolveMimeTypeFromName(fileName: String?): String {
-        return fileName?.let { java.net.URLConnection.guessContentTypeFromName(it) }
-            ?: "application/octet-stream"
-    }
-
-    private fun readAttachmentBytes(uri: Uri): ByteArray {
-        val declaredSize = queryAttachmentSize(uri)
-        if (declaredSize != null && declaredSize > MAX_ATTACHMENT_BYTES) {
-            throw IllegalArgumentException(LocaleHelper.getString(this, "attachment_too_large"))
-        }
-
-        val output = java.io.ByteArrayOutputStream()
-        contentResolver.openInputStream(uri)?.use { inputStream ->
-            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-            var totalBytes = 0
-            while (true) {
-                val read = inputStream.read(buffer)
-                if (read == -1) break
-                totalBytes += read
-                if (totalBytes > MAX_ATTACHMENT_BYTES) {
-                    throw IllegalArgumentException(LocaleHelper.getString(this, "attachment_too_large"))
-                }
-                output.write(buffer, 0, read)
-            }
-        } ?: throw IllegalArgumentException(LocaleHelper.getString(this, "attachment_read_error"))
-
-        return output.toByteArray()
-    }
-
-    private fun queryAttachmentSize(uri: Uri): Long? {
-        return runCatching {
-            contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
-                val index = cursor.getColumnIndex(OpenableColumns.SIZE)
-                if (index == -1 || cursor.isNull(index)) null else cursor.getLong(index)
-            }
-        }.getOrNull()
-    }
-
-    private fun isTextLikeAttachment(mimeType: String, fileName: String?): Boolean {
-        if (mimeType.startsWith("text/", ignoreCase = true)) return true
-        val normalizedMime = mimeType.lowercase()
-        if (normalizedMime in setOf(
-                "application/json",
-                "application/xml",
-                "application/javascript",
-                "application/x-javascript",
-                "application/typescript",
-                "application/csv",
-                "application/sql",
-                "application/rtf",
-                "application/yaml",
-                "application/x-yaml",
-                "application/x-sh",
-                "application/x-httpd-php",
-                "application/graphql",
-                "application/ld+json",
-                "application/x-latex",
-                "application/x-tex",
-                "application/toml",
-                "application/x-toml",
-                "application/x-properties"
-            )
-        ) {
-            return true
-        }
-
-        val extension = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
-        return extension in setOf(
-            // Текстовые
-            "txt", "md", "markdown", "csv", "tsv", "log", "rtf",
-            // Веб-форматы
-            "json", "xml", "html", "htm", "css", "js", "jsx", "ts", "tsx",
-            "svg", "graphql", "gql",
-            // JVM-файлы
-            "kt", "kts", "java", "gradle", "groovy", "scala",
-            // Скриптовые
-            "py", "rb", "php", "pl", "pm", "lua", "r",
-            // Системные
-            "c", "cpp", "h", "hpp", "cs", "swift", "go", "rs", "dart",
-            // Shell и конфиги
-            "sh", "bash", "zsh", "bat", "cmd", "ps1", "psm1",
-            "env", "ini", "cfg", "conf", "properties", "toml",
-            "yaml", "yml", "dockerfile",
-            // SQL и данные
-            "sql", "proto", "graphql",
-            // Разметка / документация
-            "tex", "latex", "rst", "adoc", "org",
-            // Прочие
-            "diff", "patch", "gitignore", "editorconfig",
-            "makefile", "cmake", "tf", "tfvars", "hcl"
-        )
-    }
-
-    private fun decodeAttachmentText(bytes: ByteArray): String {
-        val text = bytes.toString(Charsets.UTF_8)
-            .replace("\u0000", "")
-            .trim()
-        return truncateText(text)
-    }
-
-    private fun truncateText(text: String): String {
-        return if (text.length > MAX_EXTRACTED_TEXT_CHARS) {
-            text.take(MAX_EXTRACTED_TEXT_CHARS) + "\n\n" + LocaleHelper.getString(this, "attachment_text_truncated")
-        } else {
-            text
-        }
-    }
-
+    // Биометрический gate завязан на Activity lifecycle и системные диалоги, поэтому пока оставлен рядом с экраном.
     private fun startBiometricUnlockGate() {
         if (!isBiometricGateActive || isFinishing || isDestroyed) return
         when (biometricAvailability()) {
