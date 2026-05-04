@@ -1,9 +1,14 @@
 package com.example.chatapp
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.animation.OvershootInterpolator
 import android.view.View
 import android.widget.EditText
@@ -11,6 +16,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.example.chatapp.assistant.DigitalAssistantOverlayService
+import com.example.chatapp.assistant.DigitalAssistantPermissionManager
+import com.example.chatapp.assistant.DigitalAssistantSettingsStore
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
@@ -28,6 +37,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
     private lateinit var accountSettings: AccountScopedSettings
     private lateinit var aiProviderSettings: AiProviderSettings
+    private lateinit var digitalAssistantSettings: DigitalAssistantSettingsStore
+    private lateinit var digitalAssistantPermissions: DigitalAssistantPermissionManager
     private var appliedLanguageCode: String? = null
     private var avatarBorderDrawable: AnimatedAvatarBorderDrawable? = null
     private var profileCardDrawable: AnimatedProfileCardDrawable? = null
@@ -58,6 +69,8 @@ class SettingsActivity : AppCompatActivity() {
         accountSettings = AccountScopedSettings(this)
         accountSettings.migrateLegacyDataIfNeeded()
         aiProviderSettings = AiProviderSettings(accountSettings)
+        digitalAssistantSettings = DigitalAssistantSettingsStore(this)
+        digitalAssistantPermissions = DigitalAssistantPermissionManager(this)
         appliedLanguageCode = LocaleHelper.getSelectedLanguage(this)
 
         updateProfileUi()
@@ -101,6 +114,8 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        setupDigitalAssistantSettings()
+
         findViewById<View>(R.id.itemLinks).setHapticClickListener {
             startActivity(Intent(this, SharedLinksActivity::class.java))
         }
@@ -133,6 +148,7 @@ class SettingsActivity : AppCompatActivity() {
         appliedLanguageCode = currentLanguageCode
         updateProfileUi()
         applyTranslations()
+        updateDigitalAssistantUi()
     }
 
     override fun onPause() {
@@ -213,6 +229,19 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
         findViewById<TextView>(R.id.tvLabelAdultMode)?.text = LocaleHelper.getString(this, "adult_mode_title")
         findViewById<TextView>(R.id.tvAdultModeValue)?.text = LocaleHelper.getString(this, "adult_replies_title")
+        findViewById<TextView>(R.id.tvDigitalAssistantTitle)?.text =
+            LocaleHelper.getString(this, "digital_assistant_title")
+        findViewById<TextView>(R.id.tvDigitalAssistantDescription)?.text =
+            LocaleHelper.getString(this, "digital_assistant_description")
+        findViewById<TextView>(R.id.tvDigitalAssistantEnable)?.text =
+            LocaleHelper.getString(this, "digital_assistant_enable")
+        findViewById<TextView>(R.id.tvDigitalAssistantPermissions)?.text =
+            LocaleHelper.getString(this, "digital_assistant_permissions_explanation")
+        findViewById<TextView>(R.id.btnAssignDigitalAssistant)?.text =
+            LocaleHelper.getString(this, "digital_assistant_assign_default")
+        findViewById<TextView>(R.id.btnGrantDigitalAssistantPermissions)?.text =
+            LocaleHelper.getString(this, "digital_assistant_grant_permissions")
+        updateDigitalAssistantUi()
 
         findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
         findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")
@@ -249,6 +278,96 @@ class SettingsActivity : AppCompatActivity() {
                     ?.start()
             }
             ?.start()
+    }
+
+    private fun setupDigitalAssistantSettings() {
+        findViewById<View>(R.id.digitalAssistantEnableRow).setHapticClickListener {
+            val switch = findViewById<SwitchMaterial>(R.id.switchDigitalAssistant)
+            switch.isChecked = !switch.isChecked
+        }
+
+        findViewById<SwitchMaterial>(R.id.switchDigitalAssistant).setOnCheckedChangeListener { _, isChecked ->
+            if (digitalAssistantSettings.isEnabled == isChecked) return@setOnCheckedChangeListener
+            if (isChecked && !digitalAssistantPermissions.isFreeChatDefaultAssistant()) {
+                digitalAssistantSettings.isEnabled = false
+                findViewById<SwitchMaterial>(R.id.switchDigitalAssistant).isChecked = false
+                openAssistantSettingsOrExplain()
+                updateDigitalAssistantUi()
+                return@setOnCheckedChangeListener
+            }
+            digitalAssistantSettings.isEnabled = isChecked
+            if (isChecked) {
+                requestDigitalAssistantPermissions()
+                startFallbackNotificationIfPossible()
+            }
+            updateDigitalAssistantUi()
+        }
+
+        findViewById<View>(R.id.btnAssignDigitalAssistant).setHapticClickListener {
+            openAssistantSettingsOrExplain()
+        }
+        findViewById<View>(R.id.btnGrantDigitalAssistantPermissions).setHapticClickListener {
+            requestDigitalAssistantPermissions()
+        }
+    }
+
+    private fun updateDigitalAssistantUi() {
+        if (!::digitalAssistantSettings.isInitialized) return
+        val switch = findViewById<SwitchMaterial>(R.id.switchDigitalAssistant)
+        if (switch.isChecked != digitalAssistantSettings.isEnabled) {
+            switch.isChecked = digitalAssistantSettings.isEnabled
+        }
+        val status = digitalAssistantPermissions.status(digitalAssistantSettings)
+        findViewById<TextView>(R.id.tvDigitalAssistantStatus)?.text =
+            digitalAssistantPermissions.statusLabel(status)
+    }
+
+    private fun openAssistantSettingsOrExplain() {
+        val intent = digitalAssistantPermissions.voiceInputSettingsIntent()
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+        } else {
+            Toast.makeText(
+                this,
+                LocaleHelper.getString(this, "digital_assistant_settings_unavailable"),
+                Toast.LENGTH_LONG
+            ).show()
+            startFallbackNotificationIfPossible()
+        }
+    }
+
+    private fun requestDigitalAssistantPermissions() {
+        if (!digitalAssistantPermissions.canDrawOverlays()) {
+            val intent = digitalAssistantPermissions.overlaySettingsIntent()
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+            } else {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$packageName")
+                })
+            }
+        }
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+        }
+    }
+
+    private fun startFallbackNotificationIfPossible() {
+        if (!digitalAssistantSettings.isFallbackNotificationEnabled) return
+        if (!digitalAssistantPermissions.hasNotificationPermission()) return
+        runCatching {
+            DigitalAssistantOverlayService.startFallbackNotification(this)
+        }.onFailure {
+            Toast.makeText(
+                this,
+                LocaleHelper.getString(this, "digital_assistant_fallback_unavailable"),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun showEditProfileDialog() {
@@ -314,5 +433,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    }
+
+    companion object {
+        private const val REQUEST_NOTIFICATIONS = 214
     }
 }

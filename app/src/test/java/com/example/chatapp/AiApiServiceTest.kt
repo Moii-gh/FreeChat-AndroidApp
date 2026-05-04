@@ -41,6 +41,35 @@ class AiApiServiceTest {
     }
 
     @Test
+    fun `screen assistant image uses existing image input shape`() {
+        val message = JSONObject().apply {
+            put("role", "user")
+            put("content", "What is shown on the screen? Help the user understand it.")
+            put("base64", "c2NyZWVu")
+            put("mimeType", "image/jpeg")
+            put("fileName", "screen.jpg")
+        }
+
+        val body = JSONObject(
+            AiApiService.buildRequestBody(
+                isImageGeneration = false,
+                messagesToKeep = listOf(message),
+                systemPrompt = null
+            )
+        )
+
+        val content = body.getJSONArray("messages")
+            .getJSONObject(0)
+            .getJSONArray("content")
+        assertTrue(content.getJSONObject(0).getString("text").contains("screen.jpg"))
+        assertTrue(content.getJSONObject(0).getString("text").contains("image/jpeg"))
+        assertEquals(
+            "data:image/jpeg;base64,c2NyZWVu",
+            content.getJSONObject(1).getJSONObject("image_url").getString("url")
+        )
+    }
+
+    @Test
     fun `request embeds extracted text file content`() {
         val message = JSONObject().apply {
             put("role", "user")

@@ -2,6 +2,7 @@ package com.example.chatapp
 
 import android.app.Application
 import android.content.Context
+import com.example.chatapp.assistant.DigitalAssistantHandoffStore
 import com.example.chatapp.util.SafeLog
 import com.vk.id.VKID
 
@@ -13,6 +14,7 @@ class ChatApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        DigitalAssistantHandoffStore.cleanupOldFiles(this)
         if (BuildConfig.VKID_NATIVE_LOGIN_ENABLED) {
             runCatching {
                 VKID.init(this)

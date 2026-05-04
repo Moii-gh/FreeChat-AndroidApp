@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:recognitionService="com.example.chatapp.assistant.FreeChatRecognitionService"
+    android:sessionService="com.example.chatapp.assistant.FreeChatVoiceInteractionSessionService"
+    android:settingsActivity="com.example.chatapp.SettingsActivity"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="false"
+    android:supportsLocalInteraction="true" />
+

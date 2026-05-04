@@ -72,6 +72,30 @@ class OpenAiDirectServiceTest {
     }
 
     @Test
+    fun `screen assistant image is sent as openai image url content`() {
+        val messages = OpenAiDirectService.buildMessagesArray(
+            systemPrompt = "system",
+            messagesToKeep = listOf(
+                JSONObject().apply {
+                    put("role", "user")
+                    put("content", "What is shown on the screen? Help the user understand it.")
+                    put("base64", "c2NyZWVu")
+                    put("mimeType", "image/jpeg")
+                    put("fileName", "screen.jpg")
+                }
+            )
+        )
+
+        val userContent = messages.getJSONObject(1).getJSONArray("content")
+        assertEquals("text", userContent.getJSONObject(0).getString("type"))
+        assertEquals("image_url", userContent.getJSONObject(1).getString("type"))
+        assertEquals(
+            "data:image/jpeg;base64,c2NyZWVu",
+            userContent.getJSONObject(1).getJSONObject("image_url").getString("url")
+        )
+    }
+
+    @Test
     fun `openai web search request uses responses built in web search tool`() {
         val body = OpenAiDirectService.buildResponsesWebSearchRequestBody(
             systemPrompt = "system",

@@ -39,6 +39,7 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.example.chatapp.assistant.DigitalAssistantHandoffStore
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.speech.SpeechRecognizerManager
@@ -95,6 +96,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private var currentPreviewUri: Uri? = null
     private var retainedEditingAttachment: AttachmentPayload? = null
+    private var assistantHandoffAttachmentPath: String? = null
     private var currentAssistantMessage: AssistantMessageWrapper? = null
     private var isSending = false
     private var activeSuggestionCategory: QuickSuggestionCategory? = null
@@ -199,6 +201,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
         handleSharedChatIntent(intent)
+        handleAssistantHandoffIntent(intent)
         handlePrefillInputIntent(intent)
     }
 
@@ -249,6 +252,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         showWelcomeState()
         loadChats()
         handleSharedChatIntent(startIntent)
+        handleAssistantHandoffIntent(startIntent)
         handlePrefillInputIntent(startIntent)
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
@@ -490,6 +494,32 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         intent.removeExtra(EXTRA_PREFILL_INPUT)
         clearInputContext()
         updateInputText(prefill, keepSuggestions = false)
+        binding.etInput.requestFocus()
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun handleAssistantHandoffIntent(intent: Intent?) {
+        val token = intent?.getStringExtra(DigitalAssistantHandoffStore.EXTRA_HANDOFF_ID)
+            ?.takeIf { it.isNotBlank() }
+            ?: return
+        intent.removeExtra(DigitalAssistantHandoffStore.EXTRA_HANDOFF_ID)
+        val handoff = DigitalAssistantHandoffStore(this).consume(token) ?: return
+        val chatId = handoff.chatId
+        if (!chatId.isNullOrBlank()) {
+            openChat(chatId)
+            return
+        }
+        clearInputContext()
+        if (handoff.draftText.isNotBlank()) {
+            updateInputText(handoff.draftText, keepSuggestions = false)
+        }
+        handoff.attachmentUri(this)?.let { uri ->
+            assistantHandoffAttachmentPath = handoff.attachmentPath
+            grantUriPermission(packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            showFilePreview(uri)
+        }
         binding.etInput.requestFocus()
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
             as android.view.inputmethod.InputMethodManager
@@ -2071,6 +2101,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.previewImage.setImageDrawable(null)
         binding.previewImage.isGone = true
         binding.previewFileContainer.isGone = true
+        assistantHandoffAttachmentPath?.let { path ->
+            runCatching { java.io.File(path).delete() }
+        }
+        assistantHandoffAttachmentPath = null
         updateSendState()
         syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
     }
