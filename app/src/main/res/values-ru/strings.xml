@@ -374,8 +374,10 @@
     <string name="digital_assistant_notification_action_open">Открыть помощника</string>
     <string name="digital_assistant_capture_active">Делаем один временный снимок экрана</string>
     <string name="digital_assistant_open_freechat">Перейти в FreeChat</string>
+    <string name="digital_assistant_translate_screen">Перевести экран</string>
     <string name="digital_assistant_ask_screen">Спросить об экране</string>
     <string name="digital_assistant_screen_analysis">Анализ экрана</string>
+    <string name="digital_assistant_translate_screen_prompt">Переведи видимый текст на экране. Сохрани смысл и кратко поясни важный контекст интерфейса.</string>
     <string name="digital_assistant_default_screen_question">Что изображено на экране? Помоги пользователю разобраться.</string>
     <string name="digital_assistant_capture_failed">Не удалось получить изображение экрана. Проверьте разрешение.</string>
     <string name="digital_assistant_assist_screenshot_unavailable">Android не разрешает получить изображение экрана без системного подтверждения. Можно открыть FreeChat или использовать ручное прикрепление изображения.</string>

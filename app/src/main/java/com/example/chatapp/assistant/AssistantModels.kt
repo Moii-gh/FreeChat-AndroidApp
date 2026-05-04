@@ -6,7 +6,8 @@ data class AssistantAttachment(
     val mimeType: String,
     val fileName: String,
     val base64Data: String,
-    val cacheFilePath: String?
+    val cacheFilePath: String?,
+    val attachmentContext: String? = null
 ) {
     fun toAttachmentPayload(): AttachmentPayload =
         AttachmentPayload(
@@ -14,7 +15,7 @@ data class AssistantAttachment(
             mimeType = mimeType,
             fileName = fileName,
             base64Data = base64Data,
-            attachmentContext = null
+            attachmentContext = attachmentContext
         )
 }
 
@@ -37,4 +38,3 @@ data class DigitalAssistantState(
     val isGenerating: Boolean
         get() = responseStatus == AssistantResponseStatus.LOADING
 }
-

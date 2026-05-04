@@ -374,8 +374,10 @@
     <string name="digital_assistant_notification_action_open">Open assistant</string>
     <string name="digital_assistant_capture_active">Making one temporary screenshot</string>
     <string name="digital_assistant_open_freechat">Open in FreeChat</string>
+    <string name="digital_assistant_translate_screen">Translate screen</string>
     <string name="digital_assistant_ask_screen">Ask about screen</string>
     <string name="digital_assistant_screen_analysis">Screen analysis</string>
+    <string name="digital_assistant_translate_screen_prompt">Translate the visible text on the screen. Preserve the meaning and briefly explain important UI context.</string>
     <string name="digital_assistant_default_screen_question">What is shown on the screen? Help the user understand it.</string>
     <string name="digital_assistant_capture_failed">Could not get the screen image. Check the permission.</string>
     <string name="digital_assistant_assist_screenshot_unavailable">Android does not allow FreeChat to get a screen image without system confirmation. You can open FreeChat or attach an image manually.</string>

@@ -123,6 +123,15 @@
             android:excludeFromRecents="true"
             android:noHistory="true" />
 
+        <activity
+            android:name=".assistant.DigitalAssistantAttachmentPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Chatapp.Transparent"
+            android:excludeFromRecents="true"
+            android:finishOnTaskLaunch="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.example.chatapp.assistant.picker" />
+
         <service
             android:name=".assistant.FreeChatVoiceInteractionService"
             android:exported="true"

@@ -18,6 +18,10 @@ class WindowManagerOverlayHost(
     private val windowManager = hostContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var overlayView: DigitalAssistantOverlayView? = null
 
+    init {
+        DigitalAssistantRuntime.registerHost(this)
+    }
+
     fun attach() {
         if (overlayView != null) return
         val view = DigitalAssistantOverlayView(hostContext, viewModel, this)
@@ -68,6 +72,14 @@ class WindowManagerOverlayHost(
         closeAssistant(force = false)
     }
 
+    override fun hideForExternalPicker() {
+        detach()
+    }
+
+    override fun showAfterExternalPicker() {
+        attach()
+    }
+
     override fun closeAssistant(force: Boolean) {
         if (force) {
             viewModel.cancelAndReset()
@@ -75,6 +87,7 @@ class WindowManagerOverlayHost(
             viewModel.resetIdleOnly()
         }
         detach()
+        DigitalAssistantRuntime.unregisterHost(this)
         onDetached()
     }
 

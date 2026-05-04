@@ -34,6 +34,7 @@ class FreeChatVoiceInteractionSession(context: Context) : VoiceInteractionSessio
     }
 
     override fun onDestroy() {
+        host?.let { DigitalAssistantRuntime.unregisterHost(it) }
         host = null
         super.onDestroy()
     }
