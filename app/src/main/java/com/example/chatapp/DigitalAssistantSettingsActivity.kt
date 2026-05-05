@@ -66,6 +66,10 @@ class DigitalAssistantSettingsActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "digital_assistant_assign_default")
         findViewById<TextView>(R.id.btnGrantDigitalAssistantPermissions)?.text =
             LocaleHelper.getString(this, "digital_assistant_grant_permissions")
+        findViewById<TextView>(R.id.tvHowItWorksTitle)?.text =
+            LocaleHelper.getString(this, "digital_assistant_how_it_works_title")
+        findViewById<TextView>(R.id.tvHowItWorksDesc)?.text =
+            LocaleHelper.getString(this, "digital_assistant_how_it_works_desc")
     }
 
     private fun setupDigitalAssistantSettings() {

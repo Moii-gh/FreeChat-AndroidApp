@@ -315,18 +315,34 @@
             <ImageView
                 android:layout_width="26dp"
                 android:layout_height="26dp"
-                android:src="@drawable/ic_brain"
+                android:src="@drawable/ic_digital_assistant"
                 app:tint="#FFFFFF"/>
 
             <TextView
                 android:id="@+id/tvLabelDigitalAssistant"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="16dp"
                 android:text="@string/digital_assistant_short_title"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_beta_badge"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="1dp"
+                android:text="BETA"
+                android:textColor="#000000"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
 
             <ImageView
                 android:layout_width="20dp"

@@ -387,4 +387,6 @@
     <string name="digital_assistant_retry">Повторить</string>
     <string name="digital_assistant_close_generating_message">Ответ ещё генерируется. Закрыть помощника?</string>
     <string name="digital_assistant_close">Закрыть</string>
+    <string name="digital_assistant_how_it_works_title">Как это работает?</string>
+    <string name="digital_assistant_how_it_works_desc">Ассистент позволяет вызывать FreeChat из любого приложения зажатием кнопки домой или жестом. Он может анализировать содержимое экрана для ответов на ваши вопросы.</string>
 </resources>

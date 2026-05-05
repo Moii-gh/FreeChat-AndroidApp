@@ -387,4 +387,6 @@
     <string name="digital_assistant_retry">Retry</string>
     <string name="digital_assistant_close_generating_message">An answer is still being generated. Close the assistant?</string>
     <string name="digital_assistant_close">Close</string>
+    <string name="digital_assistant_how_it_works_title">How it works?</string>
+    <string name="digital_assistant_how_it_works_desc">The assistant allows you to call FreeChat from any application by holding the home button or using a gesture. It can analyze the contents of the screen to answer your questions.</string>
 </resources>

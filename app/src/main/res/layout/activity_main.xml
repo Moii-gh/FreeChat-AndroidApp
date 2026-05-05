@@ -274,6 +274,14 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
+            <ImageView
+                android:id="@+id/ivAnonymousIllustration"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_marginBottom="24dp"
+                android:src="@drawable/img_incognito_welcome"
+                android:alpha="0.7"/>
+
             <TextView
                 android:id="@+id/tvAnonymousDesc"
                 android:layout_width="wrap_content"
