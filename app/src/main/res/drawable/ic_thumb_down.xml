@@ -2,9 +2,46 @@
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="#8E8E93">
+    android:viewportHeight="24">
+
+    <!-- Основной контур пальца вниз -->
     <path
-        android:fillColor="@android:color/white"
-        android:pathData="M15,3H6C5.17,3 4.46,3.5 4.16,4.22L1.14,11.27C1.05,11.62 1,11.99 1,12.01V14c0,1.1 0.9,2 2,2h6.31l-0.95,4.57l-0.03,0.32c0,0.41 0.17,0.79 0.44,1.06L9.83,23l6.59,-6.59c0.36,-0.36 0.58,-0.86 0.58,-1.41V5c0,-1.1 -0.9,-2 -2,-2zM19,3v12h4V3H19z"/>
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#8E8E93"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M15.5,4
+            H7.2
+            C6.4,4 5.7,4.45 5.35,5.15
+            L2.25,11.9
+            C2.08,12.25 2,12.62 2,13
+            V14.1
+            C2,15.15 2.85,16 3.9,16
+            H9.2
+            L8.55,19.25
+            C8.48,19.6 8.58,19.96 8.83,20.21
+            L9.55,20.95
+            C9.85,21.25 10.35,21.25 10.65,20.95
+            L16.05,15.55
+            C16.35,15.25 16.5,14.85 16.5,14.43
+            V5
+            C16.5,4.45 16.05,4 15.5,4
+            Z" />
+
+    <!-- Правая вертикальная часть -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#8E8E93"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M19,4
+            H22
+            V15
+            H19
+            Z" />
+
 </vector>
