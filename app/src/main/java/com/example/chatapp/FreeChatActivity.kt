@@ -58,10 +58,12 @@ import org.json.JSONObject
 import com.example.chatapp.util.setHapticClickListener
 import com.example.chatapp.util.OnSwipeTouchListener
 import com.example.chatapp.ads.RewardedAdManager
-import com.example.chatapp.viewmodel.AccountSecuritySettingsStore
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
+
+import com.example.chatapp.viewmodel.AccountSecuritySettingsStore
+import com.example.chatapp.ui.TypingDotsView
 
 class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
@@ -123,6 +125,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var navigationBarInsetBottom = 0
     private var systemWindowInsetTop = 0
     private var messagesBottomAnchorId = View.NO_ID
+    private var isUserAtBottom = true
+    private var isGeneratingIndicatorVisible = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -245,9 +249,29 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 binding.drawerLayout.openDrawer(GravityCompat.START)
             }
         }
-        binding.messagesScrollView.setOnTouchListener(swipeListener)
         binding.messagesContainer.setOnTouchListener(swipeListener)
         binding.welcomeScreen.setOnTouchListener(swipeListener)
+
+        // Перехватываем касания на ScrollView, чтобы блокировать автоскролл при касании пользователя
+        binding.messagesScrollView.setOnTouchListener { v, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> {
+                    // Пользователь касается/тянет — блокируем автоскролл
+                    isUserAtBottom = false
+                    currentAssistantMessage?.autoScrollEnabled = false
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    // Пользователь отпустил — проверяем позицию через короткую задержку
+                    binding.messagesScrollView.postDelayed({
+                        recheckScrollPosition()
+                    }, 100)
+                }
+            }
+            // Передаём событие дальше для свайпа
+            swipeListener.onTouch(v, event)
+        }
+
+        setupGeneratingIndicator()
 
         showWelcomeState()
         loadChats()
@@ -1734,11 +1758,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isImageMode = isImageRequest
         )
         currentAssistantMessage = wrapper
-
         binding.etInput.text?.clear()
         clearPreview()
         updateSendState()
 
+        var lastAccumulated = ""
         chatViewModel.addToChatHistoryAndSend(
             content = text,
             base64Data = attachmentPayload?.base64Data,
@@ -1750,20 +1774,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     isSending = false
                     updateSendState()
-                    wrapper.updateContent(error, animate = false)
+                    hideGeneratingIndicator()
+                    wrapper.updateContent(error, animate = false, isFinal = true)
                     refreshDailyQuotaUi()
                     toast(error)
                 }
             },
             onChunk = { chunk ->
+                lastAccumulated = chunk
                 runOnUiThread {
-                    wrapper.updateContent(chunk, animate = false)
+                    wrapper.updateContent(chunk, animate = false, isFinal = false)
+                    updateGeneratingIndicatorVisibility()
                 }
             },
             onStreamComplete = {
                 runOnUiThread {
+                    wrapper.updateContent(lastAccumulated, animate = false, isFinal = true)
                     isSending = false
+
                     updateSendState()
+                    hideGeneratingIndicator()
                     refreshDailyQuotaUi()
                     refreshChats()
                 }
@@ -1777,6 +1807,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         chatViewModel.cancelActiveResponse()
         isSending = false
         updateSendState()
+        hideGeneratingIndicator()
 
         val wrapper = currentAssistantMessage ?: return
         val thinkingText = LocaleHelper.getString(this, "ai_thinking")
@@ -2013,16 +2044,21 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         modeOverride: String? = null,
         useModeOverride: Boolean = false
     ) {
+        var lastAccumulated = ""
         chatViewModel.fetchAiResponse(
             onChunk = { chunk ->
+                lastAccumulated = chunk
                 runOnUiThread {
-                    wrapper.updateContent(chunk, animate = false)
+                    wrapper.updateContent(chunk, animate = false, isFinal = false)
+                    updateGeneratingIndicatorVisibility()
                 }
             },
             onComplete = {
                 runOnUiThread {
+                    wrapper.updateContent(lastAccumulated, animate = false, isFinal = true)
                     isSending = false
                     updateSendState()
+                    hideGeneratingIndicator()
                     refreshDailyQuotaUi()
                     refreshChats()
                 }
@@ -2031,7 +2067,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     isSending = false
                     updateSendState()
-                    wrapper.updateContent(error, animate = false)
+                    hideGeneratingIndicator()
+                    wrapper.updateContent(error, animate = false, isFinal = true)
                     refreshDailyQuotaUi()
                     toast(error)
                 }
@@ -2122,6 +2159,115 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         chatViewModel.currentMode = null
         setWelcomeActionButtonsVisible(true)
         syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
+    }
+
+    // ──────── Плавающий индикатор генерации ────────
+
+    /**
+     * Настраивает слушатель скролла и обработчик нажатия на индикатор.
+     * Когда пользователь прокрутил чат вверх и AI генерирует ответ,
+     * по центру экрана появляется пилюля с анимированными точками.
+     * Нажатие на неё прокручивает чат вниз к генерируемому тексту.
+     */
+    private fun setupGeneratingIndicator() {
+        binding.generatingIndicator.setOnClickListener {
+            isUserAtBottom = true
+            currentAssistantMessage?.autoScrollEnabled = true
+            scrollToBottom()
+            hideGeneratingIndicator()
+        }
+
+        binding.messagesScrollView.viewTreeObserver.addOnScrollChangedListener {
+            val scrollView = binding.messagesScrollView
+            val contentHeight = binding.messagesContainer.height
+            val scrollViewHeight = scrollView.height
+            val scrollY = scrollView.scrollY
+
+            // Считаем, что пользователь "внизу", если осталось менее 150dp до конца
+            val threshold = dp(150f).toInt()
+            isUserAtBottom = (scrollY + scrollViewHeight >= contentHeight - threshold)
+
+            // Синхронизируем автоскролл wrapper'а с позицией пользователя
+            currentAssistantMessage?.autoScrollEnabled = isUserAtBottom
+
+            updateGeneratingIndicatorVisibility()
+        }
+    }
+
+    private fun updateGeneratingIndicatorVisibility() {
+        if (isSending && !isUserAtBottom) {
+            showGeneratingIndicator()
+        } else {
+            hideGeneratingIndicator()
+        }
+    }
+
+    private fun showGeneratingIndicator() {
+        if (isGeneratingIndicatorVisible) return
+        isGeneratingIndicatorVisible = true
+
+        val indicator = binding.generatingIndicator
+        indicator.animate().cancel()
+        indicator.alpha = 0f
+        indicator.scaleX = 0.8f
+        indicator.scaleY = 0.8f
+        indicator.translationY = dp(12f)
+        indicator.isVisible = true
+
+        indicator.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .translationY(0f)
+            .setDuration(220L)
+            .setInterpolator(android.view.animation.OvershootInterpolator(1.2f))
+            .start()
+
+        binding.typingDotsView.startAnimation()
+    }
+
+    private fun hideGeneratingIndicator() {
+        if (!isGeneratingIndicatorVisible) return
+        isGeneratingIndicatorVisible = false
+
+        val indicator = binding.generatingIndicator
+        indicator.animate().cancel()
+
+        indicator.animate()
+            .alpha(0f)
+            .scaleX(0.85f)
+            .scaleY(0.85f)
+            .translationY(dp(8f))
+            .setDuration(160L)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                indicator.isGone = true
+                indicator.scaleX = 1f
+                indicator.scaleY = 1f
+                indicator.translationY = 0f
+                indicator.alpha = 1f
+                binding.typingDotsView.stopAnimation()
+            }
+            .start()
+    }
+
+    private fun scrollToBottom() {
+        binding.messagesScrollView.post {
+            binding.messagesScrollView.smoothScrollTo(0, binding.messagesContainer.bottom)
+        }
+    }
+
+    /** Пересчитывает позицию скролла после того как пользователь убрал палец */
+    private fun recheckScrollPosition() {
+        val scrollView = binding.messagesScrollView
+        val contentHeight = binding.messagesContainer.height
+        val scrollViewHeight = scrollView.height
+        val scrollY = scrollView.scrollY
+        val threshold = dp(150f).toInt()
+
+        isUserAtBottom = (scrollY + scrollViewHeight >= contentHeight - threshold)
+        currentAssistantMessage?.autoScrollEnabled = isUserAtBottom
+        updateGeneratingIndicatorVisibility()
     }
 
     private fun setWelcomeActionButtonsVisible(isVisible: Boolean) {

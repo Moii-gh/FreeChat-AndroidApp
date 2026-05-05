@@ -24,9 +24,6 @@ import java.util.regex.Pattern
  * Обёртка для блока ответа ассистента.
  * Управляет контентом (текст / код / изображение), shimmer-анимациями,
  * рендерингом Markdown через Markwon.
- *
- * Ранее был inner class в MainActivity, теперь — самостоятельный класс
- * с явной зависимостью от Context.
  */
 class AssistantMessageWrapper(
     val container: LinearLayout,
@@ -85,6 +82,9 @@ class AssistantMessageWrapper(
 
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
+
+    /** Управляется извне (FreeChatActivity): если false, авто-скролл при обновлении контента отключён */
+    var autoScrollEnabled = true
 
     private data class SourceLink(
         val title: String,
@@ -185,9 +185,11 @@ class AssistantMessageWrapper(
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener { anim ->
-                matrix.setTranslate(anim.animatedValue as Float, 0f)
-                shader.setLocalMatrix(matrix)
-                textView.invalidate()
+                if (textView.paint.shader != null) {
+                    matrix.setTranslate(anim.animatedValue as Float, 0f)
+                    shader.setLocalMatrix(matrix)
+                    textView.invalidate()
+                }
             }
             start()
         }
@@ -509,8 +511,9 @@ class AssistantMessageWrapper(
     /**
      * Главный метод обновления контента.
      * Парсит текст на чанки: обычный текст (Markwon) и блоки кода (SyntaxHighlighter).
+     * Использует инкрементальное обновление View для плавности.
      */
-    fun updateContent(reply: String, animate: Boolean = true) {
+    fun updateContent(reply: String, animate: Boolean = true, isFinal: Boolean = false) {
         rawText = reply
         val thinkingText = LocaleHelper.getString(context, "ai_thinking")
         val isStatusMessage = reply == thinkingText || 
@@ -521,10 +524,13 @@ class AssistantMessageWrapper(
                 reply == "Редактирование изображения..." ||
                 reply.startsWith("Использование инструмента")
 
-        // Обработка статусов
+        // Обработка статусов (пока ИИ "думает" или выполняет инструмент)
         if (isStatusMessage) {
             removeSourcesButton()
             btnRow?.visibility = View.GONE
+            
+            // Если в контейнере уже есть сообщения, не заменяем их статусом,
+            // просто ждём когда придут реальные данные.
             if (contentArea.childCount == 0) {
                 val textView = TextView(context).apply {
                     setTextColor(Color.parseColor("#8E8E93"))
@@ -534,28 +540,46 @@ class AssistantMessageWrapper(
                 }
                 contentArea.addView(textView)
             }
-            val tv = contentArea.getChildAt(0) as? TextView
-            if (tv != null && tv.text != reply) {
-                tv.text = reply
-                applyTextShimmer(tv)
+            
+            val firstView = contentArea.getChildAt(0)
+            if (firstView is TextView && firstView.tag != "content") {
+                if (firstView.text != reply) {
+                    firstView.text = reply
+                    applyTextShimmer(firstView)
+                }
             }
             return
         }
 
-        btnRow?.visibility = View.VISIBLE
+        // Показываем кнопки только когда ответ полностью готов с плавной анимацией
+        if (isFinal) {
+            if (btnRow?.visibility != View.VISIBLE) {
+                btnRow?.alpha = 0f
+                btnRow?.visibility = View.VISIBLE
+                btnRow?.animate()
+                    ?.alpha(1f)
+                    ?.setDuration(300L)
+                    ?.setInterpolator(android.view.animation.DecelerateInterpolator())
+                    ?.start()
+            }
+        } else {
+            btnRow?.visibility = View.GONE
+            btnRow?.animate()?.cancel()
+            btnRow?.alpha = 1f
+        }
+        
         textShimmerAnimator?.cancel()
         textShimmerAnimator = null
         removeSourcesButton()
+        
         val parsedReply = parseReplySources(reply)
         val displayReply = parsedReply.content
 
-        // Удаляем статусную строку, если она была первой
+        // Очищаем статусную строку, если она была первой и мы переходим к контенту
         if (contentArea.childCount > 0) {
-            val tv = contentArea.getChildAt(0) as? TextView
-            if (tv?.paint?.shader != null || tv?.currentTextColor != ContextCompat.getColor(context, android.R.color.white)) {
-                tv?.paint?.shader = null
-                tv?.setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                tv?.invalidate()
+            val firstView = contentArea.getChildAt(0) as? TextView
+            if (firstView != null && firstView.tag != "content") {
+                contentArea.removeViewAt(0)
             }
         }
 
@@ -563,56 +587,93 @@ class AssistantMessageWrapper(
         val imageUrl = extractImageUrl(displayReply)?.takeIf { isRenderableImageUrl(it) }
         val hasImage = imageUrl != null
         val cleanReply = if (hasImage) {
-            // Убираем маркдаун картинки из текста, чтобы не дублировать
             displayReply.replace(Regex("!\\[.*?\\]\\(.*?\\)"), "").trim()
         } else {
             displayReply
         }
 
-        // Разбиваем текст на типизированные чанки: TEXT / CODE / TABLE
         val chunks = MarkdownTableRenderer.splitIntoChunks(cleanReply)
         val markwon = io.noties.markwon.Markwon.create(context)
 
-        // Перестраиваем contentArea полностью (таблицы — самостоятельные View)
-        // imageContainer убираем временно, вернём в конце если нужен
-        val savedImageContainer = imageContainer
-        contentArea.removeAllViews()
+        // Инкрементальное обновление contentArea
+        // Мы пытаемся переиспользовать существующие View, чтобы избежать мерцания.
+        
+        // 1. Синхронизируем количество View с количеством чанков (без учёта imageContainer)
+        val currentImageContainer = imageContainer
+        val childrenCountWithoutImage = if (currentImageContainer != null && currentImageContainer.parent == contentArea) {
+            contentArea.childCount - 1
+        } else {
+            contentArea.childCount
+        }
 
-        chunks.forEach { chunk ->
+        // 2. Обновляем существующие или добавляем новые
+        chunks.forEachIndexed { index, chunk ->
+            val existingView = if (index < childrenCountWithoutImage) contentArea.getChildAt(index) else null
+            
             when (chunk) {
                 is MarkdownTableRenderer.Chunk.Text -> {
-                    if (chunk.content.isNotEmpty()) {
-                        val tv = TextView(context).apply {
+                    val tv = if (existingView is TextView && existingView.tag == "content_text") {
+                        existingView
+                    } else {
+                        if (existingView != null) contentArea.removeViewAt(index)
+                        TextView(context).apply {
+                            tag = "content_text"
                             setTextColor(ContextCompat.getColor(context, android.R.color.white))
                             textSize = 16f
                             setLineSpacing(0f, 1.2f)
                             setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
                             setTextIsSelectable(true)
                             movementMethod = android.text.method.LinkMovementMethod.getInstance()
-                        }
+                        }.also { contentArea.addView(it, index) }
+                    }
+                    // Обновляем текст только если он изменился (для плавности)
+                    if (tv.text.toString() != chunk.content) {
                         markwon.setMarkdown(tv, chunk.content)
-                        contentArea.addView(tv)
                     }
                 }
                 is MarkdownTableRenderer.Chunk.Code -> {
-                    val (codeContainer, codeTv) = ChatMessageRenderer.createCodeBlockView(
-                        context, chunk.content, chunk.language
-                    )
-                    codeContainer.tag = codeTv
-                    codeTv.text = SyntaxHighlighter.highlight(chunk.content, chunk.language)
-                    contentArea.addView(codeContainer)
+                    val container = if (existingView != null && existingView.tag == "content_code") {
+                        existingView
+                    } else {
+                        if (existingView != null) contentArea.removeViewAt(index)
+                        val (codeContainer, codeTv) = ChatMessageRenderer.createCodeBlockView(
+                            context, chunk.content, chunk.language
+                        )
+                        codeContainer.tag = "content_code"
+                        codeContainer.setTag(R.id.code_text_view, codeTv) // Используем ID для хранения ссылки
+                        contentArea.addView(codeContainer, index)
+                        codeContainer
+                    }
+                    val codeTv = container.getTag(R.id.code_text_view) as? TextView
+                    if (codeTv != null && codeTv.text.toString() != chunk.content) {
+                        codeTv.text = SyntaxHighlighter.highlight(chunk.content, chunk.language)
+                    }
                 }
                 is MarkdownTableRenderer.Chunk.Table -> {
-                    val tableView = MarkdownTableRenderer.createTableView(
-                        context, chunk.parsed, chunk.raw
-                    )
-                    contentArea.addView(tableView)
+                    // Таблицы сложнее обновлять инкрементально, поэтому если таблица изменилась — пересоздаём View.
+                    // Но в стриминге таблицы обычно приходят целиком в конце чанка.
+                    val tableContainer = if (existingView != null && existingView.tag == "content_table" && existingView.getTag(R.id.table_raw_content) == chunk.raw) {
+                        existingView
+                    } else {
+                        if (existingView != null) contentArea.removeViewAt(index)
+                        MarkdownTableRenderer.createTableView(context, chunk.parsed, chunk.raw).apply {
+                            tag = "content_table"
+                            setTag(R.id.table_raw_content, chunk.raw)
+                        }.also { contentArea.addView(it, index) }
+                    }
                 }
             }
         }
 
-        // Восстанавливаем ссылку на imageContainer (был убран через removeAllViews)
-        imageContainer = savedImageContainer
+        // 3. Удаляем лишние View (если текст сократился, что редко для стримингового ответа)
+        val newChildrenCountWithoutImage = chunks.size
+        while (contentArea.childCount > newChildrenCountWithoutImage) {
+            val viewToRemove = contentArea.getChildAt(newChildrenCountWithoutImage)
+            if (viewToRemove == imageContainer) break // Не удаляем контейнер картинки здесь
+            contentArea.removeViewAt(newChildrenCountWithoutImage)
+        }
+
+        // Обработка изображения
         if (imageUrl != null) {
             ensureImageContainer()
             
@@ -649,20 +710,37 @@ class AssistantMessageWrapper(
                 }
             }
             
-            // Перемещаем imageContainer в конец
-            contentArea.removeView(imageContainer)
-            contentArea.addView(imageContainer)
+            // Перемещаем imageContainer в самый конец, если он еще не там
+            val lastIdx = contentArea.childCount - 1
+            if (contentArea.getChildAt(lastIdx) != imageContainer) {
+                contentArea.removeView(imageContainer)
+                contentArea.addView(imageContainer)
+            }
+        } else {
+            // Если картинки больше нет в тексте, убираем контейнер
+            imageContainer?.let {
+                if (it.parent == contentArea) contentArea.removeView(it)
+            }
+            imageContainer = null
+            currentImageUrl = null
         }
 
-        // Умный автоскролл: не дёргаем, если пользователь листает вверх
-        renderSourcesButton(parsedReply.sources)
+        // Источники
+        if (isFinal) {
+            renderSourcesButton(parsedReply.sources)
+        } else {
+            removeSourcesButton()
+        }
 
-        val tolerance = 400
-        val currentScrollY = scrollView.scrollY
-        val scrollChild = scrollView.getChildAt(0) ?: return
-        val maxScrollY = scrollChild.measuredHeight - scrollView.measuredHeight
-        if (maxScrollY - currentScrollY <= tolerance) {
-            scrollView.post { scrollView.fullScroll(ScrollView.FOCUS_DOWN) }
+        // Умный автоскролл: скроллим вниз только если пользователь и так внизу
+        if (autoScrollEnabled) {
+            val tolerance = 300
+            val currentScrollY = scrollView.scrollY
+            val scrollChild = scrollView.getChildAt(0) ?: return
+            val maxScrollY = scrollChild.measuredHeight - scrollView.measuredHeight
+            if (maxScrollY - currentScrollY <= tolerance) {
+                scrollView.post { scrollView.fullScroll(ScrollView.FOCUS_DOWN) }
+            }
         }
     }
 }

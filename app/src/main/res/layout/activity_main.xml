@@ -315,6 +315,31 @@
                 android:orientation="vertical"/>
         </ScrollView>
 
+        <!-- ИНДИКАТОР ГЕНЕРАЦИИ (плавающий по центру) -->
+        <LinearLayout
+            android:id="@+id/generatingIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/bg_generating_pill"
+            android:paddingHorizontal="20dp"
+            android:elevation="32dp"
+            android:translationZ="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/bottomInputArea"
+            android:layout_marginBottom="16dp">
+
+            <com.example.chatapp.ui.TypingDotsView
+                android:id="@+id/typingDotsView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
         <View
             android:id="@+id/bottomInputScrim"
             android:layout_width="0dp"

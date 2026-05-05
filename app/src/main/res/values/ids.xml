@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="user_message_history_index" type="id" />
+    <item name="code_text_view" type="id" />
+    <item name="table_raw_content" type="id" />
 </resources>
