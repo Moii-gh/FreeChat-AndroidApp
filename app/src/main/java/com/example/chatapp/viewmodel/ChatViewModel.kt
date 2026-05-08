@@ -534,7 +534,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                                 syncId = metadata.syncId,
                                 timestamp = metadata.timestamp,
                                 updatedAt = metadata.updatedAt,
-                                editRevision = metadata.editRevision
+                                editRevision = metadata.editRevision,
+                                reaction = normalizeReaction(msg.optString("reaction").takeIf { it.isNotBlank() })
                             )
                         }
                     }
@@ -562,7 +563,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         syncId = metadata.syncId,
                         timestamp = metadata.timestamp,
                         updatedAt = metadata.updatedAt,
-                        editRevision = metadata.editRevision
+                        editRevision = metadata.editRevision,
+                        reaction = normalizeReaction(
+                            (assistantHistoryMessage ?: chatHistory.lastOrNull())
+                                ?.optString("reaction")
+                                ?.takeIf { it.isNotBlank() }
+                        )
                     )
                     cachedChats = repository.getAllChats()
                     performSync()
@@ -791,6 +797,31 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             content
         }
     }
+
+    fun setAssistantReaction(syncId: String, reaction: String?) {
+        val normalizedReaction = normalizeReaction(reaction)
+        chatHistory.firstOrNull {
+            it.optString("syncId") == syncId && it.optString("role") == "assistant"
+        }?.let { message ->
+            if (normalizedReaction == null) {
+                message.remove("reaction")
+            } else {
+                message.put("reaction", normalizedReaction)
+            }
+        }
+
+        if (currentChatId != null) {
+            viewModelScope.launch {
+                repository.updateMessageReaction(syncId, normalizedReaction)
+            }
+        }
+    }
+
+    private fun normalizeReaction(reaction: String?): String? =
+        when (reaction) {
+            "like", "dislike" -> reaction
+            else -> null
+        }
 
     private fun ensureMessageMetadata(message: JSONObject): MessageMetadata {
         val syncId = message.optString("syncId").takeIf { it.isNotBlank() }

@@ -69,6 +69,8 @@ class AssistantMessageWrapper(
 
     var rawText: String = ""
     var btnRow: View? = null
+    var messageSyncId: String? = null
+    var reaction: String? = null
 
     var isImageMode = false
     var imageContainer: FrameLayout? = null

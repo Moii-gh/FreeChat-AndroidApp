@@ -990,6 +990,21 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         updateGeneratingIndicatorVisibility()
     }
 
+    private fun attachCompletedAssistantMessage(wrapper: AssistantMessageWrapper) {
+        val message = chatViewModel.chatHistory.lastOrNull()
+            ?.takeIf { it.optString("role") == "assistant" }
+            ?: return
+        val syncId = message.optString("syncId").takeIf { it.isNotBlank() } ?: return
+        wrapper.messageSyncId = syncId
+        wrapper.reaction?.let { reaction ->
+            chatViewModel.setAssistantReaction(syncId, reaction)
+        }
+    }
+
+    private fun handleAssistantReactionChanged(syncId: String, reaction: String?) {
+        chatViewModel.setAssistantReaction(syncId, reaction)
+    }
+
     private fun cancelPendingStreamUiWork(cancelScroll: Boolean) {
         cancelScheduledStreamFlush()
         streamPendingRequestId = 0L
@@ -1084,7 +1099,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             onUserMessageLongClick = { anchor, message, historyIndex ->
                 popupMenuHelper.showUserMessageOptionsMenu(anchor, message, historyIndex)
             },
-            onAssistantContentChanged = ::scheduleScrollToBottomIfPinned
+            onAssistantContentChanged = ::scheduleScrollToBottomIfPinned,
+            onAssistantReactionChanged = ::handleAssistantReactionChanged
         )
 
         speechRecognizerManager = SpeechRecognizerManager(
@@ -1757,6 +1773,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                         put("updatedAt", message.updatedAt)
                         put("editRevision", message.editRevision)
                         put("isDeleted", message.isDeleted)
+                        message.reaction?.let { put("reaction", it) }
                     }
                 )
 
@@ -1781,7 +1798,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     messageRenderer.addAssistantMessage(
                         text = assistantContent,
                         animate = false,
-                        isImageMode = AssistantMessageWrapper.containsImageReply(assistantContent)
+                        isImageMode = AssistantMessageWrapper.containsImageReply(assistantContent),
+                        messageSyncId = message.syncId,
+                        reaction = message.reaction
                     )
                 }
             }
@@ -1958,6 +1977,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
                     flushStreamingUpdate(requestId, wrapper, lastAccumulated, isFinal = true)
+                    attachCompletedAssistantMessage(wrapper)
                     finishGeneration(requestId)
                     isSending = false
 
@@ -2242,6 +2262,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 runOnUiThread {
                     if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
                     flushStreamingUpdate(requestId, wrapper, lastAccumulated, isFinal = true)
+                    attachCompletedAssistantMessage(wrapper)
                     finishGeneration(requestId)
                     isSending = false
                     updateSendState()

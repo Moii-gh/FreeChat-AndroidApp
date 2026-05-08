@@ -1,5 +1,6 @@
 package com.example.chatapp.ui
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
@@ -26,7 +27,8 @@ class ChatMessageRenderer(
     private val popupMenuHelper: PopupMenuHelper,
     private val onRegenerate: (AssistantMessageWrapper) -> Unit,
     private val onUserMessageLongClick: (View, String, Int) -> Unit,
-    private val onAssistantContentChanged: () -> Unit
+    private val onAssistantContentChanged: () -> Unit,
+    private val onAssistantReactionChanged: (String, String?) -> Unit
 ) {
 
     // ──────── Сообщения пользователя ────────
@@ -375,7 +377,13 @@ class ChatMessageRenderer(
      * Создаёт блок ответа ассистента с кнопками действий (copy, like, dislike, share, more).
      * Возвращает wrapper для дальнейшего обновления через streaming.
      */
-    fun addAssistantMessage(text: String, animate: Boolean = true, isImageMode: Boolean = false): AssistantMessageWrapper {
+    fun addAssistantMessage(
+        text: String,
+        animate: Boolean = true,
+        isImageMode: Boolean = false,
+        messageSyncId: String? = null,
+        reaction: String? = null
+    ): AssistantMessageWrapper {
         val rootContainer = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -392,7 +400,10 @@ class ChatMessageRenderer(
             { FileUtils.copyToClipboard(context, it) },
             { FileUtils.shareText(context, it) },
             context
-        )
+        ).apply {
+            this.messageSyncId = messageSyncId
+            this.reaction = normalizeReaction(reaction)
+        }
         val shouldUseImageMode = isImageMode || AssistantMessageWrapper.containsImageReply(text)
         wrapper.isImageMode = shouldUseImageMode
         val thinkingText = LocaleHelper.getString(context, "ai_thinking")
@@ -423,6 +434,7 @@ class ChatMessageRenderer(
 
         var btnLike: ImageButton? = null
         var btnDislike: ImageButton? = null
+        var currentReaction = wrapper.reaction
 
         icons.forEachIndexed { index, icon ->
             val btn = ImageButton(context).apply {
@@ -450,18 +462,20 @@ class ChatMessageRenderer(
                             }
                         }
                         1 -> {
-                            Toast.makeText(context, LocaleHelper.getString(context, "toast_liked"), Toast.LENGTH_SHORT).show()
-                            setColorFilter(Color.WHITE)
-                            btnDislike?.animate()?.scaleX(0f)?.scaleY(0f)?.setDuration(150)?.withEndAction {
-                                btnDislike?.visibility = View.GONE
-                            }?.start()
+                            currentReaction = if (currentReaction == REACTION_LIKE) null else REACTION_LIKE
+                            wrapper.reaction = currentReaction
+                            updateReactionButtons(btnLike, btnDislike, currentReaction, animate = true)
+                            wrapper.messageSyncId?.let { syncId ->
+                                onAssistantReactionChanged(syncId, currentReaction)
+                            }
                         }
                         2 -> {
-                            Toast.makeText(context, LocaleHelper.getString(context, "toast_disliked"), Toast.LENGTH_SHORT).show()
-                            setColorFilter(Color.WHITE)
-                            btnLike?.animate()?.scaleX(0f)?.scaleY(0f)?.setDuration(150)?.withEndAction {
-                                btnLike?.visibility = View.GONE
-                            }?.start()
+                            currentReaction = if (currentReaction == REACTION_DISLIKE) null else REACTION_DISLIKE
+                            wrapper.reaction = currentReaction
+                            updateReactionButtons(btnLike, btnDislike, currentReaction, animate = true)
+                            wrapper.messageSyncId?.let { syncId ->
+                                onAssistantReactionChanged(syncId, currentReaction)
+                            }
                         }
                         3 -> {
                             val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
@@ -485,6 +499,7 @@ class ChatMessageRenderer(
                 }
             )
         }
+        updateReactionButtons(btnLike, btnDislike, currentReaction, animate = false)
 
         rootContainer.addView(
             btnRow,
@@ -516,7 +531,53 @@ class ChatMessageRenderer(
         return wrapper
     }
 
+    private fun updateReactionButtons(
+        likeButton: ImageButton?,
+        dislikeButton: ImageButton?,
+        reaction: String?,
+        animate: Boolean
+    ) {
+        setReactionButtonState(likeButton, reaction == REACTION_LIKE, animate)
+        setReactionButtonState(dislikeButton, reaction == REACTION_DISLIKE, animate)
+    }
+
+    private fun setReactionButtonState(button: ImageButton?, isActive: Boolean, animate: Boolean) {
+        button ?: return
+        val targetColor = Color.parseColor(if (isActive) "#FFFFFF" else "#B3B3B3")
+        button.isSelected = isActive
+        if (!animate) {
+            button.setColorFilter(targetColor)
+            button.alpha = if (isActive) 1f else 0.86f
+            button.tag = targetColor
+            return
+        }
+
+        val currentColor = (button.tag as? Int) ?: Color.parseColor("#B3B3B3")
+        ValueAnimator.ofArgb(currentColor, targetColor).apply {
+            duration = 140L
+            addUpdateListener {
+                val color = it.animatedValue as Int
+                button.setColorFilter(color)
+                button.tag = color
+            }
+            start()
+        }
+        button.animate()
+            .alpha(if (isActive) 1f else 0.86f)
+            .setDuration(140L)
+            .start()
+    }
+
+    private fun normalizeReaction(reaction: String?): String? =
+        when (reaction) {
+            REACTION_LIKE, REACTION_DISLIKE -> reaction
+            else -> null
+        }
+
     companion object {
+        const val REACTION_LIKE = "like"
+        const val REACTION_DISLIKE = "dislike"
+
         /**
          * Создаёт виджет блока кода с заголовком (язык) и кнопкой копирования.
          */

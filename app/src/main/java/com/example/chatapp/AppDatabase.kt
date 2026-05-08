@@ -9,7 +9,7 @@ import com.example.chatapp.util.SafeLog
 
 @Database(
     entities = [ChatEntity::class, MessageEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_5_6)
                 .addMigrations(MIGRATION_6_7)
                 .addMigrations(MIGRATION_7_8)
+                .addMigrations(MIGRATION_8_9)
                 .build()
                 INSTANCE = instance
                 instance
@@ -166,6 +167,12 @@ abstract class AppDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS index_messages_chatId_isDeleted_timestamp " +
                         "ON messages(chatId, isDeleted, timestamp)"
                 )
+            }
+        }
+
+        val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.addColumnIfMissing("messages", "reaction", "TEXT")
             }
         }
     }

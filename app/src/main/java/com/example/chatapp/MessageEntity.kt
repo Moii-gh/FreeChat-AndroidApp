@@ -34,5 +34,6 @@ data class MessageEntity(
     val syncId: String = java.util.UUID.randomUUID().toString(),
     val updatedAt: Long = timestamp,
     val isDeleted: Boolean = false,
-    val editRevision: Int = 0
+    val editRevision: Int = 0,
+    val reaction: String? = null
 )

@@ -247,7 +247,8 @@ class ChatRepository(context: Context) {
         syncId: String = UUID.randomUUID().toString(),
         timestamp: Long = System.currentTimeMillis(),
         updatedAt: Long = timestamp,
-        editRevision: Int = 0
+        editRevision: Int = 0,
+        reaction: String? = null
     ): Long {
         val msg = MessageEntity(
             chatId = chatId,
@@ -260,11 +261,16 @@ class ChatRepository(context: Context) {
             attachmentFileName = attachmentFileName,
             syncId = syncId,
             updatedAt = updatedAt,
-            editRevision = editRevision
+            editRevision = editRevision,
+            reaction = reaction
         )
         val id = dao.insertMessage(msg)
         dao.updateChatLastUpdated(chatId, System.currentTimeMillis())
         return id
+    }
+
+    suspend fun updateMessageReaction(syncId: String, reaction: String?) {
+        dao.updateMessageReaction(syncId, reaction)
     }
 
     suspend fun deleteMessagesFromIndex(chatId: String, fromIndex: Int) {

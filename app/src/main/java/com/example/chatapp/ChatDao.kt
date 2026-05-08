@@ -62,6 +62,9 @@ interface ChatDao {
     @Query("SELECT * FROM messages WHERE syncId = :syncId")
     suspend fun getMessageBySyncId(syncId: String): MessageEntity?
 
+    @Query("UPDATE messages SET reaction = :reaction WHERE syncId = :syncId")
+    suspend fun updateMessageReaction(syncId: String, reaction: String?)
+
     @Query(
         """
         UPDATE messages
@@ -72,6 +75,7 @@ interface ChatDao {
             attachmentMimeType = NULL,
             attachmentFileName = NULL,
             attachmentContext = NULL,
+            reaction = NULL,
             updatedAt = :updatedAt,
             editRevision = editRevision + 1
         WHERE chatId = :chatId

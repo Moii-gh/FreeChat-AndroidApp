@@ -55,6 +55,9 @@ import io.noties.markwon.Markwon
 import kotlin.math.max
 import kotlin.math.min
 
+private const val REACTION_LIKE = "like"
+private const val REACTION_DISLIKE = "dislike"
+
 class DigitalAssistantOverlayView(
     context: Context,
     private val viewModel: DigitalAssistantViewModel,
@@ -94,6 +97,7 @@ class DigitalAssistantOverlayView(
     private var dragStartY = 0f
     private var dragLastY = 0f
     private var draggingHandle = false
+    private val assistantReactions = mutableMapOf<Long, String>()
 
     private val listener: (DigitalAssistantState) -> Unit = { state ->
         latestState = state
@@ -525,6 +529,7 @@ class DigitalAssistantOverlayView(
         val ids = messages.map { it.id }
         val idsChanged = ids != lastRenderedMessageIds
         val shouldScroll = idsChanged || isScrolledNearBottom()
+        assistantReactions.keys.retainAll(ids.toSet())
 
         if (idsChanged) {
             val previousIds = lastRenderedMessageIds.toSet()
@@ -676,6 +681,7 @@ class DigitalAssistantOverlayView(
     private fun addAssistantActionButtons(actions: LinearLayout, message: AssistantMessage) {
         var likeButton: ImageButton? = null
         var dislikeButton: ImageButton? = null
+        var currentReaction = assistantReactions[message.id]
         val buttons = listOf(
             R.drawable.ic_copy to { view: ImageButton ->
                 animateActionTap(view)
@@ -683,15 +689,15 @@ class DigitalAssistantOverlayView(
             },
             R.drawable.ic_thumb_up to { view: ImageButton ->
                 animateActionTap(view)
-                view.setColorFilter(Color.WHITE)
-                dislikeButton?.setColorFilter(Color.parseColor("#777777"))
-                Toast.makeText(context, LocaleHelper.getString(context, "toast_liked"), Toast.LENGTH_SHORT).show()
+                currentReaction = if (currentReaction == REACTION_LIKE) null else REACTION_LIKE
+                setAssistantReaction(message.id, currentReaction)
+                updateAssistantReactionButtons(likeButton, dislikeButton, currentReaction, animate = true)
             },
             R.drawable.ic_thumb_down to { view: ImageButton ->
                 animateActionTap(view)
-                view.setColorFilter(Color.WHITE)
-                likeButton?.setColorFilter(Color.parseColor("#777777"))
-                Toast.makeText(context, LocaleHelper.getString(context, "toast_disliked"), Toast.LENGTH_SHORT).show()
+                currentReaction = if (currentReaction == REACTION_DISLIKE) null else REACTION_DISLIKE
+                setAssistantReaction(message.id, currentReaction)
+                updateAssistantReactionButtons(likeButton, dislikeButton, currentReaction, animate = true)
             },
             R.drawable.ic_share to { view: ImageButton ->
                 animateActionTap(view)
@@ -708,6 +714,52 @@ class DigitalAssistantOverlayView(
             if (index == 2) dislikeButton = button
             actions.addView(button)
         }
+        updateAssistantReactionButtons(likeButton, dislikeButton, currentReaction, animate = false)
+    }
+
+    private fun setAssistantReaction(messageId: Long, reaction: String?) {
+        if (reaction == null) {
+            assistantReactions.remove(messageId)
+        } else {
+            assistantReactions[messageId] = reaction
+        }
+    }
+
+    private fun updateAssistantReactionButtons(
+        likeButton: ImageButton?,
+        dislikeButton: ImageButton?,
+        reaction: String?,
+        animate: Boolean
+    ) {
+        setAssistantReactionButtonState(likeButton, reaction == REACTION_LIKE, animate)
+        setAssistantReactionButtonState(dislikeButton, reaction == REACTION_DISLIKE, animate)
+    }
+
+    private fun setAssistantReactionButtonState(button: ImageButton?, isActive: Boolean, animate: Boolean) {
+        button ?: return
+        val targetColor = Color.parseColor(if (isActive) "#FFFFFF" else "#A6A6A6")
+        button.isSelected = isActive
+        if (!animate) {
+            button.setColorFilter(targetColor)
+            button.alpha = if (isActive) 1f else 0.86f
+            button.tag = targetColor
+            return
+        }
+
+        val currentColor = (button.tag as? Int) ?: Color.parseColor("#A6A6A6")
+        ValueAnimator.ofArgb(currentColor, targetColor).apply {
+            duration = 140L
+            addUpdateListener {
+                val color = it.animatedValue as Int
+                button.setColorFilter(color)
+                button.tag = color
+            }
+            start()
+        }
+        button.animate()
+            .alpha(if (isActive) 1f else 0.86f)
+            .setDuration(140L)
+            .start()
     }
 
     private fun createActionButton(icon: Int, onClick: (ImageButton) -> Unit): ImageButton =
