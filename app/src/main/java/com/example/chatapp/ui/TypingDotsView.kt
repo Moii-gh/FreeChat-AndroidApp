@@ -21,8 +21,8 @@ class TypingDotsView @JvmOverloads constructor(
 
     companion object {
         private const val DOT_COUNT = 3
-        private const val DOT_RADIUS_DP = 3.5f
-        private const val DOT_SPACING_DP = 10f
+        private const val DOT_RADIUS_DP = 3.0f
+        private const val DOT_SPACING_DP = 8f
         private const val ANIM_DURATION_MS = 1200L
         private const val MIN_ALPHA = 0.25f
         private const val MAX_ALPHA = 1.0f
