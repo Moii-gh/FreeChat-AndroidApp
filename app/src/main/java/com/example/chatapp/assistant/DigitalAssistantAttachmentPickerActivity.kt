@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
+import com.example.chatapp.camera.PremiumCameraActivity
 import com.example.chatapp.ChatAttachmentHelper
 import com.example.chatapp.LocaleHelper
 import kotlinx.coroutines.Dispatchers
@@ -23,9 +24,13 @@ class DigitalAssistantAttachmentPickerActivity : AppCompatActivity() {
     private var cameraImageUri: Uri? = null
     private var launched = false
 
-    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            handlePickedUri(cameraImageUri)
+    private val premiumCameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val resultUri = result.data
+                ?.getStringExtra(PremiumCameraActivity.EXTRA_RESULT_URI)
+                ?.let(Uri::parse)
+                ?: cameraImageUri
+            handlePickedUri(resultUri)
         } else {
             finishAndRestoreAssistant()
         }
@@ -82,7 +87,7 @@ class DigitalAssistantAttachmentPickerActivity : AppCompatActivity() {
             file
         )
         cameraImageUri = uri
-        takePictureLauncher.launch(uri)
+        premiumCameraLauncher.launch(PremiumCameraActivity.newIntent(this, uri, file))
     }
 
     private fun handlePickedUri(uri: Uri?) {

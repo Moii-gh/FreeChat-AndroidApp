@@ -22,12 +22,13 @@ object LocaleHelper {
     }
 
     fun getString(context: Context, tid: String): String {
-        val resourceId = context.resources.getIdentifier(tid, "string", context.packageName)
+        val localizedContext = LanguageManager.createLocalizedContext(context)
+        val resourceId = localizedContext.resources.getIdentifier(tid, "string", localizedContext.packageName)
         if (resourceId == 0) {
             SafeLog.w(TAG, "Missing string resource: key='$tid'")
             return tid
         }
-        return runCatching { context.getString(resourceId) }
+        return runCatching { localizedContext.getString(resourceId) }
             .getOrElse {
                 SafeLog.w(TAG, "Failed to load string resource '$tid': ${it.message}")
                 tid
@@ -35,20 +36,26 @@ object LocaleHelper {
     }
 
     fun getStringList(context: Context, keyPrefix: String): List<String> {
+        val localizedContext = LanguageManager.createLocalizedContext(context)
         return (1..100)
             .mapNotNull { index ->
                 val key = "${keyPrefix}_$index"
-                val resourceId = context.resources.getIdentifier(key, "string", context.packageName)
-                if (resourceId != 0) context.getString(resourceId).takeIf { it.isNotBlank() } else null
+                val resourceId = localizedContext.resources.getIdentifier(
+                    key,
+                    "string",
+                    localizedContext.packageName
+                )
+                if (resourceId != 0) localizedContext.getString(resourceId).takeIf { it.isNotBlank() } else null
             }
             .distinct()
     }
 
     fun formatString(context: Context, tid: String, vararg args: Any): String {
-        val resourceId = context.resources.getIdentifier(tid, "string", context.packageName)
+        val localizedContext = LanguageManager.createLocalizedContext(context)
+        val resourceId = localizedContext.resources.getIdentifier(tid, "string", localizedContext.packageName)
         if (resourceId == 0) return getString(context, tid)
 
-        return runCatching { context.getString(resourceId, *args) }
+        return runCatching { localizedContext.getString(resourceId, *args) }
             .getOrElse {
                 SafeLog.w(TAG, "Failed to format string resource '$tid': ${it.message}")
                 getString(context, tid)
@@ -56,8 +63,7 @@ object LocaleHelper {
     }
 
     fun localizer(context: Context): (String, Array<out Any>) -> String {
-        val appContext = context.applicationContext
-        return { key, args -> formatString(appContext, key, *args) }
+        return { key, args -> formatString(context, key, *args) }
     }
 
     fun getLanguageDisplayName(context: Context, languageCode: String): String {

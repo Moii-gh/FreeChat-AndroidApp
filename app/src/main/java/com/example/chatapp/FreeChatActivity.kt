@@ -45,6 +45,7 @@ import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.speech.SpeechRecognizerManager
 import com.example.chatapp.ui.AssistantMessageWrapper
 import com.example.chatapp.ui.ChatMessageRenderer
+import com.example.chatapp.ui.ChatScrollToBottomController
 import com.example.chatapp.ui.ChatUiAnimationHelper
 import com.example.chatapp.ui.DrawerManager
 import com.example.chatapp.ui.FreeChatAttentionDrawable
@@ -129,6 +130,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var isUserAtBottom = true
     private var isUserTouchingMessages = false
     private var isGeneratingIndicatorVisible = false
+    private var appliedLanguageCode: String? = null
     private val streamUiHandler = Handler(Looper.getMainLooper())
     private var activeGenerationId = 0L
     private var streamPendingRequestId = 0L
@@ -137,6 +139,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var streamLastRenderedText: String? = null
     private var streamFlushRunnable: Runnable? = null
     private var pendingAutoScrollRunnable: Runnable? = null
+    private var scrollToBottomController: ChatScrollToBottomController? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -227,6 +230,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     override fun onResume() {
         super.onResume()
         if (!isChatUiInitialized) return
+        val currentLanguageCode = LocaleHelper.getSelectedLanguage(this)
+        if (appliedLanguageCode != null && appliedLanguageCode != currentLanguageCode) {
+            recreate()
+            return
+        }
+        appliedLanguageCode = currentLanguageCode
         drawerManager.updateUserProfile()
         refreshDailyQuotaUi()
         applyTranslations()
@@ -249,6 +258,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun initializeChatUi(startIntent: Intent?) {
         if (isChatUiInitialized) return
         isChatUiInitialized = true
+        appliedLanguageCode = LocaleHelper.getSelectedLanguage(this)
 
         setupHelpers()
         setupTopBar()
@@ -340,6 +350,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         stopWelcomePromptCycle()
         freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
         freeChatAttentionDrawable?.cancelAttention()
+        scrollToBottomController?.detach()
+        scrollToBottomController = null
         speechRecognizerManager.destroy()
         adManager?.destroy()
         super.onDestroy()
@@ -1041,6 +1053,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (!binding.messagesScrollView.isVisible || !isUserAtBottom) return
         val targetScrollY = bottomScrollY()
         binding.messagesScrollView.scrollTo(0, targetScrollY)
+        scrollToBottomController?.refresh()
         if (isMessagesAtBottom()) {
             hideGeneratingIndicator()
         }
@@ -1580,6 +1593,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setWelcomeActionButtonsVisible(chatViewModel.currentMode == null)
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isGone = true
+        scrollToBottomController?.refresh()
         binding.topRightMain.isVisible = true
         binding.topRightChat.isGone = true
 
@@ -1597,6 +1611,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isVisible = true
         binding.messagesScrollView.isGone = true
+        scrollToBottomController?.refresh()
         binding.topRightMain.isVisible = true
         binding.topRightChat.isGone = true
 
@@ -1611,6 +1626,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isVisible = true
+        scrollToBottomController?.refresh()
         if (animateTopActions && binding.topRightMain.isVisible) {
             animateTopActionsSplit()
         } else {
@@ -2391,16 +2407,29 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             hideGeneratingIndicator()
         }
 
-        binding.messagesScrollView.viewTreeObserver.addOnScrollChangedListener {
-
-            if (isMessagesAtBottom()) {
+        scrollToBottomController = ChatScrollToBottomController(
+            scrollView = binding.messagesScrollView,
+            button = binding.btnScrollToBottom,
+            bottomScrollY = ::bottomScrollY,
+            isPinnedToBottom = { isUserAtBottom },
+            onScrollStateChanged = ::handleMessagesScrollChanged,
+            onScrollToBottom = {
                 isUserAtBottom = true
-            } else if (isUserTouchingMessages) {
-                isUserAtBottom = false
+                cancelPendingAutoScroll()
+                scrollToBottom()
+                hideGeneratingIndicator()
             }
+        ).also { it.attach() }
+    }
 
-            updateGeneratingIndicatorVisibility()
+    private fun handleMessagesScrollChanged() {
+        if (isMessagesAtBottom()) {
+            isUserAtBottom = true
+        } else if (isUserTouchingMessages) {
+            isUserAtBottom = false
         }
+
+        updateGeneratingIndicatorVisibility()
     }
 
     private fun updateGeneratingIndicatorVisibility() {
@@ -2470,6 +2499,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun recheckScrollPosition() {
         isUserAtBottom = isMessagesAtBottom()
         updateGeneratingIndicatorVisibility()
+        scrollToBottomController?.refresh()
     }
 
     private fun setWelcomeActionButtonsVisible(isVisible: Boolean) {

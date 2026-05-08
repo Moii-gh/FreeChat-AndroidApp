@@ -8,14 +8,19 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.example.chatapp.camera.PremiumCameraActivity
 import com.example.chatapp.util.setHapticClickListener
 
 class BottomSheetMenuFragment : BottomSheetDialogFragment() {
     private var cameraImageUri: Uri? = null
 
-    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            cameraImageUri?.let {
+    private val premiumCameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val resultUri = result.data
+                ?.getStringExtra(PremiumCameraActivity.EXTRA_RESULT_URI)
+                ?.let(Uri::parse)
+                ?: cameraImageUri
+            resultUri?.let {
                 val activity = activity as? ChatInputHost
                 activity?.showFilePreview(it)
             }
@@ -90,7 +95,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
                 file
             )
             cameraImageUri = uri
-            takePictureLauncher.launch(uri)
+            premiumCameraLauncher.launch(PremiumCameraActivity.newIntent(context, uri, file))
         }
 
         view.findViewById<View>(R.id.btnPhoto).setHapticClickListener {

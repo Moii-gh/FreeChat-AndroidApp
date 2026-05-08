@@ -29,4 +29,14 @@
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:colorAccent">#FFFFFF</item>
     </style>
+
+    <style name="Theme.Chatapp.PremiumCamera" parent="Theme.Chatapp">
+        <item name="android:windowBackground">#000000</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="colorAccent">#FFFFFF</item>
+    </style>
 </resources>

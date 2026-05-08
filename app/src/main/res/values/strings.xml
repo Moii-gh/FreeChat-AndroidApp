@@ -118,6 +118,10 @@
     <string name="auth_welcome_title">Sign in or sign up</string>
     <string name="button_about">About</string>
     <string name="button_camera">Camera</string>
+    <string name="content_desc_close_camera">Close camera</string>
+    <string name="content_desc_flip_camera">Flip camera</string>
+    <string name="content_desc_take_photo">Take photo</string>
+    <string name="content_desc_open_gallery">Open gallery</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_change_password">Change password</string>
     <string name="button_collapse">Collapse</string>
@@ -160,6 +164,7 @@
     <string name="content_desc_more_options">More options</string>
     <string name="content_desc_new_chat">New chat</string>
     <string name="content_desc_remove_attachment">Remove attachment</string>
+    <string name="content_desc_scroll_to_bottom">Scroll to latest message</string>
     <string name="content_desc_send">Send</string>
     <string name="content_desc_telegram_bot">Open Telegram bot</string>
     <string name="dialog_change_password">Change password</string>
