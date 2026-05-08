@@ -28,7 +28,8 @@ class ChatMessageRenderer(
     private val onRegenerate: (AssistantMessageWrapper) -> Unit,
     private val onUserMessageLongClick: (View, String, Int) -> Unit,
     private val onAssistantContentChanged: () -> Unit,
-    private val onAssistantReactionChanged: (String, String?) -> Unit
+    private val onAssistantReactionChanged: (String, String?) -> Unit,
+    private val onOpenLink: (String) -> Unit
 ) {
 
     // ──────── Сообщения пользователя ────────
@@ -399,7 +400,8 @@ class ChatMessageRenderer(
             rootContainer, contentArea,
             { FileUtils.copyToClipboard(context, it) },
             { FileUtils.shareText(context, it) },
-            context
+            context,
+            onOpenLink
         ).apply {
             this.messageSyncId = messageSyncId
             this.reaction = normalizeReaction(reaction)

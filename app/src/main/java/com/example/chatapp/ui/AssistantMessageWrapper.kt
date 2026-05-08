@@ -1,23 +1,34 @@
 package com.example.chatapp.ui
 
 import android.animation.ValueAnimator
-import android.content.Intent
 import android.graphics.*
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Build
+import android.text.Layout
+import android.text.SpannableStringBuilder
+import android.text.TextPaint
 import android.text.TextUtils
+import android.text.method.LinkMovementMethod
+import android.text.style.URLSpan
+import android.text.util.Linkify
 import android.view.Gravity
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.*
 import androidx.core.content.ContextCompat
+import androidx.core.text.util.LinkifyCompat
 import coil.load
+import com.example.chatapp.browser.BrowserUrlSanitizer
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.util.SafeLog
 import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.dpToPx
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import io.noties.markwon.AbstractMarkwonPlugin
+import io.noties.markwon.Markwon
+import io.noties.markwon.MarkwonConfiguration
 import java.util.regex.Pattern
 
 /**
@@ -30,9 +41,11 @@ class AssistantMessageWrapper(
     val contentArea: LinearLayout,
     val copyAction: (String) -> Unit,
     val shareAction: (String) -> Unit,
-    private val context: android.content.Context
+    private val context: android.content.Context,
+    private val onOpenLink: (String) -> Unit
 ) {
     companion object {
+        val LINK_COLOR: Int = Color.rgb(10, 132, 255)
         private val IMAGE_MARKDOWN_PATTERN = Pattern.compile("!\\[.*?\\]\\((.*?)\\)")
 
         fun extractImageUrl(text: String): String? {
@@ -83,7 +96,18 @@ class AssistantMessageWrapper(
 
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
-    private val markwon = io.noties.markwon.Markwon.create(context)
+    private val markwon = Markwon.builder(context)
+        .usePlugin(object : AbstractMarkwonPlugin() {
+            override fun configureTheme(builder: io.noties.markwon.core.MarkwonTheme.Builder) {
+                builder.linkColor(LINK_COLOR)
+                    .isLinkUnderlined(true)
+            }
+
+            override fun configureConfiguration(builder: MarkwonConfiguration.Builder) {
+                builder.linkResolver { _, link -> openSourceUrl(link) }
+            }
+        })
+        .build()
     private var lastRenderedText: String? = null
     private var lastRenderedWasFinal = false
     private var streamingTextView: TextView? = null
@@ -482,16 +506,12 @@ class AssistantMessageWrapper(
     }
 
     private fun openSourceUrl(url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        if (context !is android.app.Activity) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-
-        runCatching {
-            context.startActivity(intent)
-        }.onFailure {
+        val safeUrl = BrowserUrlSanitizer.normalize(url)
+        if (safeUrl == null) {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
+            return
         }
+        onOpenLink(safeUrl)
     }
 
     private fun roundedDrawable(
@@ -667,13 +687,12 @@ class AssistantMessageWrapper(
                             textSize = 16f
                             setLineSpacing(0f, 1.2f)
                             setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
-                            setTextIsSelectable(true)
-                            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+                            configureLinkableTextView()
                         }.also { contentArea.addView(it, index) }
                     }
                     // Обновляем текст только если он изменился (для плавности)
                     if (tv.text.toString() != chunk.content) {
-                        markwon.setMarkdown(tv, chunk.content)
+                        renderMarkdownWithAutoLinks(tv, chunk.content)
                     }
                 }
                 is MarkdownTableRenderer.Chunk.Code -> {
@@ -780,5 +799,51 @@ class AssistantMessageWrapper(
         lastRenderedText = reply
         lastRenderedWasFinal = true
         streamingTextView = null
+    }
+
+    private fun TextView.configureLinkableTextView() {
+        setTextIsSelectable(false)
+        linksClickable = true
+        movementMethod = LinkMovementMethod.getInstance()
+        highlightColor = Color.TRANSPARENT
+        setLinkTextColor(LINK_COLOR)
+        setHorizontallyScrolling(false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            breakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY
+            hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL
+        }
+    }
+
+    private fun renderMarkdownWithAutoLinks(textView: TextView, markdown: String) {
+        markwon.setMarkdown(textView, markdown)
+        val spannable = SpannableStringBuilder(textView.text)
+        LinkifyCompat.addLinks(spannable, Linkify.WEB_URLS)
+
+        spannable.getSpans(0, spannable.length, URLSpan::class.java).forEach { span ->
+            val start = spannable.getSpanStart(span)
+            val end = spannable.getSpanEnd(span)
+            val flags = spannable.getSpanFlags(span)
+            val safeUrl = BrowserUrlSanitizer.normalize(span.url)
+            spannable.removeSpan(span)
+            if (start >= 0 && end > start && safeUrl != null) {
+                spannable.setSpan(InternalBrowserUrlSpan(safeUrl, onOpenLink), start, end, flags)
+            }
+        }
+
+        textView.text = spannable
+    }
+
+    private class InternalBrowserUrlSpan(
+        private val url: String,
+        private val opener: (String) -> Unit
+    ) : URLSpan(url) {
+        override fun onClick(widget: View) {
+            opener(url)
+        }
+
+        override fun updateDrawState(ds: TextPaint) {
+            ds.color = LINK_COLOR
+            ds.isUnderlineText = true
+        }
     }
 }

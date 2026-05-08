@@ -40,6 +40,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.assistant.DigitalAssistantHandoffStore
+import com.example.chatapp.browser.InAppBrowserManager
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.speech.SpeechRecognizerManager
@@ -95,6 +96,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var drawerManager: DrawerManager
     private lateinit var popupMenuHelper: PopupMenuHelper
     private lateinit var messageRenderer: ChatMessageRenderer
+    private lateinit var inAppBrowserManager: InAppBrowserManager
     private lateinit var speechRecognizerManager: SpeechRecognizerManager
     private val attachmentHelper by lazy { ChatAttachmentHelper(this) }
 
@@ -140,6 +142,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var streamFlushRunnable: Runnable? = null
     private var pendingAutoScrollRunnable: Runnable? = null
     private var scrollToBottomController: ChatScrollToBottomController? = null
+    private var browserRestoreState: Bundle? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -187,6 +190,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        browserRestoreState = savedInstanceState
         if (!SharedPrefsAccountSessionStore(applicationContext).isSignedIn()) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
@@ -230,6 +234,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     override fun onResume() {
         super.onResume()
         if (!isChatUiInitialized) return
+        if (::inAppBrowserManager.isInitialized) {
+            inAppBrowserManager.onResume()
+        }
         val currentLanguageCode = LocaleHelper.getSelectedLanguage(this)
         if (appliedLanguageCode != null && appliedLanguageCode != currentLanguageCode) {
             recreate()
@@ -245,7 +252,25 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     override fun onPause() {
         freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
         freeChatAttentionDrawable?.cancelAttention()
+        if (::inAppBrowserManager.isInitialized) {
+            inAppBrowserManager.onPause()
+        }
         super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        if (::inAppBrowserManager.isInitialized) {
+            inAppBrowserManager.onSaveInstanceState(outState)
+        }
+        super.onSaveInstanceState(outState)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (::inAppBrowserManager.isInitialized && inAppBrowserManager.onBackPressed()) {
+            return
+        }
+        super.onBackPressed()
     }
 
     override fun onUserInteraction() {
@@ -352,6 +377,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         freeChatAttentionDrawable?.cancelAttention()
         scrollToBottomController?.detach()
         scrollToBottomController = null
+        if (::inAppBrowserManager.isInitialized) {
+            inAppBrowserManager.onDestroy()
+        }
         speechRecognizerManager.destroy()
         adManager?.destroy()
         super.onDestroy()
@@ -1072,6 +1100,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupHelpers() {
+        inAppBrowserManager = InAppBrowserManager(
+            activity = this,
+            host = findViewById(android.R.id.content),
+            savedState = browserRestoreState
+        )
+        browserRestoreState = null
+
         popupMenuHelper = PopupMenuHelper(
             activity = this,
             onRename = { chat, newTitle ->
@@ -1113,7 +1148,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 popupMenuHelper.showUserMessageOptionsMenu(anchor, message, historyIndex)
             },
             onAssistantContentChanged = ::scheduleScrollToBottomIfPinned,
-            onAssistantReactionChanged = ::handleAssistantReactionChanged
+            onAssistantReactionChanged = ::handleAssistantReactionChanged,
+            onOpenLink = { url -> inAppBrowserManager.open(url) }
         )
 
         speechRecognizerManager = SpeechRecognizerManager(
