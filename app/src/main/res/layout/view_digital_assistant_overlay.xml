@@ -289,6 +289,7 @@
                             android:id="@+id/sendButton"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
+                            android:layout_marginEnd="2.5dp"
                             android:layout_marginBottom="-1dp"
                             android:background="@drawable/bg_da_send_button"
                             android:contentDescription="@string/content_desc_send"

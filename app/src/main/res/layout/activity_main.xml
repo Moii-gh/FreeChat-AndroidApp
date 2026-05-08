@@ -699,6 +699,7 @@
                         android:background="@drawable/circle_solid_grey_bg"
                         android:src="@drawable/ic_send_arrow_up"
                         android:padding="6dp"
+                        android:layout_marginEnd="2.5dp"
                         android:layout_marginBottom="2dp"
                         app:tint="#1C1C1E"/>
                 </LinearLayout>
