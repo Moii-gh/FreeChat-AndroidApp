@@ -185,7 +185,17 @@ object OpenAiDirectService {
                 }
 
                 val messages = buildMessagesArray(systemPrompt, messagesToKeep)
-                val finalReply = executeWithToolLoop(apiKey, messages, coroutineContext, callback)
+                val finalReply = if (currentMode == "create_image") {
+                    executeWithToolLoop(apiKey, messages, coroutineContext, callback)
+                } else {
+                    executeStreamingRequest(
+                        apiKey = apiKey,
+                        messages = messages,
+                        coroutineContext = coroutineContext,
+                        callback = callback,
+                        includeTools = false
+                    )
+                }
 
                 withContext(Dispatchers.Main) {
                     callback.onComplete(finalReply)
