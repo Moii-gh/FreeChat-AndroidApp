@@ -537,17 +537,42 @@ class ChatMessageRenderer(
         reaction: String?,
         animate: Boolean
     ) {
-        setReactionButtonState(likeButton, reaction == REACTION_LIKE, animate)
-        setReactionButtonState(dislikeButton, reaction == REACTION_DISLIKE, animate)
+        setReactionButtonState(
+            button = likeButton,
+            isActive = reaction == REACTION_LIKE,
+            isVisibleChoice = reaction == null || reaction == REACTION_LIKE,
+            animate = animate
+        )
+        setReactionButtonState(
+            button = dislikeButton,
+            isActive = reaction == REACTION_DISLIKE,
+            isVisibleChoice = reaction == null || reaction == REACTION_DISLIKE,
+            animate = animate
+        )
     }
 
-    private fun setReactionButtonState(button: ImageButton?, isActive: Boolean, animate: Boolean) {
+    private fun setReactionButtonState(
+        button: ImageButton?,
+        isActive: Boolean,
+        isVisibleChoice: Boolean,
+        animate: Boolean
+    ) {
         button ?: return
         val targetColor = Color.parseColor(if (isActive) "#FFFFFF" else "#B3B3B3")
+        val targetAlpha = when {
+            !isVisibleChoice -> 0f
+            isActive -> 1f
+            else -> 0.86f
+        }
+        val targetScale = if (isVisibleChoice) 1f else 0.72f
         button.isSelected = isActive
+        button.isEnabled = isVisibleChoice
+        button.isClickable = isVisibleChoice
         if (!animate) {
             button.setColorFilter(targetColor)
-            button.alpha = if (isActive) 1f else 0.86f
+            button.alpha = targetAlpha
+            button.scaleX = targetScale
+            button.scaleY = targetScale
             button.tag = targetColor
             return
         }
@@ -563,7 +588,9 @@ class ChatMessageRenderer(
             start()
         }
         button.animate()
-            .alpha(if (isActive) 1f else 0.86f)
+            .alpha(targetAlpha)
+            .scaleX(targetScale)
+            .scaleY(targetScale)
             .setDuration(140L)
             .start()
     }

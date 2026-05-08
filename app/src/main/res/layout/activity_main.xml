@@ -133,10 +133,9 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_new_chat"
+                    android:src="@drawable/new_chat_white_fitted"
                     android:padding="8dp"
-                    android:scaleType="fitCenter"
-                    app:tint="#FFFFFF"/>
+                    android:scaleType="fitCenter"/>
 
                 <ImageButton
                     android:id="@+id/btnMore"

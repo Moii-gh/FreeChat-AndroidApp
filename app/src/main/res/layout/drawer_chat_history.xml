@@ -51,8 +51,8 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_new_chat"
-                app:tint="#000000"/>
+                android:src="@drawable/new_chat_black_fitted"
+                android:scaleType="fitCenter"/>
 
             <TextView
                 android:id="@+id/tvDrawerNewChat"
