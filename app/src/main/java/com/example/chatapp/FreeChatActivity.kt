@@ -1254,7 +1254,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         )
 
         binding.drawerLayout.addDrawerListener(object : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
-            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+                if (::inAppBrowserManager.isInitialized && inAppBrowserManager.isMinimized) {
+                    inAppBrowserManager.setMinimizedCardAlpha(1f - slideOffset)
+                }
+            }
             override fun onDrawerOpened(drawerView: View) {
                 val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                 imm.hideSoftInputFromWindow(binding.etInput.windowToken, 0)

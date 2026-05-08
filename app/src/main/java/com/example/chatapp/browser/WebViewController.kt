@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.SafeBrowsingResponse
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -92,6 +93,7 @@ class WebViewController(
     fun onPause() {
         webView.onPause()
         webView.pauseTimers()
+        CookieManager.getInstance().flush()
     }
 
     fun destroy() {
@@ -114,6 +116,12 @@ class WebViewController(
         )
         webView.overScrollMode = WebView.OVER_SCROLL_IF_CONTENT_SCROLLS
         webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
+        // ── Cookie management ──
+        CookieManager.getInstance().apply {
+            setAcceptCookie(true)
+            setAcceptThirdPartyCookies(webView, true)
+        }
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -187,6 +195,7 @@ class WebViewController(
                 isLoading = false
                 progress = 100
                 view?.evaluateJavascript(COSMETIC_AD_BLOCK_SCRIPT, null)
+                CookieManager.getInstance().flush()
                 listener.onStateChanged(this@WebViewController)
             }
 

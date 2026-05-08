@@ -9,12 +9,16 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.webkit.WebView
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageButton
@@ -49,7 +53,8 @@ class InAppBrowserManager(
     private var activeIndex = -1
     private var nextTabId = 1L
     private var isExpanded = false
-    private var isMinimized = false
+    var isMinimized = false
+        private set
 
     private var root: FrameLayout? = null
     private var rootLayoutParams: ViewGroup.LayoutParams? = null
@@ -63,6 +68,12 @@ class InAppBrowserManager(
     private var minimizedCard: LinearLayout? = null
     private var progressBar: ProgressBar? = null
     private var refreshButton: ImageButton? = null
+
+    // Search bar
+    private var searchOverlay: FrameLayout? = null
+    private var searchBar: LinearLayout? = null
+    private var searchInput: EditText? = null
+    private var isSearchVisible = false
 
     init {
         restore(savedState)
@@ -92,6 +103,10 @@ class InAppBrowserManager(
     }
 
     fun onBackPressed(): Boolean {
+        if (isSearchVisible) {
+            hideSearchBar()
+            return true
+        }
         val active = activeController() ?: return false
         if (isExpanded) {
             if (active.canGoBack()) {
@@ -258,6 +273,9 @@ class InAppBrowserManager(
         }
         titleBox.addView(toolbarTitle, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         titleBox.addView(toolbarSubtitle, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        titleBox.isClickable = true
+        titleBox.isFocusable = true
+        titleBox.setOnClickListener { showSearchBar() }
 
         toolbar.addView(refreshButton, LinearLayout.LayoutParams(36.dp(), 36.dp()))
         toolbar.addView(titleBox, LinearLayout.LayoutParams(0, 40.dp(), 1f))
@@ -291,11 +309,22 @@ class InAppBrowserManager(
             }
         )
 
+        val cardGradient = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+            intArrayOf(
+                Color.parseColor(if (isDark) "#3A3A3C" else "#D1D1D6"),
+                Color.parseColor(if (isDark) "#2C2C2E" else "#F2F2F7"),
+                Color.parseColor(if (isDark) "#1A3A5C" else "#C7DEFF")
+            )
+        ).apply {
+            cornerRadius = 999.dp().toFloat()
+            setStroke(1.dp(), if (isDark) Color.parseColor("#48484A") else Color.parseColor("#C6C6C8"))
+        }
+
         minimizedCard = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(12.dp(), 9.dp(), 8.dp(), 9.dp())
-            background = roundedDrawable(surface, 18.dp(), stroke, 1.dp())
+            setPadding(16.dp(), 11.dp(), 10.dp(), 11.dp())
+            background = cardGradient
             elevation = 96f
             alpha = 0f
             scaleX = 0.92f
@@ -311,18 +340,26 @@ class InAppBrowserManager(
         val cardText = TextView(activity).apply {
             id = R.id.browser_minimized_title
             setTextColor(primary)
-            textSize = 13f
+            textSize = 13.5f
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(9.dp(), 0, 10.dp(), 0)
+            setPadding(10.dp(), 0, 10.dp(), 0)
         }
-        minimizedCard?.addView(cardIcon, LinearLayout.LayoutParams(18.dp(), 18.dp()))
+        minimizedCard?.addView(cardIcon, LinearLayout.LayoutParams(20.dp(), 20.dp()))
         minimizedCard?.addView(cardText, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        minimizedCard?.addView(browserButton(R.drawable.ic_assistant_close, primary) { closeAll() }, LinearLayout.LayoutParams(30.dp(), 30.dp()))
+        minimizedCard?.addView(browserButton(R.drawable.ic_assistant_close, primary) { closeAll() }, LinearLayout.LayoutParams(32.dp(), 32.dp()))
 
         root?.addView(
             minimizedCard,
-            FrameLayout.LayoutParams(230.dp(), LinearLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER)
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            ).apply {
+                leftMargin = 14.dp()
+                rightMargin = 14.dp()
+                bottomMargin = 10.dp()
+            }
         )
 
         rootLayoutParams = FrameLayout.LayoutParams(
@@ -345,6 +382,7 @@ class InAppBrowserManager(
         minimizedCard?.isGone = true
         attachActiveWebView()
         applyBlur(true)
+        shiftInputArea(false, animate)
 
         panel?.animate()?.cancel()
         dimView?.animate()?.cancel()
@@ -357,24 +395,23 @@ class InAppBrowserManager(
             return
         }
 
-        panel?.alpha = 0f
-        panel?.translationY = 56.dp().toFloat()
-        panel?.scaleX = 0.985f
-        panel?.scaleY = 0.985f
+        val screenHeight = activity.resources.displayMetrics.heightPixels.toFloat()
+        panel?.alpha = 1f
+        panel?.translationY = screenHeight
+        panel?.scaleX = 1f
+        panel?.scaleY = 1f
         dimView?.alpha = 0f
-        dimView?.animate()?.alpha(1f)?.setDuration(220L)?.start()
+        dimView?.animate()?.alpha(1f)?.setDuration(300L)?.start()
         panel?.animate()
-            ?.alpha(1f)
             ?.translationY(0f)
-            ?.scaleX(1f)
-            ?.scaleY(1f)
-            ?.setDuration(260L)
-            ?.setInterpolator(DecelerateInterpolator(1.7f))
+            ?.setDuration(340L)
+            ?.setInterpolator(DecelerateInterpolator(2f))
             ?.start()
     }
 
     private fun minimize() {
         if (tabs.isEmpty()) return
+        hideSearchBar()
         showMinimized(animate = true)
     }
 
@@ -386,6 +423,7 @@ class InAppBrowserManager(
         setRootFloatingCardBounds()
         applyBlur(false)
         refreshMinimizedCard()
+        shiftInputArea(true, animate)
 
         dimView?.animate()?.cancel()
         panel?.animate()?.cancel()
@@ -405,13 +443,12 @@ class InAppBrowserManager(
             return
         }
 
-        dimView?.animate()?.alpha(0f)?.setDuration(180L)?.start()
+        dimView?.animate()?.alpha(0f)?.setDuration(200L)?.start()
+        val screenHeight = activity.resources.displayMetrics.heightPixels.toFloat()
         panel?.animate()
-            ?.alpha(0f)
-            ?.translationY(42.dp().toFloat())
-            ?.scaleX(0.975f)
-            ?.scaleY(0.975f)
-            ?.setDuration(180L)
+            ?.translationY(screenHeight)
+            ?.setDuration(280L)
+            ?.setInterpolator(DecelerateInterpolator(1.5f))
             ?.withEndAction { finishPanel() }
             ?.start()
 
@@ -446,6 +483,8 @@ class InAppBrowserManager(
     }
 
     private fun closeAll(removeRoot: Boolean = false) {
+        hideSearchBar()
+        shiftInputArea(false, false)
         tabs.forEach { it.controller.destroy() }
         tabs.clear()
         activeIndex = -1
@@ -538,8 +577,34 @@ class InAppBrowserManager(
         minimizedCard?.findViewById<TextView>(R.id.browser_minimized_title)?.text = title.ifNullOrBlank("Browser")
     }
 
+    fun setMinimizedCardAlpha(alpha: Float) {
+        minimizedCard?.alpha = alpha
+    }
+
     private fun activeController(): WebViewController? =
         tabs.getOrNull(activeIndex)?.controller
+
+    private fun shiftInputArea(up: Boolean, animate: Boolean) {
+        val inputArea = activity.findViewById<View>(R.id.bottomInputArea) ?: return
+        val scrollBtn = activity.findViewById<View>(R.id.btnScrollToBottom)
+        val targetY = if (up) (-50.dp()).toFloat() else 0f
+        if (!animate) {
+            inputArea.translationY = targetY
+            scrollBtn?.translationY = targetY
+            return
+        }
+        val interp = DecelerateInterpolator(1.5f)
+        inputArea.animate()
+            .translationY(targetY)
+            .setDuration(260L)
+            .setInterpolator(interp)
+            .start()
+        scrollBtn?.animate()
+            ?.translationY(targetY)
+            ?.setDuration(260L)
+            ?.setInterpolator(interp)
+            ?.start()
+    }
 
     private fun setRootFullscreen() {
         val view = root ?: return
@@ -561,16 +626,11 @@ class InAppBrowserManager(
     private fun setRootFloatingCardBounds() {
         val view = root ?: return
         val params = rootLayoutParams ?: view.layoutParams ?: return
-        val targetWidth = 262.dp()
-        val targetHeight = 96.dp()
-        if (params.width == targetWidth && params.height == targetHeight) {
-            return
-        }
-        params.width = targetWidth
-        params.height = targetHeight
+        params.width = ViewGroup.LayoutParams.MATCH_PARENT
+        params.height = ViewGroup.LayoutParams.MATCH_PARENT
         if (params is FrameLayout.LayoutParams) {
-            params.gravity = Gravity.BOTTOM or Gravity.END
-            params.setMargins(0, 0, 10.dp(), 96.dp())
+            params.gravity = Gravity.NO_GRAVITY
+            params.setMargins(0, 0, 0, 0)
         }
         view.layoutParams = params
     }
@@ -624,6 +684,155 @@ class InAppBrowserManager(
                 else -> false
             }
         }
+    }
+
+    // ────────── Search bar ──────────
+
+    private fun showSearchBar() {
+        if (isSearchVisible) return
+        isSearchVisible = true
+
+        val isDark = (activity.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val surface = if (isDark) Color.parseColor("#2C2C2E") else Color.parseColor("#F2F2F7")
+        val primary = if (isDark) Color.WHITE else Color.parseColor("#101014")
+        val secondary = if (isDark) Color.parseColor("#B3B3B3") else Color.parseColor("#707078")
+        val accent = Color.parseColor("#0A84FF")
+
+        if (searchOverlay == null) {
+            searchOverlay = FrameLayout(activity).apply {
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { hideSearchBar() }
+            }
+
+            searchBar = LinearLayout(activity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                background = roundedDrawable(surface, 999.dp(), if (isDark) Color.parseColor("#48484A") else Color.parseColor("#C6C6C8"), 1.dp())
+                setPadding(14.dp(), 10.dp(), 10.dp(), 10.dp())
+                elevation = 4f
+                isClickable = true
+            }
+
+            val searchIcon = ImageView(activity).apply {
+                setImageResource(R.drawable.ic_search)
+                setColorFilter(secondary)
+            }
+            searchBar?.addView(searchIcon, LinearLayout.LayoutParams(20.dp(), 20.dp()).apply { rightMargin = 8.dp() })
+
+            searchInput = EditText(activity).apply {
+                setTextColor(primary)
+                setHintTextColor(secondary)
+                hint = "Поиск или адрес сайта"
+                textSize = 14f
+                background = null
+                maxLines = 1
+                isSingleLine = true
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+                imeOptions = EditorInfo.IME_ACTION_GO
+                setOnEditorActionListener { _, actionId, _ ->
+                    if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_SEARCH) {
+                        navigateOrSearch(text?.toString().orEmpty())
+                        true
+                    } else false
+                }
+            }
+            searchBar?.addView(searchInput, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+
+            val cancelButton = TextView(activity).apply {
+                text = "Отмена"
+                setTextColor(accent)
+                textSize = 14f
+                setPadding(10.dp(), 6.dp(), 6.dp(), 6.dp())
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { hideSearchBar() }
+            }
+            searchBar?.addView(cancelButton, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+
+            searchOverlay?.addView(searchBar, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP
+            ).apply {
+                leftMargin = 10.dp()
+                rightMargin = 10.dp()
+                topMargin = 8.dp()
+            })
+        }
+
+        // Pre-fill with current URL
+        val currentText = activeController()?.currentUrl.orEmpty()
+        searchInput?.setText(currentText)
+
+        // Add overlay to panel above the web content
+        val panelView = panel ?: return
+        if (searchOverlay?.parent != null) {
+            (searchOverlay?.parent as? ViewGroup)?.removeView(searchOverlay)
+        }
+        // Insert overlay into root, above dimView but below panel level
+        root?.addView(searchOverlay, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ).apply {
+            topMargin = 42.dp()
+        })
+        searchOverlay?.elevation = 98f
+
+        // Animate in
+        searchBar?.translationY = (-50.dp()).toFloat()
+        searchBar?.alpha = 0f
+        searchBar?.animate()
+            ?.translationY(0f)
+            ?.alpha(1f)
+            ?.setDuration(220L)
+            ?.setInterpolator(DecelerateInterpolator(1.8f))
+            ?.start()
+
+        // Focus and select all
+        searchInput?.post {
+            searchInput?.requestFocus()
+            searchInput?.selectAll()
+            val imm = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun hideSearchBar() {
+        if (!isSearchVisible) return
+        isSearchVisible = false
+
+        val imm = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(searchInput?.windowToken, 0)
+
+        searchBar?.animate()
+            ?.translationY((-50.dp()).toFloat())
+            ?.alpha(0f)
+            ?.setDuration(180L)
+            ?.setInterpolator(DecelerateInterpolator())
+            ?.withEndAction {
+                (searchOverlay?.parent as? ViewGroup)?.removeView(searchOverlay)
+            }
+            ?.start()
+    }
+
+    private fun navigateOrSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) {
+            hideSearchBar()
+            return
+        }
+
+        // Check if it looks like a URL
+        val url = BrowserUrlSanitizer.normalize(trimmed)
+        if (url != null) {
+            activeController()?.load(url)
+        } else {
+            // Google search
+            val searchUrl = "https://www.google.com/search?q=${android.net.Uri.encode(trimmed)}"
+            activeController()?.load(searchUrl)
+        }
+        hideSearchBar()
     }
 
     private fun applyBlur(enabled: Boolean) {
