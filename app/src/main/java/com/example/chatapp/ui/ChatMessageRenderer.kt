@@ -23,10 +23,10 @@ import com.example.chatapp.util.slideAndFadeIn
 class ChatMessageRenderer(
     private val context: Context,
     private val messagesContainer: LinearLayout,
-    private val messagesScrollView: ScrollView,
     private val popupMenuHelper: PopupMenuHelper,
     private val onRegenerate: (AssistantMessageWrapper) -> Unit,
-    private val onUserMessageLongClick: (View, String, Int) -> Unit
+    private val onUserMessageLongClick: (View, String, Int) -> Unit,
+    private val onAssistantContentChanged: () -> Unit
 ) {
 
     // ──────── Сообщения пользователя ────────
@@ -391,16 +391,16 @@ class ChatMessageRenderer(
             rootContainer, contentArea,
             { FileUtils.copyToClipboard(context, it) },
             { FileUtils.shareText(context, it) },
-            context,
-            messagesScrollView
+            context
         )
         val shouldUseImageMode = isImageMode || AssistantMessageWrapper.containsImageReply(text)
         wrapper.isImageMode = shouldUseImageMode
+        val thinkingText = LocaleHelper.getString(context, "ai_thinking")
 
         if (shouldUseImageMode && text.isEmpty()) {
             wrapper.showImageLoadingState()
         } else if (text.isNotEmpty()) {
-            wrapper.updateContent(text, animate)
+            wrapper.updateContent(text, animate, isFinal = text != thinkingText)
         }
 
         // Кнопки действий
@@ -496,7 +496,6 @@ class ChatMessageRenderer(
             }
         )
 
-        val thinkingText = LocaleHelper.getString(context, "ai_thinking")
         btnRow.visibility = if (text.isNotEmpty() && text != thinkingText) View.VISIBLE else View.GONE
         wrapper.btnRow = btnRow
 
@@ -512,10 +511,7 @@ class ChatMessageRenderer(
         )
 
         rootContainer.slideAndFadeIn()
-
-        messagesScrollView.post {
-            messagesScrollView.fullScroll(ScrollView.FOCUS_DOWN)
-        }
+        onAssistantContentChanged()
 
         return wrapper
     }

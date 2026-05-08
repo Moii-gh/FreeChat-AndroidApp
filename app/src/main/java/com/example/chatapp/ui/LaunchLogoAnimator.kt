@@ -5,7 +5,9 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.app.Activity
+import android.app.Application
 import android.graphics.Color
+import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,41 @@ object LaunchLogoAnimator {
     private const val ENTER_DURATION_MS = 900L
     private const val EXIT_DURATION_MS = 260L
     private const val EXIT_DELAY_MS = 120L
+
+    private var hasPlayedForCurrentActivitySession = false
+    private var liveActivityCount = 0
+    private var lifecycleCallbacksRegistered = false
+
+    fun registerLifecycleCallbacks(application: Application) {
+        if (lifecycleCallbacksRegistered) return
+        lifecycleCallbacksRegistered = true
+        application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                liveActivityCount += 1
+            }
+
+            override fun onActivityDestroyed(activity: Activity) {
+                liveActivityCount = (liveActivityCount - 1).coerceAtLeast(0)
+                if (liveActivityCount == 0 && !activity.isChangingConfigurations) {
+                    hasPlayedForCurrentActivitySession = false
+                }
+            }
+
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+        })
+    }
+
+    fun shouldPlayOnActivityCreate(savedInstanceState: Bundle?): Boolean {
+        if (hasPlayedForCurrentActivitySession) {
+            return false
+        }
+        hasPlayedForCurrentActivitySession = true
+        return savedInstanceState == null
+    }
 
     fun show(activity: Activity, onFinished: (() -> Unit)? = null) {
         val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return

@@ -61,7 +61,9 @@ class MainActivity : ComponentActivity() {
                 AuthNavGraph(viewModel = authViewModel)
             }
         }
-        LaunchLogoAnimator.show(this)
+        if (LaunchLogoAnimator.shouldPlayOnActivityCreate(savedInstanceState)) {
+            LaunchLogoAnimator.show(this)
+        }
 
         handleTelegramLoginRedirect(intent)
     }
@@ -101,6 +103,7 @@ class MainActivity : ComponentActivity() {
 
     private fun openChatActivity(data: Uri?) {
         startActivity(Intent(this, FreeChatActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (ChatShareDeepLink.extractToken(data) != null) {
                 this.data = data
             }

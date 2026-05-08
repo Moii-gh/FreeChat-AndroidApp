@@ -30,8 +30,7 @@ class AssistantMessageWrapper(
     val contentArea: LinearLayout,
     val copyAction: (String) -> Unit,
     val shareAction: (String) -> Unit,
-    private val context: android.content.Context,
-    private val scrollView: ScrollView
+    private val context: android.content.Context
 ) {
     companion object {
         private val IMAGE_MARKDOWN_PATTERN = Pattern.compile("!\\[.*?\\]\\((.*?)\\)")
@@ -82,9 +81,10 @@ class AssistantMessageWrapper(
 
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
-
-    /** Управляется извне (FreeChatActivity): если false, авто-скролл при обновлении контента отключён */
-    var autoScrollEnabled = true
+    private val markwon = io.noties.markwon.Markwon.create(context)
+    private var lastRenderedText: String? = null
+    private var lastRenderedWasFinal = false
+    private var streamingTextView: TextView? = null
 
     private data class SourceLink(
         val title: String,
@@ -508,12 +508,54 @@ class AssistantMessageWrapper(
         }
     }
 
+    private fun renderStreamingText(reply: String) {
+        textShimmerAnimator?.cancel()
+        textShimmerAnimator = null
+        removeSourcesButton()
+        btnRow?.visibility = View.GONE
+        btnRow?.animate()?.cancel()
+        btnRow?.alpha = 1f
+
+        imageContainer?.let {
+            if (it.parent == contentArea) contentArea.removeView(it)
+        }
+        imageContainer = null
+        currentImageUrl = null
+
+        val textView = if (streamingTextView?.parent == contentArea) {
+            streamingTextView!!
+        } else {
+            contentArea.removeAllViews()
+            TextView(context).apply {
+                tag = "streaming_text"
+                setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                textSize = 16f
+                setLineSpacing(0f, 1.2f)
+                setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
+                setTextIsSelectable(false)
+            }.also { tv ->
+                streamingTextView = tv
+                contentArea.addView(tv)
+            }
+        }
+
+        if (textView.text.toString() != reply) {
+            textView.text = reply
+        }
+        lastRenderedText = reply
+        lastRenderedWasFinal = false
+    }
+
     /**
      * Главный метод обновления контента.
      * Парсит текст на чанки: обычный текст (Markwon) и блоки кода (SyntaxHighlighter).
      * Использует инкрементальное обновление View для плавности.
      */
     fun updateContent(reply: String, animate: Boolean = true, isFinal: Boolean = false) {
+        if (reply == lastRenderedText && isFinal == lastRenderedWasFinal) {
+            rawText = reply
+            return
+        }
         rawText = reply
         val thinkingText = LocaleHelper.getString(context, "ai_thinking")
         val isStatusMessage = reply == thinkingText || 
@@ -548,24 +590,26 @@ class AssistantMessageWrapper(
                     applyTextShimmer(firstView)
                 }
             }
+            lastRenderedText = reply
+            lastRenderedWasFinal = false
+            streamingTextView = null
             return
         }
 
         // Показываем кнопки только когда ответ полностью готов с плавной анимацией
-        if (isFinal) {
-            if (btnRow?.visibility != View.VISIBLE) {
-                btnRow?.alpha = 0f
-                btnRow?.visibility = View.VISIBLE
-                btnRow?.animate()
-                    ?.alpha(1f)
-                    ?.setDuration(300L)
-                    ?.setInterpolator(android.view.animation.DecelerateInterpolator())
-                    ?.start()
-            }
-        } else {
-            btnRow?.visibility = View.GONE
-            btnRow?.animate()?.cancel()
-            btnRow?.alpha = 1f
+        if (!isFinal) {
+            renderStreamingText(reply)
+            return
+        }
+
+        if (btnRow?.visibility != View.VISIBLE) {
+            btnRow?.alpha = 0f
+            btnRow?.visibility = View.VISIBLE
+            btnRow?.animate()
+                ?.alpha(1f)
+                ?.setDuration(300L)
+                ?.setInterpolator(android.view.animation.DecelerateInterpolator())
+                ?.start()
         }
         
         textShimmerAnimator?.cancel()
@@ -593,7 +637,6 @@ class AssistantMessageWrapper(
         }
 
         val chunks = MarkdownTableRenderer.splitIntoChunks(cleanReply)
-        val markwon = io.noties.markwon.Markwon.create(context)
 
         // Инкрементальное обновление contentArea
         // Мы пытаемся переиспользовать существующие View, чтобы избежать мерцания.
@@ -732,15 +775,8 @@ class AssistantMessageWrapper(
             removeSourcesButton()
         }
 
-        // Умный автоскролл: скроллим вниз только если пользователь и так внизу
-        if (autoScrollEnabled) {
-            val tolerance = 300
-            val currentScrollY = scrollView.scrollY
-            val scrollChild = scrollView.getChildAt(0) ?: return
-            val maxScrollY = scrollChild.measuredHeight - scrollView.measuredHeight
-            if (maxScrollY - currentScrollY <= tolerance) {
-                scrollView.post { scrollView.fullScroll(ScrollView.FOCUS_DOWN) }
-            }
-        }
+        lastRenderedText = reply
+        lastRenderedWasFinal = true
+        streamingTextView = null
     }
 }

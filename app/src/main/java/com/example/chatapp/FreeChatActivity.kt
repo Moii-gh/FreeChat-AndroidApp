@@ -85,6 +85,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val WELCOME_PROMPT_CURSOR_BLINK_MS = 460L
         const val WELCOME_PROMPT_CURSOR = "|"
         const val FREE_CHAT_ATTENTION_IDLE_DELAY_MS = 30_000L
+        const val STREAM_UI_FLUSH_INTERVAL_MS = 50L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -126,7 +127,16 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var systemWindowInsetTop = 0
     private var messagesBottomAnchorId = View.NO_ID
     private var isUserAtBottom = true
+    private var isUserTouchingMessages = false
     private var isGeneratingIndicatorVisible = false
+    private val streamUiHandler = Handler(Looper.getMainLooper())
+    private var activeGenerationId = 0L
+    private var streamPendingRequestId = 0L
+    private var streamPendingWrapper: AssistantMessageWrapper? = null
+    private var streamPendingText: String? = null
+    private var streamLastRenderedText: String? = null
+    private var streamFlushRunnable: Runnable? = null
+    private var pendingAutoScrollRunnable: Runnable? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -188,10 +198,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isBiometricGateActive = true
             binding.root.alpha = 0f
         }
-        LaunchLogoAnimator.show(this) {
-            if (shouldGateWithBiometrics) {
-                startBiometricUnlockGate()
+        val shouldPlayLaunchAnimation = LaunchLogoAnimator.shouldPlayOnActivityCreate(savedInstanceState)
+        if (shouldPlayLaunchAnimation) {
+            LaunchLogoAnimator.show(this) {
+                if (shouldGateWithBiometrics) {
+                    startBiometricUnlockGate()
+                }
             }
+        } else if (shouldGateWithBiometrics) {
+            startBiometricUnlockGate()
         }
         if (!shouldGateWithBiometrics) {
             initializeChatUi(intent)
@@ -257,11 +272,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             when (event.action) {
                 android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> {
                     // Пользователь касается/тянет — блокируем автоскролл
+                    isUserTouchingMessages = true
+                    cancelPendingAutoScroll()
                     isUserAtBottom = false
-                    currentAssistantMessage?.autoScrollEnabled = false
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                     // Пользователь отпустил — проверяем позицию через короткую задержку
+                    isUserTouchingMessages = false
                     binding.messagesScrollView.postDelayed({
                         recheckScrollPosition()
                     }, 100)
@@ -319,6 +336,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun onDestroy() {
+        invalidateActiveGeneration(cancelScroll = true)
         stopWelcomePromptCycle()
         freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
         freeChatAttentionDrawable?.cancelAttention()
@@ -879,9 +897,150 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun keepLatestMessageReadable() {
         if (!binding.messagesScrollView.isVisible) return
+        if (isSending) {
+            scheduleScrollToBottomIfPinned()
+            return
+        }
         binding.messagesScrollView.post {
             binding.messagesScrollView.smoothScrollTo(0, binding.messagesContainer.bottom)
         }
+    }
+
+    private fun nextGenerationId(): Long {
+        activeGenerationId += 1
+        cancelPendingStreamUiWork(cancelScroll = true)
+        streamLastRenderedText = null
+        return activeGenerationId
+    }
+
+    private fun finishGeneration(requestId: Long) {
+        if (requestId == activeGenerationId) {
+            activeGenerationId += 1
+        }
+        cancelScheduledStreamFlush()
+        streamPendingRequestId = 0L
+        streamPendingWrapper = null
+        streamPendingText = null
+        streamLastRenderedText = null
+    }
+
+    private fun invalidateActiveGeneration(cancelScroll: Boolean = true) {
+        activeGenerationId += 1
+        cancelPendingStreamUiWork(cancelScroll = cancelScroll)
+        streamLastRenderedText = null
+    }
+
+    private fun isActiveGeneration(requestId: Long, wrapper: AssistantMessageWrapper): Boolean {
+        return requestId == activeGenerationId && currentAssistantMessage === wrapper
+    }
+
+    private fun enqueueStreamingUpdate(
+        requestId: Long,
+        wrapper: AssistantMessageWrapper,
+        text: String
+    ) {
+        if (!isActiveGeneration(requestId, wrapper)) return
+        if (text == streamPendingText || text == streamLastRenderedText) return
+
+        streamPendingRequestId = requestId
+        streamPendingWrapper = wrapper
+        streamPendingText = text
+
+        if (streamFlushRunnable != null) return
+        val runnable = Runnable {
+            streamFlushRunnable = null
+            val pendingRequestId = streamPendingRequestId
+            val pendingWrapper = streamPendingWrapper ?: return@Runnable
+            val pendingText = streamPendingText ?: return@Runnable
+            applyStreamingUpdate(pendingRequestId, pendingWrapper, pendingText, isFinal = false)
+        }
+        streamFlushRunnable = runnable
+        streamUiHandler.postDelayed(runnable, STREAM_UI_FLUSH_INTERVAL_MS)
+    }
+
+    private fun flushStreamingUpdate(
+        requestId: Long,
+        wrapper: AssistantMessageWrapper,
+        text: String,
+        isFinal: Boolean
+    ) {
+        cancelScheduledStreamFlush()
+        streamPendingRequestId = requestId
+        streamPendingWrapper = wrapper
+        streamPendingText = text
+        applyStreamingUpdate(requestId, wrapper, text, isFinal)
+    }
+
+    private fun applyStreamingUpdate(
+        requestId: Long,
+        wrapper: AssistantMessageWrapper,
+        text: String,
+        isFinal: Boolean
+    ) {
+        if (!isActiveGeneration(requestId, wrapper)) return
+        if (!isFinal && text == streamLastRenderedText) return
+
+        streamPendingRequestId = 0L
+        streamPendingWrapper = null
+        streamPendingText = null
+        streamLastRenderedText = text
+
+        wrapper.updateContent(text, animate = false, isFinal = isFinal)
+        scheduleScrollToBottomIfPinned()
+        updateGeneratingIndicatorVisibility()
+    }
+
+    private fun cancelPendingStreamUiWork(cancelScroll: Boolean) {
+        cancelScheduledStreamFlush()
+        streamPendingRequestId = 0L
+        streamPendingWrapper = null
+        streamPendingText = null
+        if (cancelScroll) {
+            cancelPendingAutoScroll()
+        }
+    }
+
+    private fun cancelScheduledStreamFlush() {
+        streamFlushRunnable?.let { streamUiHandler.removeCallbacks(it) }
+        streamFlushRunnable = null
+    }
+
+    private fun scheduleScrollToBottomIfPinned() {
+        if (!binding.messagesScrollView.isVisible || !isUserAtBottom) return
+        if (pendingAutoScrollRunnable != null) return
+
+        val runnable = Runnable {
+            pendingAutoScrollRunnable = null
+            scrollToBottomIfPinned()
+        }
+        pendingAutoScrollRunnable = runnable
+        binding.messagesScrollView.postOnAnimation(runnable)
+    }
+
+    private fun cancelPendingAutoScroll() {
+        pendingAutoScrollRunnable?.let { binding.messagesScrollView.removeCallbacks(it) }
+        pendingAutoScrollRunnable = null
+    }
+
+    private fun scrollToBottomIfPinned() {
+        if (!binding.messagesScrollView.isVisible || !isUserAtBottom) return
+        val targetScrollY = bottomScrollY()
+        binding.messagesScrollView.scrollTo(0, targetScrollY)
+        if (isMessagesAtBottom()) {
+            hideGeneratingIndicator()
+        }
+    }
+
+    private fun isMessagesAtBottom(): Boolean {
+        if (!binding.messagesScrollView.isVisible) return true
+        val threshold = dp(150f).toInt()
+        return bottomScrollY() - binding.messagesScrollView.scrollY <= threshold
+    }
+
+    private fun bottomScrollY(): Int {
+        val scrollView = binding.messagesScrollView
+        val child = scrollView.getChildAt(0) ?: return 0
+        return (child.bottom + scrollView.paddingBottom - scrollView.height).coerceAtLeast(0)
     }
 
     private fun setupHelpers() {
@@ -920,12 +1079,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         messageRenderer = ChatMessageRenderer(
             context = this,
             messagesContainer = binding.messagesContainer,
-            messagesScrollView = binding.messagesScrollView,
             popupMenuHelper = popupMenuHelper,
             onRegenerate = ::regenerateAssistantResponse,
             onUserMessageLongClick = { anchor, message, historyIndex ->
                 popupMenuHelper.showUserMessageOptionsMenu(anchor, message, historyIndex)
-            }
+            },
+            onAssistantContentChanged = ::scheduleScrollToBottomIfPinned
         )
 
         speechRecognizerManager = SpeechRecognizerManager(
@@ -1479,6 +1638,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun startFreshChat() {
+        invalidateActiveGeneration(cancelScroll = true)
         chatViewModel.resetChatState()
         currentAssistantMessage = null
         isSending = false
@@ -1551,6 +1711,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun openChat(chatId: String, onOpened: (() -> Unit)? = null) {
+        invalidateActiveGeneration(cancelScroll = true)
         lifecycleScope.launch {
             val chat = chatViewModel.getChatById(chatId) ?: return@launch
             val messages = try {
@@ -1627,6 +1788,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
             showMessagesState()
             hideQuickSuggestions()
+            isUserAtBottom = true
+            scheduleScrollToBottomIfPinned()
             refreshDrawerSelection()
             binding.drawerLayout.closeDrawer(GravityCompat.START)
             onOpened?.invoke()
@@ -1732,6 +1895,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         val shouldAnimateTopActions = chatViewModel.isFirstMessage && binding.topRightMain.isVisible
         isSending = true
+        val requestId = nextGenerationId()
+        isUserAtBottom = true
         hideQuickSuggestions()
         showMessagesState(animateTopActions = shouldAnimateTopActions)
         refreshDailyQuotaUi()
@@ -1758,6 +1923,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isImageMode = isImageRequest
         )
         currentAssistantMessage = wrapper
+        scheduleScrollToBottomIfPinned()
         binding.etInput.text?.clear()
         clearPreview()
         updateSendState()
@@ -1772,10 +1938,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             fileContext = attachmentPayload?.attachmentContext,
             onError = { error ->
                 runOnUiThread {
+                    if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
+                    flushStreamingUpdate(requestId, wrapper, error, isFinal = true)
+                    finishGeneration(requestId)
                     isSending = false
                     updateSendState()
                     hideGeneratingIndicator()
-                    wrapper.updateContent(error, animate = false, isFinal = true)
                     refreshDailyQuotaUi()
                     toast(error)
                 }
@@ -1783,13 +1951,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             onChunk = { chunk ->
                 lastAccumulated = chunk
                 runOnUiThread {
-                    wrapper.updateContent(chunk, animate = false, isFinal = false)
-                    updateGeneratingIndicatorVisibility()
+                    enqueueStreamingUpdate(requestId, wrapper, chunk)
                 }
             },
             onStreamComplete = {
                 runOnUiThread {
-                    wrapper.updateContent(lastAccumulated, animate = false, isFinal = true)
+                    if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
+                    flushStreamingUpdate(requestId, wrapper, lastAccumulated, isFinal = true)
+                    finishGeneration(requestId)
                     isSending = false
 
                     updateSendState()
@@ -1804,15 +1973,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun stopGeneration() {
         if (!isSending) return
 
+        val requestId = activeGenerationId
+        val wrapper = currentAssistantMessage
         chatViewModel.cancelActiveResponse()
+        cancelScheduledStreamFlush()
+        if (wrapper != null && isActiveGeneration(requestId, wrapper)) {
+            val latestText = streamPendingText ?: wrapper.rawText
+            if (latestText.isNotBlank()) {
+                flushStreamingUpdate(requestId, wrapper, latestText, isFinal = true)
+            }
+        }
+        finishGeneration(requestId)
+        cancelPendingAutoScroll()
         isSending = false
         updateSendState()
         hideGeneratingIndicator()
 
-        val wrapper = currentAssistantMessage ?: return
+        val activeWrapper = currentAssistantMessage ?: return
         val thinkingText = LocaleHelper.getString(this, "ai_thinking")
-        if (wrapper.rawText.isBlank() || wrapper.rawText == thinkingText) {
-            binding.messagesContainer.removeView(wrapper.container)
+        if (activeWrapper.rawText.isBlank() || activeWrapper.rawText == thinkingText) {
+            binding.messagesContainer.removeView(activeWrapper.container)
             currentAssistantMessage = null
         }
     }
@@ -1820,6 +2000,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun beginEditingUserMessage(historyIndex: Int, message: String) {
         if (isSending || historyIndex !in 0 until chatViewModel.chatHistory.size) return
 
+        invalidateActiveGeneration(cancelScroll = true)
         val historyMessage = chatViewModel.chatHistory[historyIndex]
         editingMessageHistoryIndex = historyIndex
         binding.tvEditMessageTitle.text = LocaleHelper.getString(this, "menu_edit_message")
@@ -2002,6 +2183,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun submitEditedUserMessage(historyIndex: Int, text: String, attachmentPayload: AttachmentPayload?) {
         isSending = true
+        val requestId = nextGenerationId()
+        isUserAtBottom = true
         hideQuickSuggestions()
         showMessagesState()
         refreshDailyQuotaUi()
@@ -2030,10 +2213,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isImageMode = isImageRequest
         )
         currentAssistantMessage = wrapper
+        scheduleScrollToBottomIfPinned()
         updateSendState()
 
         retryWithCurrentProvider(
             wrapper = wrapper,
+            requestId = requestId,
             modeOverride = if (isImageRequest) "create_image" else null,
             useModeOverride = isImageRequest
         )
@@ -2041,6 +2226,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun retryWithCurrentProvider(
         wrapper: AssistantMessageWrapper,
+        requestId: Long,
         modeOverride: String? = null,
         useModeOverride: Boolean = false
     ) {
@@ -2049,13 +2235,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             onChunk = { chunk ->
                 lastAccumulated = chunk
                 runOnUiThread {
-                    wrapper.updateContent(chunk, animate = false, isFinal = false)
-                    updateGeneratingIndicatorVisibility()
+                    enqueueStreamingUpdate(requestId, wrapper, chunk)
                 }
             },
             onComplete = {
                 runOnUiThread {
-                    wrapper.updateContent(lastAccumulated, animate = false, isFinal = true)
+                    if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
+                    flushStreamingUpdate(requestId, wrapper, lastAccumulated, isFinal = true)
+                    finishGeneration(requestId)
                     isSending = false
                     updateSendState()
                     hideGeneratingIndicator()
@@ -2065,10 +2252,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             },
             onError = { error ->
                 runOnUiThread {
+                    if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
+                    flushStreamingUpdate(requestId, wrapper, error, isFinal = true)
+                    finishGeneration(requestId)
                     isSending = false
                     updateSendState()
                     hideGeneratingIndicator()
-                    wrapper.updateContent(error, animate = false, isFinal = true)
                     refreshDailyQuotaUi()
                     toast(error)
                 }
@@ -2114,6 +2303,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         // Генерируем новый ответ
         isSending = true
+        val requestId = nextGenerationId()
+        isUserAtBottom = isMessagesAtBottom()
         updateSendState()
         val isImageRequest = wrapper.isImageMode || AssistantMessageWrapper.containsImageReply(wrapper.rawText)
         val freshWrapper = messageRenderer.addAssistantMessage(
@@ -2122,8 +2313,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isImageMode = isImageRequest
         )
         currentAssistantMessage = freshWrapper
+        scheduleScrollToBottomIfPinned()
         retryWithCurrentProvider(
             wrapper = freshWrapper,
+            requestId = requestId,
             modeOverride = if (isImageRequest) "create_image" else null,
             useModeOverride = true
         )
@@ -2172,23 +2365,18 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun setupGeneratingIndicator() {
         binding.generatingIndicator.setOnClickListener {
             isUserAtBottom = true
-            currentAssistantMessage?.autoScrollEnabled = true
+            cancelPendingAutoScroll()
             scrollToBottom()
             hideGeneratingIndicator()
         }
 
         binding.messagesScrollView.viewTreeObserver.addOnScrollChangedListener {
-            val scrollView = binding.messagesScrollView
-            val contentHeight = binding.messagesContainer.height
-            val scrollViewHeight = scrollView.height
-            val scrollY = scrollView.scrollY
 
-            // Считаем, что пользователь "внизу", если осталось менее 150dp до конца
-            val threshold = dp(150f).toInt()
-            isUserAtBottom = (scrollY + scrollViewHeight >= contentHeight - threshold)
-
-            // Синхронизируем автоскролл wrapper'а с позицией пользователя
-            currentAssistantMessage?.autoScrollEnabled = isUserAtBottom
+            if (isMessagesAtBottom()) {
+                isUserAtBottom = true
+            } else if (isUserTouchingMessages) {
+                isUserAtBottom = false
+            }
 
             updateGeneratingIndicatorVisibility()
         }
@@ -2253,20 +2441,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun scrollToBottom() {
         binding.messagesScrollView.post {
-            binding.messagesScrollView.smoothScrollTo(0, binding.messagesContainer.bottom)
+            binding.messagesScrollView.smoothScrollTo(0, bottomScrollY())
         }
     }
 
     /** Пересчитывает позицию скролла после того как пользователь убрал палец */
     private fun recheckScrollPosition() {
-        val scrollView = binding.messagesScrollView
-        val contentHeight = binding.messagesContainer.height
-        val scrollViewHeight = scrollView.height
-        val scrollY = scrollView.scrollY
-        val threshold = dp(150f).toInt()
-
-        isUserAtBottom = (scrollY + scrollViewHeight >= contentHeight - threshold)
-        currentAssistantMessage?.autoScrollEnabled = isUserAtBottom
+        isUserAtBottom = isMessagesAtBottom()
         updateGeneratingIndicatorVisibility()
     }
 
