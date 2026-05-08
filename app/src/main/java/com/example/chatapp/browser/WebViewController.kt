@@ -14,6 +14,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.ByteArrayInputStream
 
 class WebViewController(
     context: Context,
@@ -185,6 +186,7 @@ class WebViewController(
                 currentUrl = BrowserUrlSanitizer.normalize(url) ?: url
                 isLoading = false
                 progress = 100
+                view?.evaluateJavascript(COSMETIC_AD_BLOCK_SCRIPT, null)
                 listener.onStateChanged(this@WebViewController)
             }
 
@@ -206,12 +208,89 @@ class WebViewController(
             ): WebResourceResponse? {
                 val uri: Uri = request?.url ?: return null
                 val scheme = uri.scheme?.lowercase()
-                return if (scheme == "http" || scheme == "https") null else WebResourceResponse(
-                    "text/plain",
-                    "utf-8",
+                if (scheme != "http" && scheme != "https") {
+                    return emptyResponse("text/plain")
+                }
+
+                return if (request?.isForMainFrame == false && AdBlocker.shouldBlock(uri)) {
+                    emptyResponse(detectMimeType(uri))
+                } else {
                     null
-                )
+                }
             }
+        }
+    }
+
+    private fun emptyResponse(mimeType: String): WebResourceResponse =
+        WebResourceResponse(
+            mimeType,
+            "utf-8",
+            ByteArrayInputStream(ByteArray(0))
+        ).apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                responseHeaders = mapOf("Cache-Control" to "no-store")
+            }
+        }
+
+    private fun detectMimeType(uri: Uri): String {
+        val path = uri.path.orEmpty().lowercase()
+        return when {
+            path.endsWith(".js") -> "application/javascript"
+            path.endsWith(".css") -> "text/css"
+            path.endsWith(".png") -> "image/png"
+            path.endsWith(".jpg") || path.endsWith(".jpeg") -> "image/jpeg"
+            path.endsWith(".gif") -> "image/gif"
+            path.endsWith(".webp") -> "image/webp"
+            else -> "text/plain"
+        }
+    }
+
+    private object AdBlocker {
+        private val blockedHosts = listOf(
+            "doubleclick.net",
+            "googlesyndication.com",
+            "googleadservices.com",
+            "adservice.google.",
+            "adsystem.com",
+            "adnxs.com",
+            "criteo.com",
+            "taboola.com",
+            "outbrain.com",
+            "yandex.ru/ads",
+            "mc.yandex.",
+            "metrika.yandex.",
+            "facebook.net",
+            "connect.facebook.net",
+            "scorecardresearch.com",
+            "hotjar.com",
+            "googletagmanager.com",
+            "google-analytics.com"
+        )
+
+        private val blockedPathTokens = listOf(
+            "/ads/",
+            "/ad/",
+            "/adservice",
+            "/advert",
+            "/analytics",
+            "/collect",
+            "/g/collect",
+            "/pagead/",
+            "/partnerads",
+            "/sponsor",
+            "/tracking",
+            "/track/",
+            "/pixel",
+            "banner"
+        )
+
+        fun shouldBlock(uri: Uri): Boolean {
+            val host = uri.host.orEmpty().lowercase()
+            val full = uri.toString().lowercase()
+            if (blockedHosts.any { host.contains(it) || full.contains(it) }) {
+                return true
+            }
+            return blockedPathTokens.any { token -> full.contains(token) }
         }
     }
 
@@ -220,5 +299,20 @@ class WebViewController(
         const val KEY_TITLE = "in_app_browser_title"
         const val KEY_PROGRESS = "in_app_browser_progress"
         const val KEY_LOADING = "in_app_browser_loading"
+        val COSMETIC_AD_BLOCK_SCRIPT = """
+            (function() {
+              var selectors = [
+                '[id*="ad-"]','[id^="ad_"]','[id$="_ad"]','[class*=" ad-"]',
+                '[class*=" ads"]','[class*="advert"]','[class*="banner"]',
+                '[aria-label*="advertisement" i]','iframe[src*="doubleclick"]',
+                'iframe[src*="googlesyndication"]','iframe[src*="adservice"]'
+              ];
+              try {
+                document.querySelectorAll(selectors.join(',')).forEach(function(el) {
+                  el.style.setProperty('display', 'none', 'important');
+                });
+              } catch (e) {}
+            })();
+        """.trimIndent()
     }
 }

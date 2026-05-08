@@ -62,8 +62,6 @@ class InAppBrowserManager(
     private var webContainer: FrameLayout? = null
     private var minimizedCard: LinearLayout? = null
     private var progressBar: ProgressBar? = null
-    private var backButton: ImageButton? = null
-    private var forwardButton: ImageButton? = null
     private var refreshButton: ImageButton? = null
 
     init {
@@ -236,8 +234,6 @@ class InAppBrowserManager(
             setDragGesture()
         }
 
-        backButton = browserButton(R.drawable.ic_arrow_back, primary) { activeController()?.goBack() }
-        forwardButton = browserButton(R.drawable.ic_browser_forward, primary) { activeController()?.goForward() }
         refreshButton = browserButton(R.drawable.ic_browser_refresh, primary) { activeController()?.reload() }
 
         val titleBox = LinearLayout(activity).apply {
@@ -263,8 +259,6 @@ class InAppBrowserManager(
         titleBox.addView(toolbarTitle, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         titleBox.addView(toolbarSubtitle, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
 
-        toolbar.addView(backButton, LinearLayout.LayoutParams(36.dp(), 36.dp()))
-        toolbar.addView(forwardButton, LinearLayout.LayoutParams(36.dp(), 36.dp()))
         toolbar.addView(refreshButton, LinearLayout.LayoutParams(36.dp(), 36.dp()))
         toolbar.addView(titleBox, LinearLayout.LayoutParams(0, 40.dp(), 1f))
         toolbar.addView(browserButton(R.drawable.ic_browser_minimize, primary) { minimize() }, LinearLayout.LayoutParams(36.dp(), 36.dp()))
@@ -293,10 +287,7 @@ class InAppBrowserManager(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 Gravity.BOTTOM
             ).apply {
-                leftMargin = 8.dp()
-                rightMargin = 8.dp()
                 topMargin = 42.dp()
-                bottomMargin = 8.dp()
             }
         )
 
@@ -494,10 +485,8 @@ class InAppBrowserManager(
         toolbarSubtitle?.text = BrowserUrlSanitizer.displayHost(controller?.currentUrl)
         progressBar?.progress = controller?.progress ?: 0
         progressBar?.isVisible = controller?.isLoading == true
-        backButton?.isEnabled = controller?.canGoBack() == true
-        forwardButton?.isEnabled = controller?.canGoForward() == true
         refreshButton?.isEnabled = controller != null
-        listOf(backButton, forwardButton, refreshButton).forEach { button ->
+        listOf(refreshButton).forEach { button ->
             button?.alpha = if (button?.isEnabled == true) 1f else 0.38f
         }
     }
