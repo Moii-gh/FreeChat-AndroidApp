@@ -691,13 +691,27 @@ class DigitalAssistantOverlayView(
                 animateActionTap(view)
                 currentReaction = if (currentReaction == REACTION_LIKE) null else REACTION_LIKE
                 setAssistantReaction(message.id, currentReaction)
-                updateAssistantReactionButtons(likeButton, dislikeButton, currentReaction, animate = true)
+                updateAssistantReactionButtons(
+                    likeButton,
+                    dislikeButton,
+                    currentReaction,
+                    animate = true,
+                    visibleWidth = dp(22),
+                    visibleMarginEnd = dp(1)
+                )
             },
             R.drawable.ic_thumb_down to { view: ImageButton ->
                 animateActionTap(view)
                 currentReaction = if (currentReaction == REACTION_DISLIKE) null else REACTION_DISLIKE
                 setAssistantReaction(message.id, currentReaction)
-                updateAssistantReactionButtons(likeButton, dislikeButton, currentReaction, animate = true)
+                updateAssistantReactionButtons(
+                    likeButton,
+                    dislikeButton,
+                    currentReaction,
+                    animate = true,
+                    visibleWidth = dp(22),
+                    visibleMarginEnd = dp(1)
+                )
             },
             R.drawable.ic_share to { view: ImageButton ->
                 animateActionTap(view)
@@ -714,7 +728,14 @@ class DigitalAssistantOverlayView(
             if (index == 2) dislikeButton = button
             actions.addView(button)
         }
-        updateAssistantReactionButtons(likeButton, dislikeButton, currentReaction, animate = false)
+        updateAssistantReactionButtons(
+            likeButton,
+            dislikeButton,
+            currentReaction,
+            animate = false,
+            visibleWidth = dp(22),
+            visibleMarginEnd = dp(1)
+        )
     }
 
     private fun setAssistantReaction(messageId: Long, reaction: String?) {
@@ -729,21 +750,67 @@ class DigitalAssistantOverlayView(
         likeButton: ImageButton?,
         dislikeButton: ImageButton?,
         reaction: String?,
-        animate: Boolean
+        animate: Boolean,
+        visibleWidth: Int,
+        visibleMarginEnd: Int
     ) {
-        setAssistantReactionButtonState(likeButton, reaction == REACTION_LIKE, animate)
-        setAssistantReactionButtonState(dislikeButton, reaction == REACTION_DISLIKE, animate)
+        setAssistantReactionButtonState(
+            button = likeButton,
+            isActive = reaction == REACTION_LIKE,
+            isVisibleChoice = reaction == null || reaction == REACTION_LIKE,
+            animate = animate,
+            visibleWidth = visibleWidth,
+            visibleMarginEnd = visibleMarginEnd
+        )
+        setAssistantReactionButtonState(
+            button = dislikeButton,
+            isActive = reaction == REACTION_DISLIKE,
+            isVisibleChoice = reaction == null || reaction == REACTION_DISLIKE,
+            animate = animate,
+            visibleWidth = visibleWidth,
+            visibleMarginEnd = visibleMarginEnd
+        )
     }
 
-    private fun setAssistantReactionButtonState(button: ImageButton?, isActive: Boolean, animate: Boolean) {
+    private fun setAssistantReactionButtonState(
+        button: ImageButton?,
+        isActive: Boolean,
+        isVisibleChoice: Boolean,
+        animate: Boolean,
+        visibleWidth: Int,
+        visibleMarginEnd: Int
+    ) {
         button ?: return
         val targetColor = Color.parseColor(if (isActive) "#FFFFFF" else "#A6A6A6")
+        val targetAlpha = when {
+            !isVisibleChoice -> 0f
+            isActive -> 1f
+            else -> 0.86f
+        }
+        val targetScale = if (isVisibleChoice) 1f else 0.72f
+        val targetWidth = if (isVisibleChoice) visibleWidth else 0
+        val targetMarginEnd = if (isVisibleChoice) visibleMarginEnd else 0
+        button.animate().cancel()
         button.isSelected = isActive
+        button.isEnabled = isVisibleChoice
+        button.isClickable = isVisibleChoice
         if (!animate) {
             button.setColorFilter(targetColor)
-            button.alpha = if (isActive) 1f else 0.86f
+            button.alpha = targetAlpha
+            button.scaleX = targetScale
+            button.scaleY = targetScale
+            (button.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                params.width = targetWidth
+                params.marginEnd = targetMarginEnd
+                button.layoutParams = params
+            }
+            button.visibility = if (isVisibleChoice) View.VISIBLE else View.GONE
             button.tag = targetColor
             return
+        }
+
+        if (isVisibleChoice) {
+            button.visibility = View.VISIBLE
         }
 
         val currentColor = (button.tag as? Int) ?: Color.parseColor("#A6A6A6")
@@ -756,9 +823,30 @@ class DigitalAssistantOverlayView(
             }
             start()
         }
+        (button.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+            val startWidth = params.width
+            val startMarginEnd = params.marginEnd
+            ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 140L
+                addUpdateListener {
+                    val fraction = it.animatedFraction
+                    params.width = (startWidth + (targetWidth - startWidth) * fraction).toInt()
+                    params.marginEnd = (startMarginEnd + (targetMarginEnd - startMarginEnd) * fraction).toInt()
+                    button.layoutParams = params
+                }
+                start()
+            }
+        }
         button.animate()
-            .alpha(if (isActive) 1f else 0.86f)
+            .alpha(targetAlpha)
+            .scaleX(targetScale)
+            .scaleY(targetScale)
             .setDuration(140L)
+            .withEndAction {
+                if (!isVisibleChoice) {
+                    button.visibility = View.GONE
+                }
+            }
             .start()
     }
 
