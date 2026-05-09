@@ -751,7 +751,7 @@ class ChatMessageRenderer(
                 setLineSpacing((2 * density), 1.0f)
                 setHorizontallyScrolling(true)
                 setPadding((14 * density).toInt(), (13 * density).toInt(), (14 * density).toInt(), (13 * density).toInt())
-                setTextIsSelectable(true)
+                SelectableTextSupport.configure(this)
                 minWidth = (context.resources.displayMetrics.widthPixels - (48 * density).toInt()).coerceAtLeast(0)
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,

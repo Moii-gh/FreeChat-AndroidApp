@@ -1,5 +1,6 @@
 package com.example.chatapp.browser
 
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.Color
@@ -10,6 +11,7 @@ import android.text.InputType
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.animation.PathInterpolator
 import android.view.inputmethod.EditorInfo
@@ -46,10 +48,15 @@ class InAppBrowserManager(
     private var toolbarSubtitle: TextView? = null
     private var webContainer: FrameLayout? = null
     private var progressBar: ProgressBar? = null
-    private var refreshButton: ImageButton? = null
+    private var browserCloseButton: ImageButton? = null
+    private var browserRefreshButton: ImageButton? = null
+    private var bottomFullscreenGestureView: View? = null
     private var isBrowserVisible = false
     private var isBrowserOpening = false
+    private var isBrowserClosing = false
+    private var isBrowserFullscreen = false
     private var openAnimationToken = 0
+    private var panelMarginAnimator: ValueAnimator? = null
     private val openInterpolator = PathInterpolator(0.42f, 0f, 0.58f, 1f)
 
     private var searchOverlay: FrameLayout? = null
@@ -102,7 +109,7 @@ class InAppBrowserManager(
     }
 
     fun onDestroy() {
-        closeBrowser()
+        closeBrowser(animate = false)
     }
 
     override fun onStateChanged(controller: WebViewController) {
@@ -154,6 +161,7 @@ class InAppBrowserManager(
                     Color.TRANSPARENT
                 )
             )
+            setSwipeDownCloseGesture()
         }
         panel?.addView(topDepth, LinearLayout.LayoutParams.MATCH_PARENT, 6.dp())
 
@@ -176,14 +184,10 @@ class InAppBrowserManager(
             setPadding(10.dp(), 0, 10.dp(), 8.dp())
         }
 
-        refreshButton = browserButton(R.drawable.ic_browser_refresh, primary) {
-            controller?.reload()
-        }
-
         val titleBox = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(10.dp(), 0, 10.dp(), 0)
+            setPadding(14.dp(), 0, 10.dp(), 0)
             isClickable = true
             isFocusable = true
             setOnClickListener { showSearchBar() }
@@ -206,11 +210,26 @@ class InAppBrowserManager(
         titleBox.addView(toolbarTitle, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         titleBox.addView(toolbarSubtitle, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
 
-        toolbar.addView(refreshButton, LinearLayout.LayoutParams(36.dp(), 36.dp()))
         toolbar.addView(titleBox, LinearLayout.LayoutParams(0, 40.dp(), 1f))
+        browserRefreshButton = browserControlButton(
+            iconRes = R.drawable.ic_browser_refresh,
+            contentDescription = LocaleHelper.getString(activity, "auth_refresh_widget"),
+            onClick = { refreshCurrentPageFromActionButton() }
+        )
+        browserCloseButton = browserControlButton(
+            iconRes = R.drawable.ic_assistant_close,
+            contentDescription = LocaleHelper.getString(activity, "digital_assistant_close"),
+            onClick = { closeBrowser() }
+        )
         toolbar.addView(
-            browserButton(R.drawable.ic_assistant_close, primary) { closeBrowser() },
-            LinearLayout.LayoutParams(36.dp(), 36.dp())
+            browserRefreshButton,
+            LinearLayout.LayoutParams(BROWSER_CONTROL_SIZE_DP.dp(), BROWSER_CONTROL_SIZE_DP.dp()).apply {
+                rightMargin = BROWSER_CONTROL_GAP_DP.dp()
+            }
+        )
+        toolbar.addView(
+            browserCloseButton,
+            LinearLayout.LayoutParams(BROWSER_CONTROL_SIZE_DP.dp(), BROWSER_CONTROL_SIZE_DP.dp())
         )
         panel?.addView(toolbar, LinearLayout.LayoutParams.MATCH_PARENT, 48.dp())
 
@@ -229,15 +248,32 @@ class InAppBrowserManager(
             panel?.addView(it, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         }
 
+        isBrowserFullscreen = false
+        val panelParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            Gravity.BOTTOM
+        ).apply {
+            topMargin = compactBrowserTopMargin()
+        }
         root?.addView(
             panel,
+            panelParams
+        )
+
+        bottomFullscreenGestureView = View(activity).apply {
+            setBackgroundColor(Color.TRANSPARENT)
+            elevation = 96f
+            isClickable = true
+            setSwipeUpFullscreenGesture()
+        }
+        root?.addView(
+            bottomFullscreenGestureView,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
+                BROWSER_EDGE_GESTURE_HEIGHT_DP.dp(),
                 Gravity.BOTTOM
-            ).apply {
-                topMargin = 42.dp()
-            }
+            )
         )
 
         host.addView(
@@ -270,11 +306,16 @@ class InAppBrowserManager(
 
         openAnimationToken++
         val animationToken = openAnimationToken
+        isBrowserClosing = false
 
         browserRoot.isVisible = true
         browserRoot.bringToFront()
         backdrop?.animate()?.cancel()
         browserPanel.animate().cancel()
+        browserRefreshButton?.animate()?.cancel()
+        browserCloseButton?.animate()?.cancel()
+        browserRefreshButton?.isEnabled = true
+        browserCloseButton?.isEnabled = true
         backdrop?.isVisible = true
         browserPanel.isVisible = true
         browserPanel.alpha = 1f
@@ -288,6 +329,7 @@ class InAppBrowserManager(
             backdrop?.alpha = 1f
             browserPanel.translationY = 0f
             browserPanel.setLayerType(View.LAYER_TYPE_NONE, null)
+            showBrowserControls(immediate = true)
             return
         }
 
@@ -299,6 +341,7 @@ class InAppBrowserManager(
         browserPanel.translationY = fallbackOffset.toFloat()
         backdrop?.alpha = 0f
         browserPanel.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        hideBrowserControls(immediate = true)
 
         browserPanel.doOnPreDraw {
             if (animationToken != openAnimationToken || panel !== browserPanel) return@doOnPreDraw
@@ -325,16 +368,70 @@ class InAppBrowserManager(
                     backdrop?.alpha = 1f
                 }
                 .start()
+            showBrowserControls(immediate = false, startDelay = 80L)
         }
     }
 
-    private fun closeBrowser() {
+    private fun closeBrowser(animate: Boolean = true) {
+        val browserRoot = root
+        val browserPanel = panel
+        val refreshControl = browserRefreshButton
+        val closeControl = browserCloseButton
+
+        if (!animate || browserRoot == null || browserPanel == null) {
+            openAnimationToken++
+            teardownBrowser()
+            return
+        }
+        if (isBrowserClosing) return
+
         openAnimationToken++
+        val animationToken = openAnimationToken
         isBrowserOpening = false
         isBrowserVisible = false
+        isBrowserClosing = true
         hideSearchBar(immediate = true)
+        browserPanel.animate().cancel()
+        dimView?.animate()?.cancel()
+        panelMarginAnimator?.cancel()
+        refreshControl?.animate()?.cancel()
+        closeControl?.animate()?.cancel()
+        refreshControl?.isEnabled = false
+        closeControl?.isEnabled = false
+        browserPanel.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        val endOffset = browserRoot.height
+            .takeIf { it > 0 }
+            ?: activity.resources.displayMetrics.heightPixels
+
+        dimView?.animate()
+            ?.alpha(0f)
+            ?.setDuration(BROWSER_CLOSE_DIM_FADE_DURATION_MS)
+            ?.setInterpolator(openInterpolator)
+            ?.start()
+        hideBrowserControls(immediate = false)
+        browserPanel.animate()
+            .translationY(endOffset.toFloat())
+            .setDuration(BROWSER_CLOSE_DURATION_MS)
+            .setInterpolator(openInterpolator)
+            .withEndAction {
+                if (animationToken != openAnimationToken || panel !== browserPanel) return@withEndAction
+                teardownBrowser()
+            }
+            .start()
+    }
+
+    private fun teardownBrowser() {
+        isBrowserOpening = false
+        isBrowserVisible = false
+        isBrowserClosing = false
+        isBrowserFullscreen = false
+        panelMarginAnimator?.cancel()
+        panelMarginAnimator = null
         panel?.animate()?.cancel()
         dimView?.animate()?.cancel()
+        browserRefreshButton?.animate()?.cancel()
+        browserCloseButton?.animate()?.cancel()
         panel?.setLayerType(View.LAYER_TYPE_NONE, null)
         controller?.destroy()
         controller = null
@@ -347,7 +444,9 @@ class InAppBrowserManager(
         toolbarSubtitle = null
         webContainer = null
         progressBar = null
-        refreshButton = null
+        browserRefreshButton = null
+        browserCloseButton = null
+        bottomFullscreenGestureView = null
         searchOverlay = null
         searchBar = null
         searchInput = null
@@ -362,21 +461,132 @@ class InAppBrowserManager(
         toolbarSubtitle?.text = BrowserUrlSanitizer.displayHost(active?.currentUrl)
         progressBar?.progress = active?.progress ?: 0
         progressBar?.isVisible = active?.isLoading == true
-        refreshButton?.isEnabled = active != null
-        refreshButton?.alpha = if (active != null) 1f else 0.38f
+        browserRefreshButton?.isEnabled = active != null
+        browserRefreshButton?.alpha = if (active != null) BROWSER_CONTROL_ALPHA else 0.38f
     }
 
-    private fun browserButton(iconRes: Int, tint: Int, onClick: () -> Unit): ImageButton =
+    private fun browserControlButton(
+        iconRes: Int,
+        contentDescription: String,
+        onClick: () -> Unit
+    ): ImageButton =
         ImageButton(activity).apply {
             setImageResource(iconRes)
-            setColorFilter(tint)
-            setBackgroundColor(Color.TRANSPARENT)
+            setColorFilter(Color.WHITE)
+            setBackgroundResource(R.drawable.circle_button_bg)
             scaleType = ImageView.ScaleType.CENTER
-            setPadding(9.dp(), 9.dp(), 9.dp(), 9.dp())
+            setPadding(11.dp(), 11.dp(), 11.dp(), 11.dp())
+            alpha = 0f
+            scaleX = 0.9f
+            scaleY = 0.9f
+            translationY = (-4).dp().toFloat()
+            elevation = 98f
             isClickable = true
             isFocusable = true
-            setOnClickListener { onClick() }
+            this.contentDescription = contentDescription
+            setOnClickListener {
+                performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                onClick()
+            }
         }
+
+    private fun refreshCurrentPageFromActionButton() {
+        controller?.reload()
+        browserRefreshButton?.animate()
+            ?.rotationBy(180f)
+            ?.setDuration(BROWSER_REFRESH_SPIN_DURATION_MS)
+            ?.setInterpolator(openInterpolator)
+            ?.start()
+    }
+
+    private fun showBrowserControls(immediate: Boolean, startDelay: Long = 0L) {
+        listOfNotNull(browserRefreshButton, browserCloseButton).forEach { button ->
+            button.animate().cancel()
+            button.isVisible = true
+            if (immediate) {
+                button.alpha = BROWSER_CONTROL_ALPHA
+                button.scaleX = 1f
+                button.scaleY = 1f
+                button.translationY = 0f
+            } else {
+                button.alpha = 0f
+                button.scaleX = 0.9f
+                button.scaleY = 0.9f
+                button.translationY = (-4).dp().toFloat()
+                button.animate()
+                    .alpha(BROWSER_CONTROL_ALPHA)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .setDuration(BROWSER_CONTROL_FADE_DURATION_MS)
+                    .setStartDelay(startDelay)
+                    .setInterpolator(openInterpolator)
+                    .start()
+            }
+        }
+    }
+
+    private fun hideBrowserControls(immediate: Boolean) {
+        listOfNotNull(browserRefreshButton, browserCloseButton).forEach { button ->
+            button.animate().cancel()
+            if (immediate) {
+                button.alpha = 0f
+                button.scaleX = 0.9f
+                button.scaleY = 0.9f
+                button.translationY = (-4).dp().toFloat()
+            } else {
+                button.animate()
+                    .alpha(0f)
+                    .scaleX(0.9f)
+                    .scaleY(0.9f)
+                    .translationY((-4).dp().toFloat())
+                    .setDuration(BROWSER_CONTROL_FADE_DURATION_MS)
+                    .setInterpolator(openInterpolator)
+                    .start()
+            }
+        }
+    }
+
+    private fun updateSearchOverlayTopMargin(topMargin: Int = currentPanelTopMargin()) {
+        searchOverlay?.let { overlay ->
+            val params = overlay.layoutParams as? FrameLayout.LayoutParams ?: return@let
+            params.topMargin = topMargin
+            overlay.layoutParams = params
+        }
+    }
+
+    private fun currentPanelTopMargin(): Int =
+        (panel?.layoutParams as? FrameLayout.LayoutParams)?.topMargin ?: compactBrowserTopMargin()
+
+    private fun compactBrowserTopMargin(): Int = BROWSER_COMPACT_TOP_MARGIN_DP.dp()
+
+    private fun setPanelTopMargin(topMargin: Int) {
+        val browserPanel = panel ?: return
+        val params = browserPanel.layoutParams as? FrameLayout.LayoutParams ?: return
+        params.topMargin = topMargin.coerceIn(0, compactBrowserTopMargin())
+        browserPanel.layoutParams = params
+        updateSearchOverlayTopMargin(params.topMargin)
+    }
+
+    private fun setBrowserFullscreen(fullscreen: Boolean, animate: Boolean) {
+        val targetTop = if (fullscreen) 0 else compactBrowserTopMargin()
+        val startTop = currentPanelTopMargin()
+        isBrowserFullscreen = fullscreen
+        panelMarginAnimator?.cancel()
+        if (!animate || startTop == targetTop) {
+            setPanelTopMargin(targetTop)
+            return
+        }
+
+        panelMarginAnimator = ValueAnimator.ofInt(startTop, targetTop).apply {
+            duration = BROWSER_EXPAND_DURATION_MS
+            interpolator = openInterpolator
+            addUpdateListener { animator ->
+                setPanelTopMargin(animator.animatedValue as Int)
+            }
+            start()
+        }
+    }
 
     private fun View.setSwipeDownCloseGesture() {
         var downY = 0f
@@ -390,6 +600,7 @@ class InAppBrowserManager(
                     isBrowserOpening = false
                     isBrowserVisible = true
                     panel?.animate()?.cancel()
+                    panelMarginAnimator?.cancel()
                     dimView?.animate()?.cancel()
                     panel?.setLayerType(View.LAYER_TYPE_NONE, null)
                     true
@@ -405,8 +616,11 @@ class InAppBrowserManager(
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     val dy = (event.rawY - downY).coerceAtLeast(0f)
-                    if (dragging && dy > 120.dp()) {
+                    if (dragging && !isBrowserFullscreen && dy > BROWSER_CLOSE_DRAG_THRESHOLD_DP.dp()) {
                         closeBrowser()
+                    } else if (dragging && isBrowserFullscreen && dy > BROWSER_COLLAPSE_DRAG_THRESHOLD_DP.dp()) {
+                        panel?.translationY = 0f
+                        setBrowserFullscreen(fullscreen = false, animate = true)
                     } else {
                         panel?.animate()
                             ?.translationY(0f)
@@ -418,6 +632,49 @@ class InAppBrowserManager(
                             ?.setDuration(BROWSER_SETTLE_DURATION_MS)
                             ?.setInterpolator(openInterpolator)
                             ?.start()
+                        if (!dragging) view.performClick()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun View.setSwipeUpFullscreenGesture() {
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        var downY = 0f
+        var startTop = 0
+        var dragging = false
+
+        setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downY = event.rawY
+                    startTop = currentPanelTopMargin()
+                    dragging = false
+                    panelMarginAnimator?.cancel()
+                    view.parent?.requestDisallowInterceptTouchEvent(true)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dy = event.rawY - downY
+                    if (-dy > touchSlop) {
+                        dragging = true
+                    }
+                    if (dragging) {
+                        setPanelTopMargin((startTop + dy.toInt()).coerceAtLeast(0))
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    view.parent?.requestDisallowInterceptTouchEvent(false)
+                    val dy = event.rawY - downY
+                    if (dragging && -dy > BROWSER_EXPAND_DRAG_THRESHOLD_DP.dp()) {
+                        performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        setBrowserFullscreen(fullscreen = true, animate = true)
+                    } else {
+                        setBrowserFullscreen(fullscreen = isBrowserFullscreen, animate = true)
                         if (!dragging) view.performClick()
                     }
                     true
@@ -527,7 +784,7 @@ class InAppBrowserManager(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             ).apply {
-                topMargin = 42.dp()
+                topMargin = currentPanelTopMargin()
             }
         )
         searchOverlay?.elevation = 98f
@@ -591,7 +848,20 @@ class InAppBrowserManager(
 
     private companion object {
         const val BROWSER_OPEN_DURATION_MS = 340L
+        const val BROWSER_CLOSE_DURATION_MS = 250L
+        const val BROWSER_EXPAND_DURATION_MS = 260L
         const val BROWSER_DIM_FADE_DURATION_MS = 240L
+        const val BROWSER_CLOSE_DIM_FADE_DURATION_MS = 180L
         const val BROWSER_SETTLE_DURATION_MS = 180L
+        const val BROWSER_CONTROL_FADE_DURATION_MS = 180L
+        const val BROWSER_REFRESH_SPIN_DURATION_MS = 260L
+        const val BROWSER_CONTROL_ALPHA = 0.92f
+        const val BROWSER_CONTROL_SIZE_DP = 40
+        const val BROWSER_CONTROL_GAP_DP = 8
+        const val BROWSER_EDGE_GESTURE_HEIGHT_DP = 30
+        const val BROWSER_COMPACT_TOP_MARGIN_DP = 42
+        const val BROWSER_CLOSE_DRAG_THRESHOLD_DP = 120
+        const val BROWSER_COLLAPSE_DRAG_THRESHOLD_DP = 34
+        const val BROWSER_EXPAND_DRAG_THRESHOLD_DP = 34
     }
 }

@@ -282,6 +282,7 @@ object MarkdownTableRenderer {
                     TableRow.LayoutParams.WRAP_CONTENT,
                     TableRow.LayoutParams.WRAP_CONTENT
                 )
+                SelectableTextSupport.configure(this)
                 // Правая граница между колонками (кроме последней)
                 if (colIdx < colCount - 1) {
                     background = columnDividerDrawable(
@@ -326,6 +327,7 @@ object MarkdownTableRenderer {
                         TableRow.LayoutParams.WRAP_CONTENT,
                         TableRow.LayoutParams.WRAP_CONTENT
                     )
+                    SelectableTextSupport.configure(this)
                     // Вертикальный разделитель между колонками
                     if (colIdx < colCount - 1) {
                         background = columnDividerDrawable(

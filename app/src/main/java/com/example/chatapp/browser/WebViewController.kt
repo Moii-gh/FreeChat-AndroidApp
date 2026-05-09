@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.os.Message
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.SafeBrowsingResponse
@@ -113,7 +114,7 @@ class WebViewController(
             allowFileAccessFromFileURLs = false
             allowUniversalAccessFromFileURLs = false
             javaScriptCanOpenWindowsAutomatically = false
-            setSupportMultipleWindows(false)
+            setSupportMultipleWindows(true)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -131,17 +132,34 @@ class WebViewController(
                 title = newTitle.orEmpty()
                 listener.onStateChanged(this@WebViewController)
             }
+
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message?
+            ): Boolean {
+                if (!isUserGesture) return false
+                val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
+                transport.webView = createPopupRelayWebView()
+                resultMsg.sendToTarget()
+                return true
+            }
         }
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString()
                 val safeUrl = BrowserUrlSanitizer.normalize(url)
+                val isMainFrame = request?.isForMainFrame != false
                 return if (safeUrl == null) {
-                    listener.onBlockedUrl(url)
+                    if (isMainFrame) listener.onBlockedUrl(url)
+                    true
+                } else if (isBlockedUrl(safeUrl)) {
+                    if (isMainFrame) listener.onBlockedUrl(url)
                     true
                 } else {
-                    currentUrl = safeUrl
+                    if (isMainFrame) currentUrl = safeUrl
                     false
                 }
             }
@@ -150,6 +168,9 @@ class WebViewController(
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 val safeUrl = BrowserUrlSanitizer.normalize(url)
                 return if (safeUrl == null) {
+                    listener.onBlockedUrl(url)
+                    true
+                } else if (isBlockedUrl(safeUrl)) {
                     listener.onBlockedUrl(url)
                     true
                 } else {
@@ -192,7 +213,7 @@ class WebViewController(
                 val uri: Uri = request?.url ?: return null
                 val scheme = uri.scheme?.lowercase()
                 if (scheme != "http" && scheme != "https") {
-                    return emptyResponse("text/plain")
+                    return null
                 }
 
                 return if (request.isForMainFrame == false && AdBlocker.shouldBlock(uri)) {
@@ -202,6 +223,61 @@ class WebViewController(
                 }
             }
         }
+    }
+
+    private fun createPopupRelayWebView(): WebView =
+        WebView(webView.context).apply {
+            settings.apply {
+                javaScriptEnabled = false
+                domStorageEnabled = false
+                loadsImagesAutomatically = false
+                mediaPlaybackRequiresUserGesture = true
+                setSupportMultipleWindows(false)
+            }
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    relayPopupUrl(request?.url?.toString(), view)
+                    return true
+                }
+
+                @Suppress("DEPRECATION")
+                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                    relayPopupUrl(url, view)
+                    return true
+                }
+
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    relayPopupUrl(url, view)
+                }
+
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? = emptyResponse("text/plain")
+            }
+        }
+
+    private fun relayPopupUrl(url: String?, popupView: WebView?) {
+        val safeUrl = BrowserUrlSanitizer.normalize(url)
+        if (safeUrl == null || isBlockedUrl(safeUrl)) {
+            popupView?.post { popupView.destroy() }
+            if (safeUrl == null && !url.isNullOrBlank()) {
+                listener.onBlockedUrl(url)
+            }
+            return
+        }
+
+        currentUrl = safeUrl
+        webView.post {
+            webView.loadUrl(safeUrl)
+            listener.onStateChanged(this)
+        }
+        popupView?.post { popupView.destroy() }
+    }
+
+    private fun isBlockedUrl(url: String): Boolean {
+        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return true
+        return AdBlocker.shouldBlock(uri)
     }
 
     private fun emptyResponse(mimeType: String): WebResourceResponse =
@@ -230,41 +306,71 @@ class WebViewController(
 
     private object AdBlocker {
         private val blockedHosts = listOf(
+            "adform.net",
+            "adfox.ru",
+            "adnxs.com",
+            "adroll.com",
+            "adsafeprotected.com",
+            "adsrvr.org",
+            "amazon-adsystem.com",
+            "an.yandex.",
+            "appsflyer.com",
+            "betweendigital.com",
+            "bidr.io",
+            "criteo.com",
             "doubleclick.net",
+            "exoclick.com",
+            "facebook.net",
+            "flashtalking.com",
+            "google-analytics.com",
             "googlesyndication.com",
             "googleadservices.com",
-            "adservice.google.",
-            "adsystem.com",
-            "adnxs.com",
-            "criteo.com",
-            "taboola.com",
-            "outbrain.com",
-            "yandex.ru/ads",
+            "googletagmanager.com",
+            "hotjar.com",
+            "imrworldwide.com",
             "mc.yandex.",
             "metrika.yandex.",
-            "facebook.net",
-            "connect.facebook.net",
+            "mgid.com",
+            "moatads.com",
+            "openx.net",
+            "outbrain.com",
+            "popads.net",
+            "propellerads.com",
+            "pubmatic.com",
+            "relap.io",
+            "revcontent.com",
+            "rubiconproject.com",
             "scorecardresearch.com",
-            "hotjar.com",
-            "googletagmanager.com",
-            "google-analytics.com"
+            "smartadserver.com",
+            "taboola.com",
+            "trafficjunky.net",
+            "yieldmo.com",
+            "adservice.google.",
+            "adsystem.com",
+            "connect.facebook.net"
         )
 
         private val blockedPathTokens = listOf(
             "/ads/",
             "/ad/",
+            "/adserver",
             "/adservice",
             "/advert",
             "/analytics",
             "/collect",
             "/g/collect",
             "/pagead/",
+            "/prebid",
             "/partnerads",
+            "/pubads",
             "/sponsor",
             "/tracking",
             "/track/",
             "/pixel",
-            "banner"
+            "adsbygoogle",
+            "banner",
+            "prebid.js",
+            "yandex.ru/ads"
         )
 
         fun shouldBlock(uri: Uri): Boolean {
@@ -284,7 +390,9 @@ class WebViewController(
                 '[id*="ad-"]','[id^="ad_"]','[id$="_ad"]','[class*=" ad-"]',
                 '[class*=" ads"]','[class*="advert"]','[class*="banner"]',
                 '[aria-label*="advertisement" i]','iframe[src*="doubleclick"]',
-                'iframe[src*="googlesyndication"]','iframe[src*="adservice"]'
+                'iframe[src*="googlesyndication"]','iframe[src*="adservice"]',
+                'iframe[src*="adfox"]','iframe[src*="taboola"]',
+                'iframe[src*="outbrain"]','iframe[src*="mgid"]'
               ];
               try {
                 document.querySelectorAll(selectors.join(',')).forEach(function(el) {

@@ -9,7 +9,6 @@ import android.text.Layout
 import android.text.SpannableStringBuilder
 import android.text.TextPaint
 import android.text.TextUtils
-import android.text.method.LinkMovementMethod
 import android.text.style.URLSpan
 import android.text.util.Linkify
 import android.view.Gravity
@@ -802,10 +801,11 @@ class AssistantMessageWrapper(
     }
 
     private fun TextView.configureLinkableTextView() {
-        setTextIsSelectable(false)
-        linksClickable = true
-        movementMethod = LinkMovementMethod.getInstance()
-        highlightColor = Color.TRANSPARENT
+        SelectableTextSupport.configure(
+            textView = this,
+            linkColor = LINK_COLOR,
+            openLinksOnTap = true
+        )
         setLinkTextColor(LINK_COLOR)
         setHorizontallyScrolling(false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
