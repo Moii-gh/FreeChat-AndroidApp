@@ -358,9 +358,9 @@
             android:stateListAnimator="@null"
             android:translationZ="28dp"
             android:visibility="gone"
-            android:layout_marginEnd="8dp"
             app:layout_constraintBottom_toTopOf="@id/bottomInputArea"
-            app:layout_constraintEnd_toEndOf="@id/bottomInputArea"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:tint="#FFFFFFFF"
             tools:visibility="visible" />
 

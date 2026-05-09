@@ -23,6 +23,7 @@ class ChatScrollToBottomController(
     private val button: View,
     private val bottomScrollY: () -> Int,
     private val isPinnedToBottom: () -> Boolean,
+    private val isSuppressed: () -> Boolean,
     private val onScrollStateChanged: () -> Unit,
     private val onScrollToBottom: () -> Unit
 ) {
@@ -64,6 +65,12 @@ class ChatScrollToBottomController(
         updateVisibility()
     }
 
+    fun refreshVisibility() {
+        handler.removeCallbacks(throttledUpdate)
+        isUpdateScheduled = false
+        updateVisibility()
+    }
+
     fun detach() {
         handler.removeCallbacks(throttledUpdate)
         isUpdateScheduled = false
@@ -90,6 +97,7 @@ class ChatScrollToBottomController(
 
     private fun shouldShowButton(): Boolean {
         if (!scrollView.isShown) return false
+        if (isSuppressed()) return false
         if (isPinnedToBottom()) return false
         val viewportHeight = scrollView.height
         if (viewportHeight <= 0) return false

@@ -2448,6 +2448,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             button = binding.btnScrollToBottom,
             bottomScrollY = ::bottomScrollY,
             isPinnedToBottom = { isUserAtBottom },
+            isSuppressed = { isSending },
             onScrollStateChanged = ::handleMessagesScrollChanged,
             onScrollToBottom = {
                 isUserAtBottom = true
@@ -2549,6 +2550,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             currentPreviewUri != null ||
             retainedEditingAttachment != null
         binding.btnSend.isEnabled = isSending || hasInput
+        scrollToBottomController?.refreshVisibility()
 
         if (isSending) {
             binding.btnSend.setBackgroundResource(R.drawable.circle_solid_white_bg)
