@@ -36,7 +36,8 @@ import com.example.chatapp.R
 
 class InAppBrowserManager(
     private val activity: Activity,
-    private val host: ViewGroup
+    private val host: ViewGroup,
+    private val onBeforeOpen: (() -> Unit)? = null
 ) : WebViewController.Listener {
 
     enum class FutureContentType {
@@ -57,6 +58,7 @@ class InAppBrowserManager(
     private var browserRefreshButton: ImageButton? = null
     private var bottomFullscreenGestureView: View? = null
     private var pageSplashOverlay: FrameLayout? = null
+    private var pageSplashLogo: ImageView? = null
     private var pageSplashAnimator: Animator? = null
     private var pageSplashToken = 0
     private var isBrowserVisible = false
@@ -84,6 +86,7 @@ class InAppBrowserManager(
             return
         }
 
+        onBeforeOpen?.invoke()
         ensureViews()
         hideSearchBar(immediate = true)
         val shouldAnimateOpen = !isBrowserShowing()
@@ -124,9 +127,13 @@ class InAppBrowserManager(
     override fun onStateChanged(controller: WebViewController) {
         if (controller !== this.controller) return
         refreshToolbar()
+        if (!controller.isLoading && controller.progress >= 100) {
+            hidePageLoadingSplash()
+        }
     }
 
     override fun onBlockedUrl(url: String?) {
+        hidePageLoadingSplash()
         showBlockedToast()
     }
 
@@ -449,6 +456,7 @@ class InAppBrowserManager(
             (overlay.parent as? ViewGroup)?.removeView(overlay)
         }
         pageSplashOverlay = null
+        pageSplashLogo = null
         controller?.destroy()
         controller = null
         webContainer?.removeAllViews()
@@ -521,9 +529,12 @@ class InAppBrowserManager(
         val token = pageSplashToken
 
         pageSplashAnimator?.cancel()
+        pageSplashAnimator = null
         pageSplashOverlay?.let { existing ->
             (existing.parent as? ViewGroup)?.removeView(existing)
         }
+        pageSplashOverlay = null
+        pageSplashLogo = null
 
         val overlay = FrameLayout(activity).apply {
             background = GradientDrawable(
@@ -560,6 +571,7 @@ class InAppBrowserManager(
             )
         )
         pageSplashOverlay = overlay
+        pageSplashLogo = logo
 
         val fadeIn = AnimatorSet().apply {
             playTogether(
@@ -570,39 +582,66 @@ class InAppBrowserManager(
             duration = BROWSER_SPLASH_FADE_IN_MS
             interpolator = openInterpolator
         }
-        val fadeOut = AnimatorSet().apply {
-            startDelay = BROWSER_SPLASH_HOLD_MS
-            playTogether(
-                ObjectAnimator.ofFloat(overlay, View.ALPHA, 1f, 0f),
-                ObjectAnimator.ofFloat(logo, View.ALPHA, BROWSER_SPLASH_LOGO_ALPHA, 0f),
-                ObjectAnimator.ofFloat(logo, View.SCALE_X, 1f, 1.04f),
-                ObjectAnimator.ofFloat(logo, View.SCALE_Y, 1f, 1.04f)
-            )
-            duration = BROWSER_SPLASH_FADE_OUT_MS
-            interpolator = openInterpolator
-        }
-        val rotation = ObjectAnimator.ofFloat(logo, View.ROTATION, 0f, BROWSER_SPLASH_ROTATION_DEGREES).apply {
-            duration = BROWSER_SPLASH_TOTAL_MS
+        val rotation = ObjectAnimator.ofFloat(logo, View.ROTATION, 0f, 360f).apply {
+            duration = BROWSER_SPLASH_ROTATION_DURATION_MS
+            repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
-        }
-        val fadeSequence = AnimatorSet().apply {
-            playSequentially(fadeIn, fadeOut)
         }
 
         pageSplashAnimator = AnimatorSet().apply {
-            playTogether(fadeSequence, rotation)
+            playTogether(fadeIn, rotation)
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (token == pageSplashToken && pageSplashOverlay === overlay) {
+                        pageSplashAnimator = null
+                    }
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    if (token == pageSplashToken && pageSplashOverlay === overlay) {
+                        pageSplashAnimator = null
+                    }
+                }
+            })
+            start()
+        }
+    }
+
+    private fun hidePageLoadingSplash() {
+        val overlay = pageSplashOverlay ?: return
+        val logo = pageSplashLogo
+        pageSplashToken += 1
+        val token = pageSplashToken
+
+        pageSplashAnimator?.cancel()
+        pageSplashAnimator = null
+        overlay.isClickable = false
+
+        val fadeOutAnimators = mutableListOf<Animator>(
+            ObjectAnimator.ofFloat(overlay, View.ALPHA, overlay.alpha, 0f)
+        )
+        logo?.let {
+            fadeOutAnimators += ObjectAnimator.ofFloat(it, View.ALPHA, it.alpha, 0f)
+            fadeOutAnimators += ObjectAnimator.ofFloat(it, View.SCALE_X, it.scaleX, 1.04f)
+            fadeOutAnimators += ObjectAnimator.ofFloat(it, View.SCALE_Y, it.scaleY, 1.04f)
+        }
+
+        pageSplashAnimator = AnimatorSet().apply {
+            playTogether(fadeOutAnimators)
+            duration = BROWSER_SPLASH_FADE_OUT_MS
+            interpolator = openInterpolator
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     if (token != pageSplashToken || pageSplashOverlay !== overlay) return
                     (overlay.parent as? ViewGroup)?.removeView(overlay)
                     pageSplashOverlay = null
+                    pageSplashLogo = null
                     pageSplashAnimator = null
                 }
 
                 override fun onAnimationCancel(animation: Animator) {
-                    if (pageSplashOverlay === overlay) {
-                        (overlay.parent as? ViewGroup)?.removeView(overlay)
-                        pageSplashOverlay = null
+                    if (token == pageSplashToken && pageSplashAnimator === animation) {
+                        pageSplashAnimator = null
                     }
                 }
             })
@@ -967,12 +1006,10 @@ class InAppBrowserManager(
         const val BROWSER_CONTROL_FADE_DURATION_MS = 180L
         const val BROWSER_REFRESH_SPIN_DURATION_MS = 260L
         const val BROWSER_SPLASH_FADE_IN_MS = 280L
-        const val BROWSER_SPLASH_HOLD_MS = 980L
         const val BROWSER_SPLASH_FADE_OUT_MS = 420L
-        const val BROWSER_SPLASH_TOTAL_MS = BROWSER_SPLASH_FADE_IN_MS + BROWSER_SPLASH_HOLD_MS + BROWSER_SPLASH_FADE_OUT_MS
+        const val BROWSER_SPLASH_ROTATION_DURATION_MS = 42_000L
         const val BROWSER_SPLASH_LOGO_ALPHA = 0.36f
         const val BROWSER_SPLASH_LOGO_SIZE_DP = 92
-        const val BROWSER_SPLASH_ROTATION_DEGREES = 14f
         const val BROWSER_CONTROL_ALPHA = 0.92f
         const val BROWSER_CONTROL_SIZE_DP = 40
         const val BROWSER_CONTROL_GAP_DP = 8

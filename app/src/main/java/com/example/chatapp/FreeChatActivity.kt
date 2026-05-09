@@ -52,6 +52,7 @@ import com.example.chatapp.ui.DrawerManager
 import com.example.chatapp.ui.FreeChatAttentionDrawable
 import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.PopupMenuHelper
+import com.example.chatapp.ui.SelectableTextSupport
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SafeLog
 import com.example.chatapp.viewmodel.ChatViewModel
@@ -60,6 +61,7 @@ import org.json.JSONObject
 import com.example.chatapp.util.setHapticClickListener
 import com.example.chatapp.util.OnSwipeTouchListener
 import com.example.chatapp.ads.RewardedAdManager
+import android.text.Selection
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -1103,7 +1105,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun setupHelpers() {
         inAppBrowserManager = InAppBrowserManager(
             activity = this,
-            host = findViewById(android.R.id.content)
+            host = findViewById(android.R.id.content),
+            onBeforeOpen = ::clearTextSelectionBeforeBrowserOpen
         )
 
         popupMenuHelper = PopupMenuHelper(
@@ -1158,6 +1161,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         )
         speechRecognizerManager.setup()
         speechRecognizerManager.setupMicButton(binding.btnMic, this)
+    }
+
+    private fun clearTextSelectionBeforeBrowserOpen() {
+        SelectableTextSupport.clearAllSelections()
+        binding.etInput.text?.let { editable ->
+            Selection.setSelection(editable, editable.length)
+        }
+        binding.etInput.clearFocus()
     }
 
     private fun setupTopBar() {

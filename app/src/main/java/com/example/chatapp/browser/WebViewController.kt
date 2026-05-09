@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.SafeBrowsingResponse
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -46,12 +47,24 @@ class WebViewController(
             listener.onBlockedUrl(url)
             return
         }
+        if (isBlockedUrl(safeUrl)) {
+            isLoading = false
+            progress = 100
+            listener.onBlockedUrl(url)
+            listener.onStateChanged(this)
+            return
+        }
         currentUrl = safeUrl
-        webView.loadUrl(safeUrl)
+        progress = 0
+        isLoading = true
         listener.onStateChanged(this)
+        webView.loadUrl(safeUrl)
     }
 
     fun reload() {
+        progress = 0
+        isLoading = true
+        listener.onStateChanged(this)
         webView.reload()
     }
 
@@ -124,7 +137,9 @@ class WebViewController(
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 progress = newProgress.coerceIn(0, 100)
-                isLoading = progress in 1..99
+                if (progress in 1..99) {
+                    isLoading = true
+                }
                 listener.onStateChanged(this@WebViewController)
             }
 
@@ -181,6 +196,7 @@ class WebViewController(
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 currentUrl = BrowserUrlSanitizer.normalize(url) ?: url
+                progress = 0
                 isLoading = true
                 listener.onStateChanged(this@WebViewController)
             }
@@ -191,6 +207,33 @@ class WebViewController(
                 progress = 100
                 view?.evaluateJavascript(COSMETIC_AD_BLOCK_SCRIPT, null)
                 CookieManager.getInstance().flush()
+                listener.onStateChanged(this@WebViewController)
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                if (request?.isForMainFrame == true) {
+                    currentUrl = BrowserUrlSanitizer.normalize(request.url?.toString())
+                        ?: request.url?.toString()
+                    isLoading = false
+                    progress = 100
+                    listener.onStateChanged(this@WebViewController)
+                }
+            }
+
+            @Suppress("DEPRECATION")
+            override fun onReceivedError(
+                view: WebView?,
+                errorCode: Int,
+                description: String?,
+                failingUrl: String?
+            ) {
+                currentUrl = BrowserUrlSanitizer.normalize(failingUrl) ?: failingUrl
+                isLoading = false
+                progress = 100
                 listener.onStateChanged(this@WebViewController)
             }
 

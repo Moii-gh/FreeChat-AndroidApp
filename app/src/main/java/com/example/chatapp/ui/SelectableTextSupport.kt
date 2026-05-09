@@ -1,27 +1,58 @@
 package com.example.chatapp.ui
 
 import android.graphics.Color
+import android.text.Selection
+import android.text.Spannable
 import android.text.Spanned
 import android.text.style.ClickableSpan
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.widget.TextView
+import java.util.WeakHashMap
 import kotlin.math.abs
 
 internal object SelectableTextSupport {
     private val selectionHighlightColor = Color.parseColor("#668E8E93")
+    private val configuredTextViews = WeakHashMap<TextView, SelectionConfig>()
+
+    private data class SelectionConfig(
+        val linkColor: Int?,
+        val openLinksOnTap: Boolean
+    )
 
     fun configure(
         textView: TextView,
         linkColor: Int? = null,
         openLinksOnTap: Boolean = false
     ) {
+        val config = SelectionConfig(linkColor, openLinksOnTap)
+        configuredTextViews[textView] = config
         textView.setTextIsSelectable(true)
+        applyConfiguration(textView, config)
+    }
+
+    fun clearAllSelections() {
+        configuredTextViews.keys.toList().forEach { textView ->
+            val config = configuredTextViews[textView] ?: return@forEach
+            (textView.text as? Spannable)?.let(Selection::removeSelection)
+            textView.cancelLongPress()
+            textView.isPressed = false
+            textView.clearFocus()
+
+            if (textView.isTextSelectable) {
+                textView.setTextIsSelectable(false)
+                textView.setTextIsSelectable(true)
+                applyConfiguration(textView, config)
+            }
+        }
+    }
+
+    private fun applyConfiguration(textView: TextView, config: SelectionConfig) {
         textView.highlightColor = selectionHighlightColor
-        textView.linksClickable = openLinksOnTap
-        linkColor?.let(textView::setLinkTextColor)
-        textView.setOnTouchListener(SelectableTextTouchListener(openLinksOnTap))
+        textView.linksClickable = config.openLinksOnTap
+        config.linkColor?.let(textView::setLinkTextColor)
+        textView.setOnTouchListener(SelectableTextTouchListener(config.openLinksOnTap))
     }
 
     private class SelectableTextTouchListener(
