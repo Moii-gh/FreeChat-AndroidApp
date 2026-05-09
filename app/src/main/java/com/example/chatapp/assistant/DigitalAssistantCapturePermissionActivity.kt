@@ -12,11 +12,12 @@ class DigitalAssistantCapturePermissionActivity : ComponentActivity() {
     private val captureLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK && result.data != null) {
+        val captureData = result.data
+        if (result.resultCode == RESULT_OK && captureData != null) {
             DigitalAssistantScreenCaptureService.start(
                 context = this,
                 resultCode = result.resultCode,
-                data = result.data!!
+                data = captureData
             )
         } else {
             DigitalAssistantCaptureRegistry.dispatch(

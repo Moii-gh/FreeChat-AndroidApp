@@ -53,6 +53,7 @@ import com.example.chatapp.ui.FreeChatAttentionDrawable
 import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.PopupMenuHelper
 import com.example.chatapp.ui.SelectableTextSupport
+import com.example.chatapp.ui.chat.ChatModePresentation
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SafeLog
 import com.example.chatapp.viewmodel.ChatViewModel
@@ -364,13 +365,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         drawerManager.populateChats(chatViewModel.cachedChats) // Названия чатов перерисуются с нужной локалью.
 
         // Восстанавливаем подсказку поля ввода с учетом текущего режима.
-        when (chatViewModel.currentMode) {
-            "create_image" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_create_image")
-            "search" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_panel_search")
-            "shopping" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input_purchase_research")
-            "study" -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_study_training")
-            else -> binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
-        }
+        binding.etInput.hint = ChatModePresentation.inputHint(this, chatViewModel.currentMode)
     }
 
     override fun onDestroy() {
@@ -498,7 +493,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         chatViewModel.currentMode = mode
         setWelcomeActionButtonsVisible(mode == null)
 
-        if (mode == "search") {
+        if (mode == ChatMode.SEARCH) {
             loadPopularNewsQueries()
         } else {
             syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
@@ -546,11 +541,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun activateImageSuggestions() {
+        val imageMode = ChatModePresentation.imageCreationSpec(this)
         setInputContext(
-            title = LocaleHelper.getString(this, "action_create_image"),
-            iconRes = R.drawable.ic_palette,
-            hint = LocaleHelper.getString(this, "hint_create_image"),
-            mode = "create_image"
+            title = imageMode.title,
+            iconRes = imageMode.iconRes,
+            hint = imageMode.hint,
+            mode = imageMode.mode
         )
     }
 
@@ -623,7 +619,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
 
-        if (chatViewModel.currentMode == "search") {
+        if (chatViewModel.currentMode == ChatMode.SEARCH) {
             if (query.isBlank()) {
                 showPopularNewsQueries(chatViewModel.popularNewsQueries)
             } else {
@@ -632,7 +628,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
 
-        if (chatViewModel.currentMode == "create_image") {
+        if (chatViewModel.currentMode == ChatMode.CREATE_IMAGE) {
             if (query.isBlank()) {
                 showQuickSuggestions(QuickSuggestionCategory.IMAGE)
             } else {
@@ -751,7 +747,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         hideQuickSuggestions()
         chatViewModel.loadPopularNewsQueries { queries ->
             runOnUiThread {
-                if (chatViewModel.currentMode == "search" && binding.etInput.text.isNullOrBlank()) {
+                if (chatViewModel.currentMode == ChatMode.SEARCH && binding.etInput.text.isNullOrBlank()) {
                     showPopularNewsQueries(queries)
                 }
             }
@@ -760,7 +756,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun showPopularNewsQueries(queries: List<String>) {
         val visibleQueries = queries.filter { it.isNotBlank() }.take(4)
-        if (visibleQueries.isEmpty() || chatViewModel.currentMode != "search" || currentPreviewUri != null || isSending) {
+        if (visibleQueries.isEmpty() || chatViewModel.currentMode != ChatMode.SEARCH || currentPreviewUri != null || isSending) {
             hideQuickSuggestions()
             return
         }
@@ -829,12 +825,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun applyQuickSuggestion(category: QuickSuggestionCategory, suggestion: String) {
         when (category) {
             QuickSuggestionCategory.IMAGE -> {
-                if (chatViewModel.currentMode != "create_image") {
+                if (chatViewModel.currentMode != ChatMode.CREATE_IMAGE) {
+                    val imageMode = ChatModePresentation.imageCreationSpec(this)
                     setInputContext(
-                        title = LocaleHelper.getString(this, "action_create_image"),
-                        iconRes = R.drawable.ic_palette,
-                        hint = LocaleHelper.getString(this, "hint_create_image"),
-                        mode = "create_image"
+                        title = imageMode.title,
+                        iconRes = imageMode.iconRes,
+                        hint = imageMode.hint,
+                        mode = imageMode.mode
                     )
                 }
             }
@@ -1998,7 +1995,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             chatViewModel.isFirstMessage = false
         }
 
-        val isImageRequest = chatViewModel.currentMode == "create_image"
+        val isImageRequest = chatViewModel.currentMode == ChatMode.CREATE_IMAGE
         val wrapper = messageRenderer.addAssistantMessage(
             text = if (isImageRequest) "" else LocaleHelper.getString(this, "ai_thinking"),
             animate = false,
@@ -2289,7 +2286,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
         }
 
-        val isImageRequest = chatViewModel.currentMode == "create_image"
+        val isImageRequest = chatViewModel.currentMode == ChatMode.CREATE_IMAGE
         val wrapper = messageRenderer.addAssistantMessage(
             text = if (isImageRequest) "" else LocaleHelper.getString(this, "ai_thinking"),
             animate = false,
@@ -2302,7 +2299,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         retryWithCurrentProvider(
             wrapper = wrapper,
             requestId = requestId,
-            modeOverride = if (isImageRequest) "create_image" else null,
+            modeOverride = if (isImageRequest) ChatMode.CREATE_IMAGE else null,
             useModeOverride = isImageRequest
         )
     }
@@ -2401,7 +2398,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         retryWithCurrentProvider(
             wrapper = freshWrapper,
             requestId = requestId,
-            modeOverride = if (isImageRequest) "create_image" else null,
+            modeOverride = if (isImageRequest) ChatMode.CREATE_IMAGE else null,
             useModeOverride = true
         )
     }

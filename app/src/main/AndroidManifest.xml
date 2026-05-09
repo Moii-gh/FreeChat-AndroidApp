@@ -17,6 +17,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:name=".ChatApp"
         android:allowBackup="false"
@@ -42,7 +46,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter android:autoVerify="true">
+            <!-- Telegram redirect может быть кастомной схемой, поэтому здесь обычный deep link без autoVerify. -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -53,7 +58,10 @@
                     android:host="${telegramLoginRedirectHost}"
                     android:pathPrefix="${telegramLoginRedirectPath}" />
             </intent-filter>
-            <intent-filter android:autoVerify="true">
+            <!-- Хост app link подставляется Gradle и проверяется в build.gradle.kts. -->
+            <intent-filter
+                android:autoVerify="true"
+                tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />

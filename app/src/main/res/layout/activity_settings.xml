@@ -334,7 +334,7 @@
                 android:background="@drawable/bg_beta_badge"
                 android:paddingHorizontal="5dp"
                 android:paddingVertical="1dp"
-                android:text="BETA"
+                android:text="@string/label_beta"
                 android:textColor="#000000"
                 android:textSize="9sp"
                 android:textStyle="bold" />

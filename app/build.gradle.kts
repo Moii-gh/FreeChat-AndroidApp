@@ -1,3 +1,4 @@
+import org.gradle.api.GradleException
 import java.net.URI
 
 plugins {
@@ -24,6 +25,28 @@ fun String.toBuildConfigString(): String =
 
 val configuredApiBaseUrl = envVars["APP_API_BASE_URL"] ?: "https://api.example.com/api/"
 
+fun parseAbsoluteDeepLinkUri(configName: String, value: String): URI {
+    val uri = runCatching { URI(value) }.getOrElse {
+        throw GradleException("$configName must be a valid absolute URI", it)
+    }
+    if (uri.scheme.isNullOrBlank()) {
+        throw GradleException("$configName must include a scheme")
+    }
+    if (uri.host.isNullOrBlank()) {
+        throw GradleException("$configName must include a host")
+    }
+    return uri
+}
+
+fun parseAbsoluteWebUri(configName: String, value: String): URI {
+    val uri = parseAbsoluteDeepLinkUri(configName, value)
+    val scheme = uri.scheme?.lowercase().orEmpty()
+    if (scheme != "http" && scheme != "https") {
+        throw GradleException("$configName must use http or https")
+    }
+    return uri
+}
+
 fun derivePublicBaseUrl(apiBaseUrl: String): String {
     return runCatching {
         val uri = URI(apiBaseUrl)
@@ -45,6 +68,8 @@ fun derivePublicBaseUrl(apiBaseUrl: String): String {
 
 val configuredChatSharePublicBaseUrl =
     envVars["CHAT_SHARE_PUBLIC_BASE_URL"] ?: derivePublicBaseUrl(configuredApiBaseUrl)
+val configuredChatSharePublicBaseUri =
+    parseAbsoluteWebUri("CHAT_SHARE_PUBLIC_BASE_URL", configuredChatSharePublicBaseUrl)
 val configuredVkIdClientId = envVars["VKID_CLIENT_ID"] ?: ""
 val configuredVkIdScopes = envVars["VKID_SCOPES"] ?: "email"
 val vkIdManifestClientId = configuredVkIdClientId.ifBlank { "0" }
@@ -77,10 +102,10 @@ android {
             } else {
                 "https://app0-login.tg.dev/tglogin"
             }
+        val telegramLoginRedirectParsedUri =
+            parseAbsoluteDeepLinkUri("TELEGRAM_LOGIN_REDIRECT_URI", telegramLoginRedirectUri)
         val telegramLoginScopes = envVars["TELEGRAM_LOGIN_SCOPES"] ?: "profile"
-        val telegramLoginRedirectHost = runCatching {
-            URI(telegramLoginRedirectUri).host
-        }.getOrNull().orEmpty()
+        val telegramLoginRedirectHost = telegramLoginRedirectParsedUri.host.orEmpty()
 
         buildConfigField("String", "TELEGRAM_LOGIN_CLIENT_ID", telegramLoginClientId.toBuildConfigString())
         buildConfigField("String", "TELEGRAM_LOGIN_REDIRECT_URI", telegramLoginRedirectUri.toBuildConfigString())
@@ -90,19 +115,19 @@ android {
         // TODO: вернуть true только после server-side VK flow без секрета в APK.
         buildConfigField("boolean", "VKID_NATIVE_LOGIN_ENABLED", "false")
         manifestPlaceholders["telegramLoginRedirectScheme"] = runCatching {
-            URI(telegramLoginRedirectUri).scheme
-        }.getOrNull().orEmpty().ifBlank { "https" }
+            telegramLoginRedirectParsedUri.scheme
+        }.getOrNull().orEmpty()
         manifestPlaceholders["telegramLoginRedirectHost"] = telegramLoginRedirectHost.ifBlank {
             "app0-login.tg.dev"
         }
         manifestPlaceholders["telegramLoginRedirectPath"] = runCatching {
-            URI(telegramLoginRedirectUri).path
+            telegramLoginRedirectParsedUri.path
         }.getOrNull().orEmpty().ifBlank { "/tglogin" }
         manifestPlaceholders["chatShareScheme"] = runCatching {
-            URI(configuredChatSharePublicBaseUrl).scheme
+            configuredChatSharePublicBaseUri.scheme
         }.getOrNull().orEmpty().ifBlank { "https" }
         manifestPlaceholders["chatShareHost"] = runCatching {
-            URI(configuredChatSharePublicBaseUrl).host
+            configuredChatSharePublicBaseUri.host
         }.getOrNull().orEmpty().ifBlank { "example.com" }
         manifestPlaceholders["VKIDClientID"] = vkIdManifestClientId
         // TODO: если VK SDK потребует секрет клиента, перенести обмен на backend и не встраивать секрет в APK.

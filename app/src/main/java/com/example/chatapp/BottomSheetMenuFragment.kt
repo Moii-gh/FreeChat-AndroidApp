@@ -112,7 +112,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
                 R.drawable.ic_palette,
                 LocaleHelper.getString(requireContext(), "main_panel_input_create_image"),
                 "#FFFFFF",
-                "create_image"
+                ChatMode.CREATE_IMAGE
             )
             dismiss()
         }
@@ -123,7 +123,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
                 R.drawable.ic_globe_new,
                 LocaleHelper.getString(requireContext(), "main_panel_input_panel_search"),
                 "#FFFFFF",
-                "search"
+                ChatMode.SEARCH
             )
             dismiss()
         }
@@ -134,7 +134,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
                 R.drawable.ic_shopping_new,
                 LocaleHelper.getString(requireContext(), "main_panel_input_purchase_research"),
                 "#FFFFFF",
-                "shopping"
+                ChatMode.SHOPPING
             )
             dismiss()
         }
@@ -145,7 +145,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
                 R.drawable.ic_book_new,
                 LocaleHelper.getString(requireContext(), "main_panel_study_training"),
                 "#FFFFFF",
-                "study"
+                ChatMode.STUDY
             )
             dismiss()
         }

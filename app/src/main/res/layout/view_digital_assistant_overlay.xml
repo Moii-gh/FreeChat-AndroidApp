@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/assistantOverlayRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -185,7 +186,7 @@
                     android:contentDescription="@string/content_desc_add_attachment"
                     android:padding="8dp"
                     android:src="@drawable/ic_plus"
-                    android:tint="#A0A0A0" />
+                    app:tint="#A0A0A0" />
 
                 <LinearLayout
                     android:id="@+id/inputCapsule"
@@ -238,7 +239,7 @@
                                 android:contentDescription="@string/digital_assistant_close"
                                 android:padding="3dp"
                                 android:src="@drawable/ic_assistant_close"
-                                android:tint="#FFFFFFFF" />
+                                app:tint="#FFFFFFFF" />
                         </FrameLayout>
                     </FrameLayout>
 
@@ -283,7 +284,7 @@
                             android:contentDescription="@null"
                             android:padding="6dp"
                             android:src="@drawable/ic_mic"
-                            android:tint="#8E8E93" />
+                            app:tint="#8E8E93" />
 
                         <ImageButton
                             android:id="@+id/sendButton"
@@ -296,7 +297,7 @@
                             android:enabled="false"
                             android:padding="6dp"
                             android:src="@drawable/ic_send_arrow_up"
-                            android:tint="#1B1B1B" />
+                            app:tint="#1B1B1B" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -349,7 +350,7 @@
                     android:layout_height="32dp"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_camera_new"
-                    android:tint="#FFFFFF" />
+                    app:tint="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/menuCameraText"
@@ -381,7 +382,7 @@
                     android:layout_height="32dp"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_photo_new"
-                    android:tint="#FFFFFF" />
+                    app:tint="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/menuPhotoText"
@@ -413,7 +414,7 @@
                     android:layout_height="32dp"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_file_new"
-                    android:tint="#FFFFFF" />
+                    app:tint="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/menuFilesText"

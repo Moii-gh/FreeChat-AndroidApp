@@ -1,7 +1,6 @@
 package com.example.chatapp.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -64,6 +63,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val syncRepository = com.example.chatapp.SyncRepository(application)
     private val accountSettings = AccountScopedSettings(application)
     private val sessionStore = SharedPrefsAccountSessionStore(application)
+    private val summaryCacheStore = SummaryCacheStore(application)
     private val authRepository = AuthRepository(
         service = NetworkModule.createAuthApiService(com.example.chatapp.BuildConfig.APP_API_BASE_URL),
         localize = LocaleHelper.localizer(application)
@@ -580,10 +580,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Фоновая суммаризация контекста через внешний AI-сервис */
     private fun launchSummarization(authToken: String, messagesToSummarize: List<JSONObject>) {
         val hash = messagesToSummarize.hashCode().toString()
-        val context = getApplication<Application>()
-        val prefs = context.getSharedPreferences("summary_cache", Context.MODE_PRIVATE)
-        val cacheKey = "chat_${accountSettings.currentAccountKey()}_${currentChatId}_hash"
-        val cachedHash = prefs.getString(cacheKey, "")
+        val accountKey = accountSettings.currentAccountKey()
+        val cachedHash = summaryCacheStore.cachedHash(accountKey, currentChatId)
 
         if (hash != cachedHash) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -604,7 +602,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     chatContextSummary = newSummary
 
                     currentChatId?.let { repository.updateChatSummary(it, newSummary) }
-                    prefs.edit().putString(cacheKey, hash).apply()
+                    summaryCacheStore.saveHash(accountKey, currentChatId, hash)
                 }
             }
         }
@@ -870,13 +868,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun clearSummaryCache(chatId: String?) {
-        if (chatId.isNullOrBlank()) return
-        val context = getApplication<Application>()
-        val cacheKey = "chat_${accountSettings.currentAccountKey()}_${chatId}_hash"
-        context.getSharedPreferences("summary_cache", Context.MODE_PRIVATE)
-            .edit()
-            .remove(cacheKey)
-            .apply()
+        summaryCacheStore.clear(accountSettings.currentAccountKey(), chatId)
     }
 
     private fun extractImageAttachment(content: String): ImageAttachment {

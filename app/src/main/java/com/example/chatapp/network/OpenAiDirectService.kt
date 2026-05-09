@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.example.chatapp.ChatMode
 import java.io.ByteArrayOutputStream
 import okhttp3.MultipartBody
 import kotlinx.coroutines.Job
@@ -37,12 +38,12 @@ import java.util.concurrent.TimeUnit
 object OpenAiDirectService {
 
     private const val TAG = "OpenAiDirect"
-    private const val BASE_URL = "https://api.openai.com/v1/"
-    private const val MODEL = "gpt-5.4-mini"
-    private const val FILE_SEARCH_MAX_RESULTS = 20
-    private const val FILE_SEARCH_VECTOR_STORE_TTL_DAYS = 1
-    private const val FILE_SEARCH_POLL_INTERVAL_MS = 500L
-    private const val FILE_SEARCH_MAX_POLL_ATTEMPTS = 60
+    private const val BASE_URL = OpenAiDefaults.BASE_URL
+    private const val MODEL = OpenAiDefaults.CHAT_MODEL
+    private const val FILE_SEARCH_MAX_RESULTS = OpenAiDefaults.FILE_SEARCH_MAX_RESULTS
+    private const val FILE_SEARCH_VECTOR_STORE_TTL_DAYS = OpenAiDefaults.FILE_SEARCH_VECTOR_STORE_TTL_DAYS
+    private const val FILE_SEARCH_POLL_INTERVAL_MS = OpenAiDefaults.FILE_SEARCH_POLL_INTERVAL_MS
+    private const val FILE_SEARCH_MAX_POLL_ATTEMPTS = OpenAiDefaults.FILE_SEARCH_MAX_POLL_ATTEMPTS
     private const val LINK_FORMAT_INSTRUCTION =
         "When you include links in the answer, format them as Markdown [meaningful link text](URL) " +
             "or HTML <a href=\"URL\">meaningful link text</a>. Do not leave raw plain-text URLs. " +
@@ -160,7 +161,7 @@ object OpenAiDirectService {
                     return@withContext
                 }
 
-                if (fileSearchAttachments.isNotEmpty() && currentMode != "create_image") {
+                if (fileSearchAttachments.isNotEmpty() && currentMode != ChatMode.CREATE_IMAGE) {
                     val finalReply = executeResponsesFileSearchRequest(
                         apiKey = apiKey,
                         systemPrompt = systemPrompt,
@@ -189,7 +190,7 @@ object OpenAiDirectService {
                 }
 
                 val messages = buildMessagesArray(systemPrompt, messagesToKeep)
-                val finalReply = if (currentMode == "create_image") {
+                val finalReply = if (currentMode == ChatMode.CREATE_IMAGE) {
                     executeWithToolLoop(apiKey, messages, coroutineContext, callback)
                 } else {
                     executeStreamingRequest(
@@ -750,10 +751,10 @@ object OpenAiDirectService {
         currentMode: String?,
         messagesToKeep: List<JSONObject>
     ): Boolean {
-        if (currentMode == "create_image") {
+        if (currentMode == ChatMode.CREATE_IMAGE) {
             return false
         }
-        if (currentMode == "search" || currentMode == "shopping") {
+        if (ChatMode.usesFreshWebContext(currentMode)) {
             return true
         }
 
@@ -1495,10 +1496,10 @@ private fun generateImage(apiKey: String, prompt: String): String {
         parts.add(LINK_FORMAT_INSTRUCTION)
 
         val modePrompt = when (currentMode) {
-            "shopping" -> "Ты помощник по покупкам. Ищи варианты, сравнивай характеристики и отмечай реальные ограничения."
-            "study" -> "Ты учебный помощник. Объясняй пошагово, проверяй понимание и помогай закрепить материал."
-            "search" -> "Пользователь хочет найти информацию."
-            "create_image" -> "Пользователь хочет создать изображение. Используй инструмент generate_image."
+            ChatMode.SHOPPING -> "Ты помощник по покупкам. Ищи варианты, сравнивай характеристики и отмечай реальные ограничения."
+            ChatMode.STUDY -> "Ты учебный помощник. Объясняй пошагово, проверяй понимание и помогай закрепить материал."
+            ChatMode.SEARCH -> "Пользователь хочет найти информацию."
+            ChatMode.CREATE_IMAGE -> "Пользователь хочет создать изображение. Используй инструмент generate_image."
             else -> null
         }
         if (modePrompt != null) parts.add(modePrompt)

@@ -28,26 +28,32 @@ class AiProviderSettings(private val accountSettings: AccountScopedSettings) {
     constructor(context: Context) : this(AccountScopedSettings(context))
 
     fun getProvider(): AiProvider =
-        AiProvider.fromCode(accountSettings.getString("ai_provider"))
+        AiProvider.fromCode(accountSettings.getString(KEY_AI_PROVIDER))
 
     fun setProvider(provider: AiProvider) {
-        accountSettings.saveString("ai_provider", provider.code)
+        accountSettings.saveString(KEY_AI_PROVIDER, provider.code)
     }
 
     fun getOpenAiApiKey(): String =
-        accountSettings.getString("openai_api_key")
+        accountSettings.getString(KEY_OPENAI_API_KEY)
 
     fun setOpenAiApiKey(key: String) {
-        accountSettings.saveString("openai_api_key", key.trim())
+        accountSettings.saveString(KEY_OPENAI_API_KEY, key.trim())
     }
 
     fun isAdultModeEnabled(): Boolean =
-        accountSettings.getBoolean("adult_mode_enabled")
+        accountSettings.getBoolean(KEY_ADULT_MODE_ENABLED)
 
     fun setAdultModeEnabled(enabled: Boolean) {
-        accountSettings.saveBoolean("adult_mode_enabled", enabled)
+        accountSettings.saveBoolean(KEY_ADULT_MODE_ENABLED, enabled)
         if (enabled) {
             setProvider(AiProvider.VSEGPT)
         }
+    }
+
+    private companion object {
+        const val KEY_AI_PROVIDER = "ai_provider"
+        const val KEY_OPENAI_API_KEY = "openai_api_key"
+        const val KEY_ADULT_MODE_ENABLED = "adult_mode_enabled"
     }
 }

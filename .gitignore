@@ -15,8 +15,11 @@ local.properties
 backend/node_modules
 .env
 backend/.env
+backend/secrets/
 *.log
 backend-deploy.tar.gz
+backend*.tar.gz
+build_error.txt
 *.apk
 *.aab
 *.jks

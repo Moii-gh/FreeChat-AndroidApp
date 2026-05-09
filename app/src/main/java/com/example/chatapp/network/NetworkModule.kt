@@ -15,11 +15,16 @@ object NetworkModule {
 
     fun normalizedBaseUrl(baseUrl: String): String {
         val normalized = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
-        val scheme = runCatching { URI(normalized).scheme?.lowercase() }.getOrNull()
-            ?: throw IllegalStateException("APP_API_BASE_URL must be an absolute URL")
+        val uri = runCatching { URI(normalized) }.getOrNull()
+            ?: throw IllegalStateException("APP_API_BASE_URL must be a valid absolute URL")
+        val scheme = uri.scheme?.lowercase()
+            ?: throw IllegalStateException("APP_API_BASE_URL must include a URL scheme")
+        if (uri.host.isNullOrBlank()) {
+            throw IllegalStateException("APP_API_BASE_URL must include a host")
+        }
 
         if (!BuildConfig.ALLOW_HTTP_BASE_URL && scheme != "https") {
-            SafeLog.w(TAG, "Release build is configured with non-HTTPS APP_API_BASE_URL; cleartext is blocked")
+            throw IllegalStateException("Release APP_API_BASE_URL must use HTTPS")
         }
 
         return normalized
@@ -89,6 +94,7 @@ object NetworkModule {
     }
 
     private fun authorizationInterceptor(token: String): Interceptor = Interceptor { chain ->
+        // Токен добавляется только в заголовок запроса и дальше проходит через SafeLog с редактированием.
         val request = chain.request().newBuilder()
             .addHeader("Authorization", "Bearer $token")
             .build()

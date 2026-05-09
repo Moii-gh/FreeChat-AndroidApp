@@ -118,6 +118,15 @@
     <string name="auth_welcome_title">Войти или зарегистрироваться</string>
     <string name="button_about">Сведения о</string>
     <string name="button_camera">Камера</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
+    <string name="content_desc_close_camera">Закрыть камеру</string>
+    <string name="content_desc_flip_camera">Переключить камеру</string>
+    <string name="content_desc_take_photo">Сделать фото</string>
+    <string name="content_desc_open_gallery">Открыть галерею</string>
     <string name="button_cancel">Отмена</string>
     <string name="button_change_password">Сменить пароль</string>
     <string name="button_collapse">Свернуть</string>
@@ -160,6 +169,7 @@
     <string name="content_desc_more_options">Больше действий</string>
     <string name="content_desc_new_chat">Новый чат</string>
     <string name="content_desc_remove_attachment">Удалить вложение</string>
+    <string name="content_desc_scroll_to_bottom">Перейти к последнему сообщению</string>
     <string name="content_desc_send">Отправить</string>
     <string name="content_desc_telegram_bot">Открыть Telegram-бота</string>
     <string name="dialog_change_password">Смена пароля</string>

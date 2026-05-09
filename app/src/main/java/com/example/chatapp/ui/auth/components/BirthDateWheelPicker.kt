@@ -19,7 +19,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +43,7 @@ fun BirthDateWheelPicker(
     onMonthSelected: (Int) -> Unit,
     onYearSelected: (Int) -> Unit
 ) {
-    val years = remember { (1950..LocalDate.now().year).toList() }
+    val years = (MIN_BIRTH_YEAR..LocalDate.now().year).toList()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
@@ -82,9 +81,7 @@ private fun <T> PickerColumn(
     valueFormatter: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    val initialIndex = remember(selectedValue, values) {
-        values.indexOf(selectedValue).coerceAtLeast(0)
-    }
+    val initialIndex = values.indexOf(selectedValue).coerceAtLeast(0)
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
     val rowHeight = 44.dp
     val density = LocalDensity.current
@@ -156,3 +153,5 @@ private fun <T> PickerColumn(
         }
     }
 }
+
+private const val MIN_BIRTH_YEAR = 1950

@@ -118,6 +118,15 @@
     <string name="auth_welcome_title">Увійти або зареєструватися</string>
     <string name="button_about">Відомості про</string>
     <string name="button_camera">Камера</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
+    <string name="content_desc_close_camera">Закрити камеру</string>
+    <string name="content_desc_flip_camera">Перемкнути камеру</string>
+    <string name="content_desc_take_photo">Зробити фото</string>
+    <string name="content_desc_open_gallery">Відкрити галерею</string>
     <string name="button_cancel">Скасувати</string>
     <string name="button_change_password">Змінити пароль</string>
     <string name="button_collapse">Згорнути</string>
@@ -160,6 +169,7 @@
     <string name="content_desc_more_options">Більше дій</string>
     <string name="content_desc_new_chat">Новий чат</string>
     <string name="content_desc_remove_attachment">Видалити вкладення</string>
+    <string name="content_desc_scroll_to_bottom">Перейти до останнього повідомлення</string>
     <string name="content_desc_send">Надіслати</string>
     <string name="content_desc_telegram_bot">Відкрити Telegram-бота</string>
     <string name="dialog_change_password">Зміна паролю</string>
@@ -358,6 +368,7 @@
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Digital assistant</string>
+    <string name="digital_assistant_short_title">Асистент [beta]</string>
     <string name="digital_assistant_description">Shows FreeChat over other apps and lets you ask questions about the current screen.</string>
     <string name="digital_assistant_enable">Enable digital assistant</string>
     <string name="digital_assistant_permissions_explanation">FreeChat can be selected as the default Android assistant. Overlay and notification permissions are used only for fallback; screen capture is requested only after you tap Ask about screen.</string>
@@ -374,8 +385,10 @@
     <string name="digital_assistant_notification_action_open">Open assistant</string>
     <string name="digital_assistant_capture_active">Making one temporary screenshot</string>
     <string name="digital_assistant_open_freechat">Open in FreeChat</string>
+    <string name="digital_assistant_translate_screen">Перекласти екран</string>
     <string name="digital_assistant_ask_screen">Ask about screen</string>
     <string name="digital_assistant_screen_analysis">Screen analysis</string>
+    <string name="digital_assistant_translate_screen_prompt">Переклади видимий текст на екрані. Збережи зміст і коротко поясни важливий контекст інтерфейсу.</string>
     <string name="digital_assistant_default_screen_question">What is shown on the screen? Help the user understand it.</string>
     <string name="digital_assistant_capture_failed">Could not get the screen image. Check the permission.</string>
     <string name="digital_assistant_assist_screenshot_unavailable">Android does not allow FreeChat to get a screen image without system confirmation. You can open FreeChat or attach an image manually.</string>
@@ -384,4 +397,6 @@
     <string name="digital_assistant_retry">Retry</string>
     <string name="digital_assistant_close_generating_message">An answer is still being generated. Close the assistant?</string>
     <string name="digital_assistant_close">Close</string>
+    <string name="digital_assistant_how_it_works_title">Як це працює?</string>
+    <string name="digital_assistant_how_it_works_desc">Асистент дозволяє викликати FreeChat з будь-якого застосунку, утримуючи кнопку «Додому» або використовуючи жест. Він може аналізувати вміст екрана, щоб відповідати на ваші запитання.</string>
 </resources>

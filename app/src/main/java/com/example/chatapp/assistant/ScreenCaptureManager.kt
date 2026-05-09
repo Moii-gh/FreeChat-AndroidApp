@@ -39,8 +39,9 @@ class ScreenCaptureManager(private val context: Context) {
         }
 
         val metrics = displayMetrics()
-        handlerThread = HandlerThread("FreeChatScreenCapture").also { it.start() }
-        val handler = Handler(handlerThread!!.looper)
+        val captureThread = HandlerThread("FreeChatScreenCapture").also { it.start() }
+        handlerThread = captureThread
+        val handler = Handler(captureThread.looper)
         val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         projection = projectionManager.getMediaProjection(resultCode, data)
         val reader = ImageReader.newInstance(

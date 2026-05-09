@@ -1,6 +1,7 @@
 package com.example.chatapp.network
 
 import com.example.chatapp.BuildConfig
+import com.example.chatapp.ChatMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,9 +38,9 @@ object AiApiService {
         adultMode: Boolean = false
     ): String? {
         val baseSystemPrompt = when (currentMode) {
-            "search" -> "Пользователь включил поиск в сети. Используй online search-возможности выбранной модели, отвечай по актуальной информации и добавляй раздел \"Источники\" со ссылками."
-            "shopping" -> "Ты помощник по покупкам. Используй online search-возможности выбранной модели, ищи актуальные варианты, сравнивай характеристики, отмечай реальные ограничения и добавляй раздел \"Источники\" со ссылками."
-            "study" -> "Ты учебный помощник. Объясняй пошагово, проверяй понимание и помогай закрепить материал."
+            ChatMode.SEARCH -> "Пользователь включил поиск в сети. Используй online search-возможности выбранной модели, отвечай по актуальной информации и добавляй раздел \"Источники\" со ссылками."
+            ChatMode.SHOPPING -> "Ты помощник по покупкам. Используй online search-возможности выбранной модели, ищи актуальные варианты, сравнивай характеристики, отмечай реальные ограничения и добавляй раздел \"Источники\" со ссылками."
+            ChatMode.STUDY -> "Ты учебный помощник. Объясняй пошагово, проверяй понимание и помогай закрепить материал."
             else -> null
         }
 
@@ -179,8 +180,8 @@ object AiApiService {
 
             try {
                 val coroutineContext = currentCoroutineContext()
-                val isImageGeneration = currentMode == "create_image"
-                if (currentMode == "search" || currentMode == "shopping") {
+                val isImageGeneration = currentMode == ChatMode.CREATE_IMAGE
+                if (ChatMode.usesFreshWebContext(currentMode)) {
                     withContext(Dispatchers.Main) {
                         callback.onChunk("Поиск в сети...")
                     }

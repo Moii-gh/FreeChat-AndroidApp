@@ -243,7 +243,8 @@ class WebViewController(
                 threatType: Int,
                 callback: SafeBrowsingResponse?
             ) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Safe Browsing появился в WebView на O_MR1; на старых API просто сообщаем UI о блокировке.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                     callback?.backToSafety(true)
                 }
                 listener.onBlockedUrl(request?.url?.toString())

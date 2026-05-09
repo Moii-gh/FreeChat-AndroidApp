@@ -118,6 +118,11 @@
     <string name="auth_welcome_title">Sign in or sign up</string>
     <string name="button_about">About</string>
     <string name="button_camera">Camera</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
     <string name="content_desc_close_camera">Close camera</string>
     <string name="content_desc_flip_camera">Flip camera</string>
     <string name="content_desc_take_photo">Take photo</string>

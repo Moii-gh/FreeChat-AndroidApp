@@ -2,6 +2,7 @@ package com.example.chatapp.ui
 
 import android.animation.ValueAnimator
 import android.graphics.*
+import android.graphics.text.LineBreaker
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -540,8 +541,9 @@ class AssistantMessageWrapper(
         imageContainer = null
         currentImageUrl = null
 
-        val textView = if (streamingTextView?.parent == contentArea) {
-            streamingTextView!!
+        val existingStreamingText = streamingTextView
+        val textView = if (existingStreamingText?.parent == contentArea) {
+            existingStreamingText
         } else {
             contentArea.removeAllViews()
             TextView(context).apply {
@@ -805,10 +807,8 @@ class AssistantMessageWrapper(
         )
         setLinkTextColor(LINK_COLOR)
         setHorizontallyScrolling(false)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            breakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY
-            hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL
-        }
+        breakStrategy = LineBreaker.BREAK_STRATEGY_HIGH_QUALITY
+        hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL
     }
 
     private fun renderMarkdownWithAutoLinks(textView: TextView, markdown: String) {

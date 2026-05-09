@@ -76,8 +76,8 @@ class SyncRepository(context: Context) {
             val request = SyncPayload(chatsPayload, messagesPayload)
             val response = syncApi.syncData(request)
 
-            if (response.isSuccessful && response.body() != null) {
-                val remoteData = response.body()!!
+            val remoteData = response.body()
+            if (response.isSuccessful && remoteData != null) {
 
                 db.withTransaction {
                     // Сохраняем серверные чаты в локальную БД.

@@ -118,6 +118,15 @@
     <string name="auth_welcome_title">შესვლა ან რეგისტრაცია</string>
     <string name="button_about">ინფორმაცია იმის შესახებ</string>
     <string name="button_camera">კამერა</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
+    <string name="content_desc_close_camera">კამერის დახურვა</string>
+    <string name="content_desc_flip_camera">კამერის შეცვლა</string>
+    <string name="content_desc_take_photo">ფოტოს გადაღება</string>
+    <string name="content_desc_open_gallery">გალერეის გახსნა</string>
     <string name="button_cancel">გაუქმება</string>
     <string name="button_change_password">პაროლის შეცვლა</string>
     <string name="button_collapse">ჩაკეცვა</string>
@@ -160,6 +169,7 @@
     <string name="content_desc_more_options">მეტი მოქმედება</string>
     <string name="content_desc_new_chat">ახალი ჩატი</string>
     <string name="content_desc_remove_attachment">დანართის წაშლა</string>
+    <string name="content_desc_scroll_to_bottom">ბოლო შეტყობინებაზე გადასვლა</string>
     <string name="content_desc_send">გაგზავნა</string>
     <string name="content_desc_telegram_bot">Telegram ბოტის გახსნა</string>
     <string name="dialog_change_password">პაროლის შეცვლა</string>
@@ -358,6 +368,7 @@
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Digital assistant</string>
+    <string name="digital_assistant_short_title">ასისტენტი [beta]</string>
     <string name="digital_assistant_description">Shows FreeChat over other apps and lets you ask questions about the current screen.</string>
     <string name="digital_assistant_enable">Enable digital assistant</string>
     <string name="digital_assistant_permissions_explanation">FreeChat can be selected as the default Android assistant. Overlay and notification permissions are used only for fallback; screen capture is requested only after you tap Ask about screen.</string>
@@ -374,8 +385,10 @@
     <string name="digital_assistant_notification_action_open">Open assistant</string>
     <string name="digital_assistant_capture_active">Making one temporary screenshot</string>
     <string name="digital_assistant_open_freechat">Open in FreeChat</string>
+    <string name="digital_assistant_translate_screen">ეკრანის თარგმნა</string>
     <string name="digital_assistant_ask_screen">Ask about screen</string>
     <string name="digital_assistant_screen_analysis">Screen analysis</string>
+    <string name="digital_assistant_translate_screen_prompt">თარგმნე ეკრანზე ხილული ტექსტი. შეინარჩუნე მნიშვნელობა და მოკლედ ახსენი ინტერფეისის მნიშვნელოვანი კონტექსტი.</string>
     <string name="digital_assistant_default_screen_question">What is shown on the screen? Help the user understand it.</string>
     <string name="digital_assistant_capture_failed">Could not get the screen image. Check the permission.</string>
     <string name="digital_assistant_assist_screenshot_unavailable">Android does not allow FreeChat to get a screen image without system confirmation. You can open FreeChat or attach an image manually.</string>
@@ -384,4 +397,6 @@
     <string name="digital_assistant_retry">Retry</string>
     <string name="digital_assistant_close_generating_message">An answer is still being generated. Close the assistant?</string>
     <string name="digital_assistant_close">Close</string>
+    <string name="digital_assistant_how_it_works_title">როგორ მუშაობს?</string>
+    <string name="digital_assistant_how_it_works_desc">ასისტენტი გაძლევთ საშუალებას გამოიძახოთ FreeChat ნებისმიერი აპიდან Home ღილაკის დაჭერით ან ჟესტით. მას შეუძლია ეკრანის შიგთავსის ანალიზი და თქვენს კითხვებზე პასუხი.</string>
 </resources>
