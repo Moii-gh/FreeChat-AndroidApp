@@ -1,6 +1,10 @@
 package com.example.chatapp.browser
 
 import android.animation.ValueAnimator
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.Color
@@ -13,6 +17,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import android.view.animation.PathInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -51,6 +56,9 @@ class InAppBrowserManager(
     private var browserCloseButton: ImageButton? = null
     private var browserRefreshButton: ImageButton? = null
     private var bottomFullscreenGestureView: View? = null
+    private var pageSplashOverlay: FrameLayout? = null
+    private var pageSplashAnimator: Animator? = null
+    private var pageSplashToken = 0
     private var isBrowserVisible = false
     private var isBrowserOpening = false
     private var isBrowserClosing = false
@@ -91,6 +99,7 @@ class InAppBrowserManager(
             root?.bringToFront()
             refreshToolbar()
         }
+        showPageLoadingSplash()
         controller?.load(url)
     }
 
@@ -433,6 +442,13 @@ class InAppBrowserManager(
         browserRefreshButton?.animate()?.cancel()
         browserCloseButton?.animate()?.cancel()
         panel?.setLayerType(View.LAYER_TYPE_NONE, null)
+        pageSplashToken += 1
+        pageSplashAnimator?.cancel()
+        pageSplashAnimator = null
+        pageSplashOverlay?.let { overlay ->
+            (overlay.parent as? ViewGroup)?.removeView(overlay)
+        }
+        pageSplashOverlay = null
         controller?.destroy()
         controller = null
         webContainer?.removeAllViews()
@@ -497,6 +513,101 @@ class InAppBrowserManager(
             ?.setDuration(BROWSER_REFRESH_SPIN_DURATION_MS)
             ?.setInterpolator(openInterpolator)
             ?.start()
+    }
+
+    private fun showPageLoadingSplash() {
+        val container = webContainer ?: return
+        pageSplashToken += 1
+        val token = pageSplashToken
+
+        pageSplashAnimator?.cancel()
+        pageSplashOverlay?.let { existing ->
+            (existing.parent as? ViewGroup)?.removeView(existing)
+        }
+
+        val overlay = FrameLayout(activity).apply {
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(
+                    Color.BLACK,
+                    Color.parseColor("#050506"),
+                    Color.BLACK
+                )
+            )
+            alpha = 1f
+            isClickable = true
+            isFocusable = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+
+        val logo = ImageView(activity).apply {
+            setImageResource(R.drawable.logo)
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            alpha = 0f
+            scaleX = 0.92f
+            scaleY = 0.92f
+            rotation = 0f
+        }
+
+        val logoSize = BROWSER_SPLASH_LOGO_SIZE_DP.dp()
+        overlay.addView(logo, FrameLayout.LayoutParams(logoSize, logoSize, Gravity.CENTER))
+        container.addView(
+            overlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+        pageSplashOverlay = overlay
+
+        val fadeIn = AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(logo, View.ALPHA, 0f, BROWSER_SPLASH_LOGO_ALPHA),
+                ObjectAnimator.ofFloat(logo, View.SCALE_X, 0.92f, 1f),
+                ObjectAnimator.ofFloat(logo, View.SCALE_Y, 0.92f, 1f)
+            )
+            duration = BROWSER_SPLASH_FADE_IN_MS
+            interpolator = openInterpolator
+        }
+        val fadeOut = AnimatorSet().apply {
+            startDelay = BROWSER_SPLASH_HOLD_MS
+            playTogether(
+                ObjectAnimator.ofFloat(overlay, View.ALPHA, 1f, 0f),
+                ObjectAnimator.ofFloat(logo, View.ALPHA, BROWSER_SPLASH_LOGO_ALPHA, 0f),
+                ObjectAnimator.ofFloat(logo, View.SCALE_X, 1f, 1.04f),
+                ObjectAnimator.ofFloat(logo, View.SCALE_Y, 1f, 1.04f)
+            )
+            duration = BROWSER_SPLASH_FADE_OUT_MS
+            interpolator = openInterpolator
+        }
+        val rotation = ObjectAnimator.ofFloat(logo, View.ROTATION, 0f, BROWSER_SPLASH_ROTATION_DEGREES).apply {
+            duration = BROWSER_SPLASH_TOTAL_MS
+            interpolator = LinearInterpolator()
+        }
+        val fadeSequence = AnimatorSet().apply {
+            playSequentially(fadeIn, fadeOut)
+        }
+
+        pageSplashAnimator = AnimatorSet().apply {
+            playTogether(fadeSequence, rotation)
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (token != pageSplashToken || pageSplashOverlay !== overlay) return
+                    (overlay.parent as? ViewGroup)?.removeView(overlay)
+                    pageSplashOverlay = null
+                    pageSplashAnimator = null
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    if (pageSplashOverlay === overlay) {
+                        (overlay.parent as? ViewGroup)?.removeView(overlay)
+                        pageSplashOverlay = null
+                    }
+                }
+            })
+            start()
+        }
     }
 
     private fun showBrowserControls(immediate: Boolean, startDelay: Long = 0L) {
@@ -855,6 +966,13 @@ class InAppBrowserManager(
         const val BROWSER_SETTLE_DURATION_MS = 180L
         const val BROWSER_CONTROL_FADE_DURATION_MS = 180L
         const val BROWSER_REFRESH_SPIN_DURATION_MS = 260L
+        const val BROWSER_SPLASH_FADE_IN_MS = 280L
+        const val BROWSER_SPLASH_HOLD_MS = 980L
+        const val BROWSER_SPLASH_FADE_OUT_MS = 420L
+        const val BROWSER_SPLASH_TOTAL_MS = BROWSER_SPLASH_FADE_IN_MS + BROWSER_SPLASH_HOLD_MS + BROWSER_SPLASH_FADE_OUT_MS
+        const val BROWSER_SPLASH_LOGO_ALPHA = 0.36f
+        const val BROWSER_SPLASH_LOGO_SIZE_DP = 92
+        const val BROWSER_SPLASH_ROTATION_DEGREES = 14f
         const val BROWSER_CONTROL_ALPHA = 0.92f
         const val BROWSER_CONTROL_SIZE_DP = 40
         const val BROWSER_CONTROL_GAP_DP = 8
