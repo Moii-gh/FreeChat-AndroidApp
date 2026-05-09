@@ -3,5 +3,4 @@
     <item name="user_message_history_index" type="id" />
     <item name="code_text_view" type="id" />
     <item name="table_raw_content" type="id" />
-    <item name="browser_minimized_title" type="id" />
 </resources>

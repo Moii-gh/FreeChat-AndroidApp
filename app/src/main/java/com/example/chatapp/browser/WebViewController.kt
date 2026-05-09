@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.SafeBrowsingResponse
@@ -51,36 +50,6 @@ class WebViewController(
         listener.onStateChanged(this)
     }
 
-    fun restore(state: Bundle): Boolean {
-        val restored = webView.restoreState(state) != null
-        currentUrl = state.getString(KEY_URL, currentUrl)
-        title = state.getString(KEY_TITLE, title)
-        progress = state.getInt(KEY_PROGRESS, progress)
-        isLoading = state.getBoolean(KEY_LOADING, false)
-        listener.onStateChanged(this)
-        return restored
-    }
-
-    fun saveState(outState: Bundle) {
-        webView.saveState(outState)
-        outState.putString(KEY_URL, currentUrl)
-        outState.putString(KEY_TITLE, title)
-        outState.putInt(KEY_PROGRESS, progress)
-        outState.putBoolean(KEY_LOADING, isLoading)
-    }
-
-    fun canGoBack(): Boolean = webView.canGoBack()
-
-    fun canGoForward(): Boolean = webView.canGoForward()
-
-    fun goBack() {
-        if (webView.canGoBack()) webView.goBack()
-    }
-
-    fun goForward() {
-        if (webView.canGoForward()) webView.goForward()
-    }
-
     fun reload() {
         webView.reload()
     }
@@ -98,16 +67,22 @@ class WebViewController(
 
     fun destroy() {
         runCatching {
+            webView.webChromeClient = null
+            webView.webViewClient = WebViewClient()
+            webView.onPause()
+            webView.pauseTimers()
             (webView.parent as? ViewGroup)?.removeView(webView)
             webView.stopLoading()
             webView.loadUrl("about:blank")
             webView.clearHistory()
             webView.removeAllViews()
+            CookieManager.getInstance().flush()
             webView.destroy()
         }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
+    @Suppress("DEPRECATION")
     private fun configureWebView() {
         WebView.setWebContentsDebuggingEnabled(false)
         webView.layoutParams = ViewGroup.LayoutParams(
@@ -117,7 +92,6 @@ class WebViewController(
         webView.overScrollMode = WebView.OVER_SCROLL_IF_CONTENT_SCROLLS
         webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
-        // ── Cookie management ──
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(webView, true)
@@ -221,7 +195,7 @@ class WebViewController(
                     return emptyResponse("text/plain")
                 }
 
-                return if (request?.isForMainFrame == false && AdBlocker.shouldBlock(uri)) {
+                return if (request.isForMainFrame == false && AdBlocker.shouldBlock(uri)) {
                     emptyResponse(detectMimeType(uri))
                 } else {
                     null
@@ -304,10 +278,6 @@ class WebViewController(
     }
 
     private companion object {
-        const val KEY_URL = "in_app_browser_url"
-        const val KEY_TITLE = "in_app_browser_title"
-        const val KEY_PROGRESS = "in_app_browser_progress"
-        const val KEY_LOADING = "in_app_browser_loading"
         val COSMETIC_AD_BLOCK_SCRIPT = """
             (function() {
               var selectors = [

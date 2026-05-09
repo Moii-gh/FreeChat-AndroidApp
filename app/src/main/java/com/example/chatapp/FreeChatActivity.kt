@@ -63,9 +63,12 @@ import com.example.chatapp.ads.RewardedAdManager
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
+import androidx.activity.OnBackPressedCallback
 
 import com.example.chatapp.viewmodel.AccountSecuritySettingsStore
 import com.example.chatapp.ui.TypingDotsView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
@@ -142,7 +145,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var streamFlushRunnable: Runnable? = null
     private var pendingAutoScrollRunnable: Runnable? = null
     private var scrollToBottomController: ChatScrollToBottomController? = null
-    private var browserRestoreState: Bundle? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -190,7 +192,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        browserRestoreState = savedInstanceState
         if (!SharedPrefsAccountSessionStore(applicationContext).isSignedIn()) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
@@ -198,6 +199,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupBackNavigation()
         securitySettingsStore = AccountSecuritySettingsStore(applicationContext)
         val shouldSkipBiometricOnce = intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE, false) == true
         val shouldGateWithBiometrics = securitySettingsStore.isBiometricEnabled() && !shouldSkipBiometricOnce
@@ -258,26 +260,25 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         super.onPause()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        if (::inAppBrowserManager.isInitialized) {
-            inAppBrowserManager.onSaveInstanceState(outState)
-        }
-        super.onSaveInstanceState(outState)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (::inAppBrowserManager.isInitialized && inAppBrowserManager.onBackPressed()) {
-            return
-        }
-        super.onBackPressed()
-    }
-
     override fun onUserInteraction() {
         super.onUserInteraction()
         if (!isChatUiInitialized) return
         freeChatAttentionDrawable?.cancelAttention()
         scheduleFreeChatAttentionAfterIdle()
+    }
+
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (::inAppBrowserManager.isInitialized && inAppBrowserManager.onBackPressed()) {
+                    return
+                }
+
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
+            }
+        })
     }
 
     private fun initializeChatUi(startIntent: Intent?) {
@@ -1102,10 +1103,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun setupHelpers() {
         inAppBrowserManager = InAppBrowserManager(
             activity = this,
-            host = findViewById(android.R.id.content),
-            savedState = browserRestoreState
+            host = findViewById(android.R.id.content)
         )
-        browserRestoreState = null
 
         popupMenuHelper = PopupMenuHelper(
             activity = this,
@@ -1254,11 +1253,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         )
 
         binding.drawerLayout.addDrawerListener(object : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
-            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
-                if (::inAppBrowserManager.isInitialized && inAppBrowserManager.isMinimized) {
-                    inAppBrowserManager.setMinimizedCardAlpha(1f - slideOffset)
-                }
-            }
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) = Unit
             override fun onDrawerOpened(drawerView: View) {
                 val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                 imm.hideSoftInputFromWindow(binding.etInput.windowToken, 0)
@@ -1434,9 +1429,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupInputArea() {
-        binding.root.setOnApplyWindowInsetsListener { _, insets ->
-            navigationBarInsetBottom = insets.systemWindowInsetBottom
-            systemWindowInsetTop = insets.systemWindowInsetTop
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            navigationBarInsetBottom = systemBars.bottom
+            systemWindowInsetTop = systemBars.top
             updateBottomInputSystemInset()
             updateTopInputSystemInset()
             updateFloatingInputPadding()
