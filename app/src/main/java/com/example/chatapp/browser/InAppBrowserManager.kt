@@ -33,6 +33,12 @@ import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.yandex.mobile.ads.banner.BannerAdEventListener
+import com.yandex.mobile.ads.banner.BannerAdSize
+import com.yandex.mobile.ads.banner.BannerAdView
+import com.yandex.mobile.ads.common.AdRequest
+import com.yandex.mobile.ads.common.AdRequestError
+import com.yandex.mobile.ads.common.ImpressionData
 
 class InAppBrowserManager(
     private val activity: Activity,
@@ -59,6 +65,7 @@ class InAppBrowserManager(
     private var bottomFullscreenGestureView: View? = null
     private var pageSplashOverlay: FrameLayout? = null
     private var pageSplashLogo: ImageView? = null
+    private var pageSplashAdView: BannerAdView? = null
     private var pageSplashAnimator: Animator? = null
     private var pageSplashToken = 0
     private var isBrowserVisible = false
@@ -452,6 +459,7 @@ class InAppBrowserManager(
         pageSplashToken += 1
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        destroyPageSplashAd()
         pageSplashOverlay?.let { overlay ->
             (overlay.parent as? ViewGroup)?.removeView(overlay)
         }
@@ -530,6 +538,7 @@ class InAppBrowserManager(
 
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        destroyPageSplashAd()
         pageSplashOverlay?.let { existing ->
             (existing.parent as? ViewGroup)?.removeView(existing)
         }
@@ -561,8 +570,31 @@ class InAppBrowserManager(
             rotation = 0f
         }
 
+        val content = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
         val logoSize = BROWSER_SPLASH_LOGO_SIZE_DP.dp()
-        overlay.addView(logo, FrameLayout.LayoutParams(logoSize, logoSize, Gravity.CENTER))
+        content.addView(logo, LinearLayout.LayoutParams(logoSize, logoSize))
+
+        val adView = createPageSplashAdView(token)
+        val adSize = adView.adSize
+        val adWidth = adSize?.getWidthInPixels(activity)
+            ?: BROWSER_SPLASH_BANNER_FALLBACK_WIDTH_DP.dp()
+        val adHeight = adSize?.getHeightInPixels(activity)
+            ?: BROWSER_SPLASH_BANNER_FALLBACK_HEIGHT_DP.dp()
+        content.addView(
+            adView,
+            LinearLayout.LayoutParams(adWidth, adHeight).apply {
+                topMargin = BROWSER_SPLASH_BANNER_TOP_MARGIN_DP.dp()
+            }
+        )
+
+        overlay.addView(content, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER
+        ))
         container.addView(
             overlay,
             FrameLayout.LayoutParams(
@@ -572,6 +604,7 @@ class InAppBrowserManager(
         )
         pageSplashOverlay = overlay
         pageSplashLogo = logo
+        pageSplashAdView = adView
 
         val fadeIn = AnimatorSet().apply {
             playTogether(
@@ -607,6 +640,42 @@ class InAppBrowserManager(
         }
     }
 
+    private fun createPageSplashAdView(token: Int): BannerAdView {
+        val widthDp = ((activity.resources.displayMetrics.widthPixels / activity.resources.displayMetrics.density).toInt() -
+            BROWSER_SPLASH_BANNER_HORIZONTAL_MARGIN_DP * 2)
+            .coerceIn(BROWSER_SPLASH_BANNER_MIN_WIDTH_DP, BROWSER_SPLASH_BANNER_MAX_WIDTH_DP)
+        val adSize = BannerAdSize.stickySize(activity, widthDp)
+
+        return BannerAdView(activity).apply {
+            alpha = 0f
+            setAdUnitId(BROWSER_SPLASH_BANNER_AD_UNIT_ID)
+            setAdSize(adSize)
+            setBannerAdEventListener(object : BannerAdEventListener {
+                override fun onAdLoaded() {
+                    if (token == pageSplashToken && pageSplashAdView === this@apply) {
+                        animate()
+                            .alpha(1f)
+                            .setDuration(BROWSER_SPLASH_BANNER_FADE_IN_MS)
+                            .setInterpolator(openInterpolator)
+                            .start()
+                    }
+                }
+
+                override fun onAdFailedToLoad(error: AdRequestError) {
+                    if (pageSplashAdView === this@apply) {
+                        isVisible = false
+                    }
+                }
+
+                override fun onAdClicked() = Unit
+                override fun onLeftApplication() = Unit
+                override fun onReturnedToApplication() = Unit
+                override fun onImpression(impressionData: ImpressionData?) = Unit
+            })
+            loadAd(AdRequest.Builder().build())
+        }
+    }
+
     private fun hidePageLoadingSplash() {
         val overlay = pageSplashOverlay ?: return
         val logo = pageSplashLogo
@@ -634,6 +703,7 @@ class InAppBrowserManager(
                 override fun onAnimationEnd(animation: Animator) {
                     if (token != pageSplashToken || pageSplashOverlay !== overlay) return
                     (overlay.parent as? ViewGroup)?.removeView(overlay)
+                    destroyPageSplashAd()
                     pageSplashOverlay = null
                     pageSplashLogo = null
                     pageSplashAnimator = null
@@ -647,6 +717,13 @@ class InAppBrowserManager(
             })
             start()
         }
+    }
+
+    private fun destroyPageSplashAd() {
+        pageSplashAdView?.animate()?.cancel()
+        pageSplashAdView?.setBannerAdEventListener(null)
+        pageSplashAdView?.destroy()
+        pageSplashAdView = null
     }
 
     private fun showBrowserControls(immediate: Boolean, startDelay: Long = 0L) {
@@ -1008,6 +1085,14 @@ class InAppBrowserManager(
         const val BROWSER_SPLASH_FADE_IN_MS = 280L
         const val BROWSER_SPLASH_FADE_OUT_MS = 420L
         const val BROWSER_SPLASH_ROTATION_DURATION_MS = 42_000L
+        const val BROWSER_SPLASH_BANNER_FADE_IN_MS = 180L
+        const val BROWSER_SPLASH_BANNER_AD_UNIT_ID = "R-M-19145287-1"
+        const val BROWSER_SPLASH_BANNER_HORIZONTAL_MARGIN_DP = 24
+        const val BROWSER_SPLASH_BANNER_TOP_MARGIN_DP = 18
+        const val BROWSER_SPLASH_BANNER_MIN_WIDTH_DP = 280
+        const val BROWSER_SPLASH_BANNER_MAX_WIDTH_DP = 336
+        const val BROWSER_SPLASH_BANNER_FALLBACK_WIDTH_DP = 320
+        const val BROWSER_SPLASH_BANNER_FALLBACK_HEIGHT_DP = 50
         const val BROWSER_SPLASH_LOGO_ALPHA = 0.36f
         const val BROWSER_SPLASH_LOGO_SIZE_DP = 92
         const val BROWSER_CONTROL_ALPHA = 0.92f
