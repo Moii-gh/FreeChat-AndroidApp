@@ -185,7 +185,7 @@ class PopupMenuHelper(
     fun showCurrentChatOptionsMenu(anchorView: View, chat: ChatEntity) {
         val popupView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_bg)
+            background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_translucent_bg)
             elevation = 24f
             setPadding(8.dpToPx(), 10.dpToPx(), 8.dpToPx(), 10.dpToPx())
         }

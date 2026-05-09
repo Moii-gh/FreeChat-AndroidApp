@@ -10,6 +10,20 @@ import org.junit.Test
 class AiApiServiceTest {
 
     @Test
+    fun `system prompt asks for meaningful markdown or html links`() {
+        val prompt = requireNotNull(AiApiService.buildSystemPrompt(
+            currentMode = null,
+            customInstructions = "",
+            chatContextSummary = "",
+            filesContext = ""
+        ))
+
+        assertTrue(prompt.contains("[meaningful link text](URL)"))
+        assertTrue(prompt.contains("<a href=\"URL\">meaningful link text</a>"))
+        assertTrue(prompt.contains("Do not leave raw plain-text URLs"))
+    }
+
+    @Test
     fun `request includes image data url`() {
         val message = JSONObject().apply {
             put("role", "user")

@@ -43,6 +43,10 @@ object OpenAiDirectService {
     private const val FILE_SEARCH_VECTOR_STORE_TTL_DAYS = 1
     private const val FILE_SEARCH_POLL_INTERVAL_MS = 500L
     private const val FILE_SEARCH_MAX_POLL_ATTEMPTS = 60
+    private const val LINK_FORMAT_INSTRUCTION =
+        "When you include links in the answer, format them as Markdown [meaningful link text](URL) " +
+            "or HTML <a href=\"URL\">meaningful link text</a>. Do not leave raw plain-text URLs. " +
+            "The link text must describe the target, not repeat the URL."
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
@@ -1487,6 +1491,8 @@ private fun generateImage(apiKey: String, prompt: String): String {
             "Ты — умный AI-ассистент. Отвечай на языке пользователя. " +
             "Для генерации и редактирования изображений используй доступные image tools, когда это уместно."
         )
+
+        parts.add(LINK_FORMAT_INSTRUCTION)
 
         val modePrompt = when (currentMode) {
             "shopping" -> "Ты помощник по покупкам. Ищи варианты, сравнивай характеристики и отмечай реальные ограничения."

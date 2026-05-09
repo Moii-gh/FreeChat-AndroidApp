@@ -24,6 +24,10 @@ object AiApiService {
     }
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+    private const val LINK_FORMAT_INSTRUCTION =
+        "When you include links in the answer, format them as Markdown [meaningful link text](URL) " +
+            "or HTML <a href=\"URL\">meaningful link text</a>. Do not leave raw plain-text URLs. " +
+            "The link text must describe the target, not repeat the URL."
 
     fun buildSystemPrompt(
         currentMode: String?,
@@ -41,6 +45,7 @@ object AiApiService {
 
         val parts = mutableListOf<String>()
         if (baseSystemPrompt != null) parts.add(baseSystemPrompt)
+        parts.add(LINK_FORMAT_INSTRUCTION)
         if (adultMode) {
             parts.add(
                 "18+ style mode is enabled. Reply in a direct adult conversational tone. " +

@@ -294,10 +294,7 @@ class AssistantMessageWrapper(
             return ParsedReply(reply, emptyList())
         }
 
-        val content = lines.take(headerIndex)
-            .joinToString("\n")
-            .trimEnd()
-        return ParsedReply(content, sources)
+        return ParsedReply(reply, sources)
     }
 
     private fun parseSourceLine(line: String): SourceLink? {
