@@ -3,7 +3,6 @@ package com.example.chatapp
 import android.animation.AnimatorSet
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.Context
@@ -12,7 +11,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
@@ -28,12 +26,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
@@ -53,7 +47,11 @@ import com.example.chatapp.ui.FreeChatAttentionDrawable
 import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.PopupMenuHelper
 import com.example.chatapp.ui.SelectableTextSupport
+import com.example.chatapp.ui.chat.BiometricGateController
+import com.example.chatapp.ui.chat.ChatAttachmentPreviewController
 import com.example.chatapp.ui.chat.ChatModePresentation
+import com.example.chatapp.ui.chat.StreamingUiController
+import com.example.chatapp.ui.chat.WelcomePromptController
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SafeLog
 import com.example.chatapp.viewmodel.ChatViewModel
@@ -68,7 +66,6 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import androidx.activity.OnBackPressedCallback
 
-import com.example.chatapp.viewmodel.AccountSecuritySettingsStore
 import com.example.chatapp.ui.TypingDotsView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -87,13 +84,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val SUGGESTIONS_SHOW_DURATION_MS = 180L
         const val SUGGESTIONS_HIDE_DURATION_MS = 120L
         const val TOP_ACTIONS_SPLIT_DURATION_MS = 260L
-        const val WELCOME_PROMPT_ROTATION_MS = 5_000L
-        const val WELCOME_PROMPT_ANIMATION_MS = 260L
-        const val WELCOME_PROMPT_TYPE_STEP_MS = 26L
-        const val WELCOME_PROMPT_CURSOR_BLINK_MS = 460L
-        const val WELCOME_PROMPT_CURSOR = "|"
         const val FREE_CHAT_ATTENTION_IDLE_DELAY_MS = 30_000L
-        const val STREAM_UI_FLUSH_INTERVAL_MS = 50L
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -104,11 +95,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var messageRenderer: ChatMessageRenderer
     private lateinit var inAppBrowserManager: InAppBrowserManager
     private lateinit var speechRecognizerManager: SpeechRecognizerManager
+    private lateinit var welcomePromptController: WelcomePromptController
+    private lateinit var streamingUiController: StreamingUiController
+    private lateinit var biometricGateController: BiometricGateController
+    private lateinit var attachmentPreviewController: ChatAttachmentPreviewController
     private val attachmentHelper by lazy { ChatAttachmentHelper(this) }
 
-    private var currentPreviewUri: Uri? = null
-    private var retainedEditingAttachment: AttachmentPayload? = null
-    private var assistantHandoffAttachmentPath: String? = null
     private var currentAssistantMessage: AssistantMessageWrapper? = null
     private var isSending = false
     private var activeSuggestionCategory: QuickSuggestionCategory? = null
@@ -116,21 +108,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var handledShareToken: String? = null
     private var adManager: RewardedAdManager? = null
     private var topActionsAnimator: AnimatorSet? = null
-    private val welcomePromptHandler = Handler(Looper.getMainLooper())
-    private var welcomePromptAnimator: AnimatorSet? = null
-    private var welcomePrompts: List<String> = emptyList()
-    private var welcomePromptIndex = 0
-    private var welcomePromptText = ""
-    private var welcomePromptVisibleChars = 0
-    private var welcomePromptCursorVisible = true
-    private var isWelcomePromptCycleRunning = false
     private var editingMessageHistoryIndex: Int? = null
     private val freeChatAttentionHandler = Handler(Looper.getMainLooper())
     private var freeChatAttentionDrawable: FreeChatAttentionDrawable? = null
     private var isFreeChatButtonInteracting = false
-    private lateinit var securitySettingsStore: AccountSecuritySettingsStore
-    private var biometricGateDialog: AlertDialog? = null
-    private var isBiometricGateActive = false
     private var isChatUiInitialized = false
     private var navigationBarInsetBottom = 0
     private var systemWindowInsetTop = 0
@@ -139,13 +120,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var isUserTouchingMessages = false
     private var isGeneratingIndicatorVisible = false
     private var appliedLanguageCode: String? = null
-    private val streamUiHandler = Handler(Looper.getMainLooper())
-    private var activeGenerationId = 0L
-    private var streamPendingRequestId = 0L
-    private var streamPendingWrapper: AssistantMessageWrapper? = null
-    private var streamPendingText: String? = null
-    private var streamLastRenderedText: String? = null
-    private var streamFlushRunnable: Runnable? = null
     private var pendingAutoScrollRunnable: Runnable? = null
     private var scrollToBottomController: ChatScrollToBottomController? = null
 
@@ -153,43 +127,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
     }
 
-    private val welcomePromptRotationRunnable = object : Runnable {
-        override fun run() {
-            if (!isWelcomePromptCycleRunning || welcomePrompts.isEmpty()) return
-            showNextWelcomePrompt()
-            welcomePromptHandler.postDelayed(this, WELCOME_PROMPT_ROTATION_MS)
-        }
-    }
-
-    private val welcomePromptTypingRunnable = object : Runnable {
-        override fun run() {
-            if (!isWelcomePromptCycleRunning) return
-            if (welcomePromptVisibleChars < welcomePromptText.length) {
-                welcomePromptVisibleChars += 1
-                renderWelcomePrompt()
-                welcomePromptHandler.postDelayed(this, WELCOME_PROMPT_TYPE_STEP_MS)
-            } else {
-                renderWelcomePrompt(showCursor = false)
-            }
-        }
-    }
-
     private val freeChatAttentionRunnable = object : Runnable {
         override fun run() {
             if (!isFreeChatButtonInteracting && binding.btnAddLimits.isShown) {
                 freeChatAttentionDrawable?.play(binding.btnAddLimits)
             }
-        }
-    }
-
-    private val welcomePromptCursorRunnable = object : Runnable {
-        override fun run() {
-            if (!isWelcomePromptCycleRunning) return
-            welcomePromptCursorVisible = !welcomePromptCursorVisible
-            if (welcomePromptVisibleChars < welcomePromptText.length) {
-                renderWelcomePrompt()
-            }
-            welcomePromptHandler.postDelayed(this, WELCOME_PROMPT_CURSOR_BLINK_MS)
         }
     }
 
@@ -202,27 +144,61 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupLifecycleControllers()
         setupBackNavigation()
-        securitySettingsStore = AccountSecuritySettingsStore(applicationContext)
         val shouldSkipBiometricOnce = intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE, false) == true
-        val shouldGateWithBiometrics = securitySettingsStore.isBiometricEnabled() && !shouldSkipBiometricOnce
+        val shouldGateWithBiometrics = biometricGateController.shouldGate(shouldSkipBiometricOnce)
         if (shouldGateWithBiometrics) {
-            isBiometricGateActive = true
-            binding.root.alpha = 0f
+            biometricGateController.prepareGate()
         }
         val shouldPlayLaunchAnimation = LaunchLogoAnimator.shouldPlayOnActivityCreate(savedInstanceState)
         if (shouldPlayLaunchAnimation) {
             LaunchLogoAnimator.show(this) {
                 if (shouldGateWithBiometrics) {
-                    startBiometricUnlockGate()
+                    biometricGateController.start()
                 }
             }
         } else if (shouldGateWithBiometrics) {
-            startBiometricUnlockGate()
+            biometricGateController.start()
         }
         if (!shouldGateWithBiometrics) {
             initializeChatUi(intent)
         }
+    }
+
+    private fun setupLifecycleControllers() {
+        welcomePromptController = WelcomePromptController(
+            context = this,
+            titleView = binding.tvWelcomeTitle
+        )
+        streamingUiController = StreamingUiController(
+            isCurrentAssistantMessage = { wrapper -> currentAssistantMessage === wrapper },
+            onContentApplied = {
+                scheduleScrollToBottomIfPinned()
+                updateGeneratingIndicatorVisibility()
+            },
+            onCancelAutoScroll = ::cancelPendingAutoScroll
+        )
+        biometricGateController = BiometricGateController(
+            activity = this,
+            rootView = binding.root,
+            onUnlocked = { initializeChatUi(intent) },
+            onMessage = ::toast
+        )
+        attachmentPreviewController = ChatAttachmentPreviewController(
+            context = this,
+            binding = binding,
+            chatViewModel = chatViewModel,
+            onPreviewShown = {
+                hideQuickSuggestions()
+                updateSendState()
+            },
+            onPreviewCleared = {
+                updateSendState()
+                syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
+            },
+            onPreviewChanged = ::updateSendState
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -339,9 +315,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun applyTranslations() {
-        refreshWelcomePrompts()
+        welcomePromptController.refreshPrompts()
         if (binding.welcomeScreen.isVisible) {
-            startWelcomePromptCycle(resetIndex = false)
+            welcomePromptController.start(resetIndex = false)
         }
         binding.tvBtnCreateImage.text = LocaleHelper.getString(this, "button_create_image")
         binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
@@ -369,8 +345,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun onDestroy() {
-        invalidateActiveGeneration(cancelScroll = true)
-        stopWelcomePromptCycle()
+        if (::streamingUiController.isInitialized) {
+            invalidateActiveGeneration(cancelScroll = true)
+        }
+        if (::welcomePromptController.isInitialized) {
+            welcomePromptController.stop()
+        }
+        if (::biometricGateController.isInitialized) {
+            biometricGateController.dismiss()
+        }
         freeChatAttentionHandler.removeCallbacks(freeChatAttentionRunnable)
         freeChatAttentionDrawable?.cancelAttention()
         scrollToBottomController?.detach()
@@ -378,95 +361,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (::inAppBrowserManager.isInitialized) {
             inAppBrowserManager.onDestroy()
         }
-        speechRecognizerManager.destroy()
+        if (::speechRecognizerManager.isInitialized) {
+            speechRecognizerManager.destroy()
+        }
         adManager?.destroy()
         super.onDestroy()
-    }
-
-    private fun refreshWelcomePrompts() {
-        val prompts = LocaleHelper.getStringList(this, "welcome_prompt")
-            .ifEmpty { listOf(LocaleHelper.getString(this, "welcome_question")) }
-        welcomePrompts = prompts
-        if (welcomePromptIndex >= welcomePrompts.size) {
-            welcomePromptIndex = 0
-        }
-    }
-
-    private fun startWelcomePromptCycle(resetIndex: Boolean) {
-        refreshWelcomePrompts()
-        if (welcomePrompts.isEmpty()) return
-
-        if (resetIndex) {
-            welcomePromptIndex = 0
-        }
-
-        isWelcomePromptCycleRunning = true
-        welcomePromptHandler.removeCallbacks(welcomePromptRotationRunnable)
-        welcomePromptHandler.removeCallbacks(welcomePromptTypingRunnable)
-        welcomePromptHandler.removeCallbacks(welcomePromptCursorRunnable)
-        welcomePromptAnimator?.cancel()
-
-        binding.tvWelcomeTitle.alpha = 1f
-        binding.tvWelcomeTitle.translationY = 0f
-        typeWelcomePrompt(welcomePrompts[welcomePromptIndex])
-        welcomePromptHandler.postDelayed(welcomePromptRotationRunnable, WELCOME_PROMPT_ROTATION_MS)
-        welcomePromptHandler.postDelayed(welcomePromptCursorRunnable, WELCOME_PROMPT_CURSOR_BLINK_MS)
-    }
-
-    private fun stopWelcomePromptCycle() {
-        isWelcomePromptCycleRunning = false
-        welcomePromptAnimator?.cancel()
-        welcomePromptAnimator = null
-        welcomePromptHandler.removeCallbacks(welcomePromptRotationRunnable)
-        welcomePromptHandler.removeCallbacks(welcomePromptTypingRunnable)
-        welcomePromptHandler.removeCallbacks(welcomePromptCursorRunnable)
-    }
-
-    private fun showNextWelcomePrompt() {
-        if (welcomePrompts.isEmpty()) return
-        welcomePromptIndex = (welcomePromptIndex + 1) % welcomePrompts.size
-        val nextPrompt = welcomePrompts[welcomePromptIndex]
-
-        welcomePromptAnimator?.cancel()
-        welcomePromptHandler.removeCallbacks(welcomePromptTypingRunnable)
-
-        val fadeOut = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.ALPHA, 1f, 0f)
-        val slideOut = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.TRANSLATION_Y, 0f, -8.dpToPx())
-        val fadeIn = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.ALPHA, 0f, 1f)
-        val slideIn = ObjectAnimator.ofFloat(binding.tvWelcomeTitle, View.TRANSLATION_Y, 10.dpToPx(), 0f)
-
-        welcomePromptAnimator = AnimatorSet().apply {
-            playTogether(fadeOut, slideOut)
-            duration = WELCOME_PROMPT_ANIMATION_MS
-            interpolator = AccelerateDecelerateInterpolator()
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    if (!isWelcomePromptCycleRunning) return
-                    typeWelcomePrompt(nextPrompt)
-                    AnimatorSet().apply {
-                        playTogether(fadeIn, slideIn)
-                        duration = WELCOME_PROMPT_ANIMATION_MS
-                        interpolator = AccelerateDecelerateInterpolator()
-                        start()
-                    }
-                }
-            })
-            start()
-        }
-    }
-
-    private fun typeWelcomePrompt(prompt: String) {
-        welcomePromptText = prompt
-        welcomePromptVisibleChars = 0
-        welcomePromptCursorVisible = true
-        renderWelcomePrompt()
-        welcomePromptHandler.postDelayed(welcomePromptTypingRunnable, WELCOME_PROMPT_TYPE_STEP_MS)
-    }
-
-    private fun renderWelcomePrompt(showCursor: Boolean = true) {
-        val visibleText = welcomePromptText.take(welcomePromptVisibleChars)
-        val cursor = if (showCursor && welcomePromptCursorVisible) WELCOME_PROMPT_CURSOR else ""
-        binding.tvWelcomeTitle.text = visibleText + cursor
     }
 
     private fun Int.dpToPx(): Float {
@@ -501,23 +400,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     override fun showFilePreview(fileUri: Uri) {
-        retainedEditingAttachment = null
-        currentPreviewUri = fileUri
-        chatViewModel.selectedFileUri = fileUri
-        val mimeType = contentResolver.getType(fileUri).orEmpty()
-
-        binding.previewContainer.isVisible = true
-        if (mimeType.startsWith("image/")) {
-            binding.previewImage.isVisible = true
-            binding.previewFileContainer.isGone = true
-            runCatching { binding.previewImage.setImageURI(fileUri) }
-        } else {
-            binding.previewImage.isGone = true
-            binding.previewFileContainer.isVisible = true
-            binding.previewFileName.text = com.example.chatapp.util.FileUtils.getFileName(this, fileUri)
-        }
-        hideQuickSuggestions()
-        updateSendState()
+        attachmentPreviewController.showFilePreview(fileUri)
     }
 
     private fun imagePromptPrefix(): String = LocaleHelper.getString(this, "action_create_image")
@@ -607,14 +490,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             updateInputText(handoff.draftText, keepSuggestions = false)
         }
         handoff.attachmentUri(this)?.let { uri ->
-            assistantHandoffAttachmentPath = handoff.attachmentPath
+            attachmentPreviewController.assistantHandoffAttachmentPath = handoff.attachmentPath
             grantUriPermission(packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             showFilePreview(uri)
         }
     }
 
     private fun syncQuickSuggestions(query: String) {
-        if (suppressSuggestionUpdates || currentPreviewUri != null || isSending || hasCompletedChatExchange()) {
+        if (suppressSuggestionUpdates || attachmentPreviewController.currentPreviewUri != null || isSending || hasCompletedChatExchange()) {
             hideQuickSuggestions()
             return
         }
@@ -756,7 +639,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun showPopularNewsQueries(queries: List<String>) {
         val visibleQueries = queries.filter { it.isNotBlank() }.take(4)
-        if (visibleQueries.isEmpty() || chatViewModel.currentMode != ChatMode.SEARCH || currentPreviewUri != null || isSending) {
+        if (visibleQueries.isEmpty() || chatViewModel.currentMode != ChatMode.SEARCH || attachmentPreviewController.currentPreviewUri != null || isSending) {
             hideQuickSuggestions()
             return
         }
@@ -947,31 +830,19 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun nextGenerationId(): Long {
-        activeGenerationId += 1
-        cancelPendingStreamUiWork(cancelScroll = true)
-        streamLastRenderedText = null
-        return activeGenerationId
+        return streamingUiController.nextGenerationId()
     }
 
     private fun finishGeneration(requestId: Long) {
-        if (requestId == activeGenerationId) {
-            activeGenerationId += 1
-        }
-        cancelScheduledStreamFlush()
-        streamPendingRequestId = 0L
-        streamPendingWrapper = null
-        streamPendingText = null
-        streamLastRenderedText = null
+        streamingUiController.finishGeneration(requestId)
     }
 
     private fun invalidateActiveGeneration(cancelScroll: Boolean = true) {
-        activeGenerationId += 1
-        cancelPendingStreamUiWork(cancelScroll = cancelScroll)
-        streamLastRenderedText = null
+        streamingUiController.invalidate(cancelScroll = cancelScroll)
     }
 
     private fun isActiveGeneration(requestId: Long, wrapper: AssistantMessageWrapper): Boolean {
-        return requestId == activeGenerationId && currentAssistantMessage === wrapper
+        return streamingUiController.isActive(requestId, wrapper)
     }
 
     private fun enqueueStreamingUpdate(
@@ -979,23 +850,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         wrapper: AssistantMessageWrapper,
         text: String
     ) {
-        if (!isActiveGeneration(requestId, wrapper)) return
-        if (text == streamPendingText || text == streamLastRenderedText) return
-
-        streamPendingRequestId = requestId
-        streamPendingWrapper = wrapper
-        streamPendingText = text
-
-        if (streamFlushRunnable != null) return
-        val runnable = Runnable {
-            streamFlushRunnable = null
-            val pendingRequestId = streamPendingRequestId
-            val pendingWrapper = streamPendingWrapper ?: return@Runnable
-            val pendingText = streamPendingText ?: return@Runnable
-            applyStreamingUpdate(pendingRequestId, pendingWrapper, pendingText, isFinal = false)
-        }
-        streamFlushRunnable = runnable
-        streamUiHandler.postDelayed(runnable, STREAM_UI_FLUSH_INTERVAL_MS)
+        streamingUiController.enqueue(requestId, wrapper, text)
     }
 
     private fun flushStreamingUpdate(
@@ -1004,30 +859,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         text: String,
         isFinal: Boolean
     ) {
-        cancelScheduledStreamFlush()
-        streamPendingRequestId = requestId
-        streamPendingWrapper = wrapper
-        streamPendingText = text
-        applyStreamingUpdate(requestId, wrapper, text, isFinal)
-    }
-
-    private fun applyStreamingUpdate(
-        requestId: Long,
-        wrapper: AssistantMessageWrapper,
-        text: String,
-        isFinal: Boolean
-    ) {
-        if (!isActiveGeneration(requestId, wrapper)) return
-        if (!isFinal && text == streamLastRenderedText) return
-
-        streamPendingRequestId = 0L
-        streamPendingWrapper = null
-        streamPendingText = null
-        streamLastRenderedText = text
-
-        wrapper.updateContent(text, animate = false, isFinal = isFinal)
-        scheduleScrollToBottomIfPinned()
-        updateGeneratingIndicatorVisibility()
+        streamingUiController.flush(requestId, wrapper, text, isFinal)
     }
 
     private fun attachCompletedAssistantMessage(wrapper: AssistantMessageWrapper) {
@@ -1045,19 +877,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         chatViewModel.setAssistantReaction(syncId, reaction)
     }
 
-    private fun cancelPendingStreamUiWork(cancelScroll: Boolean) {
-        cancelScheduledStreamFlush()
-        streamPendingRequestId = 0L
-        streamPendingWrapper = null
-        streamPendingText = null
-        if (cancelScroll) {
-            cancelPendingAutoScroll()
-        }
-    }
-
     private fun cancelScheduledStreamFlush() {
-        streamFlushRunnable?.let { streamUiHandler.removeCallbacks(it) }
-        streamFlushRunnable = null
+        streamingUiController.cancelScheduledFlush()
     }
 
     private fun scheduleScrollToBottomIfPinned() {
@@ -1633,7 +1454,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun showWelcomeState() {
         resetTopActionsAnimation()
         binding.welcomeScreen.isVisible = true
-        startWelcomePromptCycle(resetIndex = true)
+        welcomePromptController.start(resetIndex = true)
         setWelcomeActionButtonsVisible(chatViewModel.currentMode == null)
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isGone = true
@@ -1650,7 +1471,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showAnonymousWelcomeState() {
-        stopWelcomePromptCycle()
+        welcomePromptController.stop()
         resetTopActionsAnimation()
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isVisible = true
@@ -1666,7 +1487,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showMessagesState(animateTopActions: Boolean = false) {
-        stopWelcomePromptCycle()
+        welcomePromptController.stop()
         binding.welcomeScreen.isGone = true
         binding.anonymousWelcomeScreen.isGone = true
         binding.messagesScrollView.isVisible = true
@@ -1953,7 +1774,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
 
-        val previewUri = currentPreviewUri
+        val previewUri = attachmentPreviewController.currentPreviewUri
         if (text.isBlank() && previewUri == null) return
 
         val attachmentPayload = try {
@@ -2053,12 +1874,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun stopGeneration() {
         if (!isSending) return
 
-        val requestId = activeGenerationId
+        val requestId = streamingUiController.activeGenerationId
         val wrapper = currentAssistantMessage
         chatViewModel.cancelActiveResponse()
         cancelScheduledStreamFlush()
         if (wrapper != null && isActiveGeneration(requestId, wrapper)) {
-            val latestText = streamPendingText ?: wrapper.rawText
+            val latestText = streamingUiController.pendingText ?: wrapper.rawText
             if (latestText.isNotBlank()) {
                 flushStreamingUpdate(requestId, wrapper, latestText, isFinal = true)
             }
@@ -2087,8 +1908,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setInputCapsuleTopOffset(dp(38f).toInt())
         showEditMessagePanel()
         clearPreview()
-        retainedEditingAttachment = MessageInputHelper.attachmentPayloadFromHistory(historyMessage)
-        showRetainedAttachmentPreview(retainedEditingAttachment)
+        attachmentPreviewController.retainedEditingAttachment = MessageInputHelper.attachmentPayloadFromHistory(historyMessage)
+        showRetainedAttachmentPreview(attachmentPreviewController.retainedEditingAttachment)
         hideQuickSuggestions()
         updateInputText(
             MessageInputHelper.editableTextFromHistory(
@@ -2131,7 +1952,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun cancelEditingUserMessage() {
         clearEditingMessageState()
-        retainedEditingAttachment = null
+        attachmentPreviewController.retainedEditingAttachment = null
         binding.etInput.text?.clear()
         clearPreview()
         updateSendState()
@@ -2146,31 +1967,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun showRetainedAttachmentPreview(payload: AttachmentPayload?) {
-        if (payload == null) return
-
-        binding.previewContainer.isVisible = true
-        if (payload.mimeType.startsWith("image/", ignoreCase = true)) {
-            binding.previewImage.isVisible = true
-            binding.previewFileContainer.isGone = true
-            val imageSet = payload.base64Data?.let { base64 ->
-                runCatching {
-                    val bytes = Base64.decode(base64, Base64.DEFAULT)
-                    val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    binding.previewImage.setImageBitmap(bitmap)
-                }.isSuccess
-            } == true
-
-            if (!imageSet && payload.fileUri.isNotBlank()) {
-                runCatching { binding.previewImage.setImageURI(Uri.parse(payload.fileUri)) }
-            }
-        } else {
-            binding.previewImage.isGone = true
-            binding.previewImage.setImageDrawable(null)
-            binding.previewFileContainer.isVisible = true
-            binding.previewFileName.text = payload.fileName?.takeIf { it.isNotBlank() }
-                ?: LocaleHelper.getString(this, "label_file_analysis")
-        }
-        updateSendState()
+        attachmentPreviewController.showRetainedAttachmentPreview(payload)
     }
 
     private fun editUserMessage(historyIndex: Int, newText: String) {
@@ -2178,7 +1975,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (historyIndex !in 0 until chatViewModel.chatHistory.size) return
 
         val attachmentPayload = try {
-            currentPreviewUri?.let { attachmentHelper.buildAttachmentPayload(it) } ?: retainedEditingAttachment
+            attachmentPreviewController.currentPreviewUri?.let { attachmentHelper.buildAttachmentPayload(it) }
+                ?: attachmentPreviewController.retainedEditingAttachment
         } catch (e: IllegalArgumentException) {
             toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
             return
@@ -2210,7 +2008,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     removeViewsFromUserMessage(historyIndex)
                     clearEditingMessageState()
                     binding.etInput.text?.clear()
-                    retainedEditingAttachment = null
+                    attachmentPreviewController.retainedEditingAttachment = null
                     clearPreview()
                     submitEditedUserMessage(historyIndex, newText, attachmentPayload)
                 }
@@ -2412,19 +2210,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun clearPreview() {
-        currentPreviewUri = null
-        retainedEditingAttachment = null
-        chatViewModel.selectedFileUri = null
-        binding.previewContainer.isGone = true
-        binding.previewImage.setImageDrawable(null)
-        binding.previewImage.isGone = true
-        binding.previewFileContainer.isGone = true
-        assistantHandoffAttachmentPath?.let { path ->
-            runCatching { java.io.File(path).delete() }
-        }
-        assistantHandoffAttachmentPath = null
-        updateSendState()
-        syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
+        attachmentPreviewController.clearPreview()
     }
 
     private fun clearInputContext() {
@@ -2555,8 +2341,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun updateSendState() {
         val hasInput = binding.etInput.text?.isNotBlank() == true ||
-            currentPreviewUri != null ||
-            retainedEditingAttachment != null
+            attachmentPreviewController.hasAttachment
         binding.btnSend.isEnabled = isSending || hasInput
         scrollToBottomController?.refreshVisibility()
 
@@ -2603,99 +2388,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 binding.tvLimitsCount.text = label
             }
         }
-    }
-
-    // Биометрический gate завязан на Activity lifecycle и системные диалоги, поэтому пока оставлен рядом с экраном.
-    private fun startBiometricUnlockGate() {
-        if (!isBiometricGateActive || isFinishing || isDestroyed) return
-        when (biometricAvailability()) {
-            BiometricManager.BIOMETRIC_SUCCESS -> showBiometricUnlockPrompt()
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                showBiometricGateDialog("security_biometric_not_enrolled")
-            }
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                showBiometricGateDialog("security_biometric_no_hardware")
-            }
-            else -> {
-                showBiometricGateDialog("security_biometric_unavailable")
-            }
-        }
-    }
-
-    private fun showBiometricUnlockPrompt() {
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(LocaleHelper.getString(this, "security_biometric_unlock_title"))
-            .setSubtitle(LocaleHelper.getString(this, "security_biometric_unlock_subtitle"))
-            .setNegativeButtonText(LocaleHelper.getString(this, "button_cancel"))
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
-            .build()
-
-        BiometricPrompt(
-            this,
-            ContextCompat.getMainExecutor(this),
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    unlockAfterBiometric()
-                }
-
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                    if (!isBiometricGateActive) return
-                    val messageKey = when (errorCode) {
-                        BiometricPrompt.ERROR_NEGATIVE_BUTTON,
-                        BiometricPrompt.ERROR_USER_CANCELED,
-                        BiometricPrompt.ERROR_CANCELED -> "security_biometric_required_message"
-                        else -> "security_biometric_auth_failed"
-                    }
-                    showBiometricGateDialog(messageKey)
-                }
-
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    toast(LocaleHelper.getString(this@FreeChatActivity, "security_biometric_auth_failed"))
-                }
-            }
-        ).authenticate(promptInfo)
-    }
-
-    private fun unlockAfterBiometric() {
-        isBiometricGateActive = false
-        biometricGateDialog?.dismiss()
-        biometricGateDialog = null
-        initializeChatUi(intent)
-        binding.root.animate()
-            .alpha(1f)
-            .setDuration(180L)
-            .start()
-    }
-
-    private fun showBiometricGateDialog(messageKey: String) {
-        if (!isBiometricGateActive || isFinishing || isDestroyed) return
-        biometricGateDialog?.dismiss()
-        biometricGateDialog = AlertDialog.Builder(this)
-            .setTitle(LocaleHelper.getString(this, "security_biometric_required_title"))
-            .setMessage(LocaleHelper.getString(this, messageKey))
-            .setPositiveButton(LocaleHelper.getString(this, "security_biometric_retry")) { _, _ ->
-                startBiometricUnlockGate()
-            }
-            .setNegativeButton(LocaleHelper.getString(this, "security_biometric_use_login")) { _, _ ->
-                SharedPrefsAccountSessionStore(applicationContext).clearSession()
-                startActivity(
-                    Intent(this, MainActivity::class.java).apply {
-                        putExtra(MainActivity.EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, true)
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                )
-                finish()
-            }
-            .setCancelable(false)
-            .show()
-    }
-
-    private fun biometricAvailability(): Int {
-        return BiometricManager.from(this)
-            .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
     }
 
     private fun toast(message: String) {
