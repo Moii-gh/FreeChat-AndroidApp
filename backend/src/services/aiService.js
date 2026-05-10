@@ -1,6 +1,7 @@
 const { Readable } = require("node:stream");
 const { env } = require("../config/env");
 const {
+  PROVIDER_OPENAI,
   PROVIDER_VSEGPT,
   assertSelectionConfigured,
   hasCapability,
@@ -41,7 +42,7 @@ async function callAiJson({ selection, body }) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${selection.apiKey}`
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(normalizeProviderRequestBody(body, selection)),
     signal: AbortSignal.timeout(env.aiTimeoutMs)
   });
 
@@ -106,6 +107,22 @@ function normalizeImageRequestBody(requestBody, model) {
     normalized.aspect_ratio = aspectRatioFromSize(normalized.size) || "1:1";
   }
   delete normalized.size;
+  return normalized;
+}
+
+function normalizeProviderRequestBody(requestBody, selection) {
+  const normalized = { ...(requestBody || {}) };
+
+  if (
+    selection?.provider === PROVIDER_OPENAI &&
+    Object.hasOwn(normalized, "max_tokens")
+  ) {
+    if (!Object.hasOwn(normalized, "max_completion_tokens")) {
+      normalized.max_completion_tokens = normalized.max_tokens;
+    }
+    delete normalized.max_tokens;
+  }
+
   return normalized;
 }
 
@@ -303,7 +320,10 @@ async function proxyAiRequest({
   );
 
   const upstreamRequestBody = {
-    ...normalizeImageRequestBody(preparedRequestBody, selection.model),
+    ...normalizeProviderRequestBody(
+      normalizeImageRequestBody(preparedRequestBody, selection.model),
+      selection
+    ),
     model: selection.model
   };
 

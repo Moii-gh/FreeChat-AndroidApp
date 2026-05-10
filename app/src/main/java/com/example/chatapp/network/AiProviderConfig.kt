@@ -34,7 +34,7 @@ object AiModelCatalog {
         AiModelOption(
             provider = AiProvider.VSEGPT,
             modelKey = "gpt55",
-            displayName = "GPT-5.4"
+            displayName = "GPT-5.5"
         ),
         AiModelOption(
             provider = AiProvider.VSEGPT,

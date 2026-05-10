@@ -176,6 +176,224 @@ test("POST /api/ai/chat defaults to OpenAI when provider and model are omitted",
   }
 });
 
+test("POST /api/ai/chat maps OpenAI max_tokens to max_completion_tokens", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  let upstreamBody = null;
+  global.fetch = async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream"
+      }
+    });
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "openai",
+        modelKey: "gpt54",
+        request: {
+          stream: true,
+          max_tokens: 120,
+          messages: [
+            { role: "user", content: "Hello" }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(Object.hasOwn(upstreamBody, "max_tokens"), false);
+    assert.equal(upstreamBody.max_completion_tokens, 120);
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/title maps OpenAI max_tokens to max_completion_tokens", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  let upstreamBody = null;
+  global.fetch = async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: "Short title"
+          }
+        }
+      ]
+    }), {
+      status: 200,
+      headers: {
+        "content-type": "application/json"
+      }
+    });
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/title")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "openai",
+        modelKey: "gpt54",
+        firstUserMessage: "Hello"
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.content, "Short title");
+    assert.equal(Object.hasOwn(upstreamBody, "max_tokens"), false);
+    assert.equal(upstreamBody.max_completion_tokens, 40);
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat rejects OpenAI image generation while tools are not implemented", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  global.fetch = async () => {
+    throw new Error("fetch should not be called for unsupported OpenAI tools");
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "openai",
+        modelKey: "gpt54",
+        currentMode: "create_image",
+        request: {
+          prompt: "cat",
+          n: 1,
+          size: "1024x1024"
+        }
+      });
+
+    assert.equal(response.status, 501);
+    assert.equal(response.body.message, "Эта функция пока не подключена для OpenAI API на сервере.");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat rejects OpenAI search modes while tools are not implemented", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  global.fetch = async () => {
+    throw new Error("fetch should not be called for unsupported OpenAI tools");
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "openai",
+        modelKey: "gpt54",
+        currentMode: "search",
+        request: {
+          stream: true,
+          messages: [
+            { role: "user", content: "latest news" }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 501);
+    assert.equal(response.body.message, "Эта функция пока не подключена для OpenAI API на сервере.");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat rejects OpenAI image input while vision is not implemented", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  global.fetch = async () => {
+    throw new Error("fetch should not be called for unsupported OpenAI image input");
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "openai",
+        modelKey: "gpt54",
+        request: {
+          stream: true,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "What is in this image?" },
+                {
+                  type: "image_url",
+                  image_url: { url: "data:image/png;base64,aW1hZ2U=" }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 501);
+    assert.equal(response.body.message, "Эта функция пока не подключена для OpenAI API на сервере.");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat rejects explicit OpenAI tools while backend tools are not implemented", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  global.fetch = async () => {
+    throw new Error("fetch should not be called for unsupported OpenAI tools");
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "openai",
+        modelKey: "gpt54",
+        request: {
+          stream: true,
+          tools: [{ type: "web_search" }],
+          messages: [
+            { role: "user", content: "search this" }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 501);
+    assert.equal(response.body.message, "Эта функция пока не подключена для OpenAI API на сервере.");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
 test("POST /api/ai/chat returns a clear error when OpenAI key is missing", async () => {
   const restoreEnv = setAiEnv({ openAiApiKey: "", dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
@@ -198,7 +416,7 @@ test("POST /api/ai/chat returns a clear error when OpenAI key is missing", async
       });
 
     assert.equal(response.status, 503);
-    assert.match(response.body.message, /OpenAI API key is not configured/);
+    assert.equal(response.body.message, "OpenAI API key is not configured on the server.");
     assert.doesNotMatch(JSON.stringify(response.body), /openai-test-key|sk-/);
   } finally {
     global.fetch = originalFetch;
@@ -284,7 +502,7 @@ test("GET /api/ai/models returns public model metadata without technical model i
     assert.ok(response.body.models.some((model) =>
       model.provider === "vsegpt" &&
       model.modelKey === "gpt55" &&
-      model.displayName === "GPT-5.4"
+      model.displayName === "GPT-5.5"
     ));
     assert.ok(response.body.models.some((model) =>
       model.provider === "vsegpt" &&
@@ -301,7 +519,7 @@ test("GET /api/ai/models returns public model metadata without technical model i
   }
 });
 
-test("POST /api/ai/chat routes VseGPT GPT-5.4 display slot to openai/gpt-5.4-nano", async () => {
+test("POST /api/ai/chat routes VseGPT GPT-5.5 display slot to openai/gpt-5.4-nano", async () => {
   const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
   let upstreamBody = null;
@@ -332,6 +550,75 @@ test("POST /api/ai/chat routes VseGPT GPT-5.4 display slot to openai/gpt-5.4-nan
 
     assert.equal(response.status, 200);
     assert.equal(upstreamBody.model, "openai/gpt-5.4-nano");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat converts images to text before sending to VseGPT GPT-5.5 nano slot", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push({ url, body });
+
+    if (calls.length === 1) {
+      return new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: "The image shows a printed receipt with a total."
+            }
+          }
+        ]
+      }), {
+        status: 200,
+        headers: {
+          "content-type": "application/json"
+        }
+      });
+    }
+
+    return new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream"
+      }
+    });
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "vsegpt",
+        modelKey: "gpt55",
+        request: {
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Read this." },
+                {
+                  type: "image_url",
+                  image_url: { url: "data:image/png;base64,aW1hZ2U=" }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].body.model, "google/gemma-4-26b-a4b-it");
+    assert.equal(calls[1].body.model, "openai/gpt-5.4-nano");
+    assert.equal(JSON.stringify(calls[1].body).includes("image_url"), false);
+    assert.match(calls[1].body.messages[0].content, /printed receipt/);
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
