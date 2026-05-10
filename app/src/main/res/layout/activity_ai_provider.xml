@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:paddingBottom="32dp">
 
-        <!-- ═══════ TOOLBAR ═══════ -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="52dp"
@@ -22,14 +21,14 @@
                 android:id="@+id/btnBack"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                android:layout_centerVertical="true"
                 android:layout_alignParentStart="true"
-                android:src="@drawable/ic_arrow_back"
-                android:padding="6dp"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_circle_outline"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="@drawable/bg_circle_outline"
-                app:tint="#FFFFFF"/>
+                android:padding="6dp"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#FFFFFF" />
 
             <TextView
                 android:id="@+id/tvToolbarTitle"
@@ -39,10 +38,9 @@
                 android:text="@string/ai_provider_title"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- ═══════ PROVIDER SELECTION ═══════ -->
         <TextView
             android:id="@+id/tvSectionProvider"
             android:layout_width="wrap_content"
@@ -50,78 +48,23 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"
+            android:letterSpacing="0.05"
             android:text="@string/ai_provider_section"
-            android:textColor="#8E8E93"
-            android:textSize="13sp"
             android:textAllCaps="true"
-            android:letterSpacing="0.05"/>
+            android:textColor="#8E8E93"
+            android:textSize="13sp" />
 
-        <!-- VseGPT option -->
-        <LinearLayout
-            android:id="@+id/optionVsegpt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="14dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tvVsegptTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/ai_provider_vsegpt_title"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"/>
-
-                <TextView
-                    android:id="@+id/tvVsegptDesc"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/ai_provider_vsegpt_desc"
-                    android:textColor="#8E8E93"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-
-            <ImageView
-                android:id="@+id/ivVsegptCheck"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_check"
-                app:tint="#FFFFFF"
-                android:visibility="visible"/>
-        </LinearLayout>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:layout_marginHorizontal="16dp"
-            android:background="#2C2C2E"/>
-
-        <!-- OpenAI API option -->
         <LinearLayout
             android:id="@+id/optionOpenai"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="14dp"
+            android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="14dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -135,7 +78,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/ai_provider_openai_title"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tvOpenaiDesc"
@@ -144,7 +87,7 @@
                     android:layout_marginTop="2dp"
                     android:text="@string/ai_provider_openai_desc"
                     android:textColor="#8E8E93"
-                    android:textSize="13sp"/>
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <ImageView
@@ -153,88 +96,68 @@
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"
                 android:src="@drawable/ic_check"
-                app:tint="#FFFFFF"
-                android:visibility="gone"/>
+                android:visibility="visible"
+                app:tint="#FFFFFF" />
         </LinearLayout>
 
-        <!-- ═══════ OPENAI API KEY SECTION ═══════ -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="#2C2C2E" />
+
         <LinearLayout
-            android:id="@+id/openaiKeySection"
+            android:id="@+id/optionVsegpt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:layout_marginTop="24dp">
-
-            <TextView
-                android:id="@+id/tvSectionApiKey"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginBottom="8dp"
-                android:text="@string/ai_provider_api_key_section"
-                android:textColor="#8E8E93"
-                android:textSize="13sp"
-                android:textAllCaps="true"
-                android:letterSpacing="0.05"/>
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="14dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:orientation="vertical"
-                android:background="@drawable/edit_text_bg"
-                android:padding="4dp">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <EditText
-                    android:id="@+id/etApiKey"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:paddingHorizontal="12dp"
-                    android:hint="@string/ai_provider_api_key_placeholder"
+                <TextView
+                    android:id="@+id/tvVsegptTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ai_provider_vsegpt_title"
                     android:textColor="#FFFFFF"
-                    android:textColorHint="#555555"
-                    android:textSize="15sp"
-                    android:background="@android:color/transparent"
-                    android:inputType="textPassword"
-                    android:imeOptions="actionDone"
-                    android:singleLine="true"/>
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tvVsegptDesc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/ai_provider_vsegpt_desc"
+                    android:textColor="#8E8E93"
+                    android:textSize="13sp" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvApiKeyHint"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="6dp"
-                android:text="@string/ai_provider_api_key_hint"
-                android:textColor="#636366"
-                android:textSize="12sp"/>
-
-            <TextView
-                android:id="@+id/btnSaveApiKey"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/btn_edit_profile_bg"
-                android:gravity="center"
-                android:text="@string/button_save"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true"/>
+            <ImageView
+                android:id="@+id/ivVsegptCheck"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_check"
+                android:visibility="gone"
+                app:tint="#FFFFFF" />
         </LinearLayout>
 
-        <!-- ═══════ MODEL INFO ═══════ -->
         <LinearLayout
-            android:id="@+id/openaiModelInfoSection"
+            android:id="@+id/modelInfoSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:layout_marginTop="24dp">
+            android:layout_marginTop="24dp"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvSectionModel"
@@ -242,58 +165,35 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginBottom="8dp"
+                android:letterSpacing="0.05"
                 android:text="@string/ai_provider_model_section"
-                android:textColor="#8E8E93"
-                android:textSize="13sp"
                 android:textAllCaps="true"
-                android:letterSpacing="0.05"/>
+                android:textColor="#8E8E93"
+                android:textSize="13sp" />
 
             <LinearLayout
+                android:id="@+id/modelOptionsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp">
+                android:orientation="vertical" />
 
-                <TextView
-                    android:id="@+id/tvModelName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/ai_provider_model_default"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"/>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/ai_provider_with_tools"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-
-            <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
                 android:layout_marginHorizontal="16dp"
-                android:background="#2C2C2E"/>
+                android:background="#2C2C2E" />
 
             <TextView
                 android:id="@+id/tvToolsInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:lineSpacingMultiplier="1.3"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="12dp"
                 android:text="@string/ai_provider_tools_info"
                 android:textColor="#8E8E93"
                 android:textSize="13sp"
-                android:lineSpacingMultiplier="1.3"/>
+                android:visibility="gone" />
         </LinearLayout>
 
     </LinearLayout>

@@ -9,6 +9,7 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
   const controller = createAiController({ userModel, aiUsageModel });
 
   router.use(authenticate);
+  router.get("/models", controller.getModels);
   router.get("/limits", controller.getLimits);
   router.get(
     "/trending",

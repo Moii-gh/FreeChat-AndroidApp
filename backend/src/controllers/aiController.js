@@ -5,6 +5,7 @@ const {
   generateSummary,
   generateTrendingQueries
 } = require("../services/aiService");
+const { publicModels } = require("../services/aiModelRegistry");
 
 const MAX_CHAT_MESSAGES = 60;
 const MAX_ARRAY_ITEMS = 128;
@@ -146,6 +147,8 @@ function createAiController({ aiUsageModel }) {
 
         await proxyAiRequest({
           user,
+          provider: validatedBody.provider,
+          modelKey: validatedBody.modelKey,
           currentMode: validatedBody.currentMode || null,
           adultMode: validatedBody.adultMode === true,
           requestBody,
@@ -195,7 +198,12 @@ function createAiController({ aiUsageModel }) {
           });
         }
 
-        const content = await generateTitle({ user, firstUserMessage });
+        const content = await generateTitle({
+          user,
+          firstUserMessage,
+          provider: req.validatedBody?.provider,
+          modelKey: req.validatedBody?.modelKey
+        });
         return res.status(200).json({ content });
       } catch (error) {
         return next(error);
@@ -218,7 +226,12 @@ function createAiController({ aiUsageModel }) {
           });
         }
 
-        const content = await generateSummary({ user, promptText });
+        const content = await generateSummary({
+          user,
+          promptText,
+          provider: req.validatedBody?.provider,
+          modelKey: req.validatedBody?.modelKey
+        });
         return res.status(200).json({ content });
       } catch (error) {
         return next(error);
@@ -240,6 +253,14 @@ function createAiController({ aiUsageModel }) {
       } catch (error) {
         return next(error);
       }
+    },
+
+    getModels: async (_req, res) => {
+      return res.status(200).json({
+        providers: ["openai", "vsegpt"],
+        defaultProvider: "openai",
+        models: publicModels()
+      });
     },
 
     getLimits: async (req, res, next) => {

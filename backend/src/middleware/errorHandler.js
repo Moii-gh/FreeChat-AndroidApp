@@ -22,7 +22,7 @@ function errorHandler(error, req, res, next) {
     });
   }
   const message =
-    status >= 500
+    status >= 500 && !error?.expose
       ? "Внутренняя ошибка сервера"
       : error?.message || "Не удалось обработать запрос";
 

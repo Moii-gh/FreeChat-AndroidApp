@@ -3,22 +3,29 @@ package com.example.chatapp
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.chatapp.data.AccountScopedSettings
+import androidx.lifecycle.lifecycleScope
+import com.example.chatapp.data.SharedPrefsAccountSessionStore
+import com.example.chatapp.network.AiModelCatalog
+import com.example.chatapp.network.AiModelOption
 import com.example.chatapp.network.AiProvider
 import com.example.chatapp.network.AiProviderSettings
+import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.network.dto.AiModelDescriptorResponse
 import com.example.chatapp.util.setHapticClickListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AiProviderActivity : AppCompatActivity() {
 
     private lateinit var providerSettings: AiProviderSettings
+    private var availableModels: List<AiModelOption> = AiModelCatalog.fallbackModels
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -35,83 +42,153 @@ class AiProviderActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnBack).setHapticClickListener { finish() }
 
         setupProviderSelection()
-        setupApiKeyInput()
         applyTranslations()
         updateUi()
+        loadServerModels()
     }
 
     private fun setupProviderSelection() {
-        findViewById<View>(R.id.optionVsegpt).setHapticClickListener {
-            providerSettings.setProvider(AiProvider.VSEGPT)
-            updateUi()
-        }
-
         findViewById<View>(R.id.optionOpenai).setHapticClickListener {
             providerSettings.setProvider(AiProvider.OPENAI)
             updateUi()
         }
-    }
 
-    private fun setupApiKeyInput() {
-        val etApiKey = findViewById<EditText>(R.id.etApiKey)
-
-        etApiKey.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                saveApiKey()
-                true
-            } else false
+        findViewById<View>(R.id.optionVsegpt).setHapticClickListener {
+            providerSettings.setProvider(AiProvider.VSEGPT)
+            updateUi()
         }
-
-        findViewById<View>(R.id.btnSaveApiKey).setHapticClickListener {
-            saveApiKey()
-        }
-    }
-
-    private fun saveApiKey() {
-        val etApiKey = findViewById<EditText>(R.id.etApiKey)
-        val key = etApiKey.text.toString().trim()
-
-        if (key.isBlank()) {
-            Toast.makeText(this, LocaleHelper.getString(this, "ai_provider_key_empty"), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        providerSettings.setOpenAiApiKey(key)
-        Toast.makeText(this, LocaleHelper.getString(this, "ai_provider_key_saved"), Toast.LENGTH_SHORT).show()
-
-        // Прячем клавиатуру после сохранения ключа.
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-        imm.hideSoftInputFromWindow(etApiKey.windowToken, 0)
     }
 
     private fun updateUi() {
         val currentProvider = providerSettings.getProvider()
         val isOpenAi = currentProvider == AiProvider.OPENAI
 
-        // Обновляем отметки выбранного провайдера.
-        findViewById<ImageView>(R.id.ivVsegptCheck).visibility =
-            if (!isOpenAi) View.VISIBLE else View.GONE
         findViewById<ImageView>(R.id.ivOpenaiCheck).visibility =
             if (isOpenAi) View.VISIBLE else View.GONE
+        findViewById<ImageView>(R.id.ivVsegptCheck).visibility =
+            if (!isOpenAi) View.VISIBLE else View.GONE
 
-        // Показываем настройки OpenAI только для прямого режима.
-        findViewById<LinearLayout>(R.id.openaiKeySection).visibility =
-            if (isOpenAi) View.VISIBLE else View.GONE
-        findViewById<LinearLayout>(R.id.openaiModelInfoSection).visibility =
-            if (isOpenAi) View.VISIBLE else View.GONE
+        findViewById<LinearLayout>(R.id.modelInfoSection).visibility = View.VISIBLE
+        renderModelOptions(currentProvider)
 
-        // Не показываем сохраненный ключ целиком.
-        val existingKey = providerSettings.getOpenAiApiKey()
-        val etApiKey = findViewById<EditText>(R.id.etApiKey)
-        if (existingKey.isNotBlank() && etApiKey.text.isNullOrBlank()) {
-            etApiKey.hint = maskApiKey(existingKey)
+        findViewById<TextView>(R.id.tvToolsInfo)?.visibility = View.GONE
+    }
+
+    private fun renderModelOptions(provider: AiProvider) {
+        val container = findViewById<LinearLayout>(R.id.modelOptionsContainer)
+        container.removeAllViews()
+
+        val selectedModelKey = providerSettings.getModelKey()
+        modelsForProvider(provider).forEach { model ->
+            container.addView(createModelOptionView(model, model.modelKey == selectedModelKey))
         }
     }
 
-    private fun maskApiKey(key: String): String {
-        if (key.length <= 8) return "••••••••"
-        return key.take(4) + "•".repeat(key.length - 8) + key.takeLast(4)
+    private fun createModelOptionView(model: AiModelOption, selected: Boolean): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            isClickable = true
+            isFocusable = true
+            setSelectableBackground()
+        }
+
+        val textColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        textColumn.addView(TextView(this).apply {
+            text = model.displayName
+            setTextColor(Color.WHITE)
+            textSize = 16f
+        })
+
+        row.addView(textColumn)
+        row.addView(ImageView(this).apply {
+            setImageResource(R.drawable.ic_check)
+            setColorFilter(Color.WHITE)
+            visibility = if (selected) View.VISIBLE else View.INVISIBLE
+            layoutParams = LinearLayout.LayoutParams(dp(24), dp(24)).apply {
+                marginStart = dp(8)
+            }
+        })
+
+        row.setHapticClickListener {
+            providerSettings.setModelKey(model.modelKey)
+            updateUi()
+        }
+
+        return row
     }
+
+    private fun modelsForProvider(provider: AiProvider): List<AiModelOption> {
+        val models = availableModels.filter { it.provider == provider }
+            .ifEmpty { AiModelCatalog.modelsFor(provider) }
+
+        if (provider == AiProvider.OPENAI) {
+            return listOf(AiModelCatalog.find(provider, AiModelCatalog.OPENAI_DEFAULT_MODEL_KEY))
+        }
+
+        return models
+    }
+
+    private fun loadServerModels() {
+        val token = SharedPrefsAccountSessionStore(applicationContext)
+            .getAuthToken()
+            ?.trim()
+            .orEmpty()
+        if (token.isBlank()) {
+            return
+        }
+
+        lifecycleScope.launch {
+            val remoteModels = withContext(Dispatchers.IO) {
+                runCatching {
+                    val service = NetworkModule.createAiLimitsApiService(BuildConfig.APP_API_BASE_URL, token)
+                    val response = service.getModels()
+                    if (!response.isSuccessful) {
+                        return@runCatching emptyList<AiModelOption>()
+                    }
+
+                    response.body()?.models.orEmpty().mapNotNull { it.toModelOption() }
+                }.getOrDefault(emptyList())
+            }
+
+            if (remoteModels.isNotEmpty()) {
+                availableModels = remoteModels
+                updateUi()
+            }
+        }
+    }
+
+    private fun AiModelDescriptorResponse.toModelOption(): AiModelOption? {
+        val provider = AiProvider.entries.firstOrNull { it.code == this.provider } ?: return null
+        if (modelKey.isBlank() || displayName.isBlank()) {
+            return null
+        }
+
+        return AiModelOption(
+            provider = provider,
+            modelKey = modelKey,
+            displayName = displayName,
+            isDefault = isDefault
+        )
+    }
+
+    private fun View.setSelectableBackground() {
+        val value = TypedValue()
+        this@AiProviderActivity.theme.resolveAttribute(
+            android.R.attr.selectableItemBackground,
+            value,
+            true
+        )
+        setBackgroundResource(value.resourceId)
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     private fun applyTranslations() {
         findViewById<TextView>(R.id.tvToolbarTitle)?.text =
@@ -126,15 +203,7 @@ class AiProviderActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "ai_provider_openai_title")
         findViewById<TextView>(R.id.tvOpenaiDesc)?.text =
             LocaleHelper.getString(this, "ai_provider_openai_desc")
-        findViewById<TextView>(R.id.tvSectionApiKey)?.text =
-            LocaleHelper.getString(this, "ai_provider_api_key_section")
-        findViewById<TextView>(R.id.tvApiKeyHint)?.text =
-            LocaleHelper.getString(this, "ai_provider_api_key_hint")
-        findViewById<TextView>(R.id.btnSaveApiKey)?.text =
-            LocaleHelper.getString(this, "button_save")
         findViewById<TextView>(R.id.tvSectionModel)?.text =
             LocaleHelper.getString(this, "ai_provider_model_section")
-        findViewById<TextView>(R.id.tvToolsInfo)?.text =
-            LocaleHelper.getString(this, "ai_provider_tools_info")
     }
 }

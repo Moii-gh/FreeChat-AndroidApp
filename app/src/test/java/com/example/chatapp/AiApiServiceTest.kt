@@ -1,6 +1,7 @@
 package com.example.chatapp
 
 import com.example.chatapp.network.AiApiService
+import com.example.chatapp.network.AiProvider
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -108,5 +109,33 @@ class AiApiServiceTest {
         assertTrue(content.contains("text/plain"))
         assertTrue(content.contains("alpha\nbeta"))
         assertFalse(content.contains("base64"))
+    }
+
+    @Test
+    fun `chat payload sends provider and model key without secrets or display names`() {
+        val requestBody = AiApiService.buildRequestBody(
+            isImageGeneration = false,
+            messagesToKeep = listOf(JSONObject().apply {
+                put("role", "user")
+                put("content", "Hello")
+            }),
+            systemPrompt = null
+        )
+
+        val payload = JSONObject(
+            AiApiService.buildChatPayload(
+                provider = AiProvider.OPENAI,
+                modelKey = "gpt54",
+                currentMode = null,
+                adultMode = false,
+                requestBody = requestBody
+            )
+        )
+
+        assertEquals("openai", payload.getString("provider"))
+        assertEquals("gpt54", payload.getString("modelKey"))
+        assertFalse(payload.has("displayName"))
+        assertFalse(payload.toString().contains("api_key", ignoreCase = true))
+        assertFalse(payload.toString().contains("sk-"))
     }
 }

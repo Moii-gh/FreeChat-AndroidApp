@@ -16,3 +16,17 @@ data class AiLimitsResponse(
 data class AiTrendingResponse(
     val queries: List<String> = emptyList()
 )
+
+@Keep
+data class AiModelsResponse(
+    val defaultProvider: String = "openai",
+    val models: List<AiModelDescriptorResponse> = emptyList()
+)
+
+@Keep
+data class AiModelDescriptorResponse(
+    val provider: String,
+    val modelKey: String,
+    val displayName: String,
+    val isDefault: Boolean = false
+)

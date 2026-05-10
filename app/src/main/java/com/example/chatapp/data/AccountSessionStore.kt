@@ -269,6 +269,13 @@ class AccountScopedSettings(
         prefs.edit().putString(scopedKey(key), value).apply()
     }
 
+    fun removeString(key: String) {
+        prefs.edit()
+            .remove(scopedKey(key))
+            .remove(key)
+            .apply()
+    }
+
     fun getBoolean(key: String, defaultValue: Boolean = false): Boolean {
         return prefs.getBoolean(scopedKey(key), defaultValue)
     }

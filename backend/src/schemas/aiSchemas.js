@@ -1,8 +1,12 @@
 const { z } = require("zod");
 
 const aiCurrentModeSchema = z.string().trim().min(1).max(64).optional().nullable();
+const aiProviderSchema = z.enum(["openai", "vsegpt"]).optional();
+const aiModelKeySchema = z.string().trim().min(1).max(64).optional();
 
 const aiChatSchema = z.object({
+  provider: aiProviderSchema,
+  modelKey: aiModelKeySchema,
   currentMode: aiCurrentModeSchema,
   adultMode: z.boolean().optional(),
   request: z.record(z.any()).optional(),
@@ -22,10 +26,14 @@ const aiChatSchema = z.object({
 });
 
 const aiTitleSchema = z.object({
+  provider: aiProviderSchema,
+  modelKey: aiModelKeySchema,
   firstUserMessage: z.string().trim().min(1).max(4000)
 }).strict();
 
 const aiSummarySchema = z.object({
+  provider: aiProviderSchema,
+  modelKey: aiModelKeySchema,
   promptText: z.string().trim().min(1).max(16000)
 }).strict();
 

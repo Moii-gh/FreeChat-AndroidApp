@@ -3,42 +3,102 @@ package com.example.chatapp.network
 import android.content.Context
 import com.example.chatapp.data.AccountScopedSettings
 
-/**
- * Поддерживаемые AI-провайдеры.
- *
- * VSEGPT  — все запросы уходят на наш бэкенд (текущее поведение).
- * OPENAI  — напрямую к OpenAI API с вызовом инструментов.
- */
 enum class AiProvider(val code: String, val displayLabel: String) {
-    VSEGPT("vsegpt", "VseGPT (сервер)"),
-    OPENAI("openai", "OpenAI API");
+    OPENAI("openai", "OpenAI API"),
+    VSEGPT("vsegpt", "VseGPT");
 
     companion object {
         fun fromCode(code: String?): AiProvider =
-            entries.firstOrNull { it.code == code } ?: VSEGPT
+            entries.firstOrNull { it.code == code } ?: OPENAI
     }
 }
 
-/**
- * Чтение / запись настроек провайдера.
- * Хранит провайдер и ключ API в AccountScopedSettings.
- */
+data class AiModelOption(
+    val provider: AiProvider,
+    val modelKey: String,
+    val displayName: String,
+    val isDefault: Boolean = false
+)
+
+object AiModelCatalog {
+    const val OPENAI_DEFAULT_MODEL_KEY = "gpt54"
+    const val VSEGPT_DEFAULT_MODEL_KEY = "gemini3"
+
+    val fallbackModels: List<AiModelOption> = listOf(
+        AiModelOption(
+            provider = AiProvider.OPENAI,
+            modelKey = OPENAI_DEFAULT_MODEL_KEY,
+            displayName = "GPT-5.4",
+            isDefault = true
+        ),
+        AiModelOption(
+            provider = AiProvider.VSEGPT,
+            modelKey = "gpt55",
+            displayName = "GPT-5.4"
+        ),
+        AiModelOption(
+            provider = AiProvider.VSEGPT,
+            modelKey = VSEGPT_DEFAULT_MODEL_KEY,
+            displayName = "Gemini-3",
+            isDefault = true
+        ),
+        AiModelOption(
+            provider = AiProvider.VSEGPT,
+            modelKey = "deepseek",
+            displayName = "DeepSeek"
+        )
+    )
+
+    fun modelsFor(provider: AiProvider): List<AiModelOption> =
+        fallbackModels.filter { it.provider == provider }
+
+    fun defaultModelKey(provider: AiProvider): String =
+        when (provider) {
+            AiProvider.OPENAI -> OPENAI_DEFAULT_MODEL_KEY
+            AiProvider.VSEGPT -> VSEGPT_DEFAULT_MODEL_KEY
+        }
+
+    fun find(provider: AiProvider, modelKey: String?): AiModelOption {
+        val models = modelsFor(provider)
+        return models.firstOrNull { it.modelKey == modelKey }
+            ?: models.firstOrNull { it.isDefault }
+            ?: models.first()
+    }
+}
+
 class AiProviderSettings(private val accountSettings: AccountScopedSettings) {
 
     constructor(context: Context) : this(AccountScopedSettings(context))
+
+    init {
+        accountSettings.removeString("openai" + "_api_key")
+    }
 
     fun getProvider(): AiProvider =
         AiProvider.fromCode(accountSettings.getString(KEY_AI_PROVIDER))
 
     fun setProvider(provider: AiProvider) {
+        val previousProvider = getProvider()
         accountSettings.saveString(KEY_AI_PROVIDER, provider.code)
+        if (previousProvider != provider) {
+            setModelKey(AiModelCatalog.defaultModelKey(provider))
+        }
     }
 
-    fun getOpenAiApiKey(): String =
-        accountSettings.getString(KEY_OPENAI_API_KEY)
+    fun getModelKey(): String {
+        val provider = getProvider()
+        return AiModelCatalog.find(provider, accountSettings.getString(KEY_AI_MODEL_KEY)).modelKey
+    }
 
-    fun setOpenAiApiKey(key: String) {
-        accountSettings.saveString(KEY_OPENAI_API_KEY, key.trim())
+    fun setModelKey(modelKey: String) {
+        val provider = getProvider()
+        val safeModelKey = AiModelCatalog.find(provider, modelKey).modelKey
+        accountSettings.saveString(KEY_AI_MODEL_KEY, safeModelKey)
+    }
+
+    fun getSelectedModel(): AiModelOption {
+        val provider = getProvider()
+        return AiModelCatalog.find(provider, getModelKey())
     }
 
     fun isAdultModeEnabled(): Boolean =
@@ -53,7 +113,7 @@ class AiProviderSettings(private val accountSettings: AccountScopedSettings) {
 
     private companion object {
         const val KEY_AI_PROVIDER = "ai_provider"
-        const val KEY_OPENAI_API_KEY = "openai_api_key"
+        const val KEY_AI_MODEL_KEY = "ai_model_key"
         const val KEY_ADULT_MODE_ENABLED = "adult_mode_enabled"
     }
 }

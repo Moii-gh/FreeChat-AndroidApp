@@ -5,10 +5,8 @@ import androidx.room.withTransaction
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
-import com.example.chatapp.network.AiProvider
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
-import com.example.chatapp.network.OpenAiDirectService
 import com.example.chatapp.network.dto.ChatShareMessageDto
 import com.example.chatapp.network.dto.ChatShareItemDto
 import com.example.chatapp.network.dto.CreateChatShareRequest
@@ -331,18 +329,16 @@ class ChatRepository(context: Context) {
     suspend fun generateChatTitle(
         firstUserMessage: String
     ): String? = withContext(Dispatchers.IO) {
-        when (aiProviderSettings.getProvider()) {
-            AiProvider.OPENAI -> {
-                val apiKey = aiProviderSettings.getOpenAiApiKey()
-                if (apiKey.isBlank()) return@withContext null
-                OpenAiDirectService.generateTitle(apiKey, firstUserMessage)
-            }
-            AiProvider.VSEGPT -> {
-                val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
-                if (authToken.isBlank()) return@withContext null
-                AiApiService.generateTitle(authToken, firstUserMessage)
-            }
-        }
+        val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (authToken.isBlank()) return@withContext null
+
+        val provider = aiProviderSettings.getProvider()
+        AiApiService.generateTitle(
+            authToken = authToken,
+            provider = provider,
+            modelKey = aiProviderSettings.getModelKey(),
+            firstUserMessage = firstUserMessage
+        )
     }
 
     private fun currentOwnerKey(): String {

@@ -12,10 +12,10 @@ import com.example.chatapp.data.AuthRepository
 import com.example.chatapp.data.NetworkResult
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.network.AiApiService
+import com.example.chatapp.network.AiModelCatalog
 import com.example.chatapp.network.AiProvider
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
-import com.example.chatapp.network.OpenAiDirectService
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
 import kotlinx.coroutines.Dispatchers
@@ -390,9 +390,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         // Фоновая суммаризация при необходимости
         if (messagesToSummarize.isNotEmpty() && currentChatId != null) {
             val summAuthToken = sessionStore.getAuthToken()?.trim().orEmpty()
-            val canSummarize = summAuthToken.isNotEmpty() ||
-                (aiProviderSettings.getProvider() == AiProvider.OPENAI && aiProviderSettings.getOpenAiApiKey().isNotBlank())
-            if (canSummarize) {
+            if (summAuthToken.isNotEmpty()) {
                 launchSummarization(summAuthToken, messagesToSummarize)
             }
         }
@@ -402,7 +400,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
         val adultMode = aiProviderSettings.isAdultModeEnabled()
         val effectiveProvider = if (adultMode) AiProvider.VSEGPT else aiProviderSettings.getProvider()
-        if (authToken.isBlank() && effectiveProvider == AiProvider.VSEGPT) {
+        val effectiveModelKey = if (effectiveProvider == aiProviderSettings.getProvider()) {
+            aiProviderSettings.getModelKey()
+        } else {
+            AiModelCatalog.defaultModelKey(effectiveProvider)
+        }
+        if (authToken.isBlank()) {
             onError(LocaleHelper.getString(getApplication(), "session_expired_sign_in"))
             return
         }
@@ -441,32 +444,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
-                when (effectiveProvider) {
-                    AiProvider.OPENAI -> {
-                        val apiKey = aiProviderSettings.getOpenAiApiKey()
-                        OpenAiDirectService.fetchStreamingResponse(
-                            apiKey = apiKey,
-                            messagesToKeep = messagesToKeep,
-                            currentMode = effectiveMode,
-                            customInstructions = customInstructions,
-                            chatContextSummary = chatContextSummary,
-                            filesContext = filesContext,
-                            callback = streamCallback
-                        )
-                    }
-                    AiProvider.VSEGPT -> {
-                        AiApiService.fetchStreamingResponse(
-                            authToken = authToken,
-                            messagesToKeep = messagesToKeep,
-                            currentMode = effectiveMode,
-                            customInstructions = customInstructions,
-                            chatContextSummary = chatContextSummary,
-                            filesContext = filesContext,
-                            adultMode = adultMode,
-                            callback = streamCallback
-                        )
-                    }
-                }
+                AiApiService.fetchStreamingResponse(
+                    authToken = authToken,
+                    provider = effectiveProvider,
+                    modelKey = effectiveModelKey,
+                    messagesToKeep = messagesToKeep,
+                    currentMode = effectiveMode,
+                    customInstructions = customInstructions,
+                    chatContextSummary = chatContextSummary,
+                    filesContext = filesContext,
+                    adultMode = adultMode,
+                    callback = streamCallback
+                )
             } finally {
                 if (activeResponseJob == coroutineContext[Job]) {
                     activeResponseJob = null
@@ -585,16 +574,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         if (hash != cachedHash) {
             viewModelScope.launch(Dispatchers.IO) {
-                val summaryReply = when (aiProviderSettings.getProvider()) {
-                    AiProvider.OPENAI -> OpenAiDirectService.summarizeMessages(
-                        apiKey = aiProviderSettings.getOpenAiApiKey(),
-                        messagesToSummarize = messagesToSummarize
-                    )
-                    AiProvider.VSEGPT -> AiApiService.summarizeMessages(
-                        authToken = authToken,
-                        messagesToSummarize = messagesToSummarize
-                    )
-                }
+                val provider = aiProviderSettings.getProvider()
+                val summaryReply = AiApiService.summarizeMessages(
+                    authToken = authToken,
+                    provider = provider,
+                    modelKey = aiProviderSettings.getModelKey(),
+                    messagesToSummarize = messagesToSummarize
+                )
                 if (summaryReply != null) {
                     val newSummary = if (chatContextSummary.isNotEmpty()) {
                         "$chatContextSummary\n$summaryReply"

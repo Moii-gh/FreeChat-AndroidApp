@@ -104,6 +104,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var currentAssistantMessage: AssistantMessageWrapper? = null
     private var isSending = false
     private var activeSuggestionCategory: QuickSuggestionCategory? = null
+    private var isIdeaSuggestionsPinned = false
     private var suppressSuggestionUpdates = false
     private var handledShareToken: String? = null
     private var adManager: RewardedAdManager? = null
@@ -434,8 +435,21 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun activateIdeaSuggestions() {
-        clearInputContext()
-        updateInputText(ideaPromptPrefix(), keepSuggestions = true)
+        clearInputContext(showWelcomeActions = false, syncSuggestions = false)
+        showIdeaInputContext()
+        isIdeaSuggestionsPinned = true
+        updateInputText("", keepSuggestions = true)
+    }
+
+    private fun showIdeaInputContext() {
+        val tint = Color.parseColor("#FFD60A")
+        binding.contextChipContainer.isVisible = true
+        binding.chipTitle.text = LocaleHelper.getString(this, "button_create_idea")
+        binding.chipTitle.setTextColor(tint)
+        binding.chipIcon.setImageResource(R.drawable.ic_bulb_yellow)
+        binding.chipIcon.setColorFilter(tint)
+        binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
+        setWelcomeActionButtonsVisible(false)
     }
 
     private fun updateInputText(text: String, keepSuggestions: Boolean) {
@@ -515,6 +529,16 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             if (query.isBlank()) {
                 showQuickSuggestions(QuickSuggestionCategory.IMAGE)
             } else {
+                hideQuickSuggestions()
+            }
+            return
+        }
+
+        if (isIdeaSuggestionsPinned) {
+            if (query.isBlank()) {
+                showQuickSuggestions(QuickSuggestionCategory.IDEA)
+            } else {
+                isIdeaSuggestionsPinned = false
                 hideQuickSuggestions()
             }
             return
@@ -720,6 +744,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
 
             QuickSuggestionCategory.IDEA -> {
+                isIdeaSuggestionsPinned = false
                 if (chatViewModel.currentMode != null) {
                     clearInputContext()
                 }
@@ -2213,12 +2238,18 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         attachmentPreviewController.clearPreview()
     }
 
-    private fun clearInputContext() {
+    private fun clearInputContext(
+        showWelcomeActions: Boolean = true,
+        syncSuggestions: Boolean = true
+    ) {
         binding.contextChipContainer.isGone = true
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
         chatViewModel.currentMode = null
-        setWelcomeActionButtonsVisible(true)
-        syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
+        isIdeaSuggestionsPinned = false
+        setWelcomeActionButtonsVisible(showWelcomeActions)
+        if (syncSuggestions) {
+            syncQuickSuggestions(binding.etInput.text?.toString().orEmpty())
+        }
     }
 
     // ──────── Плавающий индикатор генерации ────────

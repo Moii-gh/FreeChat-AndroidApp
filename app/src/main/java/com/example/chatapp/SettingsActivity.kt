@@ -214,7 +214,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvLabelLanguage)?.text = LocaleHelper.getString(this, "button_language")
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
         findViewById<TextView>(R.id.tvLabelAiProvider)?.text = LocaleHelper.getString(this, "ai_provider_title")
-        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
+        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSummary()
         findViewById<TextView>(R.id.tvLabelAdultMode)?.text = LocaleHelper.getString(this, "adult_mode_title")
         findViewById<TextView>(R.id.tvAdultModeValue)?.text = LocaleHelper.getString(this, "adult_replies_title")
         findViewById<TextView>(R.id.tvLabelDigitalAssistant)?.text =
@@ -235,7 +235,7 @@ class SettingsActivity : AppCompatActivity() {
         if (switch.isChecked != enabled) {
             switch.isChecked = enabled
         }
-        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSettings.getProvider().displayLabel
+        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSummary()
         findViewById<TextView>(R.id.tvAdultModeValue)?.text =
             if (enabled) LocaleHelper.getString(this, "settings_value_on")
             else LocaleHelper.getString(this, "adult_replies_title")
@@ -255,6 +255,12 @@ class SettingsActivity : AppCompatActivity() {
                     ?.start()
             }
             ?.start()
+    }
+
+    private fun aiProviderSummary(): String {
+        val provider = aiProviderSettings.getProvider().displayLabel
+        val model = aiProviderSettings.getSelectedModel().displayName
+        return "$provider / $model"
     }
 
     private fun showEditProfileDialog() {

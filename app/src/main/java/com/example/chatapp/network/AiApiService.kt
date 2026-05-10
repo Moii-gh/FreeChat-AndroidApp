@@ -126,6 +126,20 @@ object AiApiService {
         }.toString()
     }
 
+    fun buildChatPayload(
+        provider: AiProvider,
+        modelKey: String,
+        currentMode: String?,
+        adultMode: Boolean,
+        requestBody: String
+    ): String = JSONObject().apply {
+        put("provider", provider.code)
+        put("modelKey", modelKey)
+        put("currentMode", currentMode)
+        put("adultMode", adultMode)
+        put("request", JSONObject(requestBody))
+    }.toString()
+
     private fun buildMessageText(msg: JSONObject): String {
         val content = msg.optString("content", "")
             .replace(Regex("!\\[[^]]*]\\(data:image/[^)]+\\)"), "[Generated image]")
@@ -162,6 +176,8 @@ object AiApiService {
 
     suspend fun fetchStreamingResponse(
         authToken: String,
+        provider: AiProvider,
+        modelKey: String,
         messagesToKeep: List<JSONObject>,
         currentMode: String?,
         customInstructions: String,
@@ -194,11 +210,13 @@ object AiApiService {
                     adultMode
                 )
                 val jsonInput = buildRequestBody(isImageGeneration, messagesToKeep, systemPrompt)
-                val payload = JSONObject().apply {
-                    put("currentMode", currentMode)
-                    put("adultMode", adultMode)
-                    put("request", JSONObject(jsonInput))
-                }.toString()
+                val payload = buildChatPayload(
+                    provider = provider,
+                    modelKey = modelKey,
+                    currentMode = currentMode,
+                    adultMode = adultMode,
+                    requestBody = jsonInput
+                )
 
                 val request = buildJsonRequest(path = "ai/chat", payload = payload)
                 val call = NetworkModule.createAiHttpClient(authToken).newCall(request)
@@ -290,12 +308,16 @@ object AiApiService {
 
     suspend fun generateTitle(
         authToken: String,
+        provider: AiProvider,
+        modelKey: String,
         firstUserMessage: String
     ): String? {
         return executeContentRequest(
             authToken = authToken,
             path = "ai/title",
             payload = JSONObject().apply {
+                put("provider", provider.code)
+                put("modelKey", modelKey)
                 put("firstUserMessage", firstUserMessage)
             }.toString()
         )?.trim()
@@ -306,6 +328,8 @@ object AiApiService {
 
     suspend fun summarizeMessages(
         authToken: String,
+        provider: AiProvider,
+        modelKey: String,
         messagesToSummarize: List<JSONObject>
     ): String? {
         if (authToken.isBlank()) {
@@ -331,6 +355,8 @@ object AiApiService {
             authToken = authToken,
             path = "ai/summary",
             payload = JSONObject().apply {
+                put("provider", provider.code)
+                put("modelKey", modelKey)
                 put("promptText", promptText)
             }.toString()
         )

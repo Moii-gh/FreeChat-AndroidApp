@@ -82,6 +82,30 @@ const env = {
   vkIdUserInfoUrl: process.env.VKID_USER_INFO_URL || "https://id.vk.ru/oauth2/user_info",
   chatSharePublicBaseUrl: process.env.CHAT_SHARE_PUBLIC_BASE_URL || "",
   chatShareStoreUrl: process.env.CHAT_SHARE_STORE_URL || "",
+  openAiApiKey: process.env.OPENAI_API_KEY || "",
+  openAiChatUrl: process.env.OPENAI_CHAT_URL || "https://api.openai.com/v1/chat/completions",
+  openAiImageUrl: process.env.OPENAI_IMAGE_URL || "https://api.openai.com/v1/images/generations",
+  openAiGpt54Model:
+    process.env.OPENAI_GPT54_MODEL ||
+    process.env.OPENAI_GPT54_MINI_MODEL ||
+    "gpt-5.4-mini",
+  openAiImageModel: process.env.OPENAI_IMAGE_MODEL || "gpt-image-1",
+  vsegptApiKey: process.env.VSEGPT_API_KEY || process.env.AI_API_KEY || "",
+  vsegptChatUrl:
+    process.env.VSEGPT_CHAT_URL ||
+    process.env.AI_CHAT_URL ||
+    "https://api.vsegpt.ru/v1/chat/completions",
+  vsegptImageUrl:
+    process.env.VSEGPT_IMAGE_URL ||
+    process.env.AI_IMAGE_URL ||
+    "https://api.vsegpt.ru/v1/images/generations",
+  vsegptGpt55ModelId: process.env.VSEGPT_GPT55_MODEL_ID || "openai/gpt-5.4-nano",
+  vsegptGemini3ModelId:
+    process.env.VSEGPT_GEMINI3_MODEL_ID || "google/gemma-4-26b-a4b-it",
+  vsegptDeepSeekModelId:
+    process.env.VSEGPT_DEEPSEEK_MODEL_ID || "deepseek/deepseek-v4-flash-alt",
+  aiImageFallbackProvider: process.env.AI_IMAGE_FALLBACK_PROVIDER || "vsegpt",
+  aiImageFallbackModelKey: process.env.AI_IMAGE_FALLBACK_MODEL_KEY || "gemini3",
   aiApiKey: process.env.AI_API_KEY || "",
   aiChatUrl: process.env.AI_CHAT_URL || "",
   aiImageUrl: process.env.AI_IMAGE_URL || "",

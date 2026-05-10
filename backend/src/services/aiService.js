@@ -1,6 +1,15 @@
 const { Readable } = require("node:stream");
 const { env } = require("../config/env");
-const { selectChatModel, selectTitleModel, selectSummaryModel } = require("./entitlementService");
+const {
+  PROVIDER_VSEGPT,
+  assertSelectionConfigured,
+  hasCapability,
+  requestHasImageInput,
+  selectChatModel,
+  selectImageFallbackModel,
+  selectTitleModel,
+  selectSummaryModel
+} = require("./aiModelRegistry");
 
 function createMessagePayload(role, content) {
   return { role, content };
@@ -25,12 +34,12 @@ function withAdultModePrompt(requestBody, adultMode) {
   };
 }
 
-async function callAiJson({ upstreamUrl, body }) {
-  const response = await fetch(upstreamUrl, {
+async function callAiJson({ selection, body }) {
+  const response = await fetch(selection.upstreamUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.aiApiKey}`
+      Authorization: `Bearer ${selection.apiKey}`
     },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(env.aiTimeoutMs)
@@ -54,14 +63,6 @@ async function callAiJson({ upstreamUrl, body }) {
   }
 
   return data;
-}
-
-function assertConfigured(upstreamUrl, model, message) {
-  if (!env.aiApiKey || !upstreamUrl || !model) {
-    const error = new Error(message);
-    error.statusCode = 503;
-    throw error;
-  }
 }
 
 function gcd(left, right) {
@@ -108,18 +109,201 @@ function normalizeImageRequestBody(requestBody, model) {
   return normalized;
 }
 
-async function proxyAiRequest({ user, currentMode, adultMode = false, requestBody, res, onBeforeResponse }) {
+function contentHasImage(content) {
+  if (Array.isArray(content)) {
+    return content.some((part) => contentHasImage(part));
+  }
+
+  if (content && typeof content === "object") {
+    if (content.type === "image_url") {
+      return true;
+    }
+
+    return Object.values(content).some((value) => contentHasImage(value));
+  }
+
+  return false;
+}
+
+function collectImageParts(content, images = []) {
+  if (Array.isArray(content)) {
+    content.forEach((part) => collectImageParts(part, images));
+    return images;
+  }
+
+  if (!content || typeof content !== "object") {
+    return images;
+  }
+
+  if (content.type === "image_url") {
+    const imageUrl = content.image_url?.url || content.image_url;
+    if (typeof imageUrl === "string" && imageUrl.trim()) {
+      images.push(imageUrl.trim());
+    }
+    return images;
+  }
+
+  Object.values(content).forEach((value) => collectImageParts(value, images));
+  return images;
+}
+
+function extractTextFromContent(content) {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => extractTextFromContent(part))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (content && typeof content === "object") {
+    if (content.type === "image_url") {
+      return "";
+    }
+
+    if (content.type === "text" && typeof content.text === "string") {
+      return content.text;
+    }
+
+    return Object.values(content)
+      .map((value) => extractTextFromContent(value))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return "";
+}
+
+function collectRequestImages(requestBody) {
+  if (!requestBody || !Array.isArray(requestBody.messages)) {
+    return [];
+  }
+
+  return requestBody.messages.flatMap((message) => collectImageParts(message.content));
+}
+
+function buildImageDescriptionMessages(requestBody) {
+  const images = collectRequestImages(requestBody);
+  const content = [
+    {
+      type: "text",
+      text:
+        "Extract visible text and describe the important visual details from the attached image(s). " +
+        "Return concise plain text that can be inserted into another model prompt."
+    },
+    ...images.map((url) => ({
+      type: "image_url",
+      image_url: { url }
+    }))
+  ];
+
+  return [
+    createMessagePayload(
+      "system",
+      "You convert image inputs into a faithful text description for a text-only model."
+    ),
+    createMessagePayload("user", content)
+  ];
+}
+
+function replaceImageInputsWithDescription(requestBody, imageDescription) {
+  if (!requestBody || !Array.isArray(requestBody.messages)) {
+    return requestBody;
+  }
+
+  return {
+    ...requestBody,
+    messages: requestBody.messages.map((message) => {
+      const hasImage = contentHasImage(message.content);
+      const text = extractTextFromContent(message.content).trim();
+      if (!hasImage) {
+        return {
+          ...message,
+          content: text || message.content
+        };
+      }
+
+      return {
+        ...message,
+        content: [
+          text,
+          "Attached image description for the selected text-only model:",
+          imageDescription
+        ].filter(Boolean).join("\n\n")
+      };
+    })
+  };
+}
+
+async function describeImagesForTextFallback(requestBody) {
+  const fallbackSelection = selectImageFallbackModel();
+  assertSelectionConfigured(fallbackSelection);
+
+  const data = await callAiJson({
+    selection: fallbackSelection,
+    body: {
+      model: fallbackSelection.model,
+      stream: false,
+      temperature: 0,
+      max_tokens: 800,
+      messages: buildImageDescriptionMessages(requestBody)
+    }
+  });
+
+  const description = extractChoiceContent(data);
+  if (!description) {
+    const error = new Error("Image fallback did not return a text description");
+    error.statusCode = 502;
+    throw error;
+  }
+
+  return description;
+}
+
+async function prepareRequestBodyForSelection(requestBody, selection) {
+  const modelSupportsImage =
+    hasCapability(selection.modelDefinition, "vision") ||
+    hasCapability(selection.modelDefinition, "imageInput");
+
+  if (!requestHasImageInput(requestBody) || modelSupportsImage) {
+    return requestBody;
+  }
+
+  const imageDescription = await describeImagesForTextFallback(requestBody);
+  return replaceImageInputsWithDescription(requestBody, imageDescription);
+}
+
+async function proxyAiRequest({
+  user,
+  provider,
+  modelKey,
+  currentMode,
+  adultMode = false,
+  requestBody,
+  res,
+  onBeforeResponse
+}) {
   const selection = selectChatModel({
     user,
+    provider,
+    modelKey,
     currentMode,
     requestBody,
     adultMode
   });
 
-  assertConfigured(selection.upstreamUrl, selection.model, "AI service is not configured on the server");
+  assertSelectionConfigured(selection);
+
+  const preparedRequestBody = await prepareRequestBodyForSelection(
+    withAdultModePrompt(requestBody, adultMode),
+    selection
+  );
 
   const upstreamRequestBody = {
-    ...normalizeImageRequestBody(withAdultModePrompt(requestBody, adultMode), selection.model),
+    ...normalizeImageRequestBody(preparedRequestBody, selection.model),
     model: selection.model
   };
 
@@ -127,7 +311,7 @@ async function proxyAiRequest({ user, currentMode, adultMode = false, requestBod
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.aiApiKey}`
+      Authorization: `Bearer ${selection.apiKey}`
     },
     body: JSON.stringify(upstreamRequestBody),
     signal: AbortSignal.timeout(env.aiTimeoutMs)
@@ -160,12 +344,12 @@ function extractChoiceContent(data) {
   return data?.choices?.[0]?.message?.content?.trim?.() || "";
 }
 
-async function generateTitle({ user, firstUserMessage }) {
-  const selection = selectTitleModel(user);
-  assertConfigured(selection.upstreamUrl, selection.model, "AI title generation is not configured");
+async function generateTitle({ user, firstUserMessage, provider, modelKey }) {
+  const selection = selectTitleModel({ user, provider, modelKey });
+  assertSelectionConfigured(selection);
 
   const data = await callAiJson({
-    upstreamUrl: selection.upstreamUrl,
+    selection,
     body: {
       model: selection.model,
       stream: false,
@@ -184,12 +368,12 @@ async function generateTitle({ user, firstUserMessage }) {
   return extractChoiceContent(data).replace(/^"+|"+$/g, "").replace(/\.$/, "");
 }
 
-async function generateSummary({ user, promptText }) {
-  const selection = selectSummaryModel(user);
-  assertConfigured(selection.upstreamUrl, selection.model, "AI summarization is not configured");
+async function generateSummary({ user, promptText, provider, modelKey }) {
+  const selection = selectSummaryModel({ user, provider, modelKey });
+  assertSelectionConfigured(selection);
 
   const data = await callAiJson({
-    upstreamUrl: selection.upstreamUrl,
+    selection,
     body: {
       model: selection.model,
       stream: false,
@@ -227,13 +411,15 @@ function parseJsonArrayText(value) {
 async function generateTrendingQueries({ user, locale = "ru" }) {
   const selection = selectChatModel({
     user,
+    provider: PROVIDER_VSEGPT,
+    modelKey: "gemini3",
     currentMode: "search",
     requestBody: { messages: [] }
   });
-  assertConfigured(selection.upstreamUrl, selection.model, "AI trending search is not configured");
+  assertSelectionConfigured(selection);
 
   const data = await callAiJson({
-    upstreamUrl: selection.upstreamUrl,
+    selection,
     body: {
       model: selection.model,
       stream: false,
