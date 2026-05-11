@@ -370,7 +370,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (::speechRecognizerManager.isInitialized) {
             speechRecognizerManager.destroy()
         }
+<<<<<<< HEAD
         chatViewModel.onChatListUpdated = null
+=======
+>>>>>>> 6af6d90263bdf72f88a5c1a472b55577adf06d06
         adManager?.destroy()
         super.onDestroy()
     }
