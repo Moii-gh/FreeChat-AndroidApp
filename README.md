@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Android AI-чат с локальной историей, Telegram/VK-авторизацией, генерацией изображений и Node.js backend.</strong>
+  <strong>Android AI-чат с Telegram/VK-авторизацией, генерацией изображений, шарингом чатов и Node.js backend.</strong>
 </p>
 
 <p align="center">
@@ -33,20 +33,20 @@
 
 ## Описание для GitHub
 
-Android AI chat with Telegram/VK auth, local-first history, image and file tools, screen assistant, shared chats, and a Node.js/PostgreSQL backend.
+Android AI chat with Telegram/VK auth, image and file tools, screen assistant, shared chats, and a Node.js/PostgreSQL backend.
 
 <a id="overview"></a>
 
 ## Обзор
 
-**FreeChat** - мобильное AI-приложение для Android. Клиент хранит историю чатов локально, умеет работать с файлами и изображениями, поддерживает разные режимы AI-запросов и синхронизирует данные через отдельный backend.
+**FreeChat** - мобильное AI-приложение для Android. Клиент умеет работать с файлами и изображениями, поддерживает разные режимы AI-запросов, публичный шаринг чатов и синхронизацию данных через отдельный backend.
 
 Проект состоит из двух основных частей:
 
-- `app/` - Android-клиент на Kotlin. В проекте используются Jetpack Compose для auth flow, XML/ViewBinding для основного интерфейса, Room, Retrofit, Coroutines и Android security APIs.
+- `app/` - Android-клиент на Kotlin. В проекте используются Jetpack Compose для auth flow, XML/ViewBinding для основного интерфейса, Retrofit, Coroutines и Android security APIs.
 - `backend/` - Node.js/Express backend для авторизации, Telegram/VK login, JWT-сессий, синхронизации чатов, файлов, публичных ссылок и server-side AI proxy.
 
-Backend держит API-ключи на сервере, а Android-клиент обращается к нему через `APP_API_BASE_URL`. Это позволяет не встраивать AI-секреты в APK и централизованно управлять лимитами, моделями и fallback-провайдерами.
+Backend хранит основную базу данных в PostgreSQL и держит API-ключи на сервере, а Android-клиент обращается к нему через `APP_API_BASE_URL`. Это позволяет не встраивать AI-секреты в APK и централизованно управлять лимитами, моделями и fallback-провайдерами.
 
 <a id="features"></a>
 
@@ -54,12 +54,12 @@ Backend держит API-ключи на сервере, а Android-клиент
 
 | Сценарий | Что реализовано |
 | --- | --- |
-| AI-чат | Диалоги с локальной историей, потоковая генерация UI-ответов, повторная генерация, автозаголовки и краткие summary |
+| AI-чат | Диалоги с историей сообщений, потоковая генерация UI-ответов, повторная генерация, автозаголовки и краткие summary |
 | Режимы запросов | Обычный чат, web search, shopping research, study mode, image generation и 18+ mode |
 | AI-провайдеры | Server-side routing между OpenAI-совместимым API и VseGPT, публичный список моделей и настройка fallback |
 | Файлы и медиа | Вложения изображений и документов, avatar upload, генерация изображений, анализ файлов и фото |
 | Авторизация | Email legacy flow, Telegram bot/widget/native login, VK native login, миграция legacy email account в Telegram |
-| Хранение | Room на Android, PostgreSQL на backend, синхронизация чатов и сообщений |
+| Хранение | PostgreSQL на backend, синхронизация чатов и сообщений через API |
 | Шаринг | Публичные ссылки на снапшоты чатов, список своих ссылок и отзыв ссылок |
 | Безопасность | JWT, bcrypt, server-side secrets, biometric gate, локальные security-настройки Android |
 | Ассистент | Digital assistant overlay, screen capture flow, перевод экрана и вопросы по текущему экрану |
@@ -68,7 +68,7 @@ Backend держит API-ключи на сервере, а Android-клиент
 
 ## Почему проект выделяется
 
-- **Local-first Android-клиент.** История живет в Room и продолжает быть доступной на устройстве, а серверная синхронизация добавляется поверх локального состояния.
+- **Backend-first хранение.** Основная база данных находится в PostgreSQL, а Android-клиент синхронизируется с backend API.
 - **Server-side AI proxy.** Ключи, модели, лимиты и fallback-логика остаются на backend, а не в мобильном приложении.
 - **Несколько auth-сценариев.** Поддержаны Telegram, VK и legacy email flow, включая миграцию существующих аккаунтов.
 - **Практичный AI-интерфейс.** В приложении есть отдельные режимы для поиска, покупок, обучения, генерации изображений и работы с файлами.
@@ -80,9 +80,8 @@ Backend держит API-ключи на сервере, а Android-клиент
 
 ```mermaid
 flowchart TD
-    A["Android app"] --> B["Room local database"]
-    A --> C["Express API"]
-    C --> D["PostgreSQL"]
+    A["Android app"] --> C["Express API"]
+    C --> D["PostgreSQL database"]
     C --> E["OpenAI-compatible API"]
     C --> F["VseGPT API"]
     C --> G["Telegram Bot / Login"]
@@ -93,7 +92,7 @@ flowchart TD
 ### Поток данных
 
 1. Пользователь входит через Telegram, VK или legacy email flow.
-2. Android-клиент получает JWT, хранит сессию и работает с локальной базой Room.
+2. Android-клиент получает JWT и обращается к backend API.
 3. Сообщения и чаты синхронизируются с backend через `/api/sync`.
 4. AI-запросы идут на `/api/ai/*`, backend выбирает провайдера и модель, применяет лимиты и проксирует запрос к upstream API.
 5. Файлы загружаются через `/api/files/*`, публичные ссылки на чаты создаются через `/api/chat-shares`.
@@ -108,7 +107,7 @@ flowchart TD
 | UI | Jetpack Compose, XML layouts, ViewBinding, Material Components |
 | Архитектура | ViewModel, Repository pattern |
 | Networking | Retrofit, OkHttp, Gson |
-| Хранение | Room |
+| Клиентское состояние | Android app storage, account/session settings |
 | Async | Kotlin Coroutines |
 | Security | AndroidX Security Crypto, Biometric |
 | Media | CameraX, ML Kit Text Recognition, Coil |
@@ -410,5 +409,5 @@ npm test
 
 <p align="center">
   <strong>FreeChat</strong><br />
-  Mobile AI chat with local persistence, server-side AI routing and Android assistant features.
+  Mobile AI chat with server-side AI routing, shared chats and Android assistant features.
 </p>
