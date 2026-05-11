@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/freechat-logo-transparent.png" alt="FreeChat logo" width="136" />
+  <img src="docs/assets/freechat-logo-white-transparent.png" alt="FreeChat logo" width="136" />
 </p>
 
 <h1 align="center">FreeChat</h1>
