@@ -13,6 +13,7 @@ import com.example.chatapp.network.dto.CreateChatShareRequest
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
 import com.example.chatapp.util.FileUtils
+import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -53,7 +54,8 @@ class ChatRepository(context: Context) {
     }
 
     suspend fun updateChatTitle(chatId: String, title: String) {
-        dao.updateChatTitle(chatId, title)
+        dao.updateChatTitle(chatId, title, System.currentTimeMillis())
+        SafeLog.d("ChatRepository", "Chat title saved in local database chatId=${chatId.take(8)} hasTitle=${title.isNotBlank()}")
     }
 
     suspend fun updateChatSummary(chatId: String, summary: String) {
@@ -327,18 +329,27 @@ class ChatRepository(context: Context) {
     }
 
     suspend fun generateChatTitle(
-        firstUserMessage: String
+        firstUserMessage: String,
+        firstAssistantMessage: String? = null
     ): String? = withContext(Dispatchers.IO) {
         val authToken = sessionStore.getAuthToken()?.trim().orEmpty()
         if (authToken.isBlank()) return@withContext null
 
         val provider = aiProviderSettings.getProvider()
+        val modelKey = aiProviderSettings.getModelKey()
+        SafeLog.d(
+            "ChatRepository",
+            "Chat title generation started provider=${provider.code} modelKey=$modelKey hasAssistantMessage=${!firstAssistantMessage.isNullOrBlank()}"
+        )
         AiApiService.generateTitle(
             authToken = authToken,
             provider = provider,
-            modelKey = aiProviderSettings.getModelKey(),
-            firstUserMessage = firstUserMessage
-        )
+            modelKey = modelKey,
+            firstUserMessage = firstUserMessage,
+            firstAssistantMessage = firstAssistantMessage
+        ).also { title ->
+            SafeLog.d("ChatRepository", "Chat title generation finished hasTitle=${!title.isNullOrBlank()}")
+        }
     }
 
     private fun currentOwnerKey(): String {

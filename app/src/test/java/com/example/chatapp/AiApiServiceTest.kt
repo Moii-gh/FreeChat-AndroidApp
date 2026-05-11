@@ -91,6 +91,7 @@ class AiApiServiceTest {
             put("content", "Summarize this file")
             put("mimeType", "text/plain")
             put("fileName", "notes.txt")
+            put("base64", "YWxwaGEKYmV0YQ==")
             put("fileText", "alpha\nbeta")
         }
 
@@ -109,6 +110,47 @@ class AiApiServiceTest {
         assertTrue(content.contains("text/plain"))
         assertTrue(content.contains("alpha\nbeta"))
         assertFalse(content.contains("base64"))
+
+        val fileSearchFile = body.getJSONArray("fileSearchFiles").getJSONObject(0)
+        assertEquals("YWxwaGEKYmV0YQ==", fileSearchFile.getString("base64"))
+        assertEquals("text/plain", fileSearchFile.getString("mimeType"))
+        assertEquals("notes.txt", fileSearchFile.getString("fileName"))
+    }
+
+    @Test
+    fun `image generation request keeps source image for backend image edit routing`() {
+        val message = JSONObject().apply {
+            put("role", "user")
+            put("content", "Make the background brighter")
+            put("base64", "aW1hZ2U=")
+            put("mimeType", "image/png")
+            put("fileName", "photo.png")
+        }
+
+        val body = JSONObject(
+            AiApiService.buildRequestBody(
+                isImageGeneration = true,
+                messagesToKeep = listOf(message),
+                systemPrompt = null
+            )
+        )
+
+        assertEquals("Make the background brighter", body.getString("prompt"))
+        assertEquals(
+            "data:image/png;base64,aW1hZ2U=",
+            body.getJSONArray("images")
+                .getJSONObject(0)
+                .getString("image_url")
+        )
+    }
+
+    @Test
+    fun `json image response can be rendered outside explicit image mode`() {
+        val rendered = AiApiService.parseImageResponseBody(
+            """{"data":[{"b64_json":"aW1hZ2U="}]}"""
+        )
+
+        assertEquals("![image](data:image/png;base64,aW1hZ2U=)", rendered)
     }
 
     @Test
@@ -136,6 +178,25 @@ class AiApiServiceTest {
         assertEquals("gpt54", payload.getString("modelKey"))
         assertFalse(payload.has("displayName"))
         assertFalse(payload.toString().contains("api_key", ignoreCase = true))
+        assertFalse(payload.toString().contains("sk-"))
+    }
+
+    @Test
+    fun `title payload sends provider model and assistant answer without secrets`() {
+        val payload = JSONObject(
+            AiApiService.buildTitlePayload(
+                provider = AiProvider.VSEGPT,
+                modelKey = "gemini3",
+                firstUserMessage = "Как сварить кофе?",
+                firstAssistantMessage = "Вот короткий рецепт."
+            )
+        )
+
+        assertEquals("vsegpt", payload.getString("provider"))
+        assertEquals("gemini3", payload.getString("modelKey"))
+        assertEquals("Как сварить кофе?", payload.getString("firstUserMessage"))
+        assertEquals("Вот короткий рецепт.", payload.getString("firstAssistantMessage"))
+        assertFalse(payload.has("apiKey"))
         assertFalse(payload.toString().contains("sk-"))
     }
 }

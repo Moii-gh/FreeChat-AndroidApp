@@ -17,8 +17,18 @@ data class AiModelOption(
     val provider: AiProvider,
     val modelKey: String,
     val displayName: String,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val capabilities: Set<String> = emptySet()
 )
+
+object AiCapabilities {
+    const val TEXT = "text"
+    const val VISION = "vision"
+    const val WEB_SEARCH = "webSearch"
+    const val FILE_SEARCH = "fileSearch"
+    const val IMAGE_GENERATION = "imageGeneration"
+    const val IMAGE_EDIT = "imageEdit"
+}
 
 object AiModelCatalog {
     const val OPENAI_DEFAULT_MODEL_KEY = "gpt54"
@@ -29,23 +39,47 @@ object AiModelCatalog {
             provider = AiProvider.OPENAI,
             modelKey = OPENAI_DEFAULT_MODEL_KEY,
             displayName = "GPT-5.4",
-            isDefault = true
+            isDefault = true,
+            capabilities = setOf(
+                AiCapabilities.TEXT,
+                AiCapabilities.VISION,
+                AiCapabilities.WEB_SEARCH,
+                AiCapabilities.FILE_SEARCH,
+                AiCapabilities.IMAGE_GENERATION,
+                AiCapabilities.IMAGE_EDIT
+            )
         ),
         AiModelOption(
             provider = AiProvider.VSEGPT,
             modelKey = "gpt55",
-            displayName = "GPT-5.5"
+            displayName = "GPT-5.5",
+            capabilities = setOf(
+                AiCapabilities.TEXT,
+                AiCapabilities.WEB_SEARCH,
+                AiCapabilities.IMAGE_GENERATION
+            )
         ),
         AiModelOption(
             provider = AiProvider.VSEGPT,
             modelKey = VSEGPT_DEFAULT_MODEL_KEY,
             displayName = "Gemini-3",
-            isDefault = true
+            isDefault = true,
+            capabilities = setOf(
+                AiCapabilities.TEXT,
+                AiCapabilities.VISION,
+                AiCapabilities.WEB_SEARCH,
+                AiCapabilities.IMAGE_GENERATION
+            )
         ),
         AiModelOption(
             provider = AiProvider.VSEGPT,
             modelKey = "deepseek",
-            displayName = "DeepSeek"
+            displayName = "DeepSeek",
+            capabilities = setOf(
+                AiCapabilities.TEXT,
+                AiCapabilities.WEB_SEARCH,
+                AiCapabilities.IMAGE_GENERATION
+            )
         )
     )
 
@@ -64,6 +98,9 @@ object AiModelCatalog {
             ?: models.firstOrNull { it.isDefault }
             ?: models.first()
     }
+
+    fun supports(provider: AiProvider, modelKey: String?, capability: String): Boolean =
+        find(provider, modelKey).capabilities.contains(capability)
 }
 
 class AiProviderSettings(private val accountSettings: AccountScopedSettings) {

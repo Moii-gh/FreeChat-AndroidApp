@@ -2,6 +2,7 @@ package com.example.chatapp.network
 
 import com.example.chatapp.BuildConfig
 import com.example.chatapp.ChatMode
+import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -77,14 +78,20 @@ object AiApiService {
                 put("response_format", "b64_json")
                 put("n", 1)
                 put("size", "1024x1024")
-                val lastPrompt = messagesToKeep.lastOrNull {
-                    it.getString("role") == "user"
-                }?.getString("content") ?: "Creative image"
+                val lastUserMessage = messagesToKeep.lastOrNull {
+                    it.optString("role") == "user"
+                }
+                val lastPrompt = lastUserMessage?.optString("content") ?: "Creative image"
                 put("prompt", lastPrompt)
+                val imageReferences = buildImageEditReferences(lastUserMessage)
+                if (imageReferences.length() > 0) {
+                    put("images", imageReferences)
+                }
             } else {
                 put("stream", true)
 
                 val messages = JSONArray()
+                val fileSearchFiles = JSONArray()
                 if (systemPrompt != null) {
                     messages.put(JSONObject().apply {
                         put("role", "system")
@@ -114,6 +121,7 @@ object AiApiService {
                             }
                         )
                     } else {
+                        buildFileSearchAttachment(msg, mimeType)?.let { fileSearchFiles.put(it) }
                         messages.put(JSONObject().apply {
                             put("role", msg.optString("role", "user"))
                             put("content", messageText)
@@ -122,6 +130,9 @@ object AiApiService {
                 }
 
                 put("messages", messages)
+                if (fileSearchFiles.length() > 0) {
+                    put("fileSearchFiles", fileSearchFiles)
+                }
             }
         }.toString()
     }
@@ -139,6 +150,19 @@ object AiApiService {
         put("adultMode", adultMode)
         put("request", JSONObject(requestBody))
     }.toString()
+
+    fun parseImageResponseBody(bodyText: String): String? = runCatching {
+        val imageData = JSONObject(bodyText)
+            .getJSONArray("data")
+            .getJSONObject(0)
+        val b64 = imageData.optString("b64_json")
+        val imageUrl = imageData.optString("url")
+        when {
+            b64.isNotBlank() -> "![image](data:image/png;base64,$b64)"
+            imageUrl.isNotBlank() -> "![image]($imageUrl)"
+            else -> null
+        }
+    }.getOrNull()
 
     private fun buildMessageText(msg: JSONObject): String {
         val content = msg.optString("content", "")
@@ -173,6 +197,34 @@ object AiApiService {
 
     private fun isImageMimeType(mimeType: String): Boolean =
         mimeType.startsWith("image/", ignoreCase = true)
+
+    private fun buildImageEditReferences(message: JSONObject?): JSONArray {
+        val result = JSONArray()
+        if (message == null) return result
+
+        val mimeType = normalizedMimeType(message)
+        val base64 = message.optString("base64").takeIf { it.isNotBlank() }
+        if (base64 != null && isImageMimeType(mimeType)) {
+            result.put(JSONObject().apply {
+                put("image_url", "data:$mimeType;base64,$base64")
+            })
+        }
+
+        return result
+    }
+
+    private fun buildFileSearchAttachment(message: JSONObject, mimeType: String): JSONObject? {
+        if (isImageMimeType(mimeType)) return null
+        val base64 = message.optString("base64").takeIf { it.isNotBlank() } ?: return null
+
+        return JSONObject().apply {
+            put("base64", base64)
+            put("mimeType", mimeType)
+            message.optString("fileName").takeIf { it.isNotBlank() }?.let {
+                put("fileName", it)
+            }
+        }
+    }
 
     suspend fun fetchStreamingResponse(
         authToken: String,
@@ -237,18 +289,14 @@ object AiApiService {
                         }
 
                         var finalReply = ""
+                        val isJsonResponse = response.header("Content-Type")
+                            .orEmpty()
+                            .contains("application/json", ignoreCase = true)
 
-                        if (isImageGeneration) {
-                            val imageData = JSONObject(responseBody.string())
-                                .getJSONArray("data")
-                                .getJSONObject(0)
-                            val b64 = imageData.optString("b64_json")
-                            val imageUrl = imageData.optString("url")
-                            finalReply = when {
-                                b64.isNotBlank() -> "![image](data:image/png;base64,$b64)"
-                                imageUrl.isNotBlank() -> "![image]($imageUrl)"
-                                else -> error("Image response is empty")
-                            }
+                        if (isImageGeneration || isJsonResponse) {
+                            val bodyText = responseBody.string()
+                            finalReply = parseImageResponseBody(bodyText)
+                                ?: if (isImageGeneration) error("Image response is empty") else bodyText
                             withContext(Dispatchers.Main) {
                                 callback.onChunk(finalReply)
                             }
@@ -310,21 +358,51 @@ object AiApiService {
         authToken: String,
         provider: AiProvider,
         modelKey: String,
-        firstUserMessage: String
+        firstUserMessage: String,
+        firstAssistantMessage: String? = null
     ): String? {
+        SafeLog.d(
+            "AiApiService",
+            "Requesting chat title provider=${provider.code} modelKey=$modelKey hasAssistantMessage=${!firstAssistantMessage.isNullOrBlank()}"
+        )
         return executeContentRequest(
             authToken = authToken,
             path = "ai/title",
-            payload = JSONObject().apply {
-                put("provider", provider.code)
-                put("modelKey", modelKey)
-                put("firstUserMessage", firstUserMessage)
-            }.toString()
-        )?.trim()
-            ?.removeSurrounding("\"")
-            ?.removeSuffix(".")
-            ?.takeIf { it.isNotBlank() && it.length <= 60 }
+            payload = buildTitlePayload(
+                provider = provider,
+                modelKey = modelKey,
+                firstUserMessage = firstUserMessage,
+                firstAssistantMessage = firstAssistantMessage
+            )
+        )?.let(::sanitizeTitle)
     }
+
+    fun buildTitlePayload(
+        provider: AiProvider,
+        modelKey: String,
+        firstUserMessage: String,
+        firstAssistantMessage: String? = null
+    ): String = JSONObject().apply {
+        put("provider", provider.code)
+        put("modelKey", modelKey)
+        put("firstUserMessage", firstUserMessage)
+        if (!firstAssistantMessage.isNullOrBlank()) {
+            put("firstAssistantMessage", firstAssistantMessage)
+        }
+    }.toString()
+
+    private fun sanitizeTitle(rawTitle: String): String? =
+        rawTitle
+            .trim()
+            .lineSequence()
+            .map { it.trim() }
+            .firstOrNull { it.isNotBlank() }
+            ?.replace(Regex("^(title|название)\\s*[:：-]\\s*", RegexOption.IGNORE_CASE), "")
+            ?.trim('"', '\'', '«', '»', '“', '”', '„')
+            ?.replace(Regex("\\s+"), " ")
+            ?.removeSuffix(".")
+            ?.trim()
+            ?.takeIf { it.isNotBlank() && it.length <= 80 }
 
     suspend fun summarizeMessages(
         authToken: String,
@@ -372,11 +450,14 @@ object AiApiService {
             NetworkModule.createAiHttpClient(authToken).newCall(request).execute().use { response ->
                 val body = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
+                    SafeLog.w("AiApiService", "Content request failed path=$path http=${response.code}")
                     return@use null
                 }
 
                 JSONObject(body).optString("content").takeIf { it.isNotBlank() }
             }
+        }.onFailure { error ->
+            SafeLog.w("AiApiService", "Content request failed path=$path", error)
         }.getOrNull()
     }
 

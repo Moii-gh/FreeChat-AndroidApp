@@ -7,12 +7,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.chatapp.network.AiCapabilities
+import com.example.chatapp.network.AiModelCatalog
+import com.example.chatapp.network.AiProviderSettings
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.example.chatapp.camera.PremiumCameraActivity
 import com.example.chatapp.util.setHapticClickListener
 
 class BottomSheetMenuFragment : BottomSheetDialogFragment() {
     private var cameraImageUri: Uri? = null
+    private val serverFeatureUnavailableMessage =
+        "\u042d\u0442\u0430 \u0444\u0443\u043d\u043a\u0446\u0438\u044f \u043f\u043e\u043a\u0430 \u043d\u0435 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0430 \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435."
 
     private val premiumCameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -106,7 +111,21 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             filePickerLauncher.launch("*/*")
         }
 
-        view.findViewById<View>(R.id.optCreateImage).setHapticClickListener {
+        val providerSettings = AiProviderSettings(requireContext())
+        val selectedProvider = providerSettings.getProvider()
+        val selectedModelKey = providerSettings.getModelKey()
+        val canCreateImages = AiModelCatalog.supports(
+            selectedProvider,
+            selectedModelKey,
+            AiCapabilities.IMAGE_GENERATION
+        )
+        val canUseWebSearch = AiModelCatalog.supports(
+            selectedProvider,
+            selectedModelKey,
+            AiCapabilities.WEB_SEARCH
+        )
+
+        configureFeatureOption(view.findViewById(R.id.optCreateImage), canCreateImages) {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_create_image"),
                 R.drawable.ic_palette,
@@ -117,7 +136,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             dismiss()
         }
 
-        view.findViewById<View>(R.id.optSearch).setHapticClickListener {
+        configureFeatureOption(view.findViewById(R.id.optSearch), canUseWebSearch) {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_search"),
                 R.drawable.ic_globe_new,
@@ -128,7 +147,7 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             dismiss()
         }
 
-        view.findViewById<View>(R.id.optShopping).setHapticClickListener {
+        configureFeatureOption(view.findViewById(R.id.optShopping), canUseWebSearch) {
             activity?.setInputContext(
                 LocaleHelper.getString(requireContext(), "panel_purchase_research"),
                 R.drawable.ic_shopping_new,
@@ -158,5 +177,16 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
 
     private fun toast(msg: String) {
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun configureFeatureOption(view: View, available: Boolean, action: () -> Unit) {
+        view.alpha = if (available) 1f else 0.45f
+        view.setHapticClickListener {
+            if (available) {
+                action()
+            } else {
+                toast(serverFeatureUnavailableMessage)
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@ import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
+import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -82,9 +83,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var selectedFileUri: Uri? = null
     private var activeResponseJob: Job? = null
+    var onChatListUpdated: (() -> Unit)? = null
 
     /** Накопленная информация о всех файлах, прикреплённых за сессию чата */
     private val attachedFilesRegistry = mutableListOf<String>()
+    private val titleGenerationInFlight = mutableSetOf<String>()
+    private val titleGenerationCompletedChats = mutableSetOf<String>()
 
     // Кэш чатов для бокового меню
     var cachedChats: List<ChatEntity> = emptyList()
@@ -93,12 +97,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Количество сообщений, храним в скользящем окне для контекста */
     private val CONTEXT_WINDOW_SIZE = 20
 
+    private fun notifyChatListUpdated() {
+        SafeLog.d("ChatViewModel", "Chat history cache updated count=${cachedChats.size}")
+        onChatListUpdated?.invoke()
+    }
+
     // ──────── CRUD операции с чатами ────────
 
     fun performSync(onRefreshed: (() -> Unit)? = null) {
         viewModelScope.launch {
             syncRepository.trySync()
             cachedChats = repository.getAllChats()
+            notifyChatListUpdated()
             onRefreshed?.invoke()
         }
     }
@@ -122,6 +132,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val chatId = repository.createChat(temporaryTitle)
             cachedChats = repository.getAllChats()
+            notifyChatListUpdated()
             callback(chatId)
         }
     }
@@ -295,17 +306,84 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun generateAndSetChatTitle(chatId: String, firstMessage: String, onDone: () -> Unit) {
+    fun generateAndSetChatTitle(
+        chatId: String,
+        firstMessage: String,
+        firstAssistantMessage: String? = null,
+        onDone: (Boolean) -> Unit = {}
+    ) {
         viewModelScope.launch {
-            val aiTitle = repository.generateChatTitle(firstMessage)
-            if (aiTitle != null) {
-                currentChatTitle = aiTitle
-                repository.updateChatTitle(chatId, aiTitle)
-                cachedChats = repository.getAllChats()
-                onDone()
+            if (!titleGenerationInFlight.add(chatId)) {
+                SafeLog.d("ChatViewModel", "Chat title generation skipped because request is already in flight")
+                onDone(false)
+                return@launch
+            }
+
+            try {
+                val aiTitle = repository.generateChatTitle(firstMessage, firstAssistantMessage)
+                if (aiTitle != null) {
+                    if (currentChatId == chatId) {
+                        currentChatTitle = aiTitle
+                    }
+                    repository.updateChatTitle(chatId, aiTitle)
+                    titleGenerationCompletedChats.add(chatId)
+                    cachedChats = repository.getAllChats()
+                    SafeLog.d("ChatViewModel", "Chat title saved and history cache refreshed hasTitle=true")
+                    notifyChatListUpdated()
+                    syncRepository.trySync()
+                    cachedChats = repository.getAllChats()
+                    notifyChatListUpdated()
+                    onDone(true)
+                } else {
+                    SafeLog.d("ChatViewModel", "Chat title generation returned empty title; keeping temporary title")
+                    onDone(false)
+                }
+            } finally {
+                titleGenerationInFlight.remove(chatId)
             }
         }
     }
+
+    private fun maybeGenerateTitleAfterSuccessfulResponse(chatId: String) {
+        val firstUserMessage = firstMessageContent("user") ?: return
+        if (!shouldGenerateTitle(chatId, firstUserMessage)) {
+            return
+        }
+
+        val firstAssistantMessage = firstMessageContent("assistant")
+        SafeLog.d(
+            "ChatViewModel",
+            "Chat title generation scheduled chatId=${chatId.take(8)} hasAssistantMessage=${!firstAssistantMessage.isNullOrBlank()}"
+        )
+        generateAndSetChatTitle(chatId, firstUserMessage, firstAssistantMessage)
+    }
+
+    private fun shouldGenerateTitle(chatId: String, firstUserMessage: String): Boolean {
+        if (isAnonymousChat || titleGenerationCompletedChats.contains(chatId)) {
+            return false
+        }
+
+        val title = currentChatTitle.trim()
+        val firstMessageDraft = firstUserMessage.take(60).trim()
+        val temporaryTitles = setOf(
+            "",
+            LocaleHelper.getString(getApplication(), "label_new_chat"),
+            LocaleHelper.getString(getApplication(), "label_file_analysis"),
+            LocaleHelper.getString(getApplication(), "untitled_chat"),
+            "New chat",
+            "Новый чат",
+            "Untitled",
+            "Без названия"
+        )
+
+        return title in temporaryTitles || (firstMessageDraft.isNotBlank() && title == firstMessageDraft)
+    }
+
+    private fun firstMessageContent(role: String): String? =
+        chatHistory.firstOrNull { it.optString("role") == role }
+            ?.optString("content")
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
 
     // ──────── Добавление в историю и отправка ────────
 
@@ -528,11 +606,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             )
                         }
                     }
-                    val titleSource = chatHistory.firstOrNull {
-                        it.getString("role") == "user"
-                    }?.getString("content")
-                        ?: LocaleHelper.getString(getApplication(), "label_file_analysis")
-                    generateAndSetChatTitle(chatId, titleSource) {}
+                    cachedChats = repository.getAllChats()
+                    notifyChatListUpdated()
+                    maybeGenerateTitleAfterSuccessfulResponse(chatId)
                     performSync()
                 }
             }
@@ -560,6 +636,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     )
                     cachedChats = repository.getAllChats()
+                    notifyChatListUpdated()
+                    maybeGenerateTitleAfterSuccessfulResponse(chatId)
                     performSync()
                 }
             }

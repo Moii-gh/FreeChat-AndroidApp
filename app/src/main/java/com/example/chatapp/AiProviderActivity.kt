@@ -173,7 +173,8 @@ class AiProviderActivity : AppCompatActivity() {
             provider = provider,
             modelKey = modelKey,
             displayName = displayName,
-            isDefault = isDefault
+            isDefault = isDefault,
+            capabilities = capabilities.toSet()
         )
     }
 

@@ -28,5 +28,6 @@ data class AiModelDescriptorResponse(
     val provider: String,
     val modelKey: String,
     val displayName: String,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val capabilities: List<String> = emptyList()
 )

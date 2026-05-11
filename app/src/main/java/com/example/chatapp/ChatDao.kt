@@ -14,8 +14,8 @@ interface ChatDao {
     @Update
     suspend fun updateChat(chat: ChatEntity)
 
-    @Query("UPDATE chats SET title = :title WHERE id = :chatId")
-    suspend fun updateChatTitle(chatId: String, title: String)
+    @Query("UPDATE chats SET title = :title, lastUpdated = :updatedAt WHERE id = :chatId")
+    suspend fun updateChatTitle(chatId: String, title: String, updatedAt: Long)
 
     @Query("UPDATE chats SET lastUpdated = :timestamp WHERE id = :chatId")
     suspend fun updateChatLastUpdated(chatId: String, timestamp: Long)

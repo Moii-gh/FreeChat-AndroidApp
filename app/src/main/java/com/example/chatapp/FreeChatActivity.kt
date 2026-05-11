@@ -269,6 +269,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupHelpers()
         setupTopBar()
         setupDrawer()
+        chatViewModel.onChatListUpdated = {
+            runOnUiThread {
+                refreshDrawerSelection()
+            }
+        }
         setupInputArea()
         setupWelcomeActions()
         setupPreview()
@@ -365,6 +370,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (::speechRecognizerManager.isInitialized) {
             speechRecognizerManager.destroy()
         }
+        chatViewModel.onChatListUpdated = null
         adManager?.destroy()
         super.onDestroy()
     }

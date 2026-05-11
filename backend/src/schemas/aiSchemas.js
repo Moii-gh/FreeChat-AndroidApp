@@ -28,7 +28,8 @@ const aiChatSchema = z.object({
 const aiTitleSchema = z.object({
   provider: aiProviderSchema,
   modelKey: aiModelKeySchema,
-  firstUserMessage: z.string().trim().min(1).max(4000)
+  firstUserMessage: z.string().trim().min(1).max(4000),
+  firstAssistantMessage: z.string().trim().max(8000).optional()
 }).strict();
 
 const aiSummarySchema = z.object({

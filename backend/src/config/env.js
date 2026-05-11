@@ -84,7 +84,12 @@ const env = {
   chatShareStoreUrl: process.env.CHAT_SHARE_STORE_URL || "",
   openAiApiKey: process.env.OPENAI_API_KEY || "",
   openAiChatUrl: process.env.OPENAI_CHAT_URL || "https://api.openai.com/v1/chat/completions",
+  openAiResponsesUrl: process.env.OPENAI_RESPONSES_URL || "https://api.openai.com/v1/responses",
   openAiImageUrl: process.env.OPENAI_IMAGE_URL || "https://api.openai.com/v1/images/generations",
+  openAiImageEditUrl: process.env.OPENAI_IMAGE_EDIT_URL || "https://api.openai.com/v1/images/edits",
+  openAiFilesUrl: process.env.OPENAI_FILES_URL || "https://api.openai.com/v1/files",
+  openAiVectorStoresUrl:
+    process.env.OPENAI_VECTOR_STORES_URL || "https://api.openai.com/v1/vector_stores",
   openAiGpt54Model:
     process.env.OPENAI_GPT54_MODEL ||
     process.env.OPENAI_GPT54_MINI_MODEL ||

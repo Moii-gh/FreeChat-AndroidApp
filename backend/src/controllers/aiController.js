@@ -42,7 +42,16 @@ function getAllowedStringLength(path, value) {
       : MAX_URL_LENGTH;
   }
 
+  if (isInlineFileContentPath(path)) {
+    return MAX_DATA_URL_LENGTH;
+  }
+
   return MAX_STRING_LENGTH;
+}
+
+function isInlineFileContentPath(path) {
+  return /\.(fileSearchFiles|file_search_files)\[\d+\]\.(base64|data|content|dataUrl|data_url)$/.test(path) ||
+    /\.(fileSearch|file_search)\.files\[\d+\]\.(base64|data|content|dataUrl|data_url)$/.test(path);
 }
 
 function inspectAiValue(value, state, path = "request", depth = 0) {
@@ -61,7 +70,7 @@ function inspectAiValue(value, state, path = "request", depth = 0) {
     }
 
     const isInlineImageUrl = path.endsWith(".image_url.url") && value.startsWith("data:image/");
-    if (isInlineImageUrl) {
+    if (isInlineImageUrl || isInlineFileContentPath(path)) {
       return;
     }
 
@@ -192,6 +201,7 @@ function createAiController({ aiUsageModel }) {
         }
 
         const firstUserMessage = req.validatedBody?.firstUserMessage?.trim?.() || "";
+        const firstAssistantMessage = req.validatedBody?.firstAssistantMessage?.trim?.() || "";
         if (!firstUserMessage) {
           return res.status(400).json({
             message: "firstUserMessage is required"
@@ -201,6 +211,7 @@ function createAiController({ aiUsageModel }) {
         const content = await generateTitle({
           user,
           firstUserMessage,
+          firstAssistantMessage,
           provider: req.validatedBody?.provider,
           modelKey: req.validatedBody?.modelKey
         });
