@@ -1,30 +1,31 @@
+<p align="center">
+  <img src="docs/assets/freechat-logo-transparent.png" alt="FreeChat logo" width="136" />
+</p>
+
 <h1 align="center">FreeChat</h1>
 
 <p align="center">
-  <img src="app/src/main/res/drawable/logo.png" alt="FreeChat logo" width="140" />
+  <strong>Android AI-чат с server-side AI routing, Telegram/VK-авторизацией и PostgreSQL backend.</strong><br />
+  <span>Генерация изображений, вложения, экранный ассистент, публичные ссылки на чаты и управляемые дневные лимиты.</span>
 </p>
 
 <p align="center">
-  <strong>Android AI-чат с Telegram/VK-авторизацией, генерацией изображений, шарингом чатов и Node.js backend.</strong>
-</p>
-
-<p align="center">
-  <a href="#github-description">GitHub Description</a> |
-  <a href="#overview">Обзор</a> |
-  <a href="#features">Возможности</a> |
-  <a href="#architecture">Архитектура</a> |
-  <a href="#quick-start">Быстрый старт</a> |
-  <a href="#api">API</a> |
+  <a href="#github-description">Описание</a> ·
+  <a href="#overview">Обзор</a> ·
+  <a href="#features">Возможности</a> ·
+  <a href="#architecture">Архитектура</a> ·
+  <a href="#quick-start">Быстрый старт</a> ·
+  <a href="#api">API</a> ·
   <a href="#tests">Тесты</a>
 </p>
 
 <p align="center">
-  <img alt="Android" src="https://img.shields.io/badge/Android-34-1f7a4d?style=for-the-badge&logo=android&logoColor=white" />
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-2f4f9d?style=for-the-badge&logo=kotlin&logoColor=white" />
-  <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack_Compose-UI-0d9488?style=for-the-badge&logo=jetpackcompose&logoColor=white" />
-  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-Backend-22543d?style=for-the-badge&logo=nodedotjs&logoColor=white" />
-  <img alt="Express" src="https://img.shields.io/badge/Express-API-222222?style=for-the-badge&logo=express&logoColor=white" />
-  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Data-1d4ed8?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img alt="Android" src="https://img.shields.io/badge/Android-34-1f7a4d?style=flat-square&logo=android&logoColor=white" />
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2-6d5dfc?style=flat-square&logo=kotlin&logoColor=white" />
+  <img alt="Compose" src="https://img.shields.io/badge/Compose-UI-0ea5e9?style=flat-square&logo=jetpackcompose&logoColor=white" />
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-Express-22543d?style=flat-square&logo=nodedotjs&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Data-2563eb?style=flat-square&logo=postgresql&logoColor=white" />
+  <img alt="AI Proxy" src="https://img.shields.io/badge/AI-server--side-7c3aed?style=flat-square" />
 </p>
 
 ---
@@ -33,7 +34,7 @@
 
 ## Описание для GitHub
 
-Android AI chat with Telegram/VK auth, image and file tools, screen assistant, shared chats, and a Node.js/PostgreSQL backend.
+> Android AI chat with Telegram/VK auth, image and file tools, screen assistant, shared chats, and a Node.js/PostgreSQL backend.
 
 <a id="overview"></a>
 
@@ -47,6 +48,15 @@ Android AI chat with Telegram/VK auth, image and file tools, screen assistant, s
 - `backend/` - Node.js/Express backend для авторизации, Telegram/VK login, JWT-сессий, синхронизации чатов, файлов, публичных ссылок и server-side AI proxy.
 
 Backend хранит основную базу данных в PostgreSQL и держит API-ключи на сервере, а Android-клиент обращается к нему через `APP_API_BASE_URL`. Это позволяет не встраивать AI-секреты в APK и централизованно управлять лимитами, моделями и fallback-провайдерами.
+
+## Коротко
+
+| Зона | Что внутри |
+| --- | --- |
+| Android-клиент | Chat UI, auth flow, вложения, камера, голосовой ввод, ассистент поверх других приложений |
+| Backend API | Auth, sync, file uploads, shared chats, AI proxy, лимиты и бонусы за rewarded ads |
+| AI routing | OpenAI-compatible endpoints, VseGPT-compatible endpoints, web search, vision, image generation |
+| Данные | PostgreSQL, JWT-сессии, публичные share snapshots, локальное состояние аккаунта на устройстве |
 
 <a id="features"></a>
 
