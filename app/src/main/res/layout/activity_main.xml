@@ -330,11 +330,11 @@
         <LinearLayout
             android:id="@+id/generatingIndicator"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
+            android:layout_height="30dp"
             android:orientation="horizontal"
             android:gravity="center"
             android:background="@drawable/bg_generating_pill"
-            android:paddingHorizontal="14dp"
+            android:paddingHorizontal="12dp"
             android:elevation="32dp"
             android:translationZ="32dp"
             android:clickable="true"
@@ -346,29 +346,8 @@
             android:layout_marginBottom="8dp"
             app:layout_goneMarginBottom="12dp">
 
-            <ImageView
-                android:id="@+id/generatingIndicatorIcon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginEnd="8dp"
-                android:src="@drawable/ic_idea"
-                app:tint="#B3B3B3" />
-
-            <TextView
-                android:id="@+id/generatingIndicatorText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:maxLines="1"
-                android:maxWidth="220dp"
-                android:ellipsize="end"
-                android:text="@string/ai_activity_processing_request"
-                android:textColor="#D8D8D8"
-                android:textSize="13sp" />
-
             <com.example.chatapp.ui.TypingDotsView
                 android:id="@+id/typingDotsView"
-                android:layout_marginStart="8dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </LinearLayout>

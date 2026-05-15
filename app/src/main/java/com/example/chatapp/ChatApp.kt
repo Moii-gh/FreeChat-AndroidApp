@@ -15,6 +15,8 @@ class ChatApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        ChatResponseNotifications.ensureChannel(this)
+        ChatGenerationManager.recoverInterruptedGenerations(this)
         LaunchLogoAnimator.registerLifecycleCallbacks(this)
         DigitalAssistantHandoffStore.cleanupOldFiles(this)
         if (BuildConfig.VKID_NATIVE_LOGIN_ENABLED) {

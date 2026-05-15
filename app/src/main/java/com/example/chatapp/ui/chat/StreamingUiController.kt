@@ -27,6 +27,12 @@ internal class StreamingUiController(
         return activeGenerationId
     }
 
+    fun attachGeneration(requestId: Long) {
+        activeGenerationId = requestId
+        cancelPendingWork(cancelScroll = false)
+        lastRenderedText = null
+    }
+
     fun finishGeneration(requestId: Long) {
         if (requestId == activeGenerationId) {
             activeGenerationId += 1

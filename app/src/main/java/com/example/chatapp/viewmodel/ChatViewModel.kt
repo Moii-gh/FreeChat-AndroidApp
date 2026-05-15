@@ -4,6 +4,9 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chatapp.ChatGenerationManager
+import com.example.chatapp.ChatGenerationRequest
+import com.example.chatapp.ChatGenerationStatus
 import com.example.chatapp.ChatEntity
 import com.example.chatapp.ChatRepository
 import com.example.chatapp.LocaleHelper
@@ -23,8 +26,10 @@ import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SafeLog
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -83,6 +88,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val aiProviderSettings = AiProviderSettings(accountSettings)
     private val aiActivityManager = AiActivityStateManager(viewModelScope)
     val aiActivityState: StateFlow<com.example.chatapp.ai.AiActivitySnapshot?> = aiActivityManager.state
+    val generationSnapshots = ChatGenerationManager.snapshots
 
     // ──────── Состояние текущего чата ────────
     val chatHistory = mutableListOf<JSONObject>()
@@ -96,6 +102,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var selectedFileUri: Uri? = null
     private var activeResponseJob: Job? = null
+    private var activeAssistantSyncId: String? = null
     var onChatListUpdated: (() -> Unit)? = null
 
     /** Накопленная информация о всех файлах, прикреплённых за сессию чата */
@@ -478,7 +485,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val messagesToKeep = if (chatHistory.size > lastN + 1) {
             chatHistory.takeLast(lastN + 1)
         } else {
-            chatHistory
+            chatHistory.toList()
         }
 
         val messagesToSummarize = if (chatHistory.size > lastN + 1) {
@@ -510,79 +517,185 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         val initialActivityState = AiActivityToolMapper.initialStateForRequest(effectiveMode, messagesToKeep)
         activeResponseJob?.cancel()
+        ChatGenerationManager.cancel(activeAssistantSyncId)
         aiActivityManager.begin(activityGenerationId, initialActivityState)
-        val responseJob = viewModelScope.launch {
-            try {
-                val streamCallback = object : AiApiService.StreamCallback {
-                    override suspend fun onActivity(activityState: AiActivityState) {
-                        aiActivityManager.update(activityGenerationId, activityState)
-                    }
+        val assistantSyncId = UUID.randomUUID().toString()
+        activeAssistantSyncId = assistantSyncId
+        val assistantTimestamp = maxOf(
+            System.currentTimeMillis(),
+            (chatHistory.lastOrNull()?.optLong("timestamp", 0L) ?: 0L) + 1L
+        )
+        val assistantMessage = JSONObject().apply {
+            put("role", "assistant")
+            put("content", "")
+            put("syncId", assistantSyncId)
+            put("timestamp", assistantTimestamp)
+            put("updatedAt", assistantTimestamp)
+            put("editRevision", 0)
+            put("isDeleted", false)
+        }
+        chatHistory.add(assistantMessage)
 
-                    override suspend fun onStreamStarted() {
-                        aiActivityManager.markStreamStarted(activityGenerationId)
-                    }
+        val responseJob = viewModelScope.launch generation@{
+            var targetChatId = currentChatId
+            if (targetChatId == null && !isAnonymousChat) {
+                targetChatId = repository.createChat(currentChatTitle)
+                currentChatId = targetChatId
+                persistHistoryBeforeAssistant(targetChatId, assistantSyncId)
+                cachedChats = repository.getAllChats()
+                notifyChatListUpdated()
+            }
 
-                    override suspend fun onChunk(accumulatedText: String) {
-                        onChunk(accumulatedText)
-                    }
+            if (targetChatId != null) {
+                repository.addAssistantMessage(
+                    chatId = targetChatId,
+                    content = "",
+                    syncId = assistantSyncId,
+                    timestamp = assistantTimestamp,
+                    updatedAt = assistantTimestamp
+                )
+            }
 
-                    override suspend fun onComplete(fullText: String) {
-                        val prepared = prepareAssistantResponse(fullText)
-                        if (prepared.content.isNotBlank()) {
-                            onChunk(prepared.content)
-                        }
-                        val generatedImage = prepared.imageAttachment
-                        val now = System.currentTimeMillis()
-                        val assistantMessage = JSONObject().apply {
-                            put("role", "assistant")
-                            put("content", prepared.content)
-                            generatedImage.imageUrl?.let { put("imageUri", it) }
-                            generatedImage.attachmentData?.let { put("base64", it) }
-                            generatedImage.mimeType?.let { put("mimeType", it) }
-                            generatedImage.fileName?.let { put("fileName", it) }
-                            put("syncId", UUID.randomUUID().toString())
-                            put("timestamp", now)
-                            put("updatedAt", now)
-                            put("editRevision", 0)
-                            put("isDeleted", false)
-                        }
-                        chatHistory.add(assistantMessage)
-                        saveCompletedResponse(prepared.content, assistantMessage)
-                        aiActivityManager.complete(activityGenerationId)
-                        onComplete()
-                    }
-
-                    override suspend fun onError(errorMessage: String) {
-                        aiActivityManager.fail(activityGenerationId)
-                        onError(errorMessage)
-                    }
-                }
-
-                AiApiService.fetchStreamingResponse(
+            ChatGenerationManager.start(
+                context = getApplication(),
+                request = ChatGenerationRequest(
+                    generationId = activityGenerationId,
+                    chatId = targetChatId,
                     authToken = authToken,
                     provider = effectiveProvider,
                     modelKey = effectiveModelKey,
+                    assistantSyncId = assistantSyncId,
                     messagesToKeep = messagesToKeep,
                     currentMode = effectiveMode,
                     customInstructions = customInstructions,
                     chatContextSummary = chatContextSummary,
                     filesContext = filesContext,
-                    adultMode = adultMode,
-                    callback = streamCallback
+                    adultMode = adultMode
                 )
-            } finally {
-                if (activeResponseJob == coroutineContext[Job]) {
-                    activeResponseJob = null
+            )
+
+            var lastRenderedText = ""
+            var streamStarted = false
+            generationSnapshots.collect { snapshots ->
+                val snapshot = snapshots[assistantSyncId] ?: return@collect
+                snapshot.activityState?.let { activityState ->
+                    aiActivityManager.update(activityGenerationId, activityState)
                 }
+                if (snapshot.streamStarted && !streamStarted) {
+                    streamStarted = true
+                    aiActivityManager.markStreamStarted(activityGenerationId)
+                }
+                if (snapshot.accumulatedText != lastRenderedText) {
+                    lastRenderedText = snapshot.accumulatedText
+                    updateAssistantHistoryMessage(assistantSyncId, snapshot.accumulatedText)
+                    onChunk(snapshot.accumulatedText)
+                }
+
+                when (snapshot.status) {
+                    ChatGenerationStatus.RUNNING -> Unit
+                    ChatGenerationStatus.COMPLETED -> {
+                        aiActivityManager.complete(activityGenerationId)
+                        cachedChats = repository.getAllChats()
+                        notifyChatListUpdated()
+                        if (currentChatId == targetChatId) {
+                            targetChatId?.let(::maybeGenerateTitleAfterSuccessfulResponse)
+                        }
+                        performSync()
+                        onComplete()
+                        this@generation.cancel()
+                    }
+                    ChatGenerationStatus.FAILED -> {
+                        aiActivityManager.fail(activityGenerationId)
+                        snapshot.errorMessage?.let { updateAssistantHistoryMessage(assistantSyncId, it) }
+                        onError(snapshot.errorMessage ?: LocaleHelper.getString(getApplication(), "toast_error"))
+                        this@generation.cancel()
+                    }
+                    ChatGenerationStatus.CANCELLED -> {
+                        aiActivityManager.cancelActive()
+                        this@generation.cancel()
+                    }
+                }
+            }
+        }
+        responseJob.invokeOnCompletion {
+            if (activeResponseJob == responseJob) {
+                activeResponseJob = null
+                activeAssistantSyncId = null
             }
         }
         activeResponseJob = responseJob
     }
 
     fun cancelActiveResponse() {
+        ChatGenerationManager.cancel(activeAssistantSyncId)
+        detachActiveResponseObserver()
+    }
+
+    private fun detachActiveResponseObserver() {
         activeResponseJob?.cancel()
         activeResponseJob = null
+        activeAssistantSyncId = null
         aiActivityManager.cancelActive()
+    }
+
+    fun activeGenerationForChat(chatId: String?): com.example.chatapp.ChatGenerationSnapshot? =
+        ChatGenerationManager.activeForChat(chatId)
+
+    private suspend fun persistHistoryBeforeAssistant(chatId: String, assistantSyncId: String) {
+        for (msg in chatHistory) {
+            val metadata = ensureMessageMetadata(msg)
+            if (metadata.syncId == assistantSyncId) continue
+
+            val role = msg.optString("role")
+            val content = msg.optString("content")
+            val imageUrl = msg.optString("imageUri").ifBlank {
+                msg.optString("imageUrl")
+            }.takeIf { it.isNotEmpty() }
+            val attachmentData = msg.optString("base64").takeIf { it.isNotEmpty() }
+            val attachmentMimeType = msg.optString("mimeType").takeIf { it.isNotEmpty() }
+            val attachmentFileName = msg.optString("fileName").takeIf { it.isNotEmpty() }
+
+            if (role == "user") {
+                repository.addUserMessage(
+                    chatId = chatId,
+                    content = content,
+                    imageUrl = imageUrl,
+                    attachmentData = attachmentData,
+                    attachmentMimeType = attachmentMimeType,
+                    attachmentFileName = attachmentFileName,
+                    attachmentContext = msg.optString("fileContext").takeIf { it.isNotEmpty() },
+                    syncId = metadata.syncId,
+                    timestamp = metadata.timestamp,
+                    updatedAt = metadata.updatedAt,
+                    editRevision = metadata.editRevision
+                )
+            } else if (role == "assistant") {
+                val storedImage = extractImageAttachment(content)
+                val storedImageUrl = imageUrl ?: storedImage.imageUrl
+                repository.addAssistantMessage(
+                    chatId = chatId,
+                    content = contentForStorage(content, storedImageUrl),
+                    imageUrl = storedImageUrl,
+                    attachmentData = attachmentData ?: storedImage.attachmentData,
+                    attachmentMimeType = attachmentMimeType ?: storedImage.mimeType,
+                    attachmentFileName = attachmentFileName ?: storedImage.fileName,
+                    syncId = metadata.syncId,
+                    timestamp = metadata.timestamp,
+                    updatedAt = metadata.updatedAt,
+                    editRevision = metadata.editRevision,
+                    reaction = normalizeReaction(msg.optString("reaction").takeIf { it.isNotBlank() })
+                )
+            }
+        }
+    }
+
+    private fun updateAssistantHistoryMessage(syncId: String, content: String) {
+        chatHistory.firstOrNull {
+            it.optString("syncId") == syncId && it.optString("role") == "assistant"
+        }?.let { message ->
+            message.put("content", content)
+            message.put("updatedAt", System.currentTimeMillis())
+        }
     }
 
     /**
@@ -851,7 +964,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         isAnonymousChat = false
         currentMode = null
         selectedFileUri = null
-        cancelActiveResponse()
+        detachActiveResponseObserver()
         attachedFilesRegistry.clear()
     }
 

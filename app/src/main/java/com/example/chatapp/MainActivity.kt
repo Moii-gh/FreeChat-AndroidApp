@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
                 AuthNavGraph(viewModel = authViewModel)
             }
         }
+        NotificationPermissionHelper.requestOnFirstOpen(this)
         if (LaunchLogoAnimator.shouldPlayOnActivityCreate(savedInstanceState)) {
             LaunchLogoAnimator.show(this)
         }

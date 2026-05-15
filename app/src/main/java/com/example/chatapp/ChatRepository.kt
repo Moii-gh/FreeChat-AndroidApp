@@ -275,6 +275,53 @@ class ChatRepository(context: Context) {
         dao.updateMessageReaction(syncId, reaction)
     }
 
+    suspend fun updateAssistantMessage(
+        syncId: String,
+        content: String,
+        imageUrl: String?,
+        attachmentData: String?,
+        attachmentMimeType: String?,
+        attachmentFileName: String?,
+        updatedAt: Long = System.currentTimeMillis()
+    ): Boolean {
+        val existing = dao.getMessageBySyncId(syncId) ?: return false
+        if (existing.role != "assistant" || existing.isDeleted) return false
+
+        dao.updateMessage(
+            existing.copy(
+                content = content,
+                imageUrl = imageUrl,
+                attachmentData = attachmentData,
+                attachmentMimeType = attachmentMimeType,
+                attachmentFileName = attachmentFileName,
+                updatedAt = updatedAt,
+                isDeleted = false
+            )
+        )
+        dao.updateChatLastUpdated(existing.chatId, updatedAt)
+        return true
+    }
+
+    suspend fun tombstoneMessage(syncId: String, updatedAt: Long = System.currentTimeMillis()): Boolean {
+        val existing = dao.getMessageBySyncId(syncId) ?: return false
+        dao.updateMessage(
+            existing.copy(
+                content = "",
+                imageUrl = null,
+                attachmentData = null,
+                attachmentMimeType = null,
+                attachmentFileName = null,
+                attachmentContext = null,
+                reaction = null,
+                updatedAt = updatedAt,
+                isDeleted = true,
+                editRevision = existing.editRevision + 1
+            )
+        )
+        dao.updateChatLastUpdated(existing.chatId, updatedAt)
+        return true
+    }
+
     suspend fun deleteMessagesFromIndex(chatId: String, fromIndex: Int) {
         val now = System.currentTimeMillis()
         db.withTransaction {

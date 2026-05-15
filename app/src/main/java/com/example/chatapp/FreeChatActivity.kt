@@ -42,7 +42,6 @@ import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.speech.SpeechRecognizerManager
 import com.example.chatapp.ui.AssistantMessageWrapper
-import com.example.chatapp.ui.AiActivityStatusPresenter
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.ChatScrollToBottomController
 import com.example.chatapp.ui.ChatUiAnimationHelper
@@ -86,6 +85,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     companion object {
         const val EXTRA_PREFILL_INPUT = "com.example.chatapp.EXTRA_PREFILL_INPUT"
         const val EXTRA_SKIP_BIOMETRIC_ONCE = "com.example.chatapp.EXTRA_SKIP_BIOMETRIC_ONCE"
+        const val EXTRA_OPEN_CHAT_ID = "com.example.chatapp.EXTRA_OPEN_CHAT_ID"
 
         const val SUGGESTIONS_SHOW_DURATION_MS = 180L
         const val SUGGESTIONS_HIDE_DURATION_MS = 120L
@@ -130,6 +130,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var pendingAutoScrollRunnable: Runnable? = null
     private var scrollToBottomController: ChatScrollToBottomController? = null
     private var pendingSendJob: Job? = null
+    private var generatingChatIds: Set<String> = emptySet()
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -152,6 +153,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        NotificationPermissionHelper.requestOnFirstOpen(this)
         setupLifecycleControllers()
         welcomePromptController.restoreState(savedInstanceState)
         setupBackNavigation()
@@ -191,6 +193,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             onCancelAutoScroll = ::cancelPendingAutoScroll
         )
         observeAiActivityState()
+        observeChatGenerationState()
         biometricGateController = BiometricGateController(
             activity = this,
             rootView = binding.root,
@@ -223,6 +226,77 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
     }
 
+    private fun observeChatGenerationState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                chatViewModel.generationSnapshots.collect { snapshots ->
+                    updateDrawerGenerationIndicators(
+                        snapshots.values
+                            .filter { it.isRunning && !it.chatId.isNullOrBlank() }
+                            .mapNotNull { it.chatId }
+                            .toSet()
+                    )
+                    val currentChatId = chatViewModel.currentChatId ?: return@collect
+                    val snapshot = snapshots.values
+                        .filter { it.chatId == currentChatId }
+                        .maxByOrNull { it.generationId }
+                        ?: return@collect
+                    applyObservedGenerationSnapshot(snapshot)
+                }
+            }
+        }
+    }
+
+    private fun updateDrawerGenerationIndicators(chatIds: Set<String>) {
+        if (generatingChatIds == chatIds) return
+        generatingChatIds = chatIds
+        if (!::drawerManager.isInitialized) return
+        drawerManager.setGeneratingChatIds(chatIds)
+        refreshDrawerSelection()
+    }
+
+    private fun applyObservedGenerationSnapshot(snapshot: ChatGenerationSnapshot) {
+        val wrapper = currentAssistantMessage
+            ?.takeIf { it.messageSyncId == snapshot.assistantSyncId }
+            ?: return
+
+        if (streamingUiController.activeGenerationId != snapshot.generationId) {
+            streamingUiController.attachGeneration(snapshot.generationId)
+        }
+
+        when (snapshot.status) {
+            ChatGenerationStatus.RUNNING -> {
+                isSending = true
+                updateSendState()
+                enqueueStreamingUpdate(snapshot.generationId, wrapper, snapshot.accumulatedText)
+            }
+            ChatGenerationStatus.COMPLETED -> {
+                flushStreamingUpdate(snapshot.generationId, wrapper, snapshot.accumulatedText, isFinal = true)
+                finishGeneration(snapshot.generationId)
+                isSending = false
+                updateSendState()
+                hideGeneratingIndicator()
+                refreshDailyQuotaUi()
+                refreshChats()
+            }
+            ChatGenerationStatus.FAILED -> {
+                val text = snapshot.errorMessage ?: snapshot.accumulatedText
+                flushStreamingUpdate(snapshot.generationId, wrapper, text, isFinal = true)
+                finishGeneration(snapshot.generationId)
+                isSending = false
+                updateSendState()
+                hideGeneratingIndicator()
+                refreshDailyQuotaUi()
+            }
+            ChatGenerationStatus.CANCELLED -> {
+                finishGeneration(snapshot.generationId)
+                isSending = false
+                updateSendState()
+                hideGeneratingIndicator()
+            }
+        }
+    }
+
     private fun applyAiActivityState(snapshot: AiActivitySnapshot?) {
         val wrapper = currentAssistantMessage
         if (snapshot != null && wrapper != null && isActiveGeneration(snapshot.generationId, wrapper)) {
@@ -237,15 +311,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun updateFloatingActivityIndicator(snapshot: AiActivitySnapshot?) {
-        val state = snapshot?.state
-        val label = if (state != null) {
-            AiActivityStatusPresenter.text(this, state)
-        } else {
-            LocaleHelper.getString(this, "ai_activity_processing_request")
-        }
-        binding.generatingIndicatorText.text = label
-        if (state != null) {
-            binding.generatingIndicatorIcon.setImageResource(AiActivityStatusPresenter.iconRes(state))
+        if (snapshot != null && isGeneratingIndicatorVisible) {
+            binding.typingDotsView.startAnimation()
         }
     }
 
@@ -256,6 +323,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
         handleSharedChatIntent(intent)
+        handleOpenChatIntent(intent)
         handleAssistantHandoffIntent(intent)
         handlePrefillInputIntent(intent)
     }
@@ -280,6 +348,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         appliedLanguageCode = currentLanguageCode
         drawerManager.updateUserProfile()
+        ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, true)
         refreshDailyQuotaUi()
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
@@ -291,6 +360,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (::inAppBrowserManager.isInitialized) {
             inAppBrowserManager.onPause()
         }
+        ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, false)
         super.onPause()
     }
 
@@ -323,9 +393,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupHelpers()
         setupTopBar()
         setupDrawer()
+        drawerManager.setGeneratingChatIds(generatingChatIds)
         chatViewModel.onChatListUpdated = {
             runOnUiThread {
                 refreshDrawerSelection()
+                ChatGenerationManager.setVisibleChat(
+                    chatViewModel.currentChatId,
+                    lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+                )
             }
         }
         setupInputArea()
@@ -368,6 +443,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         showWelcomeState()
         loadChats()
         handleSharedChatIntent(startIntent)
+        handleOpenChatIntent(startIntent)
         handleAssistantHandoffIntent(startIntent)
         handlePrefillInputIntent(startIntent)
         applyTranslations()
@@ -410,7 +486,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         pendingSendJob?.cancel()
         pendingSendJob = null
-        chatViewModel.cancelActiveResponse()
+        ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, false)
         if (::welcomePromptController.isInitialized) {
             welcomePromptController.stop()
         }
@@ -1617,6 +1693,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         showWelcomeState()
         updateSendState()
         refreshDrawerSelection()
+        ChatGenerationManager.setVisibleChat(null, lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
     }
 
     private fun toggleAnonymousChat() {
@@ -1650,6 +1727,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 drawerManager.setSelectedChatId(chatViewModel.currentChatId)
                 drawerManager.populateChats(chatViewModel.cachedChats)
                 drawerManager.updateUserProfile()
+                val activeChatId = chatViewModel.generationSnapshots.value.values
+                    .firstOrNull { it.isRunning && !it.chatId.isNullOrBlank() }
+                    ?.chatId
+                if (chatViewModel.currentChatId == null && activeChatId != null) {
+                    openChat(activeChatId)
+                }
             }
         }
     }
@@ -1673,6 +1756,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
         }
         drawerManager.setSelectedChatId(chatViewModel.currentChatId)
+        drawerManager.setGeneratingChatIds(generatingChatIds)
         drawerManager.populateChats(chats, trimmed)
     }
 
@@ -1707,6 +1791,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             clearPreview()
 
             binding.messagesContainer.removeAllViews()
+            currentAssistantMessage = null
+            isSending = false
+            val activeGeneration = chatViewModel.activeGenerationForChat(chat.id)
             messages.forEach { message ->
                 val historyIndex = chatViewModel.chatHistory.size
                 chatViewModel.chatHistory.add(
@@ -1745,13 +1832,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     } else {
                         message.content
                     }
-                    messageRenderer.addAssistantMessage(
+                    val wrapper = messageRenderer.addAssistantMessage(
                         text = assistantContent,
                         animate = false,
                         isImageMode = AssistantMessageWrapper.containsImageReply(assistantContent),
                         messageSyncId = message.syncId,
                         reaction = message.reaction
                     )
+                    if (activeGeneration?.assistantSyncId == message.syncId) {
+                        currentAssistantMessage = wrapper
+                        isSending = true
+                        streamingUiController.attachGeneration(activeGeneration.generationId)
+                        if (activeGeneration.accumulatedText.isNotBlank()) {
+                            flushStreamingUpdate(
+                                activeGeneration.generationId,
+                                wrapper,
+                                activeGeneration.accumulatedText,
+                                isFinal = false
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1760,6 +1860,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             isUserAtBottom = true
             scheduleScrollToBottomIfPinned()
             refreshDrawerSelection()
+            updateSendState()
+            ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, true)
             binding.drawerLayout.closeDrawer(GravityCompat.START)
             onOpened?.invoke()
         }
@@ -1819,6 +1921,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 }
             }
         }
+    }
+
+    private fun handleOpenChatIntent(intent: Intent?) {
+        val chatId = intent?.getStringExtra(EXTRA_OPEN_CHAT_ID)?.takeIf { it.isNotBlank() }
+            ?: return
+        intent.removeExtra(EXTRA_OPEN_CHAT_ID)
+        openChat(chatId)
     }
 
     private fun userFacingError(error: Throwable, fallbackKey: String): String {

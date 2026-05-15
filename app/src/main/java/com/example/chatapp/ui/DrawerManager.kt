@@ -31,9 +31,14 @@ class DrawerManager(
     private val onChatLongClick: (View, ChatEntity) -> Unit
 ) {
     private var selectedChatId: String? = null
+    private var generatingChatIds: Set<String> = emptySet()
 
     fun setSelectedChatId(chatId: String?) {
         selectedChatId = chatId
+    }
+
+    fun setGeneratingChatIds(chatIds: Set<String>) {
+        generatingChatIds = chatIds
     }
 
     /**
@@ -124,6 +129,7 @@ class DrawerManager(
 
     private fun createChatViewItem(chat: ChatEntity): View {
         val isSelected = chat.id == selectedChatId
+        val isGenerating = chat.id in generatingChatIds
 
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -165,10 +171,19 @@ class DrawerManager(
                 maxLines = 1
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
                 )
             })
+
+            if (isGenerating) {
+                addView(ChatLoadingIndicatorView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(16.dpToPx(), 16.dpToPx()).apply {
+                        marginStart = 10.dpToPx()
+                    }
+                })
+            }
 
             setOnClickListener { onChatClick(chat.id) }
             setOnLongClickListener { view ->
