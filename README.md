@@ -419,5 +419,5 @@ npm test
 
 <p align="center">
   <strong>FreeChat</strong><br />
-  Mobile AI chat with server-side AI routing, shared chats and Android assistant features.
+  Mobile AI chat with server-side AI routing, shared chats and Android assistant features. Э
 </p>
