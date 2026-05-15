@@ -1,7 +1,6 @@
 package com.example.chatapp.assistant
 
 import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
@@ -108,6 +107,8 @@ class DigitalAssistantOverlayView(
         isFocusableInTouchMode = true
         clipChildren = false
         clipToPadding = false
+        binding.dimView.setBackgroundColor(Color.TRANSPARENT)
+        binding.dimView.alpha = 1f
         configureStaticText()
         configureInput()
         configureClicks()
@@ -383,8 +384,10 @@ class DigitalAssistantOverlayView(
             binding.bottomPanel.clipToOutline = expanded
         }
 
+        binding.dimView.setBackgroundColor(Color.TRANSPARENT)
+        binding.dimView.alpha = 1f
+
         if (expanded) {
-            binding.dimView.setBackgroundColor(Color.parseColor("#A6000000"))
             if (changed) {
                 binding.bottomPanel.setBackgroundResource(R.drawable.bg_da_bottom_panel)
                 binding.dragHandle.alpha = 0f
@@ -399,7 +402,6 @@ class DigitalAssistantOverlayView(
                 }
             }
         } else {
-            binding.dimView.setBackgroundColor(Color.parseColor("#73000000"))
             binding.bottomPanel.background = null
             binding.responseScroll.scrollTo(0, 0)
         }
@@ -1195,11 +1197,9 @@ class DigitalAssistantOverlayView(
     }
 
     private fun playIntroAnimation() {
-        binding.dimView.animate()
-            .alpha(1f)
-            .setDuration(220L)
-            .setInterpolator(smoothOut)
-            .start()
+        binding.dimView.animate().cancel()
+        binding.dimView.setBackgroundColor(Color.TRANSPARENT)
+        binding.dimView.alpha = 1f
 
         AnimatorSet().apply {
             playTogether(
@@ -1291,11 +1291,8 @@ class DigitalAssistantOverlayView(
             .setInterpolator(smoothOut)
             .withEndAction { openFreeChat() }
             .start()
-        binding.dimView.animate()
-            .alpha(0f)
-            .setDuration(220L)
-            .setInterpolator(smoothOut)
-            .start()
+        binding.dimView.animate().cancel()
+        binding.dimView.alpha = 1f
     }
 
     private fun requestClose() {
@@ -1329,18 +1326,12 @@ class DigitalAssistantOverlayView(
             .translationY(dp(52).toFloat())
             .setDuration(235L)
             .setInterpolator(smoothOut)
+            .withEndAction {
+                host.closeAssistant(force = force)
+            }
             .start()
-        binding.dimView.animate()
-            .alpha(0f)
-            .setDuration(220L)
-            .setInterpolator(smoothOut)
-            .setListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    binding.dimView.animate().setListener(null)
-                    host.closeAssistant(force = force)
-                }
-            })
-            .start()
+        binding.dimView.animate().cancel()
+        binding.dimView.alpha = 1f
     }
 
     private fun updateInsets(insets: WindowInsets) {

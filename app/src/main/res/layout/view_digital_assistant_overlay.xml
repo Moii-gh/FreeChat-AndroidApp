@@ -11,8 +11,8 @@
         android:id="@+id/dimView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0"
-        android:background="#A6000000"
+        android:alpha="1"
+        android:background="@android:color/transparent"
         android:clickable="true"
         android:focusable="false" />
 
@@ -161,9 +161,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="92dp"
                     android:layout_gravity="bottom"
-                    android:background="@drawable/bg_da_message_fade"
+                    android:background="@android:color/transparent"
                     android:clickable="false"
-                    android:focusable="false" />
+                    android:focusable="false"
+                    android:visibility="gone" />
             </FrameLayout>
 
             <LinearLayout

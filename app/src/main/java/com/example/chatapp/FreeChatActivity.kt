@@ -1363,22 +1363,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         binding.bottomInputArea.alpha = 1f
         binding.bottomInputArea.translationY = 0f
-        binding.bottomInputScrim.alpha = 0.6f
-        
-        binding.etInput.setOnFocusChangeListener { _, hasFocus ->
-            val targetTranslation = if (hasFocus) -dp(6f) else 0f
-            
-            binding.bottomInputArea.animate()
-                .translationY(targetTranslation)
-                .setDuration(300)
-                .setInterpolator(android.view.animation.OvershootInterpolator(1.1f))
-                .start()
-                
-            binding.bottomInputScrim.animate()
-                .alpha(if (hasFocus) 1.0f else 0.6f)
-                .setDuration(300)
-                .start()
-        }
+        binding.topInputScrim.animate().cancel()
+        binding.topInputScrim.alpha = 0f
+        binding.topInputScrim.isGone = true
+        binding.bottomInputScrim.animate().cancel()
+        binding.bottomInputScrim.alpha = 0f
+        binding.bottomInputScrim.isGone = true
 
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
         binding.etInput.doAfterTextChanged { editable ->
@@ -1454,12 +1444,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.bottomInputArea.layoutParams = inputParams
         }
 
-        val scrimParams = binding.bottomInputScrim.layoutParams
-        val targetScrimHeight = navigationBarInsetBottom + dp(180f).toInt()
-        if (scrimParams.height != targetScrimHeight) {
-            scrimParams.height = targetScrimHeight
-            binding.bottomInputScrim.layoutParams = scrimParams
-        }
+        binding.bottomInputScrim.animate().cancel()
+        binding.bottomInputScrim.alpha = 0f
+        binding.bottomInputScrim.isGone = true
     }
 
     private fun updateTopInputSystemInset() {
@@ -1470,15 +1457,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.topBar.layoutParams = topBarParams
         }
 
-        val topScrim = binding.root.findViewById<View>(R.id.topInputScrim)
-        if (topScrim != null) {
-            val topScrimParams = topScrim.layoutParams
-            val targetTopScrimHeight = systemWindowInsetTop + dp(100f).toInt()
-            if (topScrimParams.height != targetTopScrimHeight) {
-                topScrimParams.height = targetTopScrimHeight
-                topScrim.layoutParams = topScrimParams
-            }
-        }
+        binding.topInputScrim.animate().cancel()
+        binding.topInputScrim.alpha = 0f
+        binding.topInputScrim.isGone = true
     }
 
     private fun updateMessagesViewportAnchor() {

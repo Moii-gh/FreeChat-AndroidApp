@@ -20,10 +20,11 @@
             android:id="@+id/topInputScrim"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:background="@drawable/top_input_scrim"
+            android:background="@android:color/transparent"
             android:elevation="24dp"
             android:translationZ="23dp"
-            android:alpha="0.8"
+            android:alpha="0"
+            android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent" />
 
         <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
@@ -400,9 +401,10 @@
             android:id="@+id/bottomInputScrim"
             android:layout_width="0dp"
             android:layout_height="170dp"
-            android:background="@drawable/bottom_input_scrim"
+            android:background="@android:color/transparent"
+            android:alpha="0"
             android:importantForAccessibility="no"
-            android:visibility="visible"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
