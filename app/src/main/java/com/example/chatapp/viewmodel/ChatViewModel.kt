@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.chatapp.ChatEntity
 import com.example.chatapp.ChatRepository
 import com.example.chatapp.LocaleHelper
+import com.example.chatapp.ai.AiActivityState
+import com.example.chatapp.ai.AiActivityStateManager
+import com.example.chatapp.ai.AiActivityToolMapper
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.AuthRepository
 import com.example.chatapp.data.NetworkResult
@@ -21,6 +24,7 @@ import com.example.chatapp.network.dto.RevokeChatShareResponse
 import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
@@ -70,6 +74,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         localize = LocaleHelper.localizer(application)
     )
     private val aiProviderSettings = AiProviderSettings(accountSettings)
+    private val aiActivityManager = AiActivityStateManager(viewModelScope)
+    val aiActivityState: StateFlow<com.example.chatapp.ai.AiActivitySnapshot?> = aiActivityManager.state
 
     // ──────── Состояние текущего чата ────────
     val chatHistory = mutableListOf<JSONObject>()
@@ -394,6 +400,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         mimeType: String?,
         fileName: String?,
         fileContext: String?,
+        activityGenerationId: Long = System.currentTimeMillis(),
         onError: (String) -> Unit,
         onChunk: (String) -> Unit,
         onStreamComplete: () -> Unit
@@ -439,7 +446,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        fetchAiResponse(onChunk, onStreamComplete, onError)
+        fetchAiResponse(
+            onChunk = onChunk,
+            onComplete = onStreamComplete,
+            onError = onError,
+            activityGenerationId = activityGenerationId
+        )
     }
 
     /**
@@ -451,7 +463,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         onComplete: () -> Unit,
         onError: (String) -> Unit,
         modeOverride: String? = null,
-        useModeOverride: Boolean = false
+        useModeOverride: Boolean = false,
+        activityGenerationId: Long = System.currentTimeMillis()
     ) {
         val effectiveMode = if (useModeOverride) modeOverride else currentMode
         val lastN = CONTEXT_WINDOW_SIZE
@@ -488,10 +501,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        val initialActivityState = AiActivityToolMapper.initialStateForRequest(effectiveMode, messagesToKeep)
         activeResponseJob?.cancel()
+        aiActivityManager.begin(activityGenerationId, initialActivityState)
         val responseJob = viewModelScope.launch {
             try {
                 val streamCallback = object : AiApiService.StreamCallback {
+                    override fun onActivity(activityState: AiActivityState) {
+                        aiActivityManager.update(activityGenerationId, activityState)
+                    }
+
+                    override fun onStreamStarted() {
+                        aiActivityManager.markStreamStarted(activityGenerationId)
+                    }
+
                     override fun onChunk(accumulatedText: String) {
                         onChunk(accumulatedText)
                     }
@@ -514,10 +537,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         chatHistory.add(assistantMessage)
                         saveCompletedResponse(fullText, assistantMessage)
+                        aiActivityManager.complete(activityGenerationId)
                         onComplete()
                     }
 
                     override fun onError(errorMessage: String) {
+                        aiActivityManager.fail(activityGenerationId)
                         onError(errorMessage)
                     }
                 }
@@ -546,6 +571,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelActiveResponse() {
         activeResponseJob?.cancel()
         activeResponseJob = null
+        aiActivityManager.cancelActive()
     }
 
     /**

@@ -7,4 +7,5 @@
     <item name="markdown_chunk_id" type="id" />
     <item name="markdown_chunk_type" type="id" />
     <item name="streaming_markdown_renderer" type="id" />
+    <item name="ai_activity_view" type="id" />
 </resources>

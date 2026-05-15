@@ -14,6 +14,7 @@ import coil.load
 import com.example.chatapp.browser.BrowserUrlSanitizer
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.example.chatapp.ai.AiActivitySnapshot
 import com.example.chatapp.ui.markdown.AndroidStreamingMarkdownRenderer
 import com.example.chatapp.util.SafeLog
 import com.example.chatapp.util.dpToPx
@@ -85,6 +86,7 @@ class AssistantMessageWrapper(
     var imageViewResult: ImageView? = null
     var currentImageUrl: String? = null
     private var sourcesButtonContainer: LinearLayout? = null
+    private var activityStatusView: AiActivityStatusView? = null
 
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
@@ -227,6 +229,71 @@ class AssistantMessageWrapper(
         pulseAnimator = null
         textShimmerAnimator?.cancel()
         textShimmerAnimator = null
+        activityStatusView?.stopAnimations()
+    }
+
+    fun showActivity(snapshot: AiActivitySnapshot) {
+        if (isImageMode && imageContainer != null && rawText.isBlank()) {
+            ensureImageLoadingState(AiActivityStatusPresenter.text(context, snapshot.state))
+            return
+        }
+
+        removeSourcesButton()
+        btnRow?.visibility = View.GONE
+
+        val statusView = activityStatusView ?: AiActivityStatusView(context).also { view ->
+            activityStatusView = view
+            contentArea.addView(
+                view,
+                0,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        if (statusView.parent == null) {
+            contentArea.addView(
+                statusView,
+                0,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        statusView.bind(snapshot.state)
+    }
+
+    fun hideActivity(animated: Boolean = true) {
+        val statusView = activityStatusView ?: return
+        statusView.animate().cancel()
+        if (!animated) {
+            removeActivityStatusView(statusView)
+            return
+        }
+
+        statusView.animate()
+            .alpha(0f)
+            .translationY((-4).dpToPx().toFloat())
+            .setDuration(150L)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                removeActivityStatusView(statusView)
+            }
+            .start()
+    }
+
+    private fun removeActivityStatusView(statusView: AiActivityStatusView) {
+        statusView.stopAnimations()
+        if (statusView.parent == contentArea) {
+            contentArea.removeView(statusView)
+        }
+        if (activityStatusView === statusView) {
+            activityStatusView = null
+        }
     }
 
     private fun ensureImageContainer() {
@@ -535,6 +602,7 @@ class AssistantMessageWrapper(
         btnRow?.animate()?.cancel()
         btnRow?.alpha = 1f
 
+        hideActivity(animated = true)
         removeStatusViews()
         markdownRenderer.render(reply, isFinal = false)
         lastRenderedText = reply
@@ -545,9 +613,10 @@ class AssistantMessageWrapper(
         for (index in contentArea.childCount - 1 downTo 0) {
             val child = contentArea.getChildAt(index)
             val isMarkdownChunk = child.getTag(R.id.markdown_chunk_id) != null
+            val isActivityStatus = child.getTag(R.id.ai_activity_view) == true
             val isManagedImage = child === imageContainer
             val isSourcesButton = child === sourcesButtonContainer
-            if (!isMarkdownChunk && !isManagedImage && !isSourcesButton) {
+            if (!isMarkdownChunk && !isActivityStatus && !isManagedImage && !isSourcesButton) {
                 contentArea.removeViewAt(index)
             }
         }
@@ -603,6 +672,8 @@ class AssistantMessageWrapper(
         }
 
         // Показываем кнопки только когда ответ полностью готов с плавной анимацией
+        hideActivity(animated = true)
+
         if (!isFinal) {
             renderStreamingMarkdown(reply)
             return

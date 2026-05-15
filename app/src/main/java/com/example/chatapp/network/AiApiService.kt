@@ -2,6 +2,8 @@ package com.example.chatapp.network
 
 import com.example.chatapp.BuildConfig
 import com.example.chatapp.ChatMode
+import com.example.chatapp.ai.AiActivityState
+import com.example.chatapp.ai.AiActivityToolMapper
 import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +22,8 @@ import java.io.InputStreamReader
 object AiApiService {
 
     interface StreamCallback {
+        fun onActivity(activityState: AiActivityState) {}
+        fun onStreamStarted() {}
         fun onChunk(accumulatedText: String)
         fun onComplete(fullText: String)
         fun onError(errorMessage: String)
@@ -164,6 +168,29 @@ object AiApiService {
         }
     }.getOrNull()
 
+    private fun extractStreamContent(json: JSONObject): String {
+        val choices = json.optJSONArray("choices")
+        if (choices != null && choices.length() > 0) {
+            return choices.optJSONObject(0)
+                ?.optJSONObject("delta")
+                ?.optString("content", "")
+                .orEmpty()
+        }
+
+        val eventType = json.optString("type")
+        if (eventType == "response.output_text.delta") {
+            return json.optString("delta", "")
+        }
+
+        if (eventType == "content_block_delta") {
+            return json.optJSONObject("delta")
+                ?.optString("text", "")
+                .orEmpty()
+        }
+
+        return ""
+    }
+
     private fun buildMessageText(msg: JSONObject): String {
         val content = msg.optString("content", "")
             .replace(Regex("!\\[[^]]*]\\(data:image/[^)]+\\)"), "[Generated image]")
@@ -251,7 +278,7 @@ object AiApiService {
                 val isImageGeneration = currentMode == ChatMode.CREATE_IMAGE
                 if (ChatMode.usesFreshWebContext(currentMode)) {
                     withContext(Dispatchers.Main) {
-                        callback.onChunk("Поиск в сети...")
+                        callback.onActivity(AiActivityState.WebSearching)
                     }
                 }
                 val systemPrompt = buildSystemPrompt(
@@ -298,39 +325,62 @@ object AiApiService {
                             finalReply = parseImageResponseBody(bodyText)
                                 ?: if (isImageGeneration) error("Image response is empty") else bodyText
                             withContext(Dispatchers.Main) {
+                                callback.onStreamStarted()
                                 callback.onChunk(finalReply)
                             }
                         } else {
+                            var streamStarted = false
                             BufferedReader(InputStreamReader(responseBody.byteStream(), Charsets.UTF_8)).use { reader ->
-                                while (true) {
-                                    val line = reader.readLine() ?: break
-                                    if (!line.startsWith("data:")) {
-                                        continue
-                                    }
+                                var eventName: String? = null
+                                val dataLines = mutableListOf<String>()
 
-                                    val data = line.removePrefix("data:").trim()
+                                suspend fun dispatchEvent() {
+                                    if (dataLines.isEmpty()) return
+                                    val data = dataLines.joinToString("\n").trim()
+                                    dataLines.clear()
+                                    val currentEventName = eventName
+                                    eventName = null
+
                                     if (data.isEmpty() || data == "[DONE]") {
-                                        continue
+                                        return
                                     }
 
-                                    runCatching {
-                                        val json = JSONObject(data)
-                                        val choices = json.optJSONArray("choices")
-                                        if (choices != null && choices.length() > 0) {
-                                            choices.getJSONObject(0)
-                                                .optJSONObject("delta")
-                                                ?.optString("content", "")
-                                                .orEmpty()
-                                        } else {
-                                            ""
+                                    val json = runCatching { JSONObject(data) }.getOrNull() ?: return
+                                    val activityState = if (currentEventName == "ai_activity") {
+                                        AiActivityToolMapper.fromActivityName(
+                                            json.optString("state").ifBlank { json.optString("type") },
+                                            json.optString("text").ifBlank { null }
+                                        )
+                                    } else {
+                                        AiActivityToolMapper.fromProviderEvent(json)
+                                    }
+                                    if (activityState != null) {
+                                        withContext(Dispatchers.Main) {
+                                            callback.onActivity(activityState)
                                         }
-                                    }.getOrDefault("").takeIf { it.isNotEmpty() }?.let { chunk ->
+                                    }
+
+                                    extractStreamContent(json).takeIf { it.isNotEmpty() }?.let { chunk ->
                                         finalReply += chunk
                                         withContext(Dispatchers.Main) {
+                                            if (!streamStarted) {
+                                                streamStarted = true
+                                                callback.onStreamStarted()
+                                            }
                                             callback.onChunk(finalReply)
                                         }
                                     }
                                 }
+
+                                while (true) {
+                                    val line = reader.readLine() ?: break
+                                    when {
+                                        line.isEmpty() -> dispatchEvent()
+                                        line.startsWith("event:") -> eventName = line.removePrefix("event:").trim()
+                                        line.startsWith("data:") -> dataLines.add(line.removePrefix("data:").trim())
+                                    }
+                                }
+                                dispatchEvent()
                             }
                         }
 

@@ -33,12 +33,16 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.chatapp.ai.AiActivitySnapshot
 import com.example.chatapp.assistant.DigitalAssistantHandoffStore
 import com.example.chatapp.browser.InAppBrowserManager
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.speech.SpeechRecognizerManager
 import com.example.chatapp.ui.AssistantMessageWrapper
+import com.example.chatapp.ui.AiActivityStatusPresenter
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.ChatScrollToBottomController
 import com.example.chatapp.ui.ChatUiAnimationHelper
@@ -180,6 +184,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             },
             onCancelAutoScroll = ::cancelPendingAutoScroll
         )
+        observeAiActivityState()
         biometricGateController = BiometricGateController(
             activity = this,
             rootView = binding.root,
@@ -200,6 +205,42 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             },
             onPreviewChanged = ::updateSendState
         )
+    }
+
+    private fun observeAiActivityState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                chatViewModel.aiActivityState.collect { snapshot ->
+                    applyAiActivityState(snapshot)
+                }
+            }
+        }
+    }
+
+    private fun applyAiActivityState(snapshot: AiActivitySnapshot?) {
+        val wrapper = currentAssistantMessage
+        if (snapshot != null && wrapper != null && isActiveGeneration(snapshot.generationId, wrapper)) {
+            wrapper.showActivity(snapshot)
+            updateFloatingActivityIndicator(snapshot)
+            scheduleScrollToBottomIfPinned()
+        } else {
+            wrapper?.hideActivity()
+            updateFloatingActivityIndicator(null)
+        }
+        updateGeneratingIndicatorVisibility()
+    }
+
+    private fun updateFloatingActivityIndicator(snapshot: AiActivitySnapshot?) {
+        val state = snapshot?.state
+        val label = if (state != null) {
+            AiActivityStatusPresenter.text(this, state)
+        } else {
+            LocaleHelper.getString(this, "ai_activity_processing_request")
+        }
+        binding.generatingIndicatorText.text = label
+        if (state != null) {
+            binding.generatingIndicatorIcon.setImageResource(AiActivityStatusPresenter.iconRes(state))
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -1849,7 +1890,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         val isImageRequest = chatViewModel.currentMode == ChatMode.CREATE_IMAGE
         val wrapper = messageRenderer.addAssistantMessage(
-            text = if (isImageRequest) "" else LocaleHelper.getString(this, "ai_thinking"),
+            text = "",
             animate = false,
             isImageMode = isImageRequest
         )
@@ -1867,6 +1908,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             mimeType = mimeType,
             fileName = attachmentPayload?.fileName,
             fileContext = attachmentPayload?.attachmentContext,
+            activityGenerationId = requestId,
             onError = { error ->
                 runOnUiThread {
                     if (!isActiveGeneration(requestId, wrapper)) return@runOnUiThread
@@ -2117,7 +2159,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         val isImageRequest = chatViewModel.currentMode == ChatMode.CREATE_IMAGE
         val wrapper = messageRenderer.addAssistantMessage(
-            text = if (isImageRequest) "" else LocaleHelper.getString(this, "ai_thinking"),
+            text = "",
             animate = false,
             isImageMode = isImageRequest
         )
@@ -2173,7 +2215,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 }
             },
             modeOverride = modeOverride,
-            useModeOverride = useModeOverride
+            useModeOverride = useModeOverride,
+            activityGenerationId = requestId
         )
     }
 
@@ -2218,7 +2261,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         updateSendState()
         val isImageRequest = wrapper.isImageMode || AssistantMessageWrapper.containsImageReply(wrapper.rawText)
         val freshWrapper = messageRenderer.addAssistantMessage(
-            text = if (isImageRequest) "" else LocaleHelper.getString(this, "ai_thinking"),
+            text = "",
             animate = false,
             isImageMode = isImageRequest
         )
