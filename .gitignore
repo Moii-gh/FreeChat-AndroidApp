@@ -1,27 +1,67 @@
-*.iml
-.gradle
-/local.properties
-.idea/
-.kotlin/
-backend/scratch_ssh/
+# OS files
 .DS_Store
-/build
-/app/build
-/backend/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-backend/node_modules
+Thumbs.db
+Desktop.ini
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Local configuration and secrets
 .env
-backend/.env
+.env.*
+!.env.example
+!**/.env.example
+local.properties
 backend/secrets/
-*.log
-backend-deploy.tar.gz
-backend*.tar.gz
-build_error.txt
-*.apk
-*.aab
+backend/scratch_ssh/
 *.jks
 *.keystore
+*.p12
+
+# Android / Gradle / Kotlin
+.gradle/
+.kotlin/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.aab
+*.dex
+output.json
+
+# Node.js
+node_modules/
+**/node_modules/
+.npm/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs, temp files and generated reports
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+build_error.txt
+
+# Runtime/generated project data
+uploads/
+outputs/
+
+# Packaged deployment/build artifacts
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Local helper files
 codex_askpass.cmd
