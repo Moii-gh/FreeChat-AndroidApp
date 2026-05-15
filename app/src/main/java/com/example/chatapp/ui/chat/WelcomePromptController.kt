@@ -1,10 +1,5 @@
 package com.example.chatapp.ui.chat
 
-<<<<<<< HEAD
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
-=======
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
@@ -15,7 +10,6 @@ import android.os.Looper
 import android.util.TypedValue
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
->>>>>>> 6af6d90263bdf72f88a5c1a472b55577adf06d06
 import android.widget.TextView
 import com.example.chatapp.LocaleHelper
 
@@ -24,19 +18,6 @@ internal class WelcomePromptController(
     private val titleView: TextView
 ) {
     private val handler = Handler(Looper.getMainLooper())
-<<<<<<< HEAD
-    private var prompts: List<String> = emptyList()
-    private var promptIndex = 0
-    private var charIndex = 0
-    private var isRunning = false
-    private var runId = 0
-    private var typingTask: Runnable? = null
-    private var rotateTask: Runnable? = null
-
-    fun refreshPrompts() {
-        prompts = LocaleHelper.getStringList(context, "welcome_prompt")
-            .ifEmpty { listOf(LocaleHelper.getString(context, "welcome_question")) }
-=======
     private var animator: AnimatorSet? = null
     private var prompts: List<String> = emptyList()
     private var promptIndex = 0
@@ -78,10 +59,8 @@ internal class WelcomePromptController(
     }
 
     fun refreshPrompts() {
-        val localizedPrompts = LocaleHelper.getStringList(context, "welcome_prompt")
+        prompts = LocaleHelper.getStringList(context, "welcome_prompt")
             .ifEmpty { listOf(LocaleHelper.getString(context, "welcome_question")) }
-        prompts = localizedPrompts
->>>>>>> 6af6d90263bdf72f88a5c1a472b55577adf06d06
         if (promptIndex >= prompts.size) {
             promptIndex = 0
         }
@@ -93,15 +72,6 @@ internal class WelcomePromptController(
 
         if (resetIndex) {
             promptIndex = 0
-<<<<<<< HEAD
-            restartAnimation()
-            return
-        }
-
-        if (!isRunning) {
-            restartAnimation()
-        }
-=======
         }
 
         isRunning = true
@@ -115,86 +85,10 @@ internal class WelcomePromptController(
         typePrompt(prompts[promptIndex])
         handler.postDelayed(rotationRunnable, ROTATION_MS)
         handler.postDelayed(cursorRunnable, CURSOR_BLINK_MS)
->>>>>>> 6af6d90263bdf72f88a5c1a472b55577adf06d06
     }
 
     fun stop() {
         isRunning = false
-<<<<<<< HEAD
-        runId += 1
-        clearScheduledWork()
-        titleView.animate().cancel()
-    }
-
-    private fun restartAnimation() {
-        isRunning = true
-        runId += 1
-        clearScheduledWork()
-        titleView.animate().cancel()
-        titleView.alpha = 1f
-        titleView.translationY = 0f
-        startTyping(runId)
-    }
-
-    private fun startTyping(token: Int) {
-        val prompt = prompts.getOrNull(promptIndex).orEmpty()
-        charIndex = 0
-        titleView.text = ""
-
-        fun scheduleNext() {
-            typingTask = Runnable {
-                if (!isRunning || token != runId) return@Runnable
-                if (charIndex < prompt.length) {
-                    charIndex += 1
-                    titleView.text = prompt.take(charIndex)
-                    scheduleNext()
-                } else {
-                    scheduleRotation(token)
-                }
-            }
-            handler.postDelayed(typingTask ?: return, TYPE_STEP_MS)
-        }
-
-        scheduleNext()
-    }
-
-    private fun scheduleRotation(token: Int) {
-        rotateTask = Runnable {
-            if (!isRunning || token != runId || prompts.isEmpty()) return@Runnable
-            promptIndex = (promptIndex + 1) % prompts.size
-            titleView.animate()
-                .alpha(0f)
-                .translationY(-FADE_OFFSET_PX)
-                .setDuration(FADE_MS)
-                .withEndAction {
-                    if (!isRunning || token != runId) return@withEndAction
-                    titleView.translationY = FADE_OFFSET_PX
-                    titleView.alpha = 0f
-                    titleView.animate()
-                        .alpha(1f)
-                        .translationY(0f)
-                        .setDuration(FADE_MS)
-                        .start()
-                    startTyping(token)
-                }
-                .start()
-        }
-        handler.postDelayed(rotateTask ?: return, ROTATION_MS)
-    }
-
-    private fun clearScheduledWork() {
-        typingTask?.let(handler::removeCallbacks)
-        rotateTask?.let(handler::removeCallbacks)
-        typingTask = null
-        rotateTask = null
-    }
-
-    private companion object {
-        const val TYPE_STEP_MS = 24L
-        const val ROTATION_MS = 4_000L
-        const val FADE_MS = 180L
-        const val FADE_OFFSET_PX = 10f
-=======
         animator?.cancel()
         animator = null
         handler.removeCallbacks(rotationRunnable)
@@ -262,6 +156,5 @@ internal class WelcomePromptController(
         const val TYPE_STEP_MS = 26L
         const val CURSOR_BLINK_MS = 460L
         const val CURSOR = "|"
->>>>>>> 6af6d90263bdf72f88a5c1a472b55577adf06d06
     }
 }

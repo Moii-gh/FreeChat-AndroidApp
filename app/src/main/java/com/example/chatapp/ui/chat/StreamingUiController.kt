@@ -62,7 +62,7 @@ internal class StreamingUiController(
             apply(request, targetWrapper, targetText, isFinal = false)
         }
         flushRunnable = runnable
-        handler.postDelayed(runnable, FLUSH_INTERVAL_MS)
+        handler.postDelayed(runnable, flushDelayFor(text))
     }
 
     fun flush(requestId: Long, wrapper: AssistantMessageWrapper, text: String, isFinal: Boolean) {
@@ -110,5 +110,10 @@ internal class StreamingUiController(
 
     private companion object {
         const val FLUSH_INTERVAL_MS = 50L
+        const val LARGE_FLUSH_INTERVAL_MS = 120L
+        const val HUGE_RESPONSE_CHARS = 40_000
+
+        fun flushDelayFor(text: String): Long =
+            if (text.length >= HUGE_RESPONSE_CHARS) LARGE_FLUSH_INTERVAL_MS else FLUSH_INTERVAL_MS
     }
 }

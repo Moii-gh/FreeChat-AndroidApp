@@ -2,28 +2,20 @@ package com.example.chatapp.ui
 
 import android.animation.ValueAnimator
 import android.graphics.*
-import android.graphics.text.LineBreaker
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
-import android.os.Build
-import android.text.Layout
-import android.text.SpannableStringBuilder
-import android.text.TextPaint
 import android.text.TextUtils
-import android.text.style.URLSpan
-import android.text.util.Linkify
 import android.view.Gravity
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.*
 import androidx.core.content.ContextCompat
-import androidx.core.text.util.LinkifyCompat
 import coil.load
 import com.example.chatapp.browser.BrowserUrlSanitizer
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.example.chatapp.ui.markdown.AndroidStreamingMarkdownRenderer
 import com.example.chatapp.util.SafeLog
-import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.dpToPx
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.noties.markwon.AbstractMarkwonPlugin
@@ -108,9 +100,16 @@ class AssistantMessageWrapper(
             }
         })
         .build()
+    private val markdownRenderer = AndroidStreamingMarkdownRenderer(
+        context = context,
+        contentArea = contentArea,
+        markwon = markwon,
+        onOpenLink = ::openSourceUrl,
+        linkColor = LINK_COLOR,
+        copyText = copyAction
+    )
     private var lastRenderedText: String? = null
     private var lastRenderedWasFinal = false
-    private var streamingTextView: TextView? = null
 
     private data class SourceLink(
         val title: String,
@@ -124,6 +123,7 @@ class AssistantMessageWrapper(
 
     /** Показывает шиммер-заглушку при генерации изображения */
     fun showImageLoadingState() {
+        markdownRenderer.clear()
         contentArea.removeAllViews()
         sourcesButtonContainer = null
         val density = context.resources.displayMetrics.density
@@ -527,7 +527,7 @@ class AssistantMessageWrapper(
         }
     }
 
-    private fun renderStreamingText(reply: String) {
+    private fun renderStreamingMarkdown(reply: String) {
         textShimmerAnimator?.cancel()
         textShimmerAnimator = null
         removeSourcesButton()
@@ -535,35 +535,22 @@ class AssistantMessageWrapper(
         btnRow?.animate()?.cancel()
         btnRow?.alpha = 1f
 
-        imageContainer?.let {
-            if (it.parent == contentArea) contentArea.removeView(it)
-        }
-        imageContainer = null
-        currentImageUrl = null
-
-        val existingStreamingText = streamingTextView
-        val textView = if (existingStreamingText?.parent == contentArea) {
-            existingStreamingText
-        } else {
-            contentArea.removeAllViews()
-            TextView(context).apply {
-                tag = "streaming_text"
-                setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                textSize = 16f
-                setLineSpacing(0f, 1.2f)
-                setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
-                setTextIsSelectable(false)
-            }.also { tv ->
-                streamingTextView = tv
-                contentArea.addView(tv)
-            }
-        }
-
-        if (textView.text.toString() != reply) {
-            textView.text = reply
-        }
+        removeStatusViews()
+        markdownRenderer.render(reply, isFinal = false)
         lastRenderedText = reply
         lastRenderedWasFinal = false
+    }
+
+    private fun removeStatusViews() {
+        for (index in contentArea.childCount - 1 downTo 0) {
+            val child = contentArea.getChildAt(index)
+            val isMarkdownChunk = child.getTag(R.id.markdown_chunk_id) != null
+            val isManagedImage = child === imageContainer
+            val isSourcesButton = child === sourcesButtonContainer
+            if (!isMarkdownChunk && !isManagedImage && !isSourcesButton) {
+                contentArea.removeViewAt(index)
+            }
+        }
     }
 
     /**
@@ -612,13 +599,12 @@ class AssistantMessageWrapper(
             }
             lastRenderedText = reply
             lastRenderedWasFinal = false
-            streamingTextView = null
             return
         }
 
         // Показываем кнопки только когда ответ полностью готов с плавной анимацией
         if (!isFinal) {
-            renderStreamingText(reply)
+            renderStreamingMarkdown(reply)
             return
         }
 
@@ -640,12 +626,7 @@ class AssistantMessageWrapper(
         val displayReply = parsedReply.content
 
         // Очищаем статусную строку, если она была первой и мы переходим к контенту
-        if (contentArea.childCount > 0) {
-            val firstView = contentArea.getChildAt(0) as? TextView
-            if (firstView != null && firstView.tag != "content") {
-                contentArea.removeViewAt(0)
-            }
-        }
+        removeStatusViews()
 
         // Если есть картинка
         val imageUrl = extractImageUrl(displayReply)?.takeIf { isRenderableImageUrl(it) }
@@ -656,84 +637,12 @@ class AssistantMessageWrapper(
             displayReply
         }
 
-        val chunks = MarkdownTableRenderer.splitIntoChunks(cleanReply)
+        markdownRenderer.render(cleanReply, isFinal = true)
 
         // Инкрементальное обновление contentArea
         // Мы пытаемся переиспользовать существующие View, чтобы избежать мерцания.
         
         // 1. Синхронизируем количество View с количеством чанков (без учёта imageContainer)
-        val currentImageContainer = imageContainer
-        val childrenCountWithoutImage = if (currentImageContainer != null && currentImageContainer.parent == contentArea) {
-            contentArea.childCount - 1
-        } else {
-            contentArea.childCount
-        }
-
-        // 2. Обновляем существующие или добавляем новые
-        chunks.forEachIndexed { index, chunk ->
-            val existingView = if (index < childrenCountWithoutImage) contentArea.getChildAt(index) else null
-            
-            when (chunk) {
-                is MarkdownTableRenderer.Chunk.Text -> {
-                    val tv = if (existingView is TextView && existingView.tag == "content_text") {
-                        existingView
-                    } else {
-                        if (existingView != null) contentArea.removeViewAt(index)
-                        TextView(context).apply {
-                            tag = "content_text"
-                            setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                            textSize = 16f
-                            setLineSpacing(0f, 1.2f)
-                            setPadding(0, 8.dpToPx(), 0, 8.dpToPx())
-                            configureLinkableTextView()
-                        }.also { contentArea.addView(it, index) }
-                    }
-                    // Обновляем текст только если он изменился (для плавности)
-                    if (tv.text.toString() != chunk.content) {
-                        renderMarkdownWithAutoLinks(tv, chunk.content)
-                    }
-                }
-                is MarkdownTableRenderer.Chunk.Code -> {
-                    val container = if (existingView != null && existingView.tag == "content_code") {
-                        existingView
-                    } else {
-                        if (existingView != null) contentArea.removeViewAt(index)
-                        val (codeContainer, codeTv) = ChatMessageRenderer.createCodeBlockView(
-                            context, chunk.content, chunk.language
-                        )
-                        codeContainer.tag = "content_code"
-                        codeContainer.setTag(R.id.code_text_view, codeTv) // Используем ID для хранения ссылки
-                        contentArea.addView(codeContainer, index)
-                        codeContainer
-                    }
-                    val codeTv = container.getTag(R.id.code_text_view) as? TextView
-                    if (codeTv != null && codeTv.text.toString() != chunk.content) {
-                        codeTv.text = SyntaxHighlighter.highlight(chunk.content, chunk.language)
-                    }
-                }
-                is MarkdownTableRenderer.Chunk.Table -> {
-                    // Таблицы сложнее обновлять инкрементально, поэтому если таблица изменилась — пересоздаём View.
-                    // Но в стриминге таблицы обычно приходят целиком в конце чанка.
-                    val tableContainer = if (existingView != null && existingView.tag == "content_table" && existingView.getTag(R.id.table_raw_content) == chunk.raw) {
-                        existingView
-                    } else {
-                        if (existingView != null) contentArea.removeViewAt(index)
-                        MarkdownTableRenderer.createTableView(context, chunk.parsed, chunk.raw).apply {
-                            tag = "content_table"
-                            setTag(R.id.table_raw_content, chunk.raw)
-                        }.also { contentArea.addView(it, index) }
-                    }
-                }
-            }
-        }
-
-        // 3. Удаляем лишние View (если текст сократился, что редко для стримингового ответа)
-        val newChildrenCountWithoutImage = chunks.size
-        while (contentArea.childCount > newChildrenCountWithoutImage) {
-            val viewToRemove = contentArea.getChildAt(newChildrenCountWithoutImage)
-            if (viewToRemove == imageContainer) break // Не удаляем контейнер картинки здесь
-            contentArea.removeViewAt(newChildrenCountWithoutImage)
-        }
 
         // Обработка изображения
         if (imageUrl != null) {
@@ -796,51 +705,6 @@ class AssistantMessageWrapper(
 
         lastRenderedText = reply
         lastRenderedWasFinal = true
-        streamingTextView = null
     }
 
-    private fun TextView.configureLinkableTextView() {
-        SelectableTextSupport.configure(
-            textView = this,
-            linkColor = LINK_COLOR,
-            openLinksOnTap = true
-        )
-        setLinkTextColor(LINK_COLOR)
-        setHorizontallyScrolling(false)
-        breakStrategy = LineBreaker.BREAK_STRATEGY_HIGH_QUALITY
-        hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL
-    }
-
-    private fun renderMarkdownWithAutoLinks(textView: TextView, markdown: String) {
-        markwon.setMarkdown(textView, markdown)
-        val spannable = SpannableStringBuilder(textView.text)
-        LinkifyCompat.addLinks(spannable, Linkify.WEB_URLS)
-
-        spannable.getSpans(0, spannable.length, URLSpan::class.java).forEach { span ->
-            val start = spannable.getSpanStart(span)
-            val end = spannable.getSpanEnd(span)
-            val flags = spannable.getSpanFlags(span)
-            val safeUrl = BrowserUrlSanitizer.normalize(span.url)
-            spannable.removeSpan(span)
-            if (start >= 0 && end > start && safeUrl != null) {
-                spannable.setSpan(InternalBrowserUrlSpan(safeUrl, onOpenLink), start, end, flags)
-            }
-        }
-
-        textView.text = spannable
-    }
-
-    private class InternalBrowserUrlSpan(
-        private val url: String,
-        private val opener: (String) -> Unit
-    ) : URLSpan(url) {
-        override fun onClick(widget: View) {
-            opener(url)
-        }
-
-        override fun updateDrawState(ds: TextPaint) {
-            ds.color = LINK_COLOR
-            ds.isUnderlineText = true
-        }
-    }
 }
