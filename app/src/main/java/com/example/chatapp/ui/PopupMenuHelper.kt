@@ -287,7 +287,16 @@ class PopupMenuHelper(
         })
 
         val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
-        if (wrapper.isImageMode && AssistantMessageWrapper.isRenderableImageUrl(imageUrl)) {
+        if (AssistantMessageWrapper.isRenderableImageUrl(imageUrl)) {
+            popupView.addView(createPopupMenuItem(
+                R.drawable.ic_share,
+                LocaleHelper.getString(activity, "share"),
+                Color.WHITE
+            ) {
+                popupWindow.dismiss()
+                FileUtils.shareImageFromUrl(activity, imageUrl)
+            })
+
             popupView.addView(createPopupMenuItem(
                 R.drawable.ic_download_simple,
                 LocaleHelper.getString(activity, "button_save"),

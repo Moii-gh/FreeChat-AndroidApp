@@ -485,11 +485,8 @@ class ChatMessageRenderer(
                         }
                         3 -> {
                             val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
-                            if (wrapper.isImageMode && imageUrl?.startsWith("data:image", ignoreCase = true) == true) {
-                                val b64 = imageUrl.substringAfter("base64,")
-                                FileUtils.shareImageBase64(context, b64)
-                            } else if (wrapper.isImageMode && AssistantMessageWrapper.isLocalImageUrl(imageUrl)) {
-                                FileUtils.shareImageUri(context, Uri.parse(imageUrl))
+                            if (AssistantMessageWrapper.isRenderableImageUrl(imageUrl)) {
+                                FileUtils.shareImageFromUrl(context, imageUrl)
                             } else {
                                 wrapper.shareAction(wrapper.rawText)
                             }

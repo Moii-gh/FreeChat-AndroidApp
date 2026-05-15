@@ -21,11 +21,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 /**
  * Утилиты для работы с файлами: получение имени, экспорт в DOCX,
@@ -35,12 +38,23 @@ object FileUtils {
     private const val MAX_CACHE_FILE_BYTES = 20 * 1024 * 1024
     private const val CACHE_SHARE_DIR = "shared_files"
     private const val GENERATED_IMAGE_DIR = "generated_images"
+    private val imageHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
 
     data class SavedImageFile(
         val uri: Uri,
         val fileName: String,
         val mimeType: String,
         val byteCount: Long
+    )
+
+    private data class ShareImageTarget(
+        val uri: Uri,
+        val mimeType: String
     )
 
     /** Извлекает имя файла из content:// URI через ContentResolver */
@@ -228,6 +242,28 @@ object FileUtils {
     }
 
     /** Шарит текст через Intent.ACTION_SEND */
+    fun shareImageFromUrl(context: Context, imageUrl: String?) {
+        if (imageUrl.isNullOrBlank()) {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        launchFileOperation(
+            context = context,
+            failureMessage = LocaleHelper.getString(context, "toast_share_error"),
+            operation = {
+                prepareImageForShare(context.applicationContext, imageUrl)
+            },
+            onSuccess = { target ->
+                if (target == null) {
+                    Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+                } else {
+                    shareImageUri(context, target.uri, target.mimeType)
+                }
+            }
+        )
+    }
+
     fun shareImageUri(context: Context, uri: Uri, mimeType: String? = null) {
         val safeUri = shareableUri(context, uri)
         if (safeUri == null) {
@@ -369,6 +405,74 @@ object FileUtils {
         )
     }
 
+    private fun prepareImageForShare(context: Context, imageUrl: String): ShareImageTarget? {
+        return when {
+            imageUrl.startsWith("data:image", ignoreCase = true) -> {
+                val mimeType = imageUrl.substringAfter("data:", "")
+                    .substringBefore(";")
+                    .takeIf { it.startsWith("image/", ignoreCase = true) }
+                    ?: "image/png"
+                saveBase64FileToCache(
+                    context = context,
+                    base64Str = imageUrl.substringAfter(",", ""),
+                    fileName = imageFileName(null, mimeType, "shared_image_${System.currentTimeMillis()}")
+                )?.let { ShareImageTarget(it, mimeType) }
+            }
+            imageUrl.startsWith("content://", ignoreCase = true) ||
+                imageUrl.startsWith("file://", ignoreCase = true) -> {
+                val uri = Uri.parse(imageUrl)
+                val safeUri = shareableUri(context, uri) ?: return null
+                val mimeType = runCatching { context.contentResolver.getType(safeUri) }.getOrNull()
+                    ?.takeIf { it.startsWith("image/", ignoreCase = true) }
+                    ?: imageMimeTypeFromName(imageUrl)
+                    ?: "image/png"
+                ShareImageTarget(safeUri, mimeType)
+            }
+            imageUrl.startsWith("http://", ignoreCase = true) ||
+                imageUrl.startsWith("https://", ignoreCase = true) -> {
+                downloadImageToCache(context, imageUrl)
+            }
+            else -> null
+        }
+    }
+
+    private fun downloadImageToCache(context: Context, imageUrl: String): ShareImageTarget? =
+        runCatching {
+            val request = Request.Builder()
+                .url(imageUrl)
+                .get()
+                .build()
+            imageHttpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@use null
+                val body = response.body ?: return@use null
+                val contentLength = body.contentLength()
+                if (contentLength > MAX_CACHE_FILE_BYTES) return@use null
+                val mimeType = body.contentType()
+                    ?.toString()
+                    ?.substringBefore(";")
+                    ?.lowercase(Locale.US)
+                    ?.takeIf { it.startsWith("image/") }
+                    ?: imageMimeTypeFromName(imageUrl)
+                    ?: return@use null
+                val cacheDir = File(context.cacheDir, CACHE_SHARE_DIR).apply { mkdirs() }
+                val file = uniqueFile(
+                    directory = cacheDir,
+                    requestedName = imageFileName(
+                        rawName = Uri.parse(imageUrl).lastPathSegment,
+                        mimeType = mimeType,
+                        prefix = "shared_image_${System.currentTimeMillis()}"
+                    )
+                )
+                body.byteStream().use { input ->
+                    writeStreamToFile(input, file, MAX_CACHE_FILE_BYTES)
+                }
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                ShareImageTarget(uri, mimeType)
+            }
+        }.onFailure {
+            SafeLog.w("FileUtils", "Could not download image for sharing", it)
+        }.getOrNull()
+
     private fun safeFileName(fileName: String?): String {
         val fallback = "attachment_${System.currentTimeMillis()}"
         val raw = fileName?.takeIf { it.isNotBlank() } ?: fallback
@@ -410,6 +514,28 @@ object FileUtils {
                     }
                     output.write(buffer, 0, read)
                 }
+            }
+        }
+        if (total <= 0L) {
+            file.delete()
+            throw IllegalArgumentException("File is empty")
+        }
+        return total
+    }
+
+    private fun writeStreamToFile(input: java.io.InputStream, file: File, maxBytes: Int): Long {
+        var total = 0L
+        FileOutputStream(file).use { output ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                total += read
+                if (total > maxBytes) {
+                    file.delete()
+                    throw IllegalArgumentException("File is too large")
+                }
+                output.write(buffer, 0, read)
             }
         }
         if (total <= 0L) {
