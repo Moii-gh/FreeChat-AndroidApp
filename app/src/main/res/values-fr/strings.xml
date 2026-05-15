@@ -355,6 +355,9 @@
     <string name="toast_liked">Piaciuto!</string>
     <string name="toast_limits_added">Limits successfully added! +5 requests.</string>
     <string name="toast_limits_exhausted">Hai esaurito le richieste gratuite per oggi! Premi il pulsante +5 in alto.</string>
+    <string name="logout_limit_title">Logout limit</string>
+    <string name="logout_limit_message_hours">You can log out again in %d hours.</string>
+    <string name="logout_limit_message_less_than_hour">You can log out again in less than an hour.</string>
     <string name="toast_logout">Sei uscito dal profilo</string>
     <string name="toast_name_empty">Il nome non può essere vuoto</string>
     <string name="toast_open_attachment_error_with_message">Impossible d\'ouvrir la pièce jointe : %s</string>

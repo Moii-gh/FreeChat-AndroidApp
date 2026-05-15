@@ -355,6 +355,9 @@
     <string name="toast_liked">Liked!</string>
     <string name="toast_limits_added">Limits successfully added! +5 requests.</string>
     <string name="toast_limits_exhausted">You have run out of free requests for today! Click the +5 button above.</string>
+    <string name="logout_limit_title">Logout limit</string>
+    <string name="logout_limit_message_hours">You can log out again in %d hours.</string>
+    <string name="logout_limit_message_less_than_hour">You can log out again in less than an hour.</string>
     <string name="toast_logout">You have been logged out</string>
     <string name="toast_name_empty">Name cannot be empty</string>
     <string name="toast_open_link_error">Could not open link</string>

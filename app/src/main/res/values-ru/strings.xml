@@ -355,6 +355,9 @@
     <string name="toast_liked">Понравилось!</string>
     <string name="toast_limits_added">Лимиты успешно добавлены! +5 запросов.</string>
     <string name="toast_limits_exhausted">У вас закончились бесплатные запросы на сегодня! Нажмите кнопку +5 сверху.</string>
+    <string name="logout_limit_title">Ограничение на выход из аккаунта</string>
+    <string name="logout_limit_message_hours">Вы сможете выйти снова через %d часов.</string>
+    <string name="logout_limit_message_less_than_hour">Вы сможете выйти снова менее чем через час.</string>
     <string name="toast_logout">Вы вышли из профиля</string>
     <string name="toast_name_empty">Имя не может быть пустым</string>
     <string name="toast_open_attachment_error_with_message">Не удалось открыть вложение: %s</string>

@@ -1,8 +1,11 @@
 package com.example.chatapp
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.animation.OvershootInterpolator
 import android.view.View
@@ -10,14 +13,19 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.chatapp.data.AccountScopedSettings
+import com.example.chatapp.data.AccountExitLimitResult
+import com.example.chatapp.data.AccountExitLimiter
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.ui.AnimatedAvatarBorderDrawable
 import com.example.chatapp.ui.AnimatedProfileCardDrawable
 import com.example.chatapp.util.SafeImageLoader
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.example.chatapp.util.setHapticClickListener
 
@@ -27,11 +35,24 @@ class SettingsActivity : AppCompatActivity() {
     private var dialogAvatarLetter: TextView? = null
 
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
+    private lateinit var accountExitLimiter: AccountExitLimiter
+    private lateinit var accountExitLimitNotificationHelper: AccountExitLimitNotificationHelper
     private lateinit var accountSettings: AccountScopedSettings
     private lateinit var aiProviderSettings: AiProviderSettings
     private var appliedLanguageCode: String? = null
     private var avatarBorderDrawable: AnimatedAvatarBorderDrawable? = null
     private var profileCardDrawable: AnimatedProfileCardDrawable? = null
+    private var pendingLogoutLimitNotificationHours: Long? = null
+
+    private val requestNotificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val remainingHours = pendingLogoutLimitNotificationHours
+        pendingLogoutLimitNotificationHours = null
+        if (granted && remainingHours != null) {
+            accountExitLimitNotificationHelper.showLogoutLimitNotification(this, remainingHours)
+        }
+    }
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -56,6 +77,9 @@ class SettingsActivity : AppCompatActivity() {
         setupProfileVisualEffects()
 
         sessionStore = SharedPrefsAccountSessionStore(this)
+        accountExitLimiter = AccountExitLimiter(this)
+        accountExitLimitNotificationHelper = AccountExitLimitNotificationHelper()
+        accountExitLimitNotificationHelper.ensureChannel(this)
         accountSettings = AccountScopedSettings(this)
         accountSettings.migrateLegacyDataIfNeeded()
         aiProviderSettings = AiProviderSettings(accountSettings)
@@ -67,14 +91,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.flAvatar).setHapticClickListener { pickImage.launch("image/*") }
 
         findViewById<View>(R.id.btnLogout).setHapticClickListener {
-            sessionStore.clearSession()
-            Toast.makeText(this, LocaleHelper.getString(this, "toast_logout"), Toast.LENGTH_SHORT).show()
-            startActivity(
-                Intent(this, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-            )
-            finish()
+            handleLogoutClick()
         }
 
         findViewById<View>(R.id.btnEditProfile).setHapticClickListener { showEditProfileDialog() }
@@ -271,6 +288,59 @@ class SettingsActivity : AppCompatActivity() {
         val provider = aiProviderSettings.getProvider().displayLabel
         val model = aiProviderSettings.getSelectedModel().displayName
         return "$provider / $model"
+    }
+
+    private fun handleLogoutClick() {
+        val limitResult = accountExitLimiter.canLogout()
+        if (!limitResult.canLogout) {
+            showLogoutLimit(limitResult)
+            return
+        }
+
+        accountExitLimiter.registerLogout()
+        performLogout()
+    }
+
+    private fun performLogout() {
+        sessionStore.clearSession()
+        Toast.makeText(this, LocaleHelper.getString(this, "toast_logout"), Toast.LENGTH_SHORT).show()
+        startActivity(
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        )
+        finish()
+    }
+
+    private fun showLogoutLimit(limitResult: AccountExitLimitResult) {
+        val message = AccountExitLimitMessages.fullMessage(this, limitResult.remainingHours)
+        runCatching {
+            Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show()
+        }.onFailure {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        }
+
+        if (!accountExitLimitNotificationHelper.showLogoutLimitNotification(
+                this,
+                limitResult.remainingHours
+            )
+        ) {
+            requestPostNotificationsPermission(limitResult.remainingHours)
+        }
+    }
+
+    private fun requestPostNotificationsPermission(remainingHours: Long) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        pendingLogoutLimitNotificationHours = remainingHours
+        requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun showEditProfileDialog() {
