@@ -1,160 +1,152 @@
 package com.example.chatapp.ui.chat
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.util.TypedValue
-import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.os.Bundle
+import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.LocaleHelper
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 internal class WelcomePromptController(
     private val context: Context,
-    private val titleView: TextView
-) {
-    private val handler = Handler(Looper.getMainLooper())
-    private var animator: AnimatorSet? = null
+    private val lifecycleOwner: LifecycleOwner,
+    titleContainer: FrameLayout,
+    primaryTitleView: TextView,
+    secondaryTitleView: TextView,
+    private val timing: WelcomePromptTiming = WelcomePromptTiming()
+) : DefaultLifecycleObserver {
+    private val rotator = SmoothTextRotator(
+        context = context,
+        container = titleContainer,
+        primaryView = primaryTitleView,
+        secondaryView = secondaryTitleView,
+        timing = timing
+    )
+
+    private var cycleJob: Job? = null
     private var prompts: List<String> = emptyList()
     private var promptIndex = 0
-    private var promptText = ""
-    private var visibleChars = 0
-    private var cursorVisible = true
-    private var isRunning = false
+    private var startRequested = false
+    private var restoredIndexPending = false
 
-    private val rotationRunnable = object : Runnable {
-        override fun run() {
-            if (!isRunning || prompts.isEmpty()) return
-            showNextPrompt()
-            handler.postDelayed(this, ROTATION_MS)
-        }
+    init {
+        lifecycleOwner.lifecycle.addObserver(this)
     }
 
-    private val typingRunnable = object : Runnable {
-        override fun run() {
-            if (!isRunning) return
-            if (visibleChars < promptText.length) {
-                visibleChars += 1
-                renderPrompt()
-                handler.postDelayed(this, TYPE_STEP_MS)
-            } else {
-                renderPrompt(showCursor = false)
-            }
-        }
+    fun restoreState(savedInstanceState: Bundle?) {
+        if (savedInstanceState == null || !savedInstanceState.containsKey(KEY_PROMPT_INDEX)) return
+        promptIndex = savedInstanceState.getInt(KEY_PROMPT_INDEX, 0).coerceAtLeast(0)
+        restoredIndexPending = true
     }
 
-    private val cursorRunnable = object : Runnable {
-        override fun run() {
-            if (!isRunning) return
-            cursorVisible = !cursorVisible
-            if (visibleChars < promptText.length) {
-                renderPrompt()
-            }
-            handler.postDelayed(this, CURSOR_BLINK_MS)
-        }
+    fun saveState(outState: Bundle) {
+        outState.putInt(KEY_PROMPT_INDEX, promptIndex)
     }
 
     fun refreshPrompts() {
-        prompts = LocaleHelper.getStringList(context, "welcome_prompt")
-            .ifEmpty { listOf(LocaleHelper.getString(context, "welcome_question")) }
-        if (promptIndex >= prompts.size) {
-            promptIndex = 0
+        val changed = loadPrompts()
+        if (prompts.isEmpty()) return
+
+        rotator.prepareForTexts(prompts)
+        promptIndex = promptIndex.coerceIn(0, prompts.lastIndex)
+        if (startRequested && changed) {
+            rotator.showImmediately(prompts[promptIndex])
         }
     }
 
     fun start(resetIndex: Boolean) {
-        refreshPrompts()
+        val promptsChanged = loadPrompts()
         if (prompts.isEmpty()) return
 
-        if (resetIndex) {
+        if (resetIndex && !restoredIndexPending) {
             promptIndex = 0
         }
+        restoredIndexPending = false
+        promptIndex = promptIndex.coerceIn(0, prompts.lastIndex)
 
-        isRunning = true
-        handler.removeCallbacks(rotationRunnable)
-        handler.removeCallbacks(typingRunnable)
-        handler.removeCallbacks(cursorRunnable)
-        animator?.cancel()
+        rotator.prepareForTexts(prompts)
 
-        titleView.alpha = 1f
-        titleView.translationY = 0f
-        typePrompt(prompts[promptIndex])
-        handler.postDelayed(rotationRunnable, ROTATION_MS)
-        handler.postDelayed(cursorRunnable, CURSOR_BLINK_MS)
+        val wasAlreadyRequested = startRequested
+        startRequested = true
+        val currentPrompt = prompts[promptIndex]
+        if (!wasAlreadyRequested || promptsChanged || rotator.currentText != currentPrompt) {
+            rotator.showImmediately(currentPrompt)
+        }
+
+        startLoopIfReady()
     }
 
     fun stop() {
-        isRunning = false
-        animator?.cancel()
-        animator = null
-        handler.removeCallbacks(rotationRunnable)
-        handler.removeCallbacks(typingRunnable)
-        handler.removeCallbacks(cursorRunnable)
+        startRequested = false
+        pauseLoop()
     }
 
-    private fun showNextPrompt() {
-        if (prompts.isEmpty()) return
-        promptIndex = (promptIndex + 1) % prompts.size
-        val nextPrompt = prompts[promptIndex]
+    override fun onStart(owner: LifecycleOwner) {
+        startLoopIfReady()
+    }
 
-        animator?.cancel()
-        handler.removeCallbacks(typingRunnable)
+    override fun onStop(owner: LifecycleOwner) {
+        pauseLoop()
+    }
 
-        val fadeOut = ObjectAnimator.ofFloat(titleView, View.ALPHA, 1f, 0f)
-        val slideOut = ObjectAnimator.ofFloat(titleView, View.TRANSLATION_Y, 0f, -8.dpToPx())
-        val fadeIn = ObjectAnimator.ofFloat(titleView, View.ALPHA, 0f, 1f)
-        val slideIn = ObjectAnimator.ofFloat(titleView, View.TRANSLATION_Y, 10.dpToPx(), 0f)
+    override fun onDestroy(owner: LifecycleOwner) {
+        stop()
+        lifecycleOwner.lifecycle.removeObserver(this)
+    }
 
-        animator = AnimatorSet().apply {
-            playTogether(fadeOut, slideOut)
-            duration = ANIMATION_MS
-            interpolator = AccelerateDecelerateInterpolator()
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    if (!isRunning) return
-                    typePrompt(nextPrompt)
-                    AnimatorSet().apply {
-                        playTogether(fadeIn, slideIn)
-                        duration = ANIMATION_MS
-                        interpolator = AccelerateDecelerateInterpolator()
-                        start()
-                    }
+    private fun loadPrompts(): Boolean {
+        val nextPrompts = LocaleHelper.getStringList(context, "welcome_prompt")
+            .ifEmpty { listOf(LocaleHelper.getString(context, "welcome_question")) }
+            .filter { it.isNotBlank() }
+
+        if (nextPrompts == prompts) return false
+
+        prompts = nextPrompts
+        if (prompts.isEmpty()) {
+            promptIndex = 0
+        } else if (promptIndex >= prompts.size) {
+            promptIndex = 0
+        }
+        return true
+    }
+
+    private fun startLoopIfReady() {
+        if (!startRequested) return
+        if (cycleJob?.isActive == true) return
+        if (prompts.size < MIN_PROMPTS_TO_ROTATE) return
+        if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
+
+        cycleJob = lifecycleOwner.lifecycleScope.launch {
+            while (isActive && startRequested) {
+                delay(timing.visibleDurationMillis)
+                if (!isActive || !startRequested || prompts.size < MIN_PROMPTS_TO_ROTATE) {
+                    continue
                 }
-            })
-            start()
+
+                val nextIndex = (promptIndex + 1) % prompts.size
+                val completed = rotator.transitionTo(prompts[nextIndex])
+                if (completed) {
+                    promptIndex = nextIndex
+                }
+            }
         }
     }
 
-    private fun typePrompt(prompt: String) {
-        promptText = prompt
-        visibleChars = 0
-        cursorVisible = true
-        renderPrompt()
-        handler.postDelayed(typingRunnable, TYPE_STEP_MS)
+    private fun pauseLoop() {
+        cycleJob?.cancel()
+        cycleJob = null
+        rotator.cancelTransition()
     }
-
-    private fun renderPrompt(showCursor: Boolean = true) {
-        val visibleText = promptText.take(visibleChars)
-        val cursor = if (showCursor && cursorVisible) CURSOR else ""
-        titleView.text = visibleText + cursor
-    }
-
-    private fun Int.dpToPx(): Float =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            toFloat(),
-            context.resources.displayMetrics
-        )
 
     private companion object {
-        const val ROTATION_MS = 5_000L
-        const val ANIMATION_MS = 260L
-        const val TYPE_STEP_MS = 26L
-        const val CURSOR_BLINK_MS = 460L
-        const val CURSOR = "|"
+        const val KEY_PROMPT_INDEX = "welcome_prompt_index"
+        const val MIN_PROMPTS_TO_ROTATE = 2
     }
 }

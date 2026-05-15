@@ -16,6 +16,7 @@ import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.ai.AiActivitySnapshot
 import com.example.chatapp.ui.markdown.AndroidStreamingMarkdownRenderer
+import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.SafeLog
 import com.example.chatapp.util.dpToPx
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -727,28 +728,35 @@ class AssistantMessageWrapper(
             if (imageUrl.startsWith("data:image")) {
                 if (currentImageUrl != imageUrl) {
                     currentImageUrl = imageUrl
-                    try {
-                        val base64Data = imageUrl.substringAfter(",")
-                        val imageBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                        imageViewResult?.setImageBitmap(bitmap)
-                    } catch (e: Exception) {
-                        SafeLog.w("AssistantMessageWrapper", "Could not decode inline image", e)
+                    val targetSize = imageContainer?.width?.takeIf { it > 0 } ?: 300.dpToPx()
+                    val base64Data = imageUrl.substringAfter(",")
+                    val target = imageViewResult
+                    if (target != null) {
+                        SafeImageLoader.loadBase64Image(
+                            imageView = target,
+                            base64Data = base64Data,
+                            fileName = "generated_image.png",
+                            widthPx = targetSize,
+                            heightPx = targetSize
+                        )
                     }
                 }
             } else if (isLocalImageUrl(imageUrl)) {
                 if (currentImageUrl != imageUrl) {
                     currentImageUrl = imageUrl
-                    runCatching {
-                        imageViewResult?.setImageURI(Uri.parse(imageUrl))
-                    }.onFailure {
-                        imageViewResult?.load(Uri.parse(imageUrl)) { crossfade(true) }
+                    val targetSize = imageContainer?.width?.takeIf { it > 0 } ?: 300.dpToPx()
+                    val target = imageViewResult
+                    if (target != null) {
+                        SafeImageLoader.loadUri(target, Uri.parse(imageUrl), targetSize, targetSize)
                     }
                 }
             } else {
                 if (currentImageUrl != imageUrl) {
                     currentImageUrl = imageUrl
-                    imageViewResult?.load(imageUrl) { crossfade(true) }
+                    val targetSize = imageContainer?.width?.takeIf { it > 0 } ?: 300.dpToPx()
+                    imageViewResult?.let { target ->
+                        SafeImageLoader.loadModel(target, imageUrl, targetSize, targetSize)
+                    }
                 }
             }
             

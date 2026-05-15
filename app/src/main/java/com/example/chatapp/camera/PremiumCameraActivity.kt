@@ -47,6 +47,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.setPressAnimation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -571,13 +572,13 @@ class PremiumCameraActivity : AppCompatActivity() {
                 galleryStack.visibility = View.VISIBLE
                 galleryFront.setPadding(0, 0, 0, 0)
                 galleryFront.imageTintList = null
-                galleryFront.setImageURI(images.first())
+                SafeImageLoader.loadUri(galleryFront, images.first(), galleryThumbSize(), galleryThumbSize())
                 galleryFront.alpha = 0f
                 galleryFront.translationX = 10f * resources.displayMetrics.density
                 galleryFront.animate().alpha(1f).translationX(0f).setDuration(260L).start()
 
                 if (images.size > 1) {
-                    galleryBack.setImageURI(images[1])
+                    SafeImageLoader.loadUri(galleryBack, images[1], galleryThumbSize(), galleryThumbSize())
                     galleryBack.visibility = View.VISIBLE
                     galleryBack.alpha = 0f
                     galleryBack.animate().alpha(0.76f).setDuration(320L).start()
@@ -587,6 +588,12 @@ class PremiumCameraActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun galleryThumbSize(): Int =
+        galleryFront.width
+            .takeIf { it > 0 }
+            ?: galleryFront.height.takeIf { it > 0 }
+            ?: (64 * resources.displayMetrics.density).toInt()
 
     private fun queryRecentImages(limit: Int): List<Uri> {
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI

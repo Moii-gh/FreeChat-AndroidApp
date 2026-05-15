@@ -16,6 +16,7 @@ import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.ui.AnimatedAvatarBorderDrawable
 import com.example.chatapp.ui.AnimatedProfileCardDrawable
+import com.example.chatapp.util.SafeImageLoader
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.example.chatapp.util.setHapticClickListener
@@ -185,8 +186,8 @@ class SettingsActivity : AppCompatActivity() {
 
             try {
                 val parsedUri = android.net.Uri.parse(avatarUri)
-                ivAvatar.setImageURI(parsedUri)
-                ivDialogAvatar?.setImageURI(parsedUri)
+                loadAvatarImage(ivAvatar, parsedUri)
+                loadAvatarImage(ivDialogAvatar, parsedUri)
             } catch (_: Exception) {
                 ivAvatar.visibility = View.GONE
                 tvLetter.visibility = View.VISIBLE
@@ -203,6 +204,15 @@ class SettingsActivity : AppCompatActivity() {
             dialogAvatarLetter?.visibility = View.VISIBLE
             dialogAvatarLetter?.text = firstLetter
         }
+    }
+
+    private fun loadAvatarImage(imageView: ImageView?, uri: android.net.Uri) {
+        imageView ?: return
+        val size = imageView.width
+            .takeIf { it > 0 }
+            ?: imageView.height.takeIf { it > 0 }
+            ?: (96 * resources.displayMetrics.density).toInt()
+        SafeImageLoader.loadUri(imageView, uri, size, size)
     }
 
     private fun applyTranslations() {

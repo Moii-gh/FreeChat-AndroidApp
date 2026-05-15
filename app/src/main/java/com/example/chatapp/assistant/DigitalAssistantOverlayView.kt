@@ -7,7 +7,6 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -20,7 +19,6 @@ import android.text.TextUtils
 import android.text.method.LinkMovementMethod
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
-import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
@@ -49,6 +47,7 @@ import com.example.chatapp.databinding.ViewDigitalAssistantOverlayBinding
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.MarkdownTableRenderer
 import com.example.chatapp.util.FileUtils
+import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.setHapticClickListener
 import io.noties.markwon.Markwon
@@ -459,17 +458,17 @@ class DigitalAssistantOverlayView(
         val attachmentId = attachment?.cacheFilePath ?: attachment?.fileName
 
         if (hasAttachment && attachmentId != lastAttachmentId) {
-            val bytes = runCatching {
-                Base64.decode(attachment?.base64Data.orEmpty(), Base64.DEFAULT)
-            }.getOrNull()
-            val bitmap = bytes?.let {
-                BitmapFactory.decodeByteArray(it, 0, it.size)
-            }
-            if (bitmap != null) {
+            if (attachment?.mimeType?.startsWith("image/", ignoreCase = true) == true) {
                 binding.previewImage.setPadding(0, 0, 0, 0)
                 binding.previewImage.clearColorFilter()
                 binding.previewImage.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                binding.previewImage.setImageBitmap(bitmap)
+                SafeImageLoader.loadBase64Image(
+                    imageView = binding.previewImage,
+                    base64Data = attachment.base64Data,
+                    fileName = attachment.fileName,
+                    widthPx = dp(64),
+                    heightPx = dp(104)
+                )
             } else {
                 binding.previewImage.setPadding(dp(16), dp(16), dp(16), dp(16))
                 binding.previewImage.setColorFilter(Color.parseColor("#8E8E93"))
@@ -1008,15 +1007,13 @@ class DigitalAssistantOverlayView(
                 background = context.getDrawable(R.drawable.bg_da_preview)
                 clipToOutline = true
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                runCatching {
-                    val bytes = Base64.decode(attachment.base64Data, Base64.DEFAULT)
-                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    setImageBitmap(bitmap)
-                }.onFailure {
-                    setImageResource(R.drawable.ic_image)
-                    setColorFilter(Color.WHITE)
-                    setPadding(dp(18), dp(18), dp(18), dp(18))
-                }
+                SafeImageLoader.loadBase64Image(
+                    imageView = this,
+                    base64Data = attachment.base64Data,
+                    fileName = attachment.fileName,
+                    widthPx = dp(86),
+                    heightPx = dp(86)
+                )
                 isClickable = true
                 isFocusable = true
                 foreground = selectableBorderlessDrawable()

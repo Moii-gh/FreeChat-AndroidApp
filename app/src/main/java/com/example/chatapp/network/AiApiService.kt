@@ -9,6 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -17,19 +18,22 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.IOException
 import java.io.InputStreamReader
 
 object AiApiService {
 
     interface StreamCallback {
-        fun onActivity(activityState: AiActivityState) {}
-        fun onStreamStarted() {}
-        fun onChunk(accumulatedText: String)
-        fun onComplete(fullText: String)
-        fun onError(errorMessage: String)
+        suspend fun onActivity(activityState: AiActivityState) {}
+        suspend fun onStreamStarted() {}
+        suspend fun onChunk(accumulatedText: String)
+        suspend fun onComplete(fullText: String)
+        suspend fun onError(errorMessage: String)
     }
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+    private const val MAX_AI_REQUEST_ATTEMPTS = 2
+    private const val RETRY_DELAY_MS = 700L
     private const val LINK_FORMAT_INSTRUCTION =
         "When you include links in the answer, format them as Markdown [meaningful link text](URL) " +
             "or HTML <a href=\"URL\">meaningful link text</a>. Do not leave raw plain-text URLs. " +
@@ -193,7 +197,10 @@ object AiApiService {
 
     private fun buildMessageText(msg: JSONObject): String {
         val content = msg.optString("content", "")
-            .replace(Regex("!\\[[^]]*]\\(data:image/[^)]+\\)"), "[Generated image]")
+            .replace(
+                Regex("!\\[[^]]*]\\((?:data:image/|content://|file://|https?://)[^)]+\\)"),
+                "[Generated image]"
+            )
         val fileName = msg.optString("fileName", "")
         val mimeType = msg.optString("mimeType", "")
         val fileContext = msg.optString("fileContext").ifBlank { msg.optString("fileText") }
@@ -297,99 +304,126 @@ object AiApiService {
                     requestBody = jsonInput
                 )
 
-                val request = buildJsonRequest(path = "ai/chat", payload = payload)
-                val call = NetworkModule.createAiHttpClient(authToken).newCall(request)
-                val cancellationHandle = coroutineContext[Job]?.invokeOnCompletion { cause ->
-                    if (cause is CancellationException) {
-                        call.cancel()
-                    }
-                }
-
-                try {
-                    call.execute().use { response ->
-                        val responseBody = response.body
-                        if (!response.isSuccessful || responseBody == null) {
-                            withContext(Dispatchers.Main) {
-                                callback.onError(parseErrorMessage(response.code, responseBody?.string().orEmpty()))
-                            }
-                            return@use
+                var attempt = 0
+                while (true) {
+                    attempt++
+                    val request = buildJsonRequest(path = "ai/chat", payload = payload)
+                    val call = NetworkModule.createAiHttpClient(authToken).newCall(request)
+                    val cancellationHandle = coroutineContext[Job]?.invokeOnCompletion { cause ->
+                        if (cause is CancellationException) {
+                            call.cancel()
                         }
+                    }
 
-                        var finalReply = ""
-                        val isJsonResponse = response.header("Content-Type")
-                            .orEmpty()
-                            .contains("application/json", ignoreCase = true)
-
-                        if (isImageGeneration || isJsonResponse) {
-                            val bodyText = responseBody.string()
-                            finalReply = parseImageResponseBody(bodyText)
-                                ?: if (isImageGeneration) error("Image response is empty") else bodyText
-                            withContext(Dispatchers.Main) {
-                                callback.onStreamStarted()
-                                callback.onChunk(finalReply)
-                            }
-                        } else {
-                            var streamStarted = false
-                            BufferedReader(InputStreamReader(responseBody.byteStream(), Charsets.UTF_8)).use { reader ->
-                                var eventName: String? = null
-                                val dataLines = mutableListOf<String>()
-
-                                suspend fun dispatchEvent() {
-                                    if (dataLines.isEmpty()) return
-                                    val data = dataLines.joinToString("\n").trim()
-                                    dataLines.clear()
-                                    val currentEventName = eventName
-                                    eventName = null
-
-                                    if (data.isEmpty() || data == "[DONE]") {
-                                        return
+                    try {
+                        val response = call.execute()
+                        var retryAfterDelay = false
+                        try {
+                            val responseBody = response.body
+                            if (!response.isSuccessful || responseBody == null) {
+                                val errorBody = responseBody?.string().orEmpty()
+                                if (attempt < MAX_AI_REQUEST_ATTEMPTS && isRetryableHttpStatus(response.code)) {
+                                    retryAfterDelay = true
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        callback.onError(parseErrorMessage(response.code, errorBody))
                                     }
+                                    return@withContext
+                                }
+                            } else {
+                                var finalReply = ""
+                                val isJsonResponse = response.header("Content-Type")
+                                    .orEmpty()
+                                    .contains("application/json", ignoreCase = true)
 
-                                    val json = runCatching { JSONObject(data) }.getOrNull() ?: return
-                                    val activityState = if (currentEventName == "ai_activity") {
-                                        AiActivityToolMapper.fromActivityName(
-                                            json.optString("state").ifBlank { json.optString("type") },
-                                            json.optString("text").ifBlank { null }
-                                        )
-                                    } else {
-                                        AiActivityToolMapper.fromProviderEvent(json)
-                                    }
-                                    if (activityState != null) {
-                                        withContext(Dispatchers.Main) {
-                                            callback.onActivity(activityState)
-                                        }
-                                    }
-
-                                    extractStreamContent(json).takeIf { it.isNotEmpty() }?.let { chunk ->
-                                        finalReply += chunk
-                                        withContext(Dispatchers.Main) {
-                                            if (!streamStarted) {
-                                                streamStarted = true
-                                                callback.onStreamStarted()
-                                            }
+                                if (isImageGeneration || isJsonResponse) {
+                                    val bodyText = responseBody.string()
+                                    val imageReply = parseImageResponseBody(bodyText)
+                                    finalReply = imageReply
+                                        ?: if (isImageGeneration) error("Image response is empty") else bodyText
+                                    withContext(Dispatchers.Main) {
+                                        callback.onStreamStarted()
+                                        if (imageReply == null) {
                                             callback.onChunk(finalReply)
                                         }
                                     }
-                                }
+                                } else {
+                                    var streamStarted = false
+                                    BufferedReader(InputStreamReader(responseBody.byteStream(), Charsets.UTF_8)).use { reader ->
+                                        var eventName: String? = null
+                                        val dataLines = mutableListOf<String>()
 
-                                while (true) {
-                                    val line = reader.readLine() ?: break
-                                    when {
-                                        line.isEmpty() -> dispatchEvent()
-                                        line.startsWith("event:") -> eventName = line.removePrefix("event:").trim()
-                                        line.startsWith("data:") -> dataLines.add(line.removePrefix("data:").trim())
+                                        suspend fun dispatchEvent() {
+                                            if (dataLines.isEmpty()) return
+                                            val data = dataLines.joinToString("\n").trim()
+                                            dataLines.clear()
+                                            val currentEventName = eventName
+                                            eventName = null
+
+                                            if (data.isEmpty() || data == "[DONE]") {
+                                                return
+                                            }
+
+                                            val json = runCatching { JSONObject(data) }.getOrNull() ?: return
+                                            val activityState = if (currentEventName == "ai_activity") {
+                                                AiActivityToolMapper.fromActivityName(
+                                                    json.optString("state").ifBlank { json.optString("type") },
+                                                    json.optString("text").ifBlank { null }
+                                                )
+                                            } else {
+                                                AiActivityToolMapper.fromProviderEvent(json)
+                                            }
+                                            if (activityState != null) {
+                                                withContext(Dispatchers.Main) {
+                                                    callback.onActivity(activityState)
+                                                }
+                                            }
+
+                                            extractStreamContent(json).takeIf { it.isNotEmpty() }?.let { chunk ->
+                                                finalReply += chunk
+                                                withContext(Dispatchers.Main) {
+                                                    if (!streamStarted) {
+                                                        streamStarted = true
+                                                        callback.onStreamStarted()
+                                                    }
+                                                    callback.onChunk(finalReply)
+                                                }
+                                            }
+                                        }
+
+                                        while (true) {
+                                            val line = reader.readLine() ?: break
+                                            when {
+                                                line.isEmpty() -> dispatchEvent()
+                                                line.startsWith("event:") -> eventName = line.removePrefix("event:").trim()
+                                                line.startsWith("data:") -> dataLines.add(line.removePrefix("data:").trim())
+                                            }
+                                        }
+                                        dispatchEvent()
                                     }
                                 }
-                                dispatchEvent()
-                            }
-                        }
 
-                        withContext(Dispatchers.Main) {
-                            callback.onComplete(finalReply)
+                                withContext(Dispatchers.Main) {
+                                    callback.onComplete(finalReply)
+                                }
+                            }
+                        } finally {
+                            response.close()
                         }
+                        if (retryAfterDelay) {
+                            delay(RETRY_DELAY_MS * attempt)
+                            continue
+                        }
+                        break
+                    } catch (error: IOException) {
+                        if (attempt < MAX_AI_REQUEST_ATTEMPTS && currentCoroutineContext().isActive) {
+                            delay(RETRY_DELAY_MS * attempt)
+                            continue
+                        }
+                        throw error
+                    } finally {
+                        cancellationHandle?.dispose()
                     }
-                } finally {
-                    cancellationHandle?.dispose()
                 }
             } catch (error: CancellationException) {
                 throw error
@@ -535,4 +569,7 @@ object AiApiService {
             else -> "Request failed: HTTP $statusCode"
         }
     }
+
+    private fun isRetryableHttpStatus(statusCode: Int): Boolean =
+        statusCode == 408 || statusCode == 429 || statusCode in 500..599
 }

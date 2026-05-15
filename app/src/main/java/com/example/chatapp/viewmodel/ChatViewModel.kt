@@ -21,11 +21,13 @@ import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.CreateChatShareResponse
 import com.example.chatapp.network.dto.RevokeChatShareResponse
+import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.util.UUID
 
@@ -55,6 +57,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val attachmentData: String?,
         val mimeType: String?,
         val fileName: String?
+    )
+
+    private data class PreparedAssistantResponse(
+        val content: String,
+        val imageAttachment: ImageAttachment
     )
 
     private data class MessageMetadata(
@@ -507,24 +514,28 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val responseJob = viewModelScope.launch {
             try {
                 val streamCallback = object : AiApiService.StreamCallback {
-                    override fun onActivity(activityState: AiActivityState) {
+                    override suspend fun onActivity(activityState: AiActivityState) {
                         aiActivityManager.update(activityGenerationId, activityState)
                     }
 
-                    override fun onStreamStarted() {
+                    override suspend fun onStreamStarted() {
                         aiActivityManager.markStreamStarted(activityGenerationId)
                     }
 
-                    override fun onChunk(accumulatedText: String) {
+                    override suspend fun onChunk(accumulatedText: String) {
                         onChunk(accumulatedText)
                     }
 
-                    override fun onComplete(fullText: String) {
-                        val generatedImage = extractImageAttachment(fullText)
+                    override suspend fun onComplete(fullText: String) {
+                        val prepared = prepareAssistantResponse(fullText)
+                        if (prepared.content.isNotBlank()) {
+                            onChunk(prepared.content)
+                        }
+                        val generatedImage = prepared.imageAttachment
                         val now = System.currentTimeMillis()
                         val assistantMessage = JSONObject().apply {
                             put("role", "assistant")
-                            put("content", fullText)
+                            put("content", prepared.content)
                             generatedImage.imageUrl?.let { put("imageUri", it) }
                             generatedImage.attachmentData?.let { put("base64", it) }
                             generatedImage.mimeType?.let { put("mimeType", it) }
@@ -536,12 +547,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             put("isDeleted", false)
                         }
                         chatHistory.add(assistantMessage)
-                        saveCompletedResponse(fullText, assistantMessage)
+                        saveCompletedResponse(prepared.content, assistantMessage)
                         aiActivityManager.complete(activityGenerationId)
                         onComplete()
                     }
 
-                    override fun onError(errorMessage: String) {
+                    override suspend fun onError(errorMessage: String) {
                         aiActivityManager.fail(activityGenerationId)
                         onError(errorMessage)
                     }
@@ -961,6 +972,42 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         summaryCacheStore.clear(accountSettings.currentAccountKey(), chatId)
     }
 
+    private suspend fun prepareAssistantResponse(content: String): PreparedAssistantResponse =
+        withContext(Dispatchers.IO) {
+            val imageAttachment = extractImageAttachment(content)
+            val inlineData = imageAttachment.attachmentData
+            val imageUrl = imageAttachment.imageUrl
+            if (
+                inlineData.isNullOrBlank() ||
+                imageUrl.isNullOrBlank() ||
+                !imageUrl.startsWith("data:image", ignoreCase = true)
+            ) {
+                return@withContext PreparedAssistantResponse(content, imageAttachment)
+            }
+
+            val persisted = FileUtils.saveBase64FileToPersistentImage(
+                context = getApplication(),
+                base64Str = inlineData,
+                fileName = imageAttachment.fileName,
+                mimeType = imageAttachment.mimeType
+            )
+            if (persisted == null) {
+                SafeLog.w("ChatViewModel", "Generated image could not be persisted; keeping inline data")
+                return@withContext PreparedAssistantResponse(content, imageAttachment)
+            }
+
+            val persistedUri = persisted.uri.toString()
+            PreparedAssistantResponse(
+                content = replaceMarkdownImageUrl(content, persistedUri),
+                imageAttachment = ImageAttachment(
+                    imageUrl = persistedUri,
+                    attachmentData = null,
+                    mimeType = persisted.mimeType,
+                    fileName = persisted.fileName
+                )
+            )
+        }
+
     private fun extractImageAttachment(content: String): ImageAttachment {
         val imageUrl = extractMarkdownImageUrl(content)
         if (imageUrl.isNullOrBlank()) {
@@ -999,8 +1046,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         return content.substring(start + 2, end).takeIf { imageUrl ->
             imageUrl.startsWith("http", ignoreCase = true) ||
-                imageUrl.startsWith("data:image", ignoreCase = true)
+                imageUrl.startsWith("data:image", ignoreCase = true) ||
+                imageUrl.startsWith("content://", ignoreCase = true) ||
+                imageUrl.startsWith("file://", ignoreCase = true)
         }
+    }
+
+    private fun replaceMarkdownImageUrl(content: String, replacementUrl: String): String {
+        val imageStart = content.indexOf("![")
+        if (imageStart == -1) return content
+        val start = content.indexOf("](", imageStart)
+        if (start == -1) return content
+        val end = content.indexOf(')', start + 2)
+        if (end == -1) return content
+        return content.replaceRange(start + 2, end, replacementUrl)
     }
 
     private fun contentForStorage(content: String, imageUrl: String?): String {

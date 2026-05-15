@@ -190,10 +190,12 @@ class ChatRepository(context: Context) {
                     MessageEntity(
                         chatId = newChatId,
                         role = message.role,
-                        content = message.content,
+                        content = cachedImageUrl?.let {
+                            replaceMarkdownImageUrl(message.content, it)
+                        } ?: message.content,
                         timestamp = message.timestamp,
                         imageUrl = cachedImageUrl ?: message.imageUrl,
-                        attachmentData = message.attachmentData,
+                        attachmentData = cachedImageUrl?.let { null } ?: message.attachmentData,
                         attachmentMimeType = message.attachmentMimeType,
                         attachmentFileName = message.attachmentFileName,
                         attachmentContext = message.attachmentContext,
@@ -412,7 +414,12 @@ class ChatRepository(context: Context) {
         val resolvedFileName = fileName?.takeIf { it.isNotBlank() }
             ?: "shared_image_${System.currentTimeMillis()}.$extension"
 
-        return FileUtils.saveBase64FileToCache(appContext, base64Data, resolvedFileName)?.toString()
+        return FileUtils.saveBase64FileToPersistentImage(
+            context = appContext,
+            base64Str = base64Data,
+            fileName = resolvedFileName,
+            mimeType = resolvedMimeType
+        )?.uri?.toString()
     }
 
     private fun contentForShare(content: String, imageUrl: String?): String {
@@ -441,7 +448,19 @@ class ChatRepository(context: Context) {
 
         return content.substring(start + 2, end).takeIf { imageUrl ->
             imageUrl.startsWith("http", ignoreCase = true) ||
-                imageUrl.startsWith("data:image", ignoreCase = true)
+                imageUrl.startsWith("data:image", ignoreCase = true) ||
+                imageUrl.startsWith("content://", ignoreCase = true) ||
+                imageUrl.startsWith("file://", ignoreCase = true)
         }
+    }
+
+    private fun replaceMarkdownImageUrl(content: String, replacementUrl: String): String {
+        val imageStart = content.indexOf("![")
+        if (imageStart == -1) return content
+        val start = content.indexOf("](", imageStart)
+        if (start == -1) return content
+        val end = content.indexOf(')', start + 2)
+        if (end == -1) return content
+        return content.replaceRange(start + 2, end, replacementUrl)
     }
 }

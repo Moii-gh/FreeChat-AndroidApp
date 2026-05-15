@@ -73,6 +73,8 @@ import androidx.activity.OnBackPressedCallback
 import com.example.chatapp.ui.TypingDotsView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 
 class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
@@ -127,6 +129,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var appliedLanguageCode: String? = null
     private var pendingAutoScrollRunnable: Runnable? = null
     private var scrollToBottomController: ChatScrollToBottomController? = null
+    private var pendingSendJob: Job? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -150,6 +153,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupLifecycleControllers()
+        welcomePromptController.restoreState(savedInstanceState)
         setupBackNavigation()
         val shouldSkipBiometricOnce = intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE, false) == true
         val shouldGateWithBiometrics = biometricGateController.shouldGate(shouldSkipBiometricOnce)
@@ -174,7 +178,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun setupLifecycleControllers() {
         welcomePromptController = WelcomePromptController(
             context = this,
-            titleView = binding.tvWelcomeTitle
+            lifecycleOwner = this,
+            titleContainer = binding.welcomeTitleRotator,
+            primaryTitleView = binding.tvWelcomeTitle,
+            secondaryTitleView = binding.tvWelcomeTitleNext
         )
         streamingUiController = StreamingUiController(
             isCurrentAssistantMessage = { wrapper -> currentAssistantMessage === wrapper },
@@ -252,6 +259,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         handleSharedChatIntent(intent)
         handleAssistantHandoffIntent(intent)
         handlePrefillInputIntent(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        if (::welcomePromptController.isInitialized) {
+            welcomePromptController.saveState(outState)
+        }
+        super.onSaveInstanceState(outState)
     }
 
     override fun onResume() {
@@ -395,6 +409,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (::streamingUiController.isInitialized) {
             invalidateActiveGeneration(cancelScroll = true)
         }
+        pendingSendJob?.cancel()
+        pendingSendJob = null
+        chatViewModel.cancelActiveResponse()
         if (::welcomePromptController.isInitialized) {
             welcomePromptController.stop()
         }
@@ -1849,24 +1866,37 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val previewUri = attachmentPreviewController.currentPreviewUri
         if (text.isBlank() && previewUri == null) return
 
-        val attachmentPayload = try {
-            attachmentHelper.buildAttachmentPayload(previewUri)
-        } catch (e: IllegalArgumentException) {
-            toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
-            return
-        }
-
         if (!chatViewModel.consumeLimit()) {
             refreshDailyQuotaUi()
             toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
             return
         }
 
+        isSending = true
+        updateSendState()
+        pendingSendJob = lifecycleScope.launch {
+            val attachmentPayload = try {
+                attachmentHelper.buildAttachmentPayload(previewUri)
+            } catch (e: IllegalArgumentException) {
+                if (isActive) {
+                    isSending = false
+                    pendingSendJob = null
+                    updateSendState()
+                    toast(e.message ?: LocaleHelper.getString(this@FreeChatActivity, "attachment_read_error"))
+                }
+                return@launch
+            }
+            pendingSendJob = null
+            if (!isActive || !isSending) return@launch
+            startPreparedSend(text, previewUri, attachmentPayload)
+        }
+    }
+
+    private fun startPreparedSend(text: String, previewUri: Uri?, attachmentPayload: AttachmentPayload?) {
         val mimeType = attachmentPayload?.mimeType
         val userHistoryIndex = chatViewModel.chatHistory.size
 
         val shouldAnimateTopActions = chatViewModel.isFirstMessage && binding.topRightMain.isVisible
-        isSending = true
         val requestId = nextGenerationId()
         isUserAtBottom = true
         hideQuickSuggestions()
@@ -1946,6 +1976,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun stopGeneration() {
         if (!isSending) return
+
+        pendingSendJob?.cancel()
+        pendingSendJob = null
 
         val requestId = streamingUiController.activeGenerationId
         val wrapper = currentAssistantMessage
@@ -2047,19 +2080,41 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (isSending) return
         if (historyIndex !in 0 until chatViewModel.chatHistory.size) return
 
-        val attachmentPayload = try {
-            attachmentPreviewController.currentPreviewUri?.let { attachmentHelper.buildAttachmentPayload(it) }
-                ?: attachmentPreviewController.retainedEditingAttachment
-        } catch (e: IllegalArgumentException) {
-            toast(e.message ?: LocaleHelper.getString(this, "attachment_read_error"))
-            return
-        }
-
-        if (newText.isBlank() && attachmentPayload == null) return
-
         if (!chatViewModel.consumeLimit()) {
             refreshDailyQuotaUi()
             toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
+            return
+        }
+
+        isSending = true
+        updateSendState()
+        pendingSendJob = lifecycleScope.launch {
+            val attachmentPayload = try {
+                attachmentPreviewController.currentPreviewUri?.let { attachmentHelper.buildAttachmentPayload(it) }
+                    ?: attachmentPreviewController.retainedEditingAttachment
+            } catch (e: IllegalArgumentException) {
+                if (isActive) {
+                    isSending = false
+                    pendingSendJob = null
+                    updateSendState()
+                    toast(e.message ?: LocaleHelper.getString(this@FreeChatActivity, "attachment_read_error"))
+                }
+                return@launch
+            }
+            pendingSendJob = null
+            if (!isActive || !isSending) return@launch
+            prepareEditedUserMessage(historyIndex, newText, attachmentPayload)
+        }
+    }
+
+    private fun prepareEditedUserMessage(
+        historyIndex: Int,
+        newText: String,
+        attachmentPayload: AttachmentPayload?
+    ) {
+        if (newText.isBlank() && attachmentPayload == null) {
+            isSending = false
+            updateSendState()
             return
         }
 
@@ -2073,11 +2128,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             fileContext = attachmentPayload?.attachmentContext,
             onError = { error ->
                 runOnUiThread {
+                    isSending = false
+                    updateSendState()
                     toast(error)
                 }
             },
             onPrepared = {
                 runOnUiThread {
+                    if (!isSending) return@runOnUiThread
                     removeViewsFromUserMessage(historyIndex)
                     clearEditingMessageState()
                     binding.etInput.text?.clear()

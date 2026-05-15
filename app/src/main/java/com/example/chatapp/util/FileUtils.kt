@@ -2,15 +2,29 @@ package com.example.chatapp.util
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Base64InputStream
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.LocaleHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.util.Locale
 
 /**
@@ -20,6 +34,14 @@ import java.util.Locale
 object FileUtils {
     private const val MAX_CACHE_FILE_BYTES = 20 * 1024 * 1024
     private const val CACHE_SHARE_DIR = "shared_files"
+    private const val GENERATED_IMAGE_DIR = "generated_images"
+
+    data class SavedImageFile(
+        val uri: Uri,
+        val fileName: String,
+        val mimeType: String,
+        val byteCount: Long
+    )
 
     /** Извлекает имя файла из content:// URI через ContentResolver */
     fun getFileName(context: Context, uri: Uri): String {
@@ -57,16 +79,43 @@ object FileUtils {
             if (estimatedDecodedSize(base64Str) > MAX_CACHE_FILE_BYTES) {
                 return null
             }
-            val bytes = android.util.Base64.decode(base64Str, android.util.Base64.DEFAULT)
-            if (bytes.size > MAX_CACHE_FILE_BYTES) {
-                return null
-            }
             val cacheDir = File(context.cacheDir, CACHE_SHARE_DIR).apply { mkdirs() }
-            val file = File(cacheDir, safeFileName(fileName))
-            file.writeBytes(bytes)
+            val file = uniqueFile(cacheDir, safeFileName(fileName))
+            writeBase64ToFile(base64Str, file, MAX_CACHE_FILE_BYTES)
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         } catch (e: Exception) {
             SafeLog.w("FileUtils", "Could not save base64 file to cache", e)
+            null
+        }
+    }
+
+    fun saveBase64FileToPersistentImage(
+        context: Context,
+        base64Str: String,
+        fileName: String?,
+        mimeType: String? = null
+    ): SavedImageFile? {
+        return try {
+            val resolvedMimeType = mimeType?.takeIf { it.startsWith("image/", ignoreCase = true) }
+                ?: imageMimeTypeFromName(fileName)
+                ?: "image/png"
+            if (estimatedDecodedSize(base64Str) > MAX_CACHE_FILE_BYTES) {
+                return null
+            }
+            val picturesRoot = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                ?: File(context.filesDir, Environment.DIRECTORY_PICTURES)
+            val imageDir = File(picturesRoot, GENERATED_IMAGE_DIR).apply { mkdirs() }
+            val resolvedFileName = imageFileName(
+                rawName = fileName,
+                mimeType = resolvedMimeType,
+                prefix = "generated_image_${System.currentTimeMillis()}"
+            )
+            val file = uniqueFile(imageDir, resolvedFileName)
+            val byteCount = writeBase64ToFile(base64Str, file, MAX_CACHE_FILE_BYTES)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            SavedImageFile(uri, file.name, resolvedMimeType, byteCount)
+        } catch (e: Exception) {
+            SafeLog.w("FileUtils", "Could not persist generated image", e)
             null
         }
     }
@@ -112,66 +161,87 @@ object FileUtils {
     }
 
     fun openBase64File(context: Context, base64Str: String, fileName: String?, mimeType: String?) {
-        val uri = saveBase64FileToCache(context, base64Str, fileName)
-        if (uri == null) {
-            Toast.makeText(context, LocaleHelper.getString(context, "toast_open_attachment_error"), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        try {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.setDataAndType(uri, mimeType?.takeIf { it.isNotBlank() } ?: "*/*")
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                LocaleHelper.formatString(context, "toast_open_attachment_error_with_message", e.message.orEmpty()),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        launchFileOperation(
+            context = context,
+            failureMessage = LocaleHelper.getString(context, "toast_open_attachment_error"),
+            operation = {
+                saveBase64FileToCache(context.applicationContext, base64Str, fileName)
+            },
+            onSuccess = { uri ->
+                if (uri == null) {
+                    Toast.makeText(context, LocaleHelper.getString(context, "toast_open_attachment_error"), Toast.LENGTH_SHORT).show()
+                } else {
+                    openUri(context, uri, mimeType)
+                }
+            }
+        )
     }
 
     /** Копирует base64-изображение в буфер обмена через временный файл */
     fun copyImageBase64(context: Context, base64Str: String) {
-        val uri = saveBase64ToCache(context, base64Str)
-        if (uri != null) {
-            copyImageUri(context, uri)
-        } else {
-            Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copy_error"), Toast.LENGTH_SHORT).show()
-        }
+        launchFileOperation(
+            context = context,
+            failureMessage = LocaleHelper.getString(context, "toast_image_copy_error"),
+            operation = {
+                saveBase64ToCache(context.applicationContext, base64Str)
+            },
+            onSuccess = { uri ->
+                if (uri == null) {
+                    Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copy_error"), Toast.LENGTH_SHORT).show()
+                } else {
+                    copyImageUri(context, uri)
+                }
+            }
+        )
     }
 
     fun copyImageUri(context: Context, uri: Uri) {
         runCatching {
+            val safeUri = shareableUri(context, uri) ?: error("Image URI is not readable")
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newUri(context.contentResolver, "image", uri)
+            val clip = ClipData.newUri(context.contentResolver, "image", safeUri)
             clipboard.setPrimaryClip(clip)
         }.onSuccess {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copied"), Toast.LENGTH_SHORT).show()
         }.onFailure {
+            SafeLog.w("FileUtils", "Could not copy image", it)
             Toast.makeText(context, LocaleHelper.getString(context, "toast_image_copy_error"), Toast.LENGTH_SHORT).show()
         }
     }
 
     /** Шарит base64-изображение через Intent.ACTION_SEND */
     fun shareImageBase64(context: Context, base64Str: String) {
-        val uri = saveBase64ToCache(context, base64Str)
-        if (uri != null) {
-            shareImageUri(context, uri, "image/png")
-        } else {
-            Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
-        }
+        launchFileOperation(
+            context = context,
+            failureMessage = LocaleHelper.getString(context, "toast_share_error"),
+            operation = {
+                saveBase64ToCache(context.applicationContext, base64Str)
+            },
+            onSuccess = { uri ->
+                if (uri == null) {
+                    Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+                } else {
+                    shareImageUri(context, uri, "image/png")
+                }
+            }
+        )
     }
 
     /** Шарит текст через Intent.ACTION_SEND */
     fun shareImageUri(context: Context, uri: Uri, mimeType: String? = null) {
+        val safeUri = shareableUri(context, uri)
+        if (safeUri == null) {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+            return
+        }
         val resolvedMimeType = mimeType?.takeIf { it.isNotBlank() }
-            ?: runCatching { context.contentResolver.getType(uri) }.getOrNull()
+            ?: runCatching { context.contentResolver.getType(safeUri) }.getOrNull()
+            ?: imageMimeTypeFromName(safeUri.toString())
             ?: "image/png"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = resolvedMimeType
-            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_STREAM, safeUri)
+            clipData = ClipData.newUri(context.contentResolver, "image", safeUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         val chooser = Intent.createChooser(intent, LocaleHelper.getString(context, "share_image")).apply {
@@ -208,18 +278,41 @@ object FileUtils {
 
     /** Копирует текст в системный буфер обмена */
     fun copyToClipboard(context: Context, text: String) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("copied_text", text))
-        Toast.makeText(context, LocaleHelper.getString(context, "toast_copied"), Toast.LENGTH_SHORT).show()
+        runCatching {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("copied_text", text))
+        }.onSuccess {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_copied"), Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            SafeLog.w("FileUtils", "Could not copy text", it)
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_error"), Toast.LENGTH_SHORT).show()
+        }
     }
 
     /** Открывает URI в системном приложении по умолчанию */
-    fun openUri(context: Context, uri: Uri?) {
+    fun openUri(context: Context, uri: Uri?, mimeType: String? = null) {
         if (uri == null) return
         try {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.setDataAndType(uri, context.contentResolver.getType(uri) ?: "*/*")
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val scheme = uri.scheme?.lowercase(Locale.US).orEmpty()
+            val intent = if (scheme == "http" || scheme == "https") {
+                Intent(Intent.ACTION_VIEW, uri)
+            } else {
+                val safeUri = shareableUri(context, uri) ?: error("File is not readable")
+                Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(
+                        safeUri,
+                        mimeType?.takeIf { it.isNotBlank() }
+                            ?: context.contentResolver.getType(safeUri)
+                            ?: imageMimeTypeFromName(safeUri.toString())
+                            ?: "*/*"
+                    )
+                    clipData = ClipData.newUri(context.contentResolver, "attachment", safeUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            }
+            if (context !is android.app.Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
             context.startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(
@@ -228,6 +321,52 @@ object FileUtils {
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    fun saveImageFromUrl(context: Context, imageUrl: String?) {
+        if (imageUrl.isNullOrBlank()) {
+            Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        launchFileOperation(
+            context = context,
+            failureMessage = LocaleHelper.getString(context, "toast_share_error"),
+            operation = {
+                when {
+                    imageUrl.startsWith("data:image", ignoreCase = true) -> {
+                        val mimeType = imageUrl.substringAfter("data:", "")
+                            .substringBefore(";")
+                            .takeIf { it.startsWith("image/", ignoreCase = true) }
+                            ?: "image/png"
+                        saveBase64ImageToPictures(
+                            context = context.applicationContext,
+                            base64Str = imageUrl.substringAfter(",", ""),
+                            fileName = imageFileName(null, mimeType, "freechat_${System.currentTimeMillis()}"),
+                            mimeType = mimeType
+                        )
+                    }
+                    imageUrl.startsWith("content://", ignoreCase = true) ||
+                        imageUrl.startsWith("file://", ignoreCase = true) -> {
+                        val uri = Uri.parse(imageUrl)
+                        saveImageUriToPictures(
+                            context = context.applicationContext,
+                            uri = uri,
+                            fileName = fileNameFromUri(context, uri),
+                            mimeType = context.contentResolver.getType(shareableUri(context, uri) ?: uri)
+                        )
+                    }
+                    else -> false
+                }
+            },
+            onSuccess = { saved ->
+                if (saved == true) {
+                    Toast.makeText(context, LocaleHelper.getString(context, "button_save"), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, LocaleHelper.getString(context, "toast_share_error"), Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 
     private fun safeFileName(fileName: String?): String {
@@ -247,8 +386,197 @@ object FileUtils {
     }
 
     private fun estimatedDecodedSize(base64: String): Int {
-        val compactLength = base64.count { !it.isWhitespace() }
+        val payload = base64.substringAfter(",", base64)
+        val compactLength = payload.count { !it.isWhitespace() }
         return (compactLength * 3) / 4
+    }
+
+    private fun writeBase64ToFile(base64: String, file: File, maxBytes: Int): Long {
+        val payload = base64.substringAfter(",", base64)
+        var total = 0L
+        Base64InputStream(
+            ByteArrayInputStream(payload.toByteArray(Charsets.US_ASCII)),
+            android.util.Base64.DEFAULT
+        ).use { input ->
+            FileOutputStream(file).use { output ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read == -1) break
+                    total += read
+                    if (total > maxBytes) {
+                        file.delete()
+                        throw IllegalArgumentException("File is too large")
+                    }
+                    output.write(buffer, 0, read)
+                }
+            }
+        }
+        if (total <= 0L) {
+            file.delete()
+            throw IllegalArgumentException("File is empty")
+        }
+        return total
+    }
+
+    private fun uniqueFile(directory: File, requestedName: String): File {
+        val safeName = safeFileName(requestedName)
+        val base = safeName.substringBeforeLast('.', safeName)
+        val extension = safeName.substringAfterLast('.', "")
+            .takeIf { it.isNotBlank() && it != safeName }
+            ?.let { ".$it" }
+            .orEmpty()
+        var candidate = File(directory, safeName)
+        var suffix = 1
+        while (candidate.exists()) {
+            candidate = File(directory, "${base}_$suffix$extension")
+            suffix++
+        }
+        return candidate
+    }
+
+    private fun imageFileName(rawName: String?, mimeType: String, prefix: String): String {
+        val extension = extensionForImageMimeType(mimeType)
+        val baseName = rawName
+            ?.substringBeforeLast('.')
+            ?.takeIf { it.isNotBlank() }
+            ?: prefix
+        return "${safeFileName(baseName)}.$extension"
+    }
+
+    private fun extensionForImageMimeType(mimeType: String): String =
+        when (mimeType.lowercase(Locale.US)) {
+            "image/jpeg", "image/jpg" -> "jpg"
+            "image/webp" -> "webp"
+            "image/gif" -> "gif"
+            else -> "png"
+        }
+
+    private fun shareableUri(context: Context, uri: Uri): Uri? {
+        val scheme = uri.scheme?.lowercase(Locale.US)
+        return when (scheme) {
+            "content" -> uri.takeIf { canOpenUri(context, it) }
+            "file", null, "" -> {
+                val path = if (scheme == "file") uri.path else uri.toString()
+                val file = path?.let(::File)?.takeIf { it.exists() && it.isFile } ?: return null
+                runCatching {
+                    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                }.getOrNull()
+            }
+            else -> null
+        }
+    }
+
+    private fun canOpenUri(context: Context, uri: Uri): Boolean =
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { true } == true
+        }.getOrDefault(false)
+
+    private fun saveBase64ImageToPictures(
+        context: Context,
+        base64Str: String,
+        fileName: String,
+        mimeType: String
+    ): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return false
+        }
+        if (estimatedDecodedSize(base64Str) > MAX_CACHE_FILE_BYTES) {
+            return false
+        }
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/FreeChat")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+        return runCatching {
+            resolver.openOutputStream(uri)?.use { output ->
+                Base64InputStream(
+                    ByteArrayInputStream(base64Str.substringAfter(",", base64Str).toByteArray(Charsets.US_ASCII)),
+                    android.util.Base64.DEFAULT
+                ).use { input -> input.copyTo(output) }
+            } ?: error("Output stream unavailable")
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            true
+        }.getOrElse {
+            SafeLog.w("FileUtils", "Could not save image to gallery", it)
+            runCatching { resolver.delete(uri, null, null) }
+            false
+        }
+    }
+
+    private fun saveImageUriToPictures(
+        context: Context,
+        uri: Uri,
+        fileName: String?,
+        mimeType: String?
+    ): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return false
+        }
+        val safeUri = shareableUri(context, uri) ?: return false
+        val resolvedMimeType = mimeType?.takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: context.contentResolver.getType(safeUri)
+            ?: imageMimeTypeFromName(fileName)
+            ?: "image/png"
+        val resolvedFileName = imageFileName(
+            rawName = fileName,
+            mimeType = resolvedMimeType,
+            prefix = "freechat_${System.currentTimeMillis()}"
+        )
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, resolvedFileName)
+            put(MediaStore.Images.Media.MIME_TYPE, resolvedMimeType)
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/FreeChat")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val targetUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+        return runCatching {
+            resolver.openInputStream(safeUri)?.use { input ->
+                resolver.openOutputStream(targetUri)?.use { output ->
+                    input.copyTo(output)
+                } ?: error("Output stream unavailable")
+            } ?: error("Input stream unavailable")
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(targetUri, values, null, null)
+            true
+        }.getOrElse {
+            SafeLog.w("FileUtils", "Could not copy image to gallery", it)
+            runCatching { resolver.delete(targetUri, null, null) }
+            false
+        }
+    }
+
+    private fun fileNameFromUri(context: Context, uri: Uri): String? =
+        runCatching { getFileName(context, uri).takeIf { it.isNotBlank() } }.getOrNull()
+
+    private fun <T> launchFileOperation(
+        context: Context,
+        failureMessage: String,
+        operation: () -> T,
+        onSuccess: (T) -> Unit
+    ) {
+        val scope = (context as? LifecycleOwner)?.lifecycleScope
+            ?: CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching(operation)
+            }
+            if (context is android.app.Activity && (context.isFinishing || context.isDestroyed)) {
+                return@launch
+            }
+            result.onSuccess(onSuccess).onFailure {
+                SafeLog.w("FileUtils", "File operation failed", it)
+                Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun java.io.InputStream.readBytesLimited(maxBytes: Int): ByteArray {

@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.util.FileUtils
+import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.bounce
 import com.example.chatapp.util.dpToPx
 import com.example.chatapp.util.slideAndFadeIn
@@ -66,12 +67,8 @@ class ChatMessageRenderer(
             scaleType = ImageView.ScaleType.CENTER_CROP
             clipToOutline = true
             setBackgroundResource(R.drawable.preview_background)
-            try {
-                setImageURI(imageUri)
-            } catch (e: Exception) {
-                Toast.makeText(context, LocaleHelper.getString(context, "toast_error"), Toast.LENGTH_SHORT).show()
-            }
         }
+        SafeImageLoader.loadUri(imageView, imageUri, sizePx, sizePx)
         attachUserMessageLongClick(imageView, message, historyIndex)
         messagesContainer.addView(
             imageView,
@@ -101,15 +98,8 @@ class ChatMessageRenderer(
             scaleType = ImageView.ScaleType.CENTER_CROP
             clipToOutline = true
             setBackgroundResource(R.drawable.preview_background)
-            runCatching {
-                val bytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                setImageBitmap(bitmap)
-            }.onFailure {
-                setImageResource(R.drawable.ic_image)
-                setColorFilter(Color.WHITE)
-            }
         }
+        SafeImageLoader.loadBase64Image(imageView, base64Data, fileName ?: "image.png", sizePx, sizePx)
         attachUserMessageLongClick(imageView, message, historyIndex)
         messagesContainer.addView(
             imageView,

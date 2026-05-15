@@ -286,6 +286,18 @@ class PopupMenuHelper(
             onRegenerate?.invoke(wrapper)
         })
 
+        val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
+        if (wrapper.isImageMode && AssistantMessageWrapper.isRenderableImageUrl(imageUrl)) {
+            popupView.addView(createPopupMenuItem(
+                R.drawable.ic_download_simple,
+                LocaleHelper.getString(activity, "button_save"),
+                Color.WHITE
+            ) {
+                popupWindow.dismiss()
+                FileUtils.saveImageFromUrl(activity, imageUrl)
+            })
+        }
+
         popupView.alpha = 0f
         popupView.scaleX = 0.92f
         popupView.scaleY = 0.92f

@@ -13,6 +13,7 @@ import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
+import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.dpToPx
 import java.util.*
 
@@ -196,7 +197,14 @@ class DrawerManager(
             tvLetter?.visibility = View.GONE
             viewBg?.visibility = View.GONE
             try {
-                ivAvatar?.setImageURI(android.net.Uri.parse(avatarUri))
+                ivAvatar?.let {
+                    SafeImageLoader.loadUri(
+                        imageView = it,
+                        uri = android.net.Uri.parse(avatarUri),
+                        widthPx = it.width.takeIf { width -> width > 0 } ?: 56.dpToPx(),
+                        heightPx = it.height.takeIf { height -> height > 0 } ?: 56.dpToPx()
+                    )
+                }
             } catch (e: Exception) {
                 ivAvatar?.visibility = View.GONE
                 tvLetter?.visibility = View.VISIBLE

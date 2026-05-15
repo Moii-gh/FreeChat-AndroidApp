@@ -7,6 +7,7 @@ import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.SyncChatDto
 import com.example.chatapp.network.dto.SyncMessageDto
 import com.example.chatapp.network.dto.SyncPayload
+import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -14,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class SyncRepository(context: Context) {
+    private val appContext = context.applicationContext
     private val db = AppDatabase.getDatabase(context)
     private val dao = db.chatDao()
     private val sessionStore = SharedPrefsAccountSessionStore(context)
@@ -55,14 +57,16 @@ class SyncRepository(context: Context) {
                 val msgs = dao.getMessagesByChatIdForSync(chat.id)
                 messagesPayload.addAll(msgs.map {
                     localRevisionSnapshot[it.syncId] = it.editRevision
+                    val syncImageUrl = shareableImageUrl(it.imageUrl, it.attachmentMimeType)
+                    val syncAttachmentData = it.attachmentData
                     SyncMessageDto(
                         syncId = it.syncId,
                         chatId = it.chatId,
                         role = it.role,
                         content = it.content,
                         timestamp = it.timestamp,
-                        imageUrl = it.imageUrl,
-                        attachmentData = it.attachmentData,
+                        imageUrl = syncImageUrl,
+                        attachmentData = syncAttachmentData,
                         attachmentMimeType = it.attachmentMimeType,
                         attachmentFileName = it.attachmentFileName,
                         attachmentContext = it.attachmentContext,
@@ -120,17 +124,20 @@ class SyncRepository(context: Context) {
                     // Сохраняем серверные сообщения.
                     for (remoteMsg in remoteData.messages) {
                         val localMsg = dao.getMessageBySyncId(remoteMsg.syncId)
+                        val cachedRemoteImage = cacheRemoteImage(remoteMsg)
                         if (localMsg == null) {
                             dao.insertMessage(
                                 MessageEntity(
                                     chatId = remoteMsg.chatId,
                                     role = remoteMsg.role,
-                                    content = remoteMsg.content,
+                                    content = cachedRemoteImage?.let {
+                                        replaceMarkdownImageUrl(remoteMsg.content, it.first)
+                                    } ?: remoteMsg.content,
                                     timestamp = remoteMsg.timestamp,
-                                    imageUrl = remoteMsg.imageUrl,
-                                    attachmentData = remoteMsg.attachmentData,
+                                    imageUrl = cachedRemoteImage?.first ?: remoteMsg.imageUrl,
+                                    attachmentData = cachedRemoteImage?.let { null } ?: remoteMsg.attachmentData,
                                     attachmentMimeType = remoteMsg.attachmentMimeType,
-                                    attachmentFileName = remoteMsg.attachmentFileName,
+                                    attachmentFileName = cachedRemoteImage?.second ?: remoteMsg.attachmentFileName,
                                     attachmentContext = remoteMsg.attachmentContext,
                                     syncId = remoteMsg.syncId,
                                     updatedAt = remoteMsg.updatedAt,
@@ -143,12 +150,14 @@ class SyncRepository(context: Context) {
                                 localMsg.copy(
                                     chatId = remoteMsg.chatId,
                                     role = remoteMsg.role,
-                                    content = remoteMsg.content,
+                                    content = cachedRemoteImage?.let {
+                                        replaceMarkdownImageUrl(remoteMsg.content, it.first)
+                                    } ?: remoteMsg.content,
                                     timestamp = remoteMsg.timestamp,
-                                    imageUrl = remoteMsg.imageUrl,
-                                    attachmentData = remoteMsg.attachmentData,
+                                    imageUrl = cachedRemoteImage?.first ?: remoteMsg.imageUrl,
+                                    attachmentData = cachedRemoteImage?.let { null } ?: remoteMsg.attachmentData,
                                     attachmentMimeType = remoteMsg.attachmentMimeType,
-                                    attachmentFileName = remoteMsg.attachmentFileName,
+                                    attachmentFileName = cachedRemoteImage?.second ?: remoteMsg.attachmentFileName,
                                     attachmentContext = remoteMsg.attachmentContext,
                                     updatedAt = remoteMsg.updatedAt,
                                     isDeleted = remoteMsg.isDeleted,
@@ -164,6 +173,54 @@ class SyncRepository(context: Context) {
         } catch (e: Exception) {
             SafeLog.w("SyncRepository", "Sync failed with exception", e)
         }
+    }
+
+    private fun shareableImageUrl(imageUrl: String?, mimeType: String?): String? {
+        if (imageUrl.isNullOrBlank()) return null
+        if (
+            imageUrl.startsWith("content://", ignoreCase = true) ||
+            imageUrl.startsWith("file://", ignoreCase = true)
+        ) {
+            return FileUtils.localImageUriToDataUrl(appContext, imageUrl, mimeType)
+        }
+        return imageUrl.takeIf {
+            it.startsWith("http", ignoreCase = true) ||
+                it.startsWith("data:image", ignoreCase = true)
+        }
+    }
+
+    private fun cacheRemoteImage(remoteMsg: SyncMessageDto): Pair<String, String>? {
+        val mimeType = remoteMsg.attachmentMimeType
+            ?.takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: remoteMsg.imageUrl
+                ?.takeIf { it.startsWith("data:image", ignoreCase = true) }
+                ?.substringAfter("data:", "")
+                ?.substringBefore(";")
+                ?.takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: return null
+        val base64Data = remoteMsg.attachmentData?.takeIf { it.isNotBlank() }
+            ?: remoteMsg.imageUrl
+                ?.takeIf { it.startsWith("data:image", ignoreCase = true) }
+                ?.substringAfter(",", "")
+                ?.takeIf { it.isNotBlank() }
+            ?: return null
+        val saved = FileUtils.saveBase64FileToPersistentImage(
+            context = appContext,
+            base64Str = base64Data,
+            fileName = remoteMsg.attachmentFileName,
+            mimeType = mimeType
+        ) ?: return null
+        return saved.uri.toString() to saved.fileName
+    }
+
+    private fun replaceMarkdownImageUrl(content: String, replacementUrl: String): String {
+        val imageStart = content.indexOf("![")
+        if (imageStart == -1) return content
+        val start = content.indexOf("](", imageStart)
+        if (start == -1) return content
+        val end = content.indexOf(')', start + 2)
+        if (end == -1) return content
+        return content.replaceRange(start + 2, end, replacementUrl)
     }
 
     private fun currentOwnerKey(): String? {

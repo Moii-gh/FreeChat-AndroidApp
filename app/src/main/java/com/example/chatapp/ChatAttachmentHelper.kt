@@ -1,10 +1,15 @@
 package com.example.chatapp
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Base64
 import com.example.chatapp.util.FileUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
 data class AttachmentPayload(
     val fileUri: String,
@@ -19,33 +24,45 @@ data class AttachmentPayload(
  * В Activity остается только координация UI, а вся работа с файлами держится здесь.
  */
 class ChatAttachmentHelper(private val context: Context) {
-    fun buildAttachmentPayload(uri: Uri?): AttachmentPayload? {
-        if (uri == null) return null
+    private data class PreparedBytes(
+        val bytes: ByteArray,
+        val mimeType: String,
+        val fileName: String?
+    )
+
+    private val appContext = context.applicationContext
+
+    suspend fun buildAttachmentPayload(uri: Uri?): AttachmentPayload? = withContext(Dispatchers.IO) {
+        if (uri == null) return@withContext null
 
         val fileName = FileUtils.getFileName(context, uri)
             .takeIf { it.isNotBlank() }
         val mimeType = resolveMimeType(uri, fileName)
-        val bytes = readAttachmentBytes(uri)
         val isImage = mimeType.startsWith("image/", ignoreCase = true)
+        val prepared = if (isImage) {
+            prepareImageAttachment(uri, mimeType, fileName)
+        } else {
+            PreparedBytes(readAttachmentBytes(uri), mimeType, fileName)
+        }
 
         val extractedText = if (!isImage) {
-            extractTextFromFile(bytes, mimeType, fileName)
+            extractTextFromFile(prepared.bytes, prepared.mimeType, prepared.fileName)
         } else {
             null
         }
 
         val attachmentContext = if (extractedText != null) {
-            buildAttachmentContext(fileName, mimeType, extractedText)
+            buildAttachmentContext(prepared.fileName, prepared.mimeType, extractedText)
         } else {
             null
         }
 
-        val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
+        val base64Data = Base64.encodeToString(prepared.bytes, Base64.NO_WRAP)
 
-        return AttachmentPayload(
+        return@withContext AttachmentPayload(
             fileUri = uri.toString(),
-            mimeType = mimeType,
-            fileName = fileName,
+            mimeType = prepared.mimeType,
+            fileName = prepared.fileName,
             base64Data = base64Data,
             attachmentContext = attachmentContext
         )
@@ -163,7 +180,7 @@ class ChatAttachmentHelper(private val context: Context) {
     }
 
     private fun resolveMimeType(uri: Uri, fileName: String?): String {
-        return context.contentResolver.getType(uri)
+        return appContext.contentResolver.getType(uri)
             ?.takeIf { it.isNotBlank() }
             ?: fileName?.let { java.net.URLConnection.guessContentTypeFromName(it) }
             ?: "application/octet-stream"
@@ -176,7 +193,7 @@ class ChatAttachmentHelper(private val context: Context) {
         }
 
         val output = java.io.ByteArrayOutputStream()
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+        appContext.contentResolver.openInputStream(uri)?.use { inputStream ->
             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
             var totalBytes = 0
             while (true) {
@@ -195,12 +212,92 @@ class ChatAttachmentHelper(private val context: Context) {
 
     private fun queryAttachmentSize(uri: Uri): Long? {
         return runCatching {
-            context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            appContext.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
                 if (!cursor.moveToFirst()) return@use null
                 val index = cursor.getColumnIndex(OpenableColumns.SIZE)
                 if (index == -1 || cursor.isNull(index)) null else cursor.getLong(index)
             }
         }.getOrNull()
+    }
+
+    private fun prepareImageAttachment(uri: Uri, mimeType: String, fileName: String?): PreparedBytes {
+        val bounds = decodeImageBounds(uri)
+        val declaredSize = queryAttachmentSize(uri)
+        if (
+            declaredSize != null &&
+            declaredSize in 1L..MAX_ORIGINAL_IMAGE_BYTES.toLong() &&
+            bounds != null &&
+            bounds.first <= MAX_IMAGE_DIMENSION &&
+            bounds.second <= MAX_IMAGE_DIMENSION
+        ) {
+            return PreparedBytes(readAttachmentBytes(uri), mimeType, fileName)
+        }
+
+        val sampleSize = bounds?.let { calculateInSampleSize(it.first, it.second, MAX_IMAGE_DIMENSION) } ?: 1
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = Bitmap.Config.RGB_565
+        }
+
+        val bitmap = try {
+            appContext.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            }
+        } catch (error: OutOfMemoryError) {
+            throw IllegalArgumentException(LocaleHelper.getString(context, "attachment_too_large"))
+        } ?: return PreparedBytes(readAttachmentBytes(uri), mimeType, fileName)
+
+        return try {
+            val compressed = compressBitmapForUpload(bitmap)
+            val normalizedName = fileName
+                ?.substringBeforeLast('.', fileName)
+                ?.takeIf { it.isNotBlank() }
+                ?.let { "$it.jpg" }
+                ?: "image_${System.currentTimeMillis()}.jpg"
+            PreparedBytes(compressed, "image/jpeg", normalizedName)
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    private fun decodeImageBounds(uri: Uri): Pair<Int, Int>? {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        runCatching {
+            appContext.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            }
+        }
+        val width = options.outWidth
+        val height = options.outHeight
+        return if (width > 0 && height > 0) width to height else null
+    }
+
+    private fun calculateInSampleSize(width: Int, height: Int, maxDimension: Int): Int {
+        var sampleSize = 1
+        var sampledWidth = width
+        var sampledHeight = height
+        while (sampledWidth / 2 >= maxDimension || sampledHeight / 2 >= maxDimension) {
+            sampledWidth /= 2
+            sampledHeight /= 2
+            sampleSize *= 2
+        }
+        return sampleSize.coerceAtLeast(1)
+    }
+
+    private fun compressBitmapForUpload(bitmap: Bitmap): ByteArray {
+        var quality = IMAGE_JPEG_QUALITY
+        var lastBytes: ByteArray
+        do {
+            val output = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output)
+            lastBytes = output.toByteArray()
+            quality -= 10
+        } while (lastBytes.size > MAX_ATTACHMENT_BYTES && quality >= MIN_IMAGE_JPEG_QUALITY)
+
+        if (lastBytes.size > MAX_ATTACHMENT_BYTES) {
+            throw IllegalArgumentException(LocaleHelper.getString(context, "attachment_too_large"))
+        }
+        return lastBytes
     }
 
     private fun isTextLikeAttachment(mimeType: String, fileName: String?): Boolean {
@@ -237,6 +334,10 @@ class ChatAttachmentHelper(private val context: Context) {
         }
 
         const val MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
+        const val MAX_ORIGINAL_IMAGE_BYTES = 1536 * 1024
+        const val MAX_IMAGE_DIMENSION = 1536
+        const val IMAGE_JPEG_QUALITY = 86
+        const val MIN_IMAGE_JPEG_QUALITY = 66
         const val MAX_EXTRACTED_TEXT_CHARS = 120_000
         const val MAX_ATTACHMENT_CONTEXT_CHARS = 4_000
 

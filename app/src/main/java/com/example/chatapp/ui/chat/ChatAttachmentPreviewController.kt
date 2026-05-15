@@ -9,6 +9,7 @@ import com.example.chatapp.AttachmentPayload
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.util.FileUtils
+import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.viewmodel.ChatViewModel
 import java.io.File
 
@@ -38,7 +39,8 @@ internal class ChatAttachmentPreviewController(
         if (mimeType.startsWith("image/")) {
             binding.previewImage.isVisible = true
             binding.previewFileContainer.isGone = true
-            runCatching { binding.previewImage.setImageURI(fileUri) }
+            val size = binding.previewImage.width.takeIf { it > 0 } ?: (72 * context.resources.displayMetrics.density).toInt()
+            SafeImageLoader.loadUri(binding.previewImage, fileUri, size, size)
         } else {
             binding.previewImage.isGone = true
             binding.previewFileContainer.isVisible = true
@@ -71,15 +73,22 @@ internal class ChatAttachmentPreviewController(
             binding.previewImage.isVisible = true
             binding.previewFileContainer.isGone = true
             val imageSet = payload.base64Data?.let { base64 ->
-                runCatching {
-                    val bytes = Base64.decode(base64, Base64.DEFAULT)
-                    val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    binding.previewImage.setImageBitmap(bitmap)
-                }.isSuccess
+                val size = binding.previewImage.width.takeIf { it > 0 } ?: (72 * context.resources.displayMetrics.density).toInt()
+                SafeImageLoader.loadBase64Image(
+                    imageView = binding.previewImage,
+                    base64Data = base64,
+                    fileName = payload.fileName ?: "preview_image.png",
+                    widthPx = size,
+                    heightPx = size
+                )
+                true
             } == true
 
             if (!imageSet && payload.fileUri.isNotBlank()) {
-                runCatching { binding.previewImage.setImageURI(Uri.parse(payload.fileUri)) }
+                val size = binding.previewImage.width.takeIf { it > 0 } ?: (72 * context.resources.displayMetrics.density).toInt()
+                runCatching { Uri.parse(payload.fileUri) }.getOrNull()?.let {
+                    SafeImageLoader.loadUri(binding.previewImage, it, size, size)
+                }
             }
         } else {
             binding.previewImage.isGone = true
