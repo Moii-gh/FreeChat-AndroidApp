@@ -39,7 +39,8 @@ object ChatResponseNotifications {
         context: Context,
         chatId: String,
         assistantSyncId: String,
-        isError: Boolean
+        isError: Boolean,
+        responsePreview: String? = null
     ) {
         if (!canNotify(context)) return
         ensureChannel(context)
@@ -56,10 +57,12 @@ object ChatResponseNotifications {
             openChatIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val contentText = buildContentText(isError, responsePreview)
         val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_brain)
+            .setSmallIcon(R.drawable.ic_freechat_notification)
             .setContentTitle("FreeChat")
-            .setContentText(if (isError) "Не удалось получить ответ" else "Ответ готов")
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -72,4 +75,27 @@ object ChatResponseNotifications {
             SafeLog.w("ChatResponseNotifications", "Could not show response notification", error)
         }
     }
+
+    private fun buildContentText(isError: Boolean, responsePreview: String?): String {
+        if (isError) return "Не удалось получить ответ"
+        return responsePreview.toNotificationPreview()
+    }
+
+    private fun String?.toNotificationPreview(): String {
+        val cleaned = this
+            ?.replace(Regex("!\\[[^]]*]\\([^)]*\\)"), " ")
+            ?.replace(Regex("\\[[^]]+]\\([^)]*\\)"), { match ->
+                match.value.substringAfter('[').substringBefore(']')
+            })
+            ?.replace(Regex("[*_`>#~-]+"), " ")
+            ?.replace(Regex("\\s+"), " ")
+            ?.trim()
+            .orEmpty()
+
+        if (cleaned.isBlank()) return "Новый ответ в FreeChat"
+        if (cleaned.length <= MAX_NOTIFICATION_PREVIEW_LENGTH) return cleaned
+        return cleaned.take(MAX_NOTIFICATION_PREVIEW_LENGTH).trimEnd() + "..."
+    }
+
+    private const val MAX_NOTIFICATION_PREVIEW_LENGTH = 140
 }

@@ -251,7 +251,13 @@ object ChatGenerationManager {
                                     streamStarted = true
                                 )
                             )
-                            maybeNotify(appContext, chatId, request.assistantSyncId, isError = false)
+                            maybeNotify(
+                                context = appContext,
+                                chatId = chatId,
+                                assistantSyncId = request.assistantSyncId,
+                                isError = false,
+                                responsePreview = prepared.content
+                            )
                             scheduleSnapshotRemoval(request.assistantSyncId)
                         }
 
@@ -339,7 +345,8 @@ object ChatGenerationManager {
         context: Context,
         chatId: String?,
         assistantSyncId: String,
-        isError: Boolean
+        isError: Boolean,
+        responsePreview: String? = null
     ) {
         if (chatId.isNullOrBlank()) return
         if (!notifiedResponses.add(assistantSyncId)) return
@@ -348,7 +355,8 @@ object ChatGenerationManager {
             context = context,
             chatId = chatId,
             assistantSyncId = assistantSyncId,
-            isError = isError
+            isError = isError,
+            responsePreview = responsePreview
         )
     }
 
