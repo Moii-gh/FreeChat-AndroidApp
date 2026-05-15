@@ -180,8 +180,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             context = this,
             lifecycleOwner = this,
             titleContainer = binding.welcomeTitleRotator,
-            primaryTitleView = binding.tvWelcomeTitle,
-            secondaryTitleView = binding.tvWelcomeTitleNext
+            titleView = binding.tvWelcomeTitle
         )
         streamingUiController = StreamingUiController(
             isCurrentAssistantMessage = { wrapper -> currentAssistantMessage === wrapper },

@@ -172,24 +172,10 @@
                 android:importantForAccessibility="yes"
                 android:layout_marginBottom="32dp">
 
-                <TextView
+                <com.example.chatapp.ui.chat.TypingTitleTextView
                     android:id="@+id/tvWelcomeTitle"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="28sp"
-                    android:textStyle="bold"
-                    android:includeFontPadding="false"
-                    android:maxLines="2"
-                    android:ellipsize="end"
-                    android:importantForAccessibility="no" />
-
-                <TextView
-                    android:id="@+id/tvWelcomeTitleNext"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:alpha="0"
                     android:gravity="center"
                     android:textColor="#FFFFFF"
                     android:textSize="28sp"
