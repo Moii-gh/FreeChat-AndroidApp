@@ -56,6 +56,7 @@
     <string name="app_brand">FreeChat</string>
     <string name="app_name">FreeChat</string>
     <string name="app_version">FreeChat Android %s</string>
+    <string name="about_app_title">FreeChat-ის შესახებ</string>
     <string name="attachment_context_file_summary">ფაილის შეჯამება</string>
     <string name="attachment_context_mime">MIME</string>
     <string name="attachment_context_preview">წინასწარი ნახვა</string>
@@ -167,6 +168,7 @@
     <string name="button_search_web_description">ახალი ინფორმაციის ძიება p-ში…</string>
     <string name="button_security">უსაფრთხოება</string>
     <string name="button_show_password">პაროლის ჩვენება</string>
+    <string name="settings_source_code">საწყისი კოდი</string>
     <string name="button_study_training">სწავლა და ტრენინგი</string>
     <string name="button_study_training_description">ისწავლეთ ახალი კონცეფცია</string>
     <string name="chat_error_empty">ჩატი ცარიელია</string>
@@ -380,7 +382,7 @@
     <string name="welcome_prompt_7">რით დავიწყოთ?</string>
     <string name="welcome_prompt_8">მზად ვარ დაგეხმაროთ</string>
     <string name="welcome_question">რით შემიძლია დახმარება?</string>
-    <string name="toast_open_link_error">Could not open link</string>
+    <string name="toast_open_link_error">ბმულის გახსნა ვერ მოხერხდა</string>
     <string name="toast_table_copied">Table copied</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>

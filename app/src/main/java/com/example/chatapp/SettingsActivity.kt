@@ -1,10 +1,12 @@
 package com.example.chatapp
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -141,7 +143,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.itemAbout).setHapticClickListener {
-            openExternalLink(BuildConfig.PUBLIC_INFO_URL)
+            showAboutAppSheet()
         }
 
         findViewById<View>(R.id.itemReport).setHapticClickListener {
@@ -439,16 +441,74 @@ class SettingsActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    private fun showAboutAppSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_about_app, null)
+        dialog.setContentView(view)
+
+        dialog.setOnShowListener { dialogInterface ->
+            val sheetDialog = dialogInterface as BottomSheetDialog
+            sheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                ?.setBackgroundColor(Color.TRANSPARENT)
+        }
+
+        view.findViewById<TextView>(R.id.tvAboutTitle)?.text =
+            LocaleHelper.getString(this, "about_app_title")
+        view.findViewById<TextView>(R.id.tvAboutVersion)?.text = LocaleHelper.formatString(
+            this,
+            "app_version",
+            BuildConfig.VERSION_NAME
+        )
+        view.findViewById<TextView>(R.id.tvPrivacyPolicyLabel)?.text =
+            LocaleHelper.getString(this, "auth_privacy_policy")
+        view.findViewById<TextView>(R.id.tvSourceCodeLabel)?.text =
+            LocaleHelper.getString(this, "settings_source_code")
+
+        view.findViewById<View>(R.id.btnPrivacyPolicy).setHapticClickListener {
+            openExternalLink(PRIVACY_POLICY_URL)
+        }
+        view.findViewById<View>(R.id.btnSourceCode).setHapticClickListener {
+            openExternalLink(SOURCE_CODE_URL)
+        }
+
+        dialog.show()
+    }
+
     private fun openExternalLink(url: String) {
         if (url.isBlank()) {
             Toast.makeText(this, LocaleHelper.getString(this, "external_link_unavailable"), Toast.LENGTH_SHORT).show()
             return
         }
 
-        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+        val uri = runCatching { Uri.parse(url) }.getOrNull()
+        val scheme = uri?.scheme.orEmpty().lowercase()
+        if (uri == null || uri.host.isNullOrBlank() || scheme !in setOf("http", "https")) {
+            Toast.makeText(this, LocaleHelper.getString(this, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        if (intent.resolveActivity(packageManager) == null) {
+            Toast.makeText(this, LocaleHelper.getString(this, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, LocaleHelper.getString(this, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
+        } catch (_: SecurityException) {
+            Toast.makeText(this, LocaleHelper.getString(this, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
+        }
     }
 
     private companion object {
         const val DEVELOPER_MENU_ENTRY_WINDOW_MS = 5_000L
+        const val PRIVACY_POLICY_URL = "https://freechat-privacy-policy.onrender.com/"
+
+        // Replace this URL here if the public repository changes.
+        const val SOURCE_CODE_URL = "https://github.com/Moii-gh/FreeChat-AndroidApp"
     }
 }

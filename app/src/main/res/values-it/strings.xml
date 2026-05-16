@@ -56,6 +56,7 @@
     <string name="app_brand">FreeChat</string>
     <string name="app_name">FreeChat</string>
     <string name="app_version">FreeChat Android %s</string>
+    <string name="about_app_title">Informazioni su FreeChat</string>
     <string name="attachment_context_file_summary">Riepilogo file</string>
     <string name="attachment_context_mime">MIME</string>
     <string name="attachment_context_preview">Anteprima</string>
@@ -167,6 +168,7 @@
     <string name="button_search_web_description">Шукаць новую інфармацыю ў рэжыме п…</string>
     <string name="button_security">Бяспека</string>
     <string name="button_show_password">Паказаць пароль</string>
+    <string name="settings_source_code">Codice sorgente</string>
     <string name="button_study_training">Вучоба і навучанне</string>
     <string name="button_study_training_description">Вывучыце новую канцэпцыю</string>
     <string name="chat_error_empty">La chat è vuota</string>
@@ -380,7 +382,7 @@
     <string name="welcome_prompt_7">З чаго пачнем?</string>
     <string name="welcome_prompt_8">Гатовы дапамагчы</string>
     <string name="welcome_question">Чым магу дапамагчы?</string>
-    <string name="toast_open_link_error">Could not open link</string>
+    <string name="toast_open_link_error">Impossibile aprire il link</string>
     <string name="toast_table_copied">Table copied</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>

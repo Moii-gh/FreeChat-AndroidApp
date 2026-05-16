@@ -56,6 +56,7 @@
     <string name="app_brand">FreeChat</string>
     <string name="app_name">FreeChat</string>
     <string name="app_version">FreeChat Android %s</string>
+    <string name="about_app_title">About FreeChat</string>
     <string name="attachment_context_file_summary">File summary</string>
     <string name="attachment_context_mime">MIME</string>
     <string name="attachment_context_preview">Preview</string>
@@ -167,6 +168,7 @@
     <string name="button_search_web_description">Search for new information in real-time</string>
     <string name="button_security">Security</string>
     <string name="button_show_password">Show password</string>
+    <string name="settings_source_code">Source code</string>
     <string name="button_study_training">Study and training</string>
     <string name="button_study_training_description">Learn a new concept</string>
     <string name="chat_error_empty">Chat is empty</string>
