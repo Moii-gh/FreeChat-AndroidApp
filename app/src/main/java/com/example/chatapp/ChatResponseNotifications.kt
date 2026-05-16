@@ -1,6 +1,7 @@
 package com.example.chatapp
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -76,6 +77,39 @@ object ChatResponseNotifications {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    fun showDebugTest(context: Context): Boolean {
+        if (!canNotify(context)) return false
+        val appContext = context.applicationContext
+        val notificationManager = NotificationManagerCompat.from(appContext)
+        if (!notificationManager.areNotificationsEnabled()) return false
+
+        ensureChannel(appContext)
+        val contentIntent = PendingIntent.getActivity(
+            appContext,
+            DEBUG_TEST_REQUEST_CODE,
+            Intent(appContext, SettingsActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val contentText = LocaleHelper.getString(appContext, "debug_notification_test_text")
+        val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_freechat_notification)
+            .setContentTitle(LocaleHelper.getString(appContext, "app_name"))
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        return runCatching {
+            notificationManager.notify(DEBUG_TEST_NOTIFICATION_ID, notification)
+            true
+        }.onFailure { error ->
+            SafeLog.w("ChatResponseNotifications", "Could not show debug test notification", error)
+        }.getOrDefault(false)
+    }
+
     private fun buildContentText(isError: Boolean, responsePreview: String?): String {
         if (isError) return "Не удалось получить ответ"
         return responsePreview.toNotificationPreview()
@@ -98,4 +132,6 @@ object ChatResponseNotifications {
     }
 
     private const val MAX_NOTIFICATION_PREVIEW_LENGTH = 140
+    private const val DEBUG_TEST_NOTIFICATION_ID = 4401
+    private const val DEBUG_TEST_REQUEST_CODE = 4402
 }

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/developerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/security_background"
+    android:clipToPadding="false"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="24dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:paddingHorizontal="12dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_security_back_button"
+                android:contentDescription="@string/content_desc_back"
+                android:padding="8dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="@color/security_text_primary" />
+
+            <TextView
+                android:id="@+id/tvToolbarTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="@string/debug_menu_title"
+                android:textColor="@color/security_text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_debug_glass_panel"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/logo" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/debug_menu_header"
+                android:textColor="@color/security_text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDeveloperBuild"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/security_text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:lineSpacingExtra="1dp"
+                android:text="@string/debug_menu_subtitle"
+                android:textColor="@color/security_text_muted"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="24dp"
+            android:text="@string/debug_menu_tools_section"
+            android:textAllCaps="true"
+            android:textColor="@color/security_text_muted"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/cardClearCache"
+            style="@style/DebugActionCard"
+            android:layout_marginTop="10dp">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_delete" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_clear_cache_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_clear_cache_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                style="@style/DebugActionChevron"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardTestNotifications"
+            style="@style/DebugActionCard">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_report"
+                app:tint="@color/security_text_primary" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_test_notifications_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_test_notifications_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                style="@style/DebugActionChevron"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardResetSettings"
+            style="@style/DebugActionCard">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_personalization"
+                app:tint="@color/security_text_primary" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_reset_settings_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_reset_settings_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                style="@style/DebugActionChevron"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardResetLogoutLimits"
+            style="@style/DebugActionCard">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_logout"
+                app:tint="@color/security_text_primary" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_reset_logout_limits_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_reset_logout_limits_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                style="@style/DebugActionChevron"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardLogs"
+            style="@style/DebugActionCard">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_info"
+                app:tint="@color/security_text_primary" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_logs_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_logs_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                style="@style/DebugActionChevron"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

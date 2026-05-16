@@ -64,6 +64,16 @@ object LanguageManager {
         return previous != language
     }
 
+    fun resetAppLanguage(context: Context): Boolean {
+        val previous = getStoredLanguage(context)
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(KEY_SELECTED_LANGUAGE)
+            .apply()
+        Locale.setDefault(resolveAppLocale(context))
+        return previous != null
+    }
+
     fun getStoredLanguage(context: Context): String? {
         val stored = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_SELECTED_LANGUAGE, null)

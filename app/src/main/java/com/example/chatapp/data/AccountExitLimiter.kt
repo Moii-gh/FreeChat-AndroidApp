@@ -62,6 +62,11 @@ class AccountExitLimiter internal constructor(
         )
     }
 
+    @Synchronized
+    fun resetLimits() {
+        resetState(todayKey())
+    }
+
     private fun normalizedState(): AccountExitLimitState {
         val storedState = readStoredState()
         val today = todayKey()

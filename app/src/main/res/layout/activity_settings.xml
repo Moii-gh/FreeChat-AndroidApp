@@ -505,6 +505,7 @@
             android:paddingBottom="24dp">
 
             <ImageView
+                android:id="@+id/ivFooterLogo"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/logo"/>

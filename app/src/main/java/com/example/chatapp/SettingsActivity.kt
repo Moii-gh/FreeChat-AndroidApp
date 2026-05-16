@@ -7,7 +7,9 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.animation.OvershootInterpolator
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
@@ -19,6 +21,7 @@ import androidx.core.content.ContextCompat
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.AccountExitLimitResult
 import com.example.chatapp.data.AccountExitLimiter
+import com.example.chatapp.developer.DeveloperMenuActivity
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.ui.AnimatedAvatarBorderDrawable
@@ -43,6 +46,8 @@ class SettingsActivity : AppCompatActivity() {
     private var avatarBorderDrawable: AnimatedAvatarBorderDrawable? = null
     private var profileCardDrawable: AnimatedProfileCardDrawable? = null
     private var pendingLogoutLimitNotificationHours: Long? = null
+    private var developerMenuLongPressCount = 0
+    private var firstDeveloperMenuLongPressAt = 0L
 
     private val requestNotificationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -142,6 +147,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.itemReport).setHapticClickListener {
             openExternalLink(BuildConfig.SUPPORT_URL)
         }
+
+        bindDeveloperMenuEntryGesture()
     }
 
     override fun onResume() {
@@ -343,6 +350,39 @@ class SettingsActivity : AppCompatActivity() {
         requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
+    private fun bindDeveloperMenuEntryGesture() {
+        val longClickListener = View.OnLongClickListener { view ->
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            handleDeveloperMenuEntryLongPress()
+            true
+        }
+
+        findViewById<View>(R.id.ivFooterLogo)?.setOnLongClickListener(longClickListener)
+        findViewById<View>(R.id.tvAppVersion)?.setOnLongClickListener(longClickListener)
+    }
+
+    private fun handleDeveloperMenuEntryLongPress() {
+        val now = SystemClock.elapsedRealtime()
+        val isSecondPressInWindow =
+            developerMenuLongPressCount == 1 &&
+                now - firstDeveloperMenuLongPressAt <= DEVELOPER_MENU_ENTRY_WINDOW_MS
+
+        if (isSecondPressInWindow) {
+            developerMenuLongPressCount = 0
+            firstDeveloperMenuLongPressAt = 0L
+            startActivity(Intent(this, DeveloperMenuActivity::class.java))
+            return
+        }
+
+        developerMenuLongPressCount = 1
+        firstDeveloperMenuLongPressAt = now
+        Toast.makeText(
+            this,
+            LocaleHelper.getString(this, "debug_menu_entry_hint"),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     private fun showEditProfileDialog() {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
@@ -406,5 +446,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    }
+
+    private companion object {
+        const val DEVELOPER_MENU_ENTRY_WINDOW_MS = 5_000L
     }
 }

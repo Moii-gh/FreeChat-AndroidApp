@@ -284,6 +284,15 @@ class AccountScopedSettings(
         prefs.edit().putBoolean(scopedKey(key), value).apply()
     }
 
+    fun resetInterfaceAndBehaviorSettings() {
+        prefs.edit().apply {
+            RESETTABLE_INTERFACE_AND_BEHAVIOR_KEYS.forEach { key ->
+                remove(scopedKey(key))
+                remove(key)
+            }
+        }.apply()
+    }
+
     fun currentAccountKey(): String {
         val userId = prefs.getString(SharedPrefsAccountSessionStore.KEY_USER_ID, null)
         if (!userId.isNullOrBlank()) {
@@ -321,6 +330,19 @@ class AccountScopedSettings(
             .putInt(targetKey, prefs.getInt(legacyKey, 20))
             .remove(legacyKey)
             .apply()
+    }
+
+    private companion object {
+        val RESETTABLE_INTERFACE_AND_BEHAVIOR_KEYS = listOf(
+            "avatar_uri",
+            "profile_name",
+            "user_instructions",
+            "ai_provider",
+            "ai_model_key",
+            "adult_mode_enabled",
+            "digital_assistant_enabled",
+            "digital_assistant_fallback_notification"
+        )
     }
 }
 

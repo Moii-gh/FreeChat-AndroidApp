@@ -103,6 +103,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
+            android:name=".developer.DeveloperMenuActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
             android:name=".DigitalAssistantSettingsActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"/>
