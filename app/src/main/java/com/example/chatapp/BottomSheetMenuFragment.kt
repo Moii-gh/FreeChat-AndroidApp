@@ -16,6 +16,10 @@ import com.example.chatapp.camera.PremiumCameraActivity
 import com.example.chatapp.util.setHapticClickListener
 
 class BottomSheetMenuFragment : BottomSheetDialogFragment() {
+    private companion object {
+        const val BACKGROUND_DIM_AMOUNT = 0.42f
+    }
+
     private var cameraImageUri: Uri? = null
     private val serverFeatureUnavailableMessage =
         "\u042d\u0442\u0430 \u0444\u0443\u043d\u043a\u0446\u0438\u044f \u043f\u043e\u043a\u0430 \u043d\u0435 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0430 \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435."
@@ -174,8 +178,8 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
     override fun onStart() {
         super.onStart()
         dialog?.window?.apply {
-            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setDimAmount(0f)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(BACKGROUND_DIM_AMOUNT)
         }
     }
 
