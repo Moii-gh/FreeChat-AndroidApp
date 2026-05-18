@@ -24,7 +24,8 @@
         <LinearLayout
             android:id="@+id/widgetInput"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/attachment_widget_input_height"
+            android:layout_height="0dp"
+            android:layout_weight="0.72"
             android:background="@drawable/bg_attachment_widget_input"
             android:clickable="true"
             android:focusable="true"
@@ -37,7 +38,7 @@
                 android:id="@+id/widgetLogo"
                 android:layout_width="@dimen/attachment_widget_logo_size"
                 android:layout_height="@dimen/attachment_widget_logo_size"
-                android:alpha="0.86"
+                android:alpha="0.62"
                 android:contentDescription="@string/app_brand"
                 android:scaleType="fitCenter"
                 android:src="@drawable/freechat_logo_white_transparent" />
@@ -60,17 +61,17 @@
         <LinearLayout
             android:id="@+id/widgetActions"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/attachment_widget_button_height"
+            android:layout_height="0dp"
             android:layout_marginTop="@dimen/attachment_widget_button_gap"
+            android:layout_weight="1"
             android:baselineAligned="false"
             android:gravity="center"
             android:orientation="horizontal">
 
             <ImageView
                 android:id="@+id/widgetCamera"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_width="@dimen/attachment_widget_button_size"
+                android:layout_height="@dimen/attachment_widget_button_size"
                 android:background="@drawable/bg_attachment_widget_button"
                 android:contentDescription="@string/button_camera"
                 android:padding="@dimen/attachment_widget_icon_padding"
@@ -80,10 +81,9 @@
 
             <ImageView
                 android:id="@+id/widgetGallery"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_width="@dimen/attachment_widget_button_size"
+                android:layout_height="@dimen/attachment_widget_button_size"
                 android:layout_marginStart="@dimen/attachment_widget_button_gap"
-                android:layout_weight="1"
                 android:background="@drawable/bg_attachment_widget_button"
                 android:contentDescription="@string/content_desc_open_gallery"
                 android:padding="@dimen/attachment_widget_icon_padding"
@@ -93,10 +93,9 @@
 
             <ImageView
                 android:id="@+id/widgetDocument"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_width="@dimen/attachment_widget_button_size"
+                android:layout_height="@dimen/attachment_widget_button_size"
                 android:layout_marginStart="@dimen/attachment_widget_button_gap"
-                android:layout_weight="1"
                 android:background="@drawable/bg_attachment_widget_button"
                 android:contentDescription="@string/button_files"
                 android:padding="@dimen/attachment_widget_icon_padding"
@@ -106,10 +105,9 @@
 
             <ImageView
                 android:id="@+id/widgetMic"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_width="@dimen/attachment_widget_button_size"
+                android:layout_height="@dimen/attachment_widget_button_size"
                 android:layout_marginStart="@dimen/attachment_widget_button_gap"
-                android:layout_weight="1"
                 android:background="@drawable/bg_attachment_widget_button"
                 android:contentDescription="@string/content_desc_microphone"
                 android:padding="@dimen/attachment_widget_icon_padding"
