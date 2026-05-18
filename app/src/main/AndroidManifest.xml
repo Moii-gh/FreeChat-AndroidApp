@@ -124,6 +124,15 @@
             android:finishOnTaskLaunch="true"
             android:theme="@style/Theme.Chatapp.Transparent" />
 
+        <activity
+            android:name=".widget.FreeChatAttachmentWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Chatapp">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".widget.FreeChatAttachmentWidgetProvider"
             android:exported="true"

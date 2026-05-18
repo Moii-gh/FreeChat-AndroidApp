@@ -103,6 +103,13 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 displayText = inputHint
             )
             return RemoteViews(context.packageName, layout.layoutResId).apply {
+                setFloat(
+                    R.id.widgetPanel,
+                    "setAlpha",
+                    FreeChatAttachmentWidgetStateStore.alphaForTransparency(
+                        state.transparencyPercent
+                    )
+                )
                 if (layout.hasInput) {
                     setContentDescription(R.id.widgetInput, inputHint)
                 }

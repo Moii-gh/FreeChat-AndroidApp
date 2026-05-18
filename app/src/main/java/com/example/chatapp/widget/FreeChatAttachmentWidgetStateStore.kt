@@ -18,6 +18,7 @@ internal object FreeChatAttachmentWidgetStateStore {
     private const val KEY_MIN_HEIGHT = "min_height"
     private const val KEY_MAX_WIDTH = "max_width"
     private const val KEY_MAX_HEIGHT = "max_height"
+    private const val KEY_TRANSPARENCY_PERCENT = "transparency_percent"
     private const val KEY_LANGUAGE = "language"
     private const val KEY_UPDATED_AT = "updated_at"
 
@@ -26,6 +27,10 @@ internal object FreeChatAttachmentWidgetStateStore {
     private const val MODE_GALLERY = "gallery"
     private const val MODE_DOCUMENT = "document"
     private const val MODE_VOICE = "voice"
+
+    const val MIN_TRANSPARENCY_PERCENT = 0
+    const val MAX_TRANSPARENCY_PERCENT = 80
+    const val DEFAULT_TRANSPARENCY_PERCENT = 0
 
     data class State(
         val appWidgetId: Int,
@@ -37,6 +42,7 @@ internal object FreeChatAttachmentWidgetStateStore {
         val minHeight: Int,
         val maxWidth: Int,
         val maxHeight: Int,
+        val transparencyPercent: Int,
         val language: String,
         val updatedAtMillis: Long
     )
@@ -56,6 +62,10 @@ internal object FreeChatAttachmentWidgetStateStore {
             minHeight = prefs.getInt(key(appWidgetId, KEY_MIN_HEIGHT), 0),
             maxWidth = prefs.getInt(key(appWidgetId, KEY_MAX_WIDTH), 0),
             maxHeight = prefs.getInt(key(appWidgetId, KEY_MAX_HEIGHT), 0),
+            transparencyPercent = prefs.getInt(
+                key(appWidgetId, KEY_TRANSPARENCY_PERCENT),
+                DEFAULT_TRANSPARENCY_PERCENT
+            ).coerceTransparency(),
             language = prefs.getString(key(appWidgetId, KEY_LANGUAGE), null) ?: language,
             updatedAtMillis = prefs.getLong(key(appWidgetId, KEY_UPDATED_AT), 0L)
         )
@@ -85,6 +95,11 @@ internal object FreeChatAttachmentWidgetStateStore {
             .putInt(key(appWidgetId, KEY_MIN_HEIGHT), size.minHeight)
             .putInt(key(appWidgetId, KEY_MAX_WIDTH), size.maxWidth)
             .putInt(key(appWidgetId, KEY_MAX_HEIGHT), size.maxHeight)
+            .putIntIfAbsent(
+                prefs,
+                key(appWidgetId, KEY_TRANSPARENCY_PERCENT),
+                DEFAULT_TRANSPARENCY_PERCENT
+            )
             .putString(key(appWidgetId, KEY_LANGUAGE), language)
             .putLong(key(appWidgetId, KEY_UPDATED_AT), System.currentTimeMillis())
             .commit()
@@ -103,6 +118,20 @@ internal object FreeChatAttachmentWidgetStateStore {
             .commit()
     }
 
+    fun saveTransparency(context: Context, appWidgetId: Int, transparencyPercent: Int) {
+        if (!isValidWidgetId(appWidgetId)) return
+        val prefs = prefs(context)
+        prefs.edit()
+            .registerWidget(prefs, appWidgetId)
+            .putInt(
+                key(appWidgetId, KEY_TRANSPARENCY_PERCENT),
+                transparencyPercent.coerceTransparency()
+            )
+            .putString(key(appWidgetId, KEY_LANGUAGE), LocaleHelper.getSelectedLanguage(context))
+            .putLong(key(appWidgetId, KEY_UPDATED_AT), System.currentTimeMillis())
+            .commit()
+    }
+
     fun restoreIds(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
         val prefs = prefs(context)
         val editor = prefs.edit()
@@ -116,6 +145,7 @@ internal object FreeChatAttachmentWidgetStateStore {
             copyKey(prefs, editor, oldId, newId, KEY_MIN_HEIGHT, ValueType.IntValue)
             copyKey(prefs, editor, oldId, newId, KEY_MAX_WIDTH, ValueType.IntValue)
             copyKey(prefs, editor, oldId, newId, KEY_MAX_HEIGHT, ValueType.IntValue)
+            copyKey(prefs, editor, oldId, newId, KEY_TRANSPARENCY_PERCENT, ValueType.IntValue)
             copyKey(prefs, editor, oldId, newId, KEY_LANGUAGE, ValueType.StringValue)
             copyKey(prefs, editor, oldId, newId, KEY_UPDATED_AT, ValueType.LongValue)
             editor.removeWidgetData(oldId)
@@ -175,6 +205,11 @@ internal object FreeChatAttachmentWidgetStateStore {
         )
     }
 
+    fun alphaForTransparency(transparencyPercent: Int): Float {
+        val transparentPart = transparencyPercent.coerceTransparency() / 100f
+        return 1f - transparentPart
+    }
+
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -190,6 +225,17 @@ internal object FreeChatAttachmentWidgetStateStore {
     ): SharedPreferences.Editor {
         if (!prefs.contains(key)) {
             putString(key, value)
+        }
+        return this
+    }
+
+    private fun SharedPreferences.Editor.putIntIfAbsent(
+        prefs: SharedPreferences,
+        key: String,
+        value: Int
+    ): SharedPreferences.Editor {
+        if (!prefs.contains(key)) {
+            putInt(key, value)
         }
         return this
     }
@@ -225,6 +271,7 @@ internal object FreeChatAttachmentWidgetStateStore {
         remove(key(appWidgetId, KEY_MIN_HEIGHT))
         remove(key(appWidgetId, KEY_MAX_WIDTH))
         remove(key(appWidgetId, KEY_MAX_HEIGHT))
+        remove(key(appWidgetId, KEY_TRANSPARENCY_PERCENT))
         remove(key(appWidgetId, KEY_LANGUAGE))
         remove(key(appWidgetId, KEY_UPDATED_AT))
         return this
@@ -263,6 +310,10 @@ internal object FreeChatAttachmentWidgetStateStore {
     }
 
     private fun key(appWidgetId: Int, suffix: String) = "widget_${appWidgetId}_$suffix"
+
+    private fun Int.coerceTransparency(): Int {
+        return coerceIn(MIN_TRANSPARENCY_PERCENT, MAX_TRANSPARENCY_PERCENT)
+    }
 
     private fun isValidWidgetId(appWidgetId: Int): Boolean {
         return appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && appWidgetId > 0

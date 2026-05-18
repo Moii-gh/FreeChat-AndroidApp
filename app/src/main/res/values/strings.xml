@@ -66,6 +66,11 @@
     <string name="attachment_text_truncated">[File content truncated]</string>
     <string name="attachment_too_large">Attachment is too large to analyze</string>
     <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
+    <string name="widget_config_title">Widget settings</string>
+    <string name="widget_config_description">Adjust how strongly the widget stands out on the home screen.</string>
+    <string name="widget_config_transparency_label">Transparency</string>
+    <string name="widget_config_transparency_value">%d%%</string>
+    <string name="widget_config_transparency_hint">Higher transparency makes the whole widget less visible.</string>
     <string name="auth_about_subtitle">This information is only needed for your FreeChat profile.</string>
     <string name="auth_about_title">Tell us about yourself</string>
     <string name="auth_agreement_hint">Data is only needed to set up your FreeChat account.</string>

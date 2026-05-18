@@ -9,7 +9,7 @@ import com.example.chatapp.util.SafeLog
 
 @Database(
     entities = [ChatEntity::class, MessageEntity::class],
-    version = 10,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,6 +32,8 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_7_8)
                 .addMigrations(MIGRATION_8_9)
                 .addMigrations(MIGRATION_9_10)
+                .addMigrations(MIGRATION_10_11)
+                .addMigrations(MIGRATION_11_12)
                 .build()
                 INSTANCE = instance
                 instance
@@ -58,6 +60,73 @@ abstract class AppDatabase : RoomDatabase() {
             if (!hasColumn(tableName, columnName)) {
                 execSQL("ALTER TABLE `$tableName` ADD COLUMN `$columnName` $definition")
             }
+        }
+
+        private fun SupportSQLiteDatabase.dropIndexes(tableName: String) {
+            val indexNames = mutableListOf<String>()
+            query(
+                "SELECT name FROM sqlite_master " +
+                    "WHERE type = 'index' AND tbl_name = '$tableName' AND sql IS NOT NULL"
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    indexNames.add(cursor.getString(0))
+                }
+            }
+            indexNames.forEach { indexName ->
+                execSQL("DROP INDEX IF EXISTS `$indexName`")
+            }
+        }
+
+        private fun SupportSQLiteDatabase.ensureCurrentSchema() {
+            addColumnIfMissing("chats", "ownerKey", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing("chats", "isPinned", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing("chats", "lastUpdated", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing("chats", "summary", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing("chats", "isDeleted", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing("chats", "isTitleManuallyEdited", "INTEGER NOT NULL DEFAULT 0")
+
+            addColumnIfMissing("messages", "attachmentData", "TEXT")
+            addColumnIfMissing("messages", "attachmentMimeType", "TEXT")
+            addColumnIfMissing("messages", "attachmentFileName", "TEXT")
+            addColumnIfMissing("messages", "attachmentContext", "TEXT")
+            addColumnIfMissing("messages", "syncId", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfMissing("messages", "updatedAt", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing("messages", "isDeleted", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing("messages", "editRevision", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing("messages", "reaction", "TEXT")
+
+            execSQL("UPDATE chats SET lastUpdated = timestamp WHERE lastUpdated = 0")
+            execSQL("UPDATE messages SET updatedAt = timestamp WHERE updatedAt = 0")
+            query("SELECT id FROM messages WHERE syncId IS NULL OR syncId = ''").use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getInt(0)
+                    val uuid = java.util.UUID.randomUUID().toString()
+                    execSQL("UPDATE messages SET syncId = '$uuid' WHERE id = $id")
+                }
+            }
+
+            execSQL(
+                """
+                DELETE FROM messages
+                WHERE syncId != ''
+                  AND id NOT IN (
+                      SELECT keep.id
+                      FROM messages AS keep
+                      WHERE keep.syncId = messages.syncId
+                      ORDER BY keep.editRevision DESC, keep.updatedAt DESC, keep.id DESC
+                      LIMIT 1
+                  )
+                """
+            )
+
+            dropIndexes("chats")
+            dropIndexes("messages")
+            execSQL("CREATE INDEX IF NOT EXISTS index_messages_chatId ON messages(chatId)")
+            execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_messages_syncId ON messages(syncId)")
+            execSQL(
+                "CREATE INDEX IF NOT EXISTS index_messages_chatId_isDeleted_timestamp " +
+                    "ON messages(chatId, isDeleted, timestamp)"
+            )
         }
 
         val MIGRATION_1_3 = object : androidx.room.migration.Migration(1, 3) {
@@ -184,6 +253,18 @@ abstract class AppDatabase : RoomDatabase() {
                     "isTitleManuallyEdited",
                     "INTEGER NOT NULL DEFAULT 0"
                 )
+            }
+        }
+
+        val MIGRATION_10_11 = object : androidx.room.migration.Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.ensureCurrentSchema()
+            }
+        }
+
+        val MIGRATION_11_12 = object : androidx.room.migration.Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.ensureCurrentSchema()
             }
         }
     }
