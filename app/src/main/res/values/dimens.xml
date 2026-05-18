@@ -10,7 +10,7 @@
     <dimen name="attachment_widget_button_size">64dp</dimen>
     <dimen name="attachment_widget_row_gap">16dp</dimen>
     <dimen name="attachment_widget_button_gap">30dp</dimen>
-    <dimen name="attachment_widget_logo_size">23dp</dimen>
+    <dimen name="attachment_widget_logo_size">25dp</dimen>
     <dimen name="attachment_widget_icon_padding">14dp</dimen>
     <dimen name="attachment_widget_text_gap">12dp</dimen>
 
@@ -23,7 +23,7 @@
     <dimen name="attachment_widget_compact_button_size">52dp</dimen>
     <dimen name="attachment_widget_compact_row_gap">12dp</dimen>
     <dimen name="attachment_widget_compact_button_gap">22dp</dimen>
-    <dimen name="attachment_widget_compact_logo_size">21dp</dimen>
+    <dimen name="attachment_widget_compact_logo_size">23dp</dimen>
     <dimen name="attachment_widget_compact_icon_padding">12dp</dimen>
     <dimen name="attachment_widget_compact_text_gap">10dp</dimen>
 
@@ -36,7 +36,7 @@
     <dimen name="attachment_widget_narrow_button_size">48dp</dimen>
     <dimen name="attachment_widget_narrow_row_gap">10dp</dimen>
     <dimen name="attachment_widget_narrow_button_gap">30dp</dimen>
-    <dimen name="attachment_widget_narrow_logo_size">20dp</dimen>
+    <dimen name="attachment_widget_narrow_logo_size">22dp</dimen>
     <dimen name="attachment_widget_narrow_icon_padding">12dp</dimen>
     <dimen name="attachment_widget_narrow_text_gap">9dp</dimen>
 
@@ -61,7 +61,7 @@
     <dimen name="attachment_widget_one_row_input_height">52dp</dimen>
     <dimen name="attachment_widget_one_row_button_size">48dp</dimen>
     <dimen name="attachment_widget_one_row_button_gap">8dp</dimen>
-    <dimen name="attachment_widget_one_row_logo_size">22dp</dimen>
+    <dimen name="attachment_widget_one_row_logo_size">24dp</dimen>
     <dimen name="attachment_widget_one_row_icon_padding">12dp</dimen>
     <dimen name="attachment_widget_one_row_text_gap">10dp</dimen>
 
@@ -73,7 +73,7 @@
     <dimen name="attachment_widget_one_row_compact_input_height">46dp</dimen>
     <dimen name="attachment_widget_one_row_compact_button_size">44dp</dimen>
     <dimen name="attachment_widget_one_row_compact_button_gap">8dp</dimen>
-    <dimen name="attachment_widget_one_row_compact_logo_size">20dp</dimen>
+    <dimen name="attachment_widget_one_row_compact_logo_size">22dp</dimen>
     <dimen name="attachment_widget_one_row_compact_icon_padding">11dp</dimen>
     <dimen name="attachment_widget_one_row_compact_text_gap">8dp</dimen>
 
