@@ -464,18 +464,20 @@ class PopupMenuHelper(
     ) {
         val dialog = Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
         var isSaving = false
+        var isDismissing = false
 
         val root = FrameLayout(activity).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+
+        val scrim = View(activity).apply {
             setBackgroundColor(Color.parseColor("#66000000"))
-            setOnClickListener {
-                if (!isSaving) {
-                    dialog.dismiss()
-                }
-            }
+            alpha = 0f
+            isClickable = true
         }
 
         val dialogView = LinearLayout(activity).apply {
@@ -484,6 +486,43 @@ class PopupMenuHelper(
             elevation = 28f
             setPadding(20.dpToPx(), 22.dpToPx(), 20.dpToPx(), 18.dpToPx())
             setOnClickListener { }
+            alpha = 0f
+            translationY = 30.dpToPx().toFloat()
+            scaleX = 0.965f
+            scaleY = 0.965f
+        }
+
+        fun dismissAnimated() {
+            if (isDismissing) return
+            isDismissing = true
+            dialogView.animate().cancel()
+            scrim.animate().cancel()
+
+            scrim.animate()
+                .alpha(0f)
+                .setDuration(130L)
+                .setInterpolator(android.view.animation.PathInterpolator(0.4f, 0f, 1f, 1f))
+                .start()
+
+            dialogView.animate()
+                .alpha(0f)
+                .translationY(12.dpToPx().toFloat())
+                .scaleX(0.985f)
+                .scaleY(0.985f)
+                .setDuration(150L)
+                .setInterpolator(android.view.animation.PathInterpolator(0.4f, 0f, 1f, 1f))
+                .withEndAction {
+                    if (dialog.isShowing) {
+                        dialog.dismiss()
+                    }
+                }
+                .start()
+        }
+
+        scrim.setOnClickListener {
+            if (!isSaving) {
+                dismissAnimated()
+            }
         }
 
         val input = EditText(activity).apply {
@@ -522,7 +561,7 @@ class PopupMenuHelper(
             }
             isClickable = true
             isFocusable = true
-            setOnClickListener { dialog.dismiss() }
+            setOnClickListener { dismissAnimated() }
         }
         buttonsContainer.addView(cancelBtn)
 
@@ -583,7 +622,7 @@ class PopupMenuHelper(
             runCatching {
                 onConfirmed(newText) {
                     if (dialog.isShowing) {
-                        dialog.dismiss()
+                        dismissAnimated()
                     }
                 }
             }.onFailure {
@@ -595,19 +634,32 @@ class PopupMenuHelper(
 
         dialogView.addView(buttonsContainer)
 
+        val restingBottomMargin = 16.dpToPx()
+        val keyboardGap = 6.dpToPx()
         val panelWidth = ((activity.resources.displayMetrics.widthPixels * widthFraction).toInt())
             .coerceAtMost(activity.resources.displayMetrics.widthPixels - 32.dpToPx())
+        root.addView(
+            scrim,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
         root.addView(
             dialogView,
             FrameLayout.LayoutParams(panelWidth, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                bottomMargin = 24.dpToPx()
+                bottomMargin = restingBottomMargin
             }
         )
 
         fun updatePanelBottomMargin(bottomInset: Int) {
             val lp = dialogView.layoutParams as FrameLayout.LayoutParams
-            val targetBottomMargin = bottomInset + 24.dpToPx()
+            val targetBottomMargin = if (bottomInset > 0) {
+                bottomInset + keyboardGap
+            } else {
+                restingBottomMargin
+            }
             if (lp.bottomMargin != targetBottomMargin) {
                 lp.bottomMargin = targetBottomMargin
                 dialogView.layoutParams = lp
@@ -662,6 +714,23 @@ class PopupMenuHelper(
 
         input.requestFocus()
         ViewCompat.requestApplyInsets(root)
+        dialogView.post {
+            dialogView.pivotX = dialogView.width / 2f
+            dialogView.pivotY = dialogView.height.toFloat()
+            scrim.animate()
+                .alpha(1f)
+                .setDuration(180L)
+                .setInterpolator(android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f))
+                .start()
+            dialogView.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(260L)
+                .setInterpolator(android.view.animation.PathInterpolator(0.16f, 1f, 0.3f, 1f))
+                .start()
+        }
         input.post {
             val inputMethodManager = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
                 as android.view.inputmethod.InputMethodManager
