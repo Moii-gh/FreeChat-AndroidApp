@@ -43,6 +43,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val DEFAULT_MIN_WIDTH_DP = 300
         private const val DEFAULT_MIN_HEIGHT_DP = 130
+        private const val ONE_ROW_MAX_HEIGHT_DP = 116
 
         fun buildRemoteViews(context: Context, options: Bundle? = null): RemoteViews {
             val layout = chooseLayout(options)
@@ -90,12 +91,29 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 ?.takeIf { it > 0 }
                 ?: DEFAULT_MIN_HEIGHT_DP
 
+            return if (minHeight < ONE_ROW_MAX_HEIGHT_DP) {
+                chooseOneRowLayout(minWidth, minHeight)
+            } else {
+                chooseTallLayout(minWidth, minHeight)
+            }
+        }
+
+        private fun chooseTallLayout(minWidth: Int, minHeight: Int): WidgetLayout {
             return when {
-                minHeight < 116 && minWidth >= 144 -> WidgetLayout.InputOnly
-                minWidth <= 128 || minHeight <= 76 -> WidgetLayout.Tiny
-                minWidth < 170 && minHeight < 120 -> WidgetLayout.Small
-                minWidth < 190 -> WidgetLayout.Narrow
-                minWidth < 300 || minHeight < 128 -> WidgetLayout.Compact
+                minWidth <= 128 || minHeight <= 76 -> WidgetLayout.TallTiny
+                minWidth < 170 && minHeight < 120 -> WidgetLayout.TallSmall
+                minWidth < 190 -> WidgetLayout.TallNarrow
+                minWidth < 300 || minHeight < 128 -> WidgetLayout.TallCompact
+                else -> WidgetLayout.TallLarge
+            }
+        }
+
+        private fun chooseOneRowLayout(minWidth: Int, minHeight: Int): WidgetLayout {
+            return when {
+                minWidth <= 128 || minHeight < 64 -> WidgetLayout.Tiny
+                minWidth < 200 -> WidgetLayout.Small
+                minWidth < 300 -> WidgetLayout.Narrow
+                minWidth < 380 -> WidgetLayout.Compact
                 else -> WidgetLayout.Large
             }
         }
@@ -131,7 +149,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             val hasDocument: Boolean,
             val hasMic: Boolean
         ) {
-            Large(
+            TallLarge(
                 R.layout.widget_attachment_panel,
                 hasInput = true,
                 hasCamera = true,
@@ -139,7 +157,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasDocument = true,
                 hasMic = true
             ),
-            Compact(
+            TallCompact(
                 R.layout.widget_attachment_panel_compact,
                 hasInput = true,
                 hasCamera = true,
@@ -147,15 +165,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasDocument = false,
                 hasMic = true
             ),
-            InputOnly(
-                R.layout.widget_attachment_panel_input_only,
-                hasInput = true,
-                hasCamera = false,
-                hasGallery = false,
-                hasDocument = false,
-                hasMic = false
-            ),
-            Narrow(
+            TallNarrow(
                 R.layout.widget_attachment_panel_narrow,
                 hasInput = true,
                 hasCamera = true,
@@ -163,7 +173,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasDocument = false,
                 hasMic = true
             ),
-            Small(
+            TallSmall(
                 R.layout.widget_attachment_panel_small,
                 hasInput = false,
                 hasCamera = true,
@@ -171,13 +181,53 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasDocument = false,
                 hasMic = true
             ),
-            Tiny(
+            TallTiny(
                 R.layout.widget_attachment_panel_tiny,
                 hasInput = false,
                 hasCamera = false,
                 hasGallery = false,
                 hasDocument = false,
                 hasMic = true
+            ),
+            Large(
+                R.layout.widget_attachment_panel_one_row,
+                hasInput = true,
+                hasCamera = true,
+                hasGallery = true,
+                hasDocument = true,
+                hasMic = true
+            ),
+            Compact(
+                R.layout.widget_attachment_panel_one_row_compact,
+                hasInput = true,
+                hasCamera = true,
+                hasGallery = true,
+                hasDocument = false,
+                hasMic = true
+            ),
+            Narrow(
+                R.layout.widget_attachment_panel_one_row_narrow,
+                hasInput = true,
+                hasCamera = true,
+                hasGallery = false,
+                hasDocument = false,
+                hasMic = true
+            ),
+            Small(
+                R.layout.widget_attachment_panel_one_row_small,
+                hasInput = true,
+                hasCamera = false,
+                hasGallery = false,
+                hasDocument = false,
+                hasMic = true
+            ),
+            Tiny(
+                R.layout.widget_attachment_panel_one_row_tiny,
+                hasInput = true,
+                hasCamera = false,
+                hasGallery = false,
+                hasDocument = false,
+                hasMic = false
             )
         }
     }

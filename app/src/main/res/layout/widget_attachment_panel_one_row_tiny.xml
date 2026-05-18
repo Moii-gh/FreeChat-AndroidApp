@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/attachment_widget_root_padding"
+    android:paddingTop="@dimen/attachment_widget_root_padding"
+    android:paddingEnd="@dimen/attachment_widget_root_padding"
+    android:paddingBottom="@dimen/attachment_widget_root_padding">
+
+    <LinearLayout
+        android:id="@+id/widgetPanel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_attachment_widget_one_row_panel_tiny"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/attachment_widget_one_row_tiny_padding">
+
+        <ImageView
+            android:id="@+id/widgetInput"
+            android:layout_width="@dimen/attachment_widget_one_row_tiny_button_width"
+            android:layout_height="@dimen/attachment_widget_one_row_tiny_button_height"
+            android:background="@drawable/bg_attachment_widget_active_tiny"
+            android:clickable="true"
+            android:contentDescription="@string/attachment_widget_hint"
+            android:focusable="true"
+            android:padding="@dimen/attachment_widget_one_row_tiny_icon_padding"
+            android:scaleType="fitCenter"
+            android:src="@drawable/freechat_logo_white_transparent" />
+    </LinearLayout>
+</LinearLayout>

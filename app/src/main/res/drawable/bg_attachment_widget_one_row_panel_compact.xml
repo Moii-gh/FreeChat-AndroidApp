@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:endColor="#EE171719"
+        android:startColor="#F3222226" />
+    <stroke android:width="1dp" android:color="#18FFFFFF" />
+    <corners android:radius="@dimen/attachment_widget_one_row_compact_corner_radius" />
+</shape>
