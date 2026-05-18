@@ -11,7 +11,8 @@ const syncChatSchema = z.object({
   isPinned: z.boolean(),
   lastUpdated: z.number().int().nonnegative(),
   summary: z.string().max(8000).default(""),
-  isDeleted: z.boolean().default(false)
+  isDeleted: z.boolean().default(false),
+  isTitleManuallyEdited: z.boolean().default(false)
 }).strict();
 
 const syncMessageSchema = z.object({

@@ -104,8 +104,11 @@ create table if not exists chats (
     last_updated_ms bigint not null,
     summary text not null default '',
     is_deleted boolean not null default false,
+    is_title_manually_edited boolean not null default false,
     created_at timestamptz not null default now()
 );
+
+alter table if exists chats add column if not exists is_title_manually_edited boolean not null default false;
 
 create table if not exists auth_nonces (
     kind text not null,

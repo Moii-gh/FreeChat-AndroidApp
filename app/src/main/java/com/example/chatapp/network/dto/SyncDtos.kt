@@ -10,7 +10,8 @@ data class SyncChatDto(
     val isPinned: Boolean,
     val lastUpdated: Long,
     val summary: String,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val isTitleManuallyEdited: Boolean = false
 )
 
 @Keep

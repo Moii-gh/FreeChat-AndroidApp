@@ -6,6 +6,7 @@ const {
   getUserChats,
   getUserMessages
 } = require("../models/syncModel");
+const { syncPayloadSchema } = require("../schemas/syncSchemas");
 
 function createFakeExecutor() {
   return {
@@ -30,19 +31,41 @@ test("upsertChats preserves ownership and last-write-wins ordering in SQL", asyn
         isPinned: false,
         lastUpdated: 456,
         summary: "summary",
-        isDeleted: true
+        isDeleted: true,
+        isTitleManuallyEdited: true
       }
     ],
     executor
   );
 
   assert.equal(executor.queries.length, 1);
+  assert.match(executor.queries[0].text, /is_title_manually_edited/);
   assert.match(executor.queries[0].text, /WHERE chats\.user_id = EXCLUDED\.user_id/);
   assert.match(executor.queries[0].text, /chats\.last_updated_ms <= EXCLUDED\.last_updated_ms/);
   assert.deepEqual(executor.queries[0].params.slice(0, 2), [
     "0f9f657d-558a-4711-91bc-bdc9171b1cb0",
     "user-1"
   ]);
+  assert.equal(executor.queries[0].params[8], true);
+});
+
+test("sync chat schema defaults manual title flag for older clients", () => {
+  const parsed = syncPayloadSchema.parse({
+    chats: [
+      {
+        id: "0f9f657d-558a-4711-91bc-bdc9171b1cb0",
+        title: "Secure chat",
+        timestamp: 123,
+        isPinned: false,
+        lastUpdated: 456,
+        summary: "summary",
+        isDeleted: false
+      }
+    ],
+    messages: []
+  });
+
+  assert.equal(parsed.chats[0].isTitleManuallyEdited, false);
 });
 
 test("upsertMessages only inserts into non-deleted chats owned by the authenticated user", async () => {
@@ -144,6 +167,7 @@ test("getUserChats returns camelCase fields for Android sync", async () => {
   assert.match(executor.queries[0].text, /is_pinned as "isPinned"/);
   assert.match(executor.queries[0].text, /last_updated_ms as "lastUpdated"/);
   assert.match(executor.queries[0].text, /is_deleted as "isDeleted"/);
+  assert.match(executor.queries[0].text, /is_title_manually_edited as "isTitleManuallyEdited"/);
 });
 
 test("getUserMessages excludes tombstoned chats from the sync response", async () => {

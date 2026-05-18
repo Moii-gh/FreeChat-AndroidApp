@@ -15,21 +15,40 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class SyncRepository(context: Context) {
+    data class SyncResult(
+        val synced: Boolean,
+        val skipped: Boolean = false,
+        val errorMessage: String? = null
+    ) {
+        val failed: Boolean
+            get() = !synced && !skipped
+
+        companion object {
+            val Synced = SyncResult(synced = true)
+            val Skipped = SyncResult(synced = false, skipped = true)
+
+            fun failed(message: String? = null) = SyncResult(
+                synced = false,
+                errorMessage = message
+            )
+        }
+    }
+
     private val appContext = context.applicationContext
     private val db = AppDatabase.getDatabase(context)
     private val dao = db.chatDao()
     private val sessionStore = SharedPrefsAccountSessionStore(context)
     private val baseUrl = BuildConfig.APP_API_BASE_URL
 
-    suspend fun trySync() = withContext(Dispatchers.IO) {
+    suspend fun trySync(): SyncResult = withContext(Dispatchers.IO) {
         syncMutex.withLock {
             trySyncLocked()
         }
     }
 
-    private suspend fun trySyncLocked() {
-        val token = sessionStore.getAuthToken() ?: return
-        val ownerKey = currentOwnerKey() ?: return
+    private suspend fun trySyncLocked(): SyncResult {
+        val token = sessionStore.getAuthToken() ?: return SyncResult.Skipped
+        val ownerKey = currentOwnerKey() ?: return SyncResult.Skipped
 
         try {
             val syncApi = NetworkModule.createSyncApiService(baseUrl, token)
@@ -44,7 +63,8 @@ class SyncRepository(context: Context) {
                     isPinned = it.isPinned,
                     lastUpdated = it.lastUpdated,
                     summary = it.summary,
-                    isDeleted = it.isDeleted
+                    isDeleted = it.isDeleted,
+                    isTitleManuallyEdited = it.isTitleManuallyEdited
                 )
             }
 
@@ -97,7 +117,8 @@ class SyncRepository(context: Context) {
                                     isPinned = remoteChat.isPinned,
                                     lastUpdated = remoteChat.lastUpdated,
                                     summary = remoteChat.summary,
-                                    isDeleted = remoteChat.isDeleted
+                                    isDeleted = remoteChat.isDeleted,
+                                    isTitleManuallyEdited = remoteChat.isTitleManuallyEdited
                                 )
                             )
                         } else {
@@ -110,7 +131,8 @@ class SyncRepository(context: Context) {
                                         isPinned = remoteChat.isPinned,
                                         lastUpdated = remoteChat.lastUpdated,
                                         summary = remoteChat.summary,
-                                        isDeleted = remoteChat.isDeleted
+                                        isDeleted = remoteChat.isDeleted,
+                                        isTitleManuallyEdited = remoteChat.isTitleManuallyEdited
                                     )
                                 )
                             }
@@ -167,11 +189,14 @@ class SyncRepository(context: Context) {
                         }
                     }
                 }
+                return SyncResult.Synced
             } else {
                 SafeLog.w("SyncRepository", "Sync failed: HTTP ${response.code()}")
+                return SyncResult.failed("HTTP ${response.code()}")
             }
         } catch (e: Exception) {
             SafeLog.w("SyncRepository", "Sync failed with exception", e)
+            return SyncResult.failed(e.message)
         }
     }
 

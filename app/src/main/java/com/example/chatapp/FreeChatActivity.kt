@@ -350,6 +350,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         drawerManager.updateUserProfile()
         ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, true)
         refreshDailyQuotaUi()
+        chatViewModel.performSync()
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
     }
@@ -1093,9 +1094,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         popupMenuHelper = PopupMenuHelper(
             activity = this,
-            onRename = { chat, newTitle ->
-                chatViewModel.renameChat(chat.id, newTitle) {
-                    refreshChats()
+            onRename = { chat, newTitle, complete ->
+                chatViewModel.renameChat(
+                    chatId = chat.id,
+                    newTitle = newTitle,
+                    isTitleManuallyEdited = true
+                ) { result ->
+                    runOnUiThread {
+                        if (result.saved) {
+                            drawerManager.queueTitleRenameAnimation(
+                                chatId = chat.id,
+                                oldTitle = chat.title,
+                                newTitle = result.title
+                            )
+                        }
+                        complete()
+                        refreshChats()
+                        if (!result.saved) {
+                            toast(LocaleHelper.getString(this, "toast_name_empty"))
+                        }
+                    }
                 }
             },
             onTogglePin = { chat ->
@@ -2290,7 +2308,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         renderUserDraftMessage(text, attachmentPayload, historyIndex)
 
         if (historyIndex == 0) {
-            chatViewModel.currentChatTitle = when {
+            val derivedTitle = when {
                 text.isNotBlank() -> text.take(60)
                 !attachmentPayload?.fileName.isNullOrBlank() -> attachmentPayload?.fileName?.take(60).orEmpty()
                 attachmentPayload != null -> LocaleHelper.getString(this, "label_file_analysis")
@@ -2298,8 +2316,15 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
             chatViewModel.isFirstMessage = false
             chatViewModel.currentChatId?.let { chatId ->
-                chatViewModel.renameChat(chatId, chatViewModel.currentChatTitle) {
-                    refreshChats()
+                if (chatViewModel.cachedChats.firstOrNull { it.id == chatId }?.isTitleManuallyEdited != true) {
+                    chatViewModel.currentChatTitle = derivedTitle
+                    chatViewModel.renameChat(
+                        chatId = chatId,
+                        newTitle = derivedTitle,
+                        isTitleManuallyEdited = false
+                    ) {
+                        refreshChats()
+                    }
                 }
             }
         }

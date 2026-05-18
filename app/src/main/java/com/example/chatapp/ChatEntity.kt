@@ -13,5 +13,6 @@ data class ChatEntity(
     val isPinned: Boolean = false,
     val lastUpdated: Long = System.currentTimeMillis(),
     val summary: String = "",
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val isTitleManuallyEdited: Boolean = false
 )

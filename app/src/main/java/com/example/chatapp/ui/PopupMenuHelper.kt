@@ -1,8 +1,9 @@
 package com.example.chatapp.ui
 
 import android.app.Activity
-import android.app.AlertDialog
+import android.app.Dialog
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.util.TypedValue
@@ -11,6 +12,11 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import com.example.chatapp.ChatEntity
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
@@ -24,7 +30,7 @@ import com.example.chatapp.util.dpToPx
  */
 class PopupMenuHelper(
     private val activity: Activity,
-    private val onRename: (ChatEntity, String) -> Unit,
+    private val onRename: (ChatEntity, String, () -> Unit) -> Unit,
     private val onTogglePin: (ChatEntity) -> Unit,
     private val onShare: (ChatEntity) -> Unit,
     private val onRevokeShares: (ChatEntity) -> Unit,
@@ -427,7 +433,7 @@ class PopupMenuHelper(
                 gravity = Gravity.CENTER
                 selectAll()
             },
-            onConfirmed = { newTitle -> onRename(chat, newTitle) }
+            onConfirmed = { newTitle, complete -> onRename(chat, newTitle, complete) }
         )
     }
 
@@ -442,7 +448,10 @@ class PopupMenuHelper(
                 gravity = Gravity.TOP or Gravity.START
                 setSelection(text?.length ?: 0)
             },
-            onConfirmed = onEdited
+            onConfirmed = { editedText, complete ->
+                onEdited(editedText)
+                complete()
+            }
         )
     }
 
@@ -451,21 +460,39 @@ class PopupMenuHelper(
         hintText: String,
         widthFraction: Float,
         configureInput: EditText.() -> Unit,
-        onConfirmed: (String) -> Unit
+        onConfirmed: (String, () -> Unit) -> Unit
     ) {
+        val dialog = Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
+        var isSaving = false
+
+        val root = FrameLayout(activity).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.parseColor("#66000000"))
+            setOnClickListener {
+                if (!isSaving) {
+                    dialog.dismiss()
+                }
+            }
+        }
+
         val dialogView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            background = ContextCompat.getDrawable(activity, R.drawable.dialog_bg)
-            setPadding(20.dpToPx(), 24.dpToPx(), 20.dpToPx(), 20.dpToPx())
+            background = ContextCompat.getDrawable(activity, R.drawable.rename_dialog_glass_bg)
+            elevation = 28f
+            setPadding(20.dpToPx(), 22.dpToPx(), 20.dpToPx(), 18.dpToPx())
+            setOnClickListener { }
         }
 
         val input = EditText(activity).apply {
             setText(initialText)
             setTextColor(Color.WHITE)
             textSize = 15f
-            setHintTextColor(Color.parseColor("#636366"))
+            setHintTextColor(Color.parseColor("#8E8E93"))
             hint = hintText
-            background = ContextCompat.getDrawable(activity, R.drawable.dialog_input_bg)
+            background = ContextCompat.getDrawable(activity, R.drawable.rename_dialog_input_bg)
             setPadding(16.dpToPx(), 14.dpToPx(), 16.dpToPx(), 14.dpToPx())
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -484,12 +511,6 @@ class PopupMenuHelper(
             ).apply { topMargin = 18.dpToPx() }
         }
 
-        val dialog = AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar)
-            .setView(dialogView)
-            .create()
-
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
         val cancelBtn = TextView(activity).apply {
             text = LocaleHelper.getString(activity, "button_cancel")
             setTextColor(Color.WHITE)
@@ -505,38 +526,147 @@ class PopupMenuHelper(
         }
         buttonsContainer.addView(cancelBtn)
 
-        val confirmBtn = TextView(activity).apply {
+        val confirmLabel = TextView(activity).apply {
             text = LocaleHelper.getString(activity, "button_ok")
             setTextColor(Color.BLACK)
             textSize = 15f
             gravity = Gravity.CENTER
             setTypeface(typeface, Typeface.BOLD)
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val confirmProgress = ProgressBar(activity, null, android.R.attr.progressBarStyleSmall).apply {
+            isGone = true
+            indeterminateDrawable.setTint(Color.BLACK)
+            layoutParams = FrameLayout.LayoutParams(22.dpToPx(), 22.dpToPx(), Gravity.CENTER)
+        }
+
+        val confirmBtn = FrameLayout(activity).apply {
             background = ContextCompat.getDrawable(activity, R.drawable.btn_ok_white_bg)
             layoutParams = LinearLayout.LayoutParams(0, 42.dpToPx(), 1f).apply {
                 marginStart = 6.dpToPx()
             }
             isClickable = true
             isFocusable = true
-            setOnClickListener {
-                val newText = input.text?.toString()?.trim().orEmpty()
-                if (newText.isNotEmpty()) {
-                    onConfirmed(newText)
-                }
-                dialog.dismiss()
-            }
+            addView(confirmLabel)
+            addView(confirmProgress)
         }
         buttonsContainer.addView(confirmBtn)
 
-        dialogView.addView(buttonsContainer)
-        dialog.show()
+        fun setSaving(saving: Boolean) {
+            isSaving = saving
+            input.isEnabled = !saving
+            cancelBtn.isEnabled = !saving
+            cancelBtn.alpha = if (saving) 0.55f else 1f
+            confirmLabel.isGone = saving
+            confirmProgress.isVisible = saving
+        }
 
-        dialog.window?.setLayout(
-            (activity.resources.displayMetrics.widthPixels * widthFraction).toInt(),
-            LinearLayout.LayoutParams.WRAP_CONTENT
+        fun updateConfirmState() {
+            val enabled = !isSaving && input.text?.toString()?.trim()?.isNotEmpty() == true
+            confirmBtn.isEnabled = enabled
+            confirmBtn.isClickable = enabled
+            confirmBtn.alpha = if (enabled) 1f else 0.45f
+        }
+
+        input.doAfterTextChanged { updateConfirmState() }
+        confirmBtn.setOnClickListener {
+            val newText = input.text?.toString()?.trim().orEmpty()
+            if (newText.isBlank() || isSaving) {
+                return@setOnClickListener
+            }
+            setSaving(true)
+            updateConfirmState()
+            runCatching {
+                onConfirmed(newText) {
+                    if (dialog.isShowing) {
+                        dialog.dismiss()
+                    }
+                }
+            }.onFailure {
+                setSaving(false)
+                updateConfirmState()
+            }
+        }
+        updateConfirmState()
+
+        dialogView.addView(buttonsContainer)
+
+        val panelWidth = ((activity.resources.displayMetrics.widthPixels * widthFraction).toInt())
+            .coerceAtMost(activity.resources.displayMetrics.widthPixels - 32.dpToPx())
+        root.addView(
+            dialogView,
+            FrameLayout.LayoutParams(panelWidth, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                bottomMargin = 24.dpToPx()
+            }
         )
 
+        fun updatePanelBottomMargin(bottomInset: Int) {
+            val lp = dialogView.layoutParams as FrameLayout.LayoutParams
+            val targetBottomMargin = bottomInset + 24.dpToPx()
+            if (lp.bottomMargin != targetBottomMargin) {
+                lp.bottomMargin = targetBottomMargin
+                dialogView.layoutParams = lp
+            }
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val navBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            updatePanelBottomMargin(maxOf(imeBottom, navBottom))
+            insets
+        }
+
+        val visibleFrame = Rect()
+        val layoutListener = android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            root.getWindowVisibleDisplayFrame(visibleFrame)
+            val screenHeight = activity.resources.displayMetrics.heightPixels
+            val keyboardHeight = (screenHeight - visibleFrame.bottom).coerceAtLeast(0)
+            val bottomInset = if (keyboardHeight > 80.dpToPx()) keyboardHeight else 0
+            updatePanelBottomMargin(bottomInset)
+        }
+        root.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+        dialog.setOnDismissListener {
+            if (root.viewTreeObserver.isAlive) {
+                root.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
+            }
+        }
+
+        dialog.setContentView(root)
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setDimAmount(0f)
+            clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            )
+        }
+        dialog.show()
+
+        dialog.window?.apply {
+            setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT
+            )
+            clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            )
+        }
+
         input.requestFocus()
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        ViewCompat.requestApplyInsets(root)
+        input.post {
+            val inputMethodManager = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+            inputMethodManager.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }
     }
 
     private fun createMenuDivider() = View(activity).apply {

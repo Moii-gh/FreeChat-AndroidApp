@@ -9,7 +9,7 @@ import com.example.chatapp.util.SafeLog
 
 @Database(
     entities = [ChatEntity::class, MessageEntity::class],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_6_7)
                 .addMigrations(MIGRATION_7_8)
                 .addMigrations(MIGRATION_8_9)
+                .addMigrations(MIGRATION_9_10)
                 .build()
                 INSTANCE = instance
                 instance
@@ -173,6 +174,16 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.addColumnIfMissing("messages", "reaction", "TEXT")
+            }
+        }
+
+        val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.addColumnIfMissing(
+                    "chats",
+                    "isTitleManuallyEdited",
+                    "INTEGER NOT NULL DEFAULT 0"
+                )
             }
         }
     }

@@ -53,9 +53,25 @@ class ChatRepository(context: Context) {
         return chatId
     }
 
-    suspend fun updateChatTitle(chatId: String, title: String) {
-        dao.updateChatTitle(chatId, title, System.currentTimeMillis())
-        SafeLog.d("ChatRepository", "Chat title saved in local database chatId=${chatId.take(8)} hasTitle=${title.isNotBlank()}")
+    suspend fun updateChatTitle(
+        chatId: String,
+        title: String,
+        isTitleManuallyEdited: Boolean = false
+    ) {
+        val ownerKey = currentOwnerKey()
+        val existing = dao.getChatByIdForSync(chatId, ownerKey) ?: return
+        val updatedAt = maxOf(System.currentTimeMillis(), existing.lastUpdated + 1)
+        dao.updateChatTitle(
+            chatId = chatId,
+            ownerKey = ownerKey,
+            title = title,
+            updatedAt = updatedAt,
+            isTitleManuallyEdited = isTitleManuallyEdited
+        )
+        SafeLog.d(
+            "ChatRepository",
+            "Chat title saved in local database chatId=${chatId.take(8)} hasTitle=${title.isNotBlank()} manual=$isTitleManuallyEdited"
+        )
     }
 
     suspend fun updateChatSummary(chatId: String, summary: String) {

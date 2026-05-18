@@ -2,6 +2,8 @@ package com.example.chatapp.ui
 
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
@@ -13,6 +15,7 @@ import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
+import com.example.chatapp.ui.chat.ChatRenameAnimationPlanner
 import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.dpToPx
 import java.util.*
@@ -30,8 +33,18 @@ class DrawerManager(
     private val onChatClick: (String) -> Unit,
     private val onChatLongClick: (View, ChatEntity) -> Unit
 ) {
+    private data class PendingTitleAnimation(
+        val oldTitle: String,
+        val newTitle: String
+    )
+
     private var selectedChatId: String? = null
     private var generatingChatIds: Set<String> = emptySet()
+    private var renderedTitles: Map<String, String> = emptyMap()
+    private var titleAnimationSerial = 0
+    private val titleAnimationVersions = mutableMapOf<String, Int>()
+    private val pendingTitleAnimations = mutableMapOf<String, PendingTitleAnimation>()
+    private val titleAnimationHandler = Handler(Looper.getMainLooper())
 
     fun setSelectedChatId(chatId: String?) {
         selectedChatId = chatId
@@ -39,6 +52,12 @@ class DrawerManager(
 
     fun setGeneratingChatIds(chatIds: Set<String>) {
         generatingChatIds = chatIds
+    }
+
+    fun queueTitleRenameAnimation(chatId: String, oldTitle: String, newTitle: String) {
+        if (oldTitle == newTitle) return
+        titleAnimationVersions[chatId] = ++titleAnimationSerial
+        pendingTitleAnimations[chatId] = PendingTitleAnimation(oldTitle, newTitle)
     }
 
     /**
@@ -115,6 +134,7 @@ class DrawerManager(
                     setPadding(16.dpToPx(), 32.dpToPx(), 16.dpToPx(), 32.dpToPx())
                 })
             }
+            renderedTitles = chats.associate { it.id to it.title }
         }
     }
 
@@ -164,8 +184,12 @@ class DrawerManager(
             }
 
             // Название чата
-            addView(TextView(context).apply {
-                text = chat.title
+            val pendingTitleAnimation = pendingTitleAnimations[chat.id]
+                ?.takeIf { it.newTitle == chat.title }
+            val previousTitle = pendingTitleAnimation?.oldTitle ?: renderedTitles[chat.id]
+            val titleToAnimateFrom = previousTitle?.takeIf { it != chat.title }
+            val titleView = TextView(context).apply {
+                text = titleToAnimateFrom ?: chat.title
                 setTextColor(Color.WHITE)
                 textSize = 16f
                 maxLines = 1
@@ -175,7 +199,14 @@ class DrawerManager(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     1f
                 )
-            })
+            }
+            addView(titleView)
+
+            if (titleToAnimateFrom != null) {
+                titleView.post {
+                    animateTitleChange(chat.id, titleView, titleToAnimateFrom, chat.title)
+                }
+            }
 
             if (isGenerating) {
                 addView(ChatLoadingIndicatorView(context).apply {
@@ -191,6 +222,47 @@ class DrawerManager(
                 true
             }
         }
+    }
+
+    private fun animateTitleChange(chatId: String, titleView: TextView, oldTitle: String, newTitle: String) {
+        val plan = ChatRenameAnimationPlanner.plan(oldTitle, newTitle)
+        val frames = plan.deleteSteps + plan.typeSteps
+        val deleteFrameCount = plan.deleteSteps.size
+        if (frames.isEmpty()) {
+            titleView.text = newTitle
+            if (pendingTitleAnimations[chatId]?.newTitle == newTitle) {
+                pendingTitleAnimations.remove(chatId)
+            }
+            return
+        }
+
+        val serial = ++titleAnimationSerial
+        titleAnimationVersions[chatId] = serial
+        titleView.animate().cancel()
+        titleView.alpha = 1f
+
+        var index = 0
+        fun scheduleNext(delayMillis: Long) {
+            titleAnimationHandler.postDelayed({
+                if (titleAnimationVersions[chatId] != serial) {
+                    return@postDelayed
+                }
+                if (index >= frames.size) {
+                    titleView.text = newTitle
+                    titleAnimationVersions.remove(chatId)
+                    if (pendingTitleAnimations[chatId]?.newTitle == newTitle) {
+                        pendingTitleAnimations.remove(chatId)
+                    }
+                    return@postDelayed
+                }
+
+                titleView.text = frames[index]
+                index += 1
+                scheduleNext(if (index < deleteFrameCount) 42L else 68L)
+            }, delayMillis)
+        }
+
+        scheduleNext(80L)
     }
 
     /** Обновление профиля пользователя в drawer header */

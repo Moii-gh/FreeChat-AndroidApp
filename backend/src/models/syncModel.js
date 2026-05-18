@@ -8,15 +8,26 @@ async function upsertChats(userId, chats, executor) {
   if (!chats || chats.length === 0) return;
   const db = getExecutor(executor);
   const query = `
-    INSERT INTO chats (id, user_id, title, timestamp_ms, is_pinned, last_updated_ms, summary, is_deleted)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    INSERT INTO chats (
+      id,
+      user_id,
+      title,
+      timestamp_ms,
+      is_pinned,
+      last_updated_ms,
+      summary,
+      is_deleted,
+      is_title_manually_edited
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     ON CONFLICT (id) DO UPDATE SET
       title = EXCLUDED.title,
       timestamp_ms = EXCLUDED.timestamp_ms,
       is_pinned = EXCLUDED.is_pinned,
       last_updated_ms = EXCLUDED.last_updated_ms,
       summary = EXCLUDED.summary,
-      is_deleted = EXCLUDED.is_deleted
+      is_deleted = EXCLUDED.is_deleted,
+      is_title_manually_edited = EXCLUDED.is_title_manually_edited
     WHERE chats.user_id = EXCLUDED.user_id
       AND chats.last_updated_ms <= EXCLUDED.last_updated_ms
   `;
@@ -30,7 +41,8 @@ async function upsertChats(userId, chats, executor) {
       chat.isPinned,
       chat.lastUpdated,
       chat.summary,
-      chat.isDeleted || false
+      chat.isDeleted || false,
+      Boolean(chat.isTitleManuallyEdited)
     ]);
   }
 }
@@ -121,7 +133,8 @@ async function getUserChats(userId, executor) {
         is_pinned as "isPinned",
         last_updated_ms as "lastUpdated",
         summary,
-        is_deleted as "isDeleted"
+        is_deleted as "isDeleted",
+        is_title_manually_edited as "isTitleManuallyEdited"
      FROM chats
      WHERE user_id = $1`,
     [userId]

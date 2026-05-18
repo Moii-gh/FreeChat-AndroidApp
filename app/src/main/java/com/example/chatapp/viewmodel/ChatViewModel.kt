@@ -57,6 +57,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val resetsAt: String?
     )
 
+    data class RenameChatResult(
+        val saved: Boolean,
+        val title: String,
+        val syncFailed: Boolean = false
+    )
+
     private data class ImageAttachment(
         val imageUrl: String?,
         val attachmentData: String?,
@@ -167,12 +173,55 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun renameChat(chatId: String, newTitle: String, onRenamed: () -> Unit) {
-        viewModelScope.launch {
-            repository.updateChatTitle(chatId, newTitle)
-            if (currentChatId == chatId) currentChatTitle = newTitle
-            cachedChats = repository.getAllChats()
+        renameChat(
+            chatId = chatId,
+            newTitle = newTitle,
+            isTitleManuallyEdited = true
+        ) {
             onRenamed()
-            performSync()
+        }
+    }
+
+    fun renameChat(
+        chatId: String,
+        newTitle: String,
+        isTitleManuallyEdited: Boolean,
+        onRenamed: (RenameChatResult) -> Unit
+    ) {
+        viewModelScope.launch {
+            val trimmedTitle = newTitle.trim()
+            if (trimmedTitle.isBlank()) {
+                onRenamed(RenameChatResult(saved = false, title = trimmedTitle))
+                return@launch
+            }
+
+            val existing = repository.getChatById(chatId)
+            if (existing == null) {
+                onRenamed(RenameChatResult(saved = false, title = trimmedTitle))
+                return@launch
+            }
+            if (!isTitleManuallyEdited && existing.isTitleManuallyEdited) {
+                onRenamed(RenameChatResult(saved = false, title = existing.title))
+                return@launch
+            }
+
+            repository.updateChatTitle(
+                chatId = chatId,
+                title = trimmedTitle,
+                isTitleManuallyEdited = isTitleManuallyEdited
+            )
+            if (currentChatId == chatId) currentChatTitle = trimmedTitle
+            cachedChats = repository.getAllChats()
+            notifyChatListUpdated()
+            onRenamed(
+                RenameChatResult(
+                    saved = true,
+                    title = trimmedTitle
+                )
+            )
+            syncRepository.trySync()
+            cachedChats = repository.getAllChats()
+            notifyChatListUpdated()
         }
     }
 
@@ -342,10 +391,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val aiTitle = repository.generateChatTitle(firstMessage, firstAssistantMessage)
                 if (aiTitle != null) {
+                    val existing = repository.getChatById(chatId)
+                    if (existing?.isTitleManuallyEdited == true) {
+                        SafeLog.d("ChatViewModel", "Generated title ignored because chat title was manually edited")
+                        onDone(false)
+                        return@launch
+                    }
                     if (currentChatId == chatId) {
                         currentChatTitle = aiTitle
                     }
-                    repository.updateChatTitle(chatId, aiTitle)
+                    repository.updateChatTitle(
+                        chatId = chatId,
+                        title = aiTitle,
+                        isTitleManuallyEdited = false
+                    )
                     titleGenerationCompletedChats.add(chatId)
                     cachedChats = repository.getAllChats()
                     SafeLog.d("ChatViewModel", "Chat title saved and history cache refreshed hasTitle=true")
@@ -380,6 +439,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun shouldGenerateTitle(chatId: String, firstUserMessage: String): Boolean {
         if (isAnonymousChat || titleGenerationCompletedChats.contains(chatId)) {
+            return false
+        }
+        if (cachedChats.firstOrNull { it.id == chatId }?.isTitleManuallyEdited == true) {
             return false
         }
 
