@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="new_chat"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_new_chat"
+        android:shortcutShortLabel="@string/button_new_chat"
+        android:shortcutLongLabel="@string/button_new_chat"
+        android:shortcutDisabledMessage="@string/shortcut_disabled_message">
+        <intent
+            android:action="com.example.chatapp.action.NEW_CHAT"
+            android:data="freechat://shortcut/new-chat"
+            android:targetPackage="com.example.chatapp"
+            android:targetClass="com.example.chatapp.MainActivity">
+            <extra
+                android:name="com.example.chatapp.shortcuts.EXTRA_SHORTCUT_ID"
+                android:value="new_chat" />
+            <extra
+                android:name="com.example.chatapp.shortcuts.EXTRA_SHORTCUT_SOURCE"
+                android:value="launcher" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="last_chat"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_last_chat"
+        android:shortcutShortLabel="@string/shortcut_last_chat"
+        android:shortcutLongLabel="@string/shortcut_last_chat"
+        android:shortcutDisabledMessage="@string/shortcut_disabled_message">
+        <intent
+            android:action="com.example.chatapp.action.LAST_CHAT"
+            android:data="freechat://shortcut/last-chat"
+            android:targetPackage="com.example.chatapp"
+            android:targetClass="com.example.chatapp.MainActivity">
+            <extra
+                android:name="com.example.chatapp.shortcuts.EXTRA_SHORTCUT_ID"
+                android:value="last_chat" />
+            <extra
+                android:name="com.example.chatapp.shortcuts.EXTRA_SHORTCUT_SOURCE"
+                android:value="launcher" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="photo"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_photo"
+        android:shortcutShortLabel="@string/button_photo"
+        android:shortcutLongLabel="@string/button_photo"
+        android:shortcutDisabledMessage="@string/shortcut_disabled_message">
+        <intent
+            android:action="com.example.chatapp.action.PHOTO"
+            android:data="freechat://shortcut/photo"
+            android:targetPackage="com.example.chatapp"
+            android:targetClass="com.example.chatapp.MainActivity">
+            <extra
+                android:name="com.example.chatapp.shortcuts.EXTRA_SHORTCUT_ID"
+                android:value="photo" />
+            <extra
+                android:name="com.example.chatapp.shortcuts.EXTRA_SHORTCUT_SOURCE"
+                android:value="launcher" />
+        </intent>
+    </shortcut>
+</shortcuts>

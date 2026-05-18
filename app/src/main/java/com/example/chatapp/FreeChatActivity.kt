@@ -68,12 +68,15 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 
 import com.example.chatapp.ui.TypingDotsView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
+import com.example.chatapp.shortcuts.FreeChatShortcut
+import com.example.chatapp.shortcuts.LastChatStore
 
 class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
@@ -87,6 +90,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         const val EXTRA_FOCUS_INPUT = "com.example.chatapp.EXTRA_FOCUS_INPUT"
         const val EXTRA_WIDGET_ATTACHMENT_URI = "com.example.chatapp.EXTRA_WIDGET_ATTACHMENT_URI"
         const val EXTRA_SKIP_BIOMETRIC_ONCE = "com.example.chatapp.EXTRA_SKIP_BIOMETRIC_ONCE"
+        const val EXTRA_SKIP_LAUNCH_ANIMATION = "com.example.chatapp.EXTRA_SKIP_LAUNCH_ANIMATION"
         const val EXTRA_OPEN_CHAT_ID = "com.example.chatapp.EXTRA_OPEN_CHAT_ID"
 
         const val SUGGESTIONS_SHOW_DURATION_MS = 180L
@@ -108,6 +112,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var biometricGateController: BiometricGateController
     private lateinit var attachmentPreviewController: ChatAttachmentPreviewController
     private val attachmentHelper by lazy { ChatAttachmentHelper(this) }
+    private val lastChatStore by lazy { LastChatStore(applicationContext) }
+    private val shortcutImagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null && isChatUiInitialized) {
+            showFilePreview(uri)
+            focusInput()
+        }
+    }
 
     private var currentAssistantMessage: AssistantMessageWrapper? = null
     private var isSending = false
@@ -164,7 +175,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (shouldGateWithBiometrics) {
             biometricGateController.prepareGate()
         }
-        val shouldPlayLaunchAnimation = LaunchLogoAnimator.shouldPlayOnActivityCreate(savedInstanceState)
+        val isShortcutLaunch = FreeChatShortcut.fromIntent(intent) != null ||
+            intent?.getBooleanExtra(EXTRA_SKIP_LAUNCH_ANIMATION, false) == true
+        val shouldPlayLaunchAnimation = !isShortcutLaunch &&
+            LaunchLogoAnimator.shouldPlayOnActivityCreate(savedInstanceState)
         if (shouldPlayLaunchAnimation) {
             LaunchLogoAnimator.show(this) {
                 if (shouldGateWithBiometrics) {
@@ -324,6 +338,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         if (!isChatUiInitialized) {
             return
         }
+        handleShortcutIntent(intent)
         handleSharedChatIntent(intent)
         handleOpenChatIntent(intent)
         handleAssistantHandoffIntent(intent)
@@ -401,6 +416,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         drawerManager.setGeneratingChatIds(generatingChatIds)
         chatViewModel.onChatListUpdated = {
             runOnUiThread {
+                chatViewModel.currentChatId?.let(lastChatStore::save)
                 refreshDrawerSelection()
                 ChatGenerationManager.setVisibleChat(
                     chatViewModel.currentChatId,
@@ -446,7 +462,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupGeneratingIndicator()
 
         showWelcomeState()
-        loadChats()
+        val shortcut = FreeChatShortcut.fromIntent(startIntent)
+        loadChats(openActiveGeneration = shortcut == null)
+        handleShortcutIntent(startIntent)
         handleSharedChatIntent(startIntent)
         handleOpenChatIntent(startIntent)
         handleAssistantHandoffIntent(startIntent)
@@ -618,19 +636,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         intent.removeExtra(EXTRA_PREFILL_INPUT)
         clearInputContext()
         updateInputText(prefill, keepSuggestions = false)
-        binding.etInput.requestFocus()
-        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
-            as android.view.inputmethod.InputMethodManager
-        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        focusInput()
     }
 
     private fun handleFocusInputIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_FOCUS_INPUT, false) != true) return
         intent.removeExtra(EXTRA_FOCUS_INPUT)
-        binding.etInput.requestFocus()
-        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
-            as android.view.inputmethod.InputMethodManager
-        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        focusInput()
     }
 
     private fun handleWidgetAttachmentIntent(intent: Intent?) {
@@ -640,10 +652,72 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             ?: return
         intent.removeExtra(EXTRA_WIDGET_ATTACHMENT_URI)
         showFilePreview(uri)
+        focusInput()
+    }
+
+    private fun focusInput() {
         binding.etInput.requestFocus()
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
             as android.view.inputmethod.InputMethodManager
         imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun handleShortcutIntent(intent: Intent?) {
+        val shortcut = FreeChatShortcut.fromIntent(intent) ?: return
+        FreeChatShortcut.consume(intent)
+
+        when (shortcut) {
+            FreeChatShortcut.NewChat -> createNewChatFromShortcut()
+            FreeChatShortcut.LastChat -> openLastChatFromShortcut()
+            FreeChatShortcut.Photo -> openPhotoPickerFromShortcut()
+        }
+    }
+
+    private fun createNewChatFromShortcut() {
+        val title = LocaleHelper.getString(this, "label_new_chat")
+        chatViewModel.createNewChat(title) { chatId ->
+            runOnUiThread {
+                showEmptyPersistedChat(chatId, title)
+            }
+        }
+    }
+
+    private fun showEmptyPersistedChat(chatId: String, title: String) {
+        startFreshChat()
+        chatViewModel.currentChatId = chatId
+        chatViewModel.currentChatTitle = title
+        chatViewModel.isFirstMessage = true
+        lastChatStore.save(chatId)
+        refreshChats()
+        refreshDrawerSelection()
+        ChatGenerationManager.setVisibleChat(chatId, lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+    }
+
+    private fun openLastChatFromShortcut() {
+        lifecycleScope.launch {
+            val storedChatId = lastChatStore.get()
+            val storedChat = storedChatId?.let { chatViewModel.getChatById(it) }
+            if (storedChatId != null && storedChat == null) {
+                lastChatStore.clearIfMatches(storedChatId)
+            }
+
+            val chat = storedChat ?: chatViewModel.getMostRecentChat()
+            if (chat == null) {
+                startFreshChat()
+                return@launch
+            }
+
+            openChat(chat.id)
+        }
+    }
+
+    private fun openPhotoPickerFromShortcut() {
+        runCatching {
+            shortcutImagePickerLauncher.launch("image/*")
+        }.onFailure { error ->
+            SafeLog.w("FreeChatActivity", "Could not open shortcut image picker", error)
+            toast(LocaleHelper.getString(this, "attachment_read_error"))
+        }
     }
 
     private fun handleAssistantHandoffIntent(intent: Intent?) {
@@ -1157,6 +1231,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             },
             onDelete = { chat ->
                 chatViewModel.deleteChat(chat.id) {
+                    lastChatStore.clearIfMatches(chat.id)
                     if (chatViewModel.currentChatId == chat.id) {
                         startFreshChat()
                     }
@@ -1767,7 +1842,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         showAnonymousWelcomeState()
     }
 
-    private fun loadChats() {
+    private fun loadChats(openActiveGeneration: Boolean = true) {
         chatViewModel.loadChats {
             runOnUiThread {
                 drawerManager.setSelectedChatId(chatViewModel.currentChatId)
@@ -1776,7 +1851,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 val activeChatId = chatViewModel.generationSnapshots.value.values
                     .firstOrNull { it.isRunning && !it.chatId.isNullOrBlank() }
                     ?.chatId
-                if (chatViewModel.currentChatId == null && activeChatId != null) {
+                if (openActiveGeneration && chatViewModel.currentChatId == null && activeChatId != null) {
                     openChat(activeChatId)
                 }
             }
@@ -1817,6 +1892,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 // Удаляем поврежденный чат, чтобы пользователь не попадал в бесконечный цикл падений.
                 chatViewModel.deleteChat(chatId) {
                     runOnUiThread {
+                        lastChatStore.clearIfMatches(chatId)
                         toast(LocaleHelper.getString(this@FreeChatActivity, "toast_error") + ": Chat corrupted and was deleted")
                         startFreshChat()
                     }
@@ -1831,6 +1907,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             chatViewModel.currentChatId = chat.id
             chatViewModel.currentChatTitle = chat.title
             chatViewModel.chatContextSummary = chat.summary
+            lastChatStore.save(chat.id)
             chatViewModel.isFirstMessage = messages.none { it.role == "user" }
             clearEditingMessageState()
             binding.etInput.text?.clear()

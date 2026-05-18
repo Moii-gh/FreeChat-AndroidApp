@@ -170,6 +170,8 @@
     <string name="button_security">Security</string>
     <string name="button_show_password">Show password</string>
     <string name="settings_source_code">Source code</string>
+    <string name="shortcut_disabled_message">Shortcut is unavailable</string>
+    <string name="shortcut_last_chat">Last chat</string>
     <string name="button_study_training">Study and training</string>
     <string name="button_study_training_description">Learn a new concept</string>
     <string name="chat_error_empty">Chat is empty</string>

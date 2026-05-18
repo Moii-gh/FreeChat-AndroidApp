@@ -236,6 +236,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun getChatById(chatId: String) = repository.getChatById(chatId)
 
+    suspend fun getMostRecentChat(): ChatEntity? {
+        cachedChats = repository.getAllChats()
+        return cachedChats.firstOrNull()
+    }
+
     suspend fun getMessages(chatId: String) = repository.getMessages(chatId)
 
     fun createShareLink(

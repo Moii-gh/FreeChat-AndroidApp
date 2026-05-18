@@ -57,6 +57,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <!-- Telegram redirect может быть кастомной схемой, поэтому здесь обычный deep link без autoVerify. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -92,6 +95,16 @@
                 <data
                     android:scheme="freechat"
                     android:host="share" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="freechat"
+                    android:host="shortcut" />
             </intent-filter>
         </activity>
 

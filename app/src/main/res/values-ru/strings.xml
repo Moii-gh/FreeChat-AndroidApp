@@ -65,6 +65,7 @@
     <string name="attachment_read_error">Не удалось прочитать вложение</string>
     <string name="attachment_text_truncated">[Содержимое файла обрезано]</string>
     <string name="attachment_too_large">Вложение слишком большое для анализа</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="auth_about_subtitle">Эти данные нужны только для вашего профиля FreeChat.</string>
     <string name="auth_about_title">Расскажите о себе</string>
     <string name="auth_agreement_hint">Данные понадобятся только для настройки вашего аккаунта FreeChat.</string>
@@ -169,6 +170,8 @@
     <string name="button_security">Безопасность</string>
     <string name="button_show_password">Показать пароль</string>
     <string name="settings_source_code">Исходный код</string>
+    <string name="shortcut_disabled_message">Быстрое действие недоступно</string>
+    <string name="shortcut_last_chat">Последний чат</string>
     <string name="button_study_training">Учеба и обучение</string>
     <string name="button_study_training_description">Изучите новую концепцию</string>
     <string name="chat_error_empty">Чат пуст</string>

@@ -65,6 +65,7 @@
     <string name="attachment_read_error">Impossibile leggere l\'allegato</string>
     <string name="attachment_text_truncated">[Contenuto del file troncato]</string>
     <string name="attachment_too_large">L\'allegato è troppo grande da analizzare</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="auth_about_subtitle">Queste informazioni servono solo per il tuo profilo FreeChat.</string>
     <string name="auth_about_title">Raccontaci di te</string>
     <string name="auth_agreement_hint">I dati servono solo per configurare il tuo account FreeChat.</string>
@@ -169,6 +170,8 @@
     <string name="button_security">Бяспека</string>
     <string name="button_show_password">Паказаць пароль</string>
     <string name="settings_source_code">Codice sorgente</string>
+    <string name="shortcut_disabled_message">Scorciatoia non disponibile</string>
+    <string name="shortcut_last_chat">Ultima chat</string>
     <string name="button_study_training">Вучоба і навучанне</string>
     <string name="button_study_training_description">Вывучыце новую канцэпцыю</string>
     <string name="chat_error_empty">La chat è vuota</string>
@@ -384,6 +387,7 @@
     <string name="welcome_question">Чым магу дапамагчы?</string>
     <string name="toast_open_link_error">Impossibile aprire il link</string>
     <string name="toast_table_copied">Table copied</string>
+    <string name="toast_text_too_large_to_copy">Il testo è troppo grande per essere copiato. Usa Condividi.</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Digital assistant</string>

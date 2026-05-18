@@ -65,6 +65,7 @@
     <string name="attachment_read_error">დანართის წაკითხვა ვერ მოხერხდა</string>
     <string name="attachment_text_truncated">[ფაილის შინაარსი შემოკლებულია]</string>
     <string name="attachment_too_large">დანართი ანალიზისთვის ძალიან დიდია</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="auth_about_subtitle">ეს ინფორმაცია მხოლოდ თქვენი FreeChat პროფილისთვის არის საჭირო.</string>
     <string name="auth_about_title">გვიამბეთ თქვენ შესახებ</string>
     <string name="auth_agreement_hint">მონაცემები მხოლოდ თქვენი FreeChat ანგარიშის მოსაწყობად არის საჭირო.</string>
@@ -169,6 +170,8 @@
     <string name="button_security">უსაფრთხოება</string>
     <string name="button_show_password">პაროლის ჩვენება</string>
     <string name="settings_source_code">საწყისი კოდი</string>
+    <string name="shortcut_disabled_message">სწრაფი მოქმედება მიუწვდომელია</string>
+    <string name="shortcut_last_chat">ბოლო ჩატი</string>
     <string name="button_study_training">სწავლა და ტრენინგი</string>
     <string name="button_study_training_description">ისწავლეთ ახალი კონცეფცია</string>
     <string name="chat_error_empty">ჩატი ცარიელია</string>
@@ -384,6 +387,7 @@
     <string name="welcome_question">რით შემიძლია დახმარება?</string>
     <string name="toast_open_link_error">ბმულის გახსნა ვერ მოხერხდა</string>
     <string name="toast_table_copied">Table copied</string>
+    <string name="toast_text_too_large_to_copy">ტექსტი ძალიან დიდია კოპირებისთვის. გამოიყენეთ გაზიარება.</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Digital assistant</string>

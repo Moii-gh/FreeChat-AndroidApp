@@ -65,6 +65,7 @@
     <string name="attachment_read_error">Не вдалося прочитати вкладення</string>
     <string name="attachment_text_truncated">[Вміст файлу обрізано]</string>
     <string name="attachment_too_large">Вкладення занадто велике для аналізу</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="auth_about_subtitle">Ці дані потрібні лише для вашого профілю FreeChat.</string>
     <string name="auth_about_title">Розкажіть про себе</string>
     <string name="auth_agreement_hint">Дані потрібні лише для налаштування вашого акаунта FreeChat.</string>
@@ -169,6 +170,8 @@
     <string name="button_security">Безпека</string>
     <string name="button_show_password">Показати пароль</string>
     <string name="settings_source_code">Вихідний код</string>
+    <string name="shortcut_disabled_message">Швидка дія недоступна</string>
+    <string name="shortcut_last_chat">Останній чат</string>
     <string name="button_study_training">Навчання</string>
     <string name="button_study_training_description">Вивчіть нову концепцію</string>
     <string name="chat_error_empty">Чат порожній</string>
@@ -384,6 +387,7 @@
     <string name="welcome_question">Чим можу допомогти?</string>
     <string name="toast_open_link_error">Не вдалося відкрити посилання</string>
     <string name="toast_table_copied">Table copied</string>
+    <string name="toast_text_too_large_to_copy">Текст завеликий для копіювання. Використайте «Поділитися».</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Digital assistant</string>

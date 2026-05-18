@@ -13,6 +13,7 @@ import com.example.chatapp.data.AuthRepository
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.navigation.AuthNavGraph
 import com.example.chatapp.network.NetworkModule
+import com.example.chatapp.shortcuts.FreeChatShortcut
 import com.example.chatapp.telegram.TelegramNativeLoginClient
 import com.example.chatapp.ui.LaunchLogoAnimator
 import com.example.chatapp.ui.auth.theme.ChatAppTheme
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         if (accountSessionStore.isSignedIn()) {
-            openChatActivity(intent?.data)
+            openChatActivity(intent)
             finish()
             return
         }
@@ -72,8 +73,11 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (accountSessionStore.isSignedIn() && ChatShareDeepLink.extractToken(intent.data) != null) {
-            openChatActivity(intent.data)
+        if (
+            accountSessionStore.isSignedIn() &&
+            (ChatShareDeepLink.extractToken(intent.data) != null || FreeChatShortcut.fromIntent(intent) != null)
+        ) {
+            openChatActivity(intent)
             finish()
             return
         }
@@ -96,17 +100,26 @@ class MainActivity : ComponentActivity() {
             if (shareUri != null) {
                 data = shareUri
             }
+            FreeChatShortcut.fromIntent(intent)?.let { shortcut ->
+                FreeChatShortcut.copyToIntent(shortcut, this)
+                putExtra(FreeChatActivity.EXTRA_SKIP_LAUNCH_ANIMATION, true)
+            }
             if (intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, false) == true) {
                 putExtra(FreeChatActivity.EXTRA_SKIP_BIOMETRIC_ONCE, true)
             }
         }
     }
 
-    private fun openChatActivity(data: Uri?) {
+    private fun openChatActivity(sourceIntent: Intent?) {
         startActivity(Intent(this, FreeChatActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (ChatShareDeepLink.extractToken(data) != null) {
-                this.data = data
+            val sourceData = sourceIntent?.data
+            if (ChatShareDeepLink.extractToken(sourceData) != null) {
+                data = sourceData
+            }
+            FreeChatShortcut.fromIntent(sourceIntent)?.let { shortcut ->
+                FreeChatShortcut.copyToIntent(shortcut, this)
+                putExtra(FreeChatActivity.EXTRA_SKIP_LAUNCH_ANIMATION, true)
             }
         })
     }
