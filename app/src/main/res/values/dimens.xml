@@ -14,14 +14,6 @@
     <dimen name="attachment_widget_icon_padding">14dp</dimen>
     <dimen name="attachment_widget_text_gap">12dp</dimen>
 
-    <dimen name="attachment_widget_wide_horizontal_padding">14dp</dimen>
-    <dimen name="attachment_widget_wide_vertical_padding">12dp</dimen>
-    <dimen name="attachment_widget_wide_corner_radius">28dp</dimen>
-    <dimen name="attachment_widget_wide_button_radius">18dp</dimen>
-    <dimen name="attachment_widget_wide_button_size">54dp</dimen>
-    <dimen name="attachment_widget_wide_button_gap">18dp</dimen>
-    <dimen name="attachment_widget_wide_icon_padding">13dp</dimen>
-
     <dimen name="attachment_widget_compact_horizontal_padding">14dp</dimen>
     <dimen name="attachment_widget_compact_vertical_padding">13dp</dimen>
     <dimen name="attachment_widget_compact_corner_radius">28dp</dimen>

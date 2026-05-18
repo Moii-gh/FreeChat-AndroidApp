@@ -91,13 +91,9 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 ?: DEFAULT_MIN_HEIGHT_DP
 
             return when {
+                minHeight < 116 && minWidth >= 144 -> WidgetLayout.InputOnly
                 minWidth <= 128 || minHeight <= 76 -> WidgetLayout.Tiny
                 minWidth < 170 && minHeight < 120 -> WidgetLayout.Small
-                minHeight < 116 -> when {
-                    minWidth >= 330 -> WidgetLayout.Wide
-                    minWidth >= 190 -> WidgetLayout.InputOnly
-                    else -> WidgetLayout.Small
-                }
                 minWidth < 190 -> WidgetLayout.Narrow
                 minWidth < 300 || minHeight < 128 -> WidgetLayout.Compact
                 else -> WidgetLayout.Large
@@ -141,14 +137,6 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = true,
                 hasDocument = true,
-                hasMic = true
-            ),
-            Wide(
-                R.layout.widget_attachment_panel_wide,
-                hasInput = true,
-                hasCamera = true,
-                hasGallery = true,
-                hasDocument = false,
                 hasMic = true
             ),
             Compact(
