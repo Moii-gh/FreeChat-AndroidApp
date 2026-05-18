@@ -23,6 +23,39 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_LOCALE_CHANGED -> updateAll(context)
+        }
+    }
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        updateAll(context)
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        FreeChatAttachmentWidgetStateStore.delete(context, appWidgetIds)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        FreeChatAttachmentWidgetStateStore.clear(context)
+    }
+
+    override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+        super.onRestored(context, oldWidgetIds, newWidgetIds)
+        FreeChatAttachmentWidgetStateStore.restoreIds(context, oldWidgetIds, newWidgetIds)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        newWidgetIds.forEach { appWidgetId ->
+            updateWidget(context, appWidgetManager, appWidgetId)
+        }
+    }
+
     override fun onAppWidgetOptionsChanged(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -30,7 +63,10 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         newOptions: Bundle
     ) {
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
-        appWidgetManager.updateAppWidget(appWidgetId, buildRemoteViews(context, newOptions))
+        appWidgetManager.updateAppWidget(
+            appWidgetId,
+            buildRemoteViews(context, appWidgetId, newOptions)
+        )
     }
 
     private fun updateWidget(
@@ -39,7 +75,10 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int
     ) {
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        appWidgetManager.updateAppWidget(appWidgetId, buildRemoteViews(context, options))
+        appWidgetManager.updateAppWidget(
+            appWidgetId,
+            buildRemoteViews(context, appWidgetId, options)
+        )
     }
 
     companion object {
@@ -47,9 +86,22 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         private const val DEFAULT_MIN_HEIGHT_DP = 130
         private const val ONE_ROW_MAX_HEIGHT_DP = 116
 
-        fun buildRemoteViews(context: Context, options: Bundle? = null): RemoteViews {
-            val layout = chooseLayout(options)
+        fun buildRemoteViews(
+            context: Context,
+            appWidgetId: Int,
+            options: Bundle? = null
+        ): RemoteViews {
+            val state = FreeChatAttachmentWidgetStateStore.load(context, appWidgetId)
+            val size = FreeChatAttachmentWidgetStateStore.sizeFrom(options, state)
+            val layout = chooseLayout(size)
             val inputHint = LocaleHelper.getString(context, "main_panel_input")
+            FreeChatAttachmentWidgetStateStore.saveRenderedState(
+                context = context,
+                appWidgetId = appWidgetId,
+                size = size.withDefaults(),
+                layoutName = layout.name,
+                displayText = inputHint
+            )
             return RemoteViews(context.packageName, layout.layoutResId).apply {
                 if (layout.hasInput) {
                     setContentDescription(R.id.widgetInput, inputHint)
@@ -59,30 +111,35 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 }
                 setActionIfPresent(
                     context,
+                    appWidgetId,
                     layout.hasInput,
                     R.id.widgetInput,
                     HomeWidgetActionActivity.ACTION_MESSAGE
                 )
                 setActionIfPresent(
                     context,
+                    appWidgetId,
                     layout.hasCamera,
                     R.id.widgetCamera,
                     HomeWidgetActionActivity.ACTION_CAMERA
                 )
                 setActionIfPresent(
                     context,
+                    appWidgetId,
                     layout.hasGallery,
                     R.id.widgetGallery,
                     HomeWidgetActionActivity.ACTION_GALLERY
                 )
                 setActionIfPresent(
                     context,
+                    appWidgetId,
                     layout.hasDocument,
                     R.id.widgetDocument,
                     HomeWidgetActionActivity.ACTION_DOCUMENT
                 )
                 setActionIfPresent(
                     context,
+                    appWidgetId,
                     layout.hasMic,
                     R.id.widgetMic,
                     HomeWidgetActionActivity.ACTION_MIC
@@ -93,21 +150,21 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         fun updateAll(context: Context) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, FreeChatAttachmentWidgetProvider::class.java)
-            appWidgetManager.getAppWidgetIds(componentName).forEach { appWidgetId ->
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+                .takeIf { it.isNotEmpty() }
+                ?: FreeChatAttachmentWidgetStateStore.knownWidgetIds(context)
+            appWidgetIds.forEach { appWidgetId ->
                 val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                appWidgetManager.updateAppWidget(appWidgetId, buildRemoteViews(context, options))
+                appWidgetManager.updateAppWidget(
+                    appWidgetId,
+                    buildRemoteViews(context, appWidgetId, options)
+                )
             }
         }
 
-        private fun chooseLayout(options: Bundle?): WidgetLayout {
-            val minWidth = options
-                ?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-                ?.takeIf { it > 0 }
-                ?: DEFAULT_MIN_WIDTH_DP
-            val minHeight = options
-                ?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
-                ?.takeIf { it > 0 }
-                ?: DEFAULT_MIN_HEIGHT_DP
+        private fun chooseLayout(size: WidgetSize): WidgetLayout {
+            val minWidth = size.minWidth.takeIf { it > 0 } ?: DEFAULT_MIN_WIDTH_DP
+            val minHeight = size.minHeight.takeIf { it > 0 } ?: DEFAULT_MIN_HEIGHT_DP
 
             return if (minHeight < ONE_ROW_MAX_HEIGHT_DP) {
                 chooseOneRowLayout(minWidth, minHeight)
@@ -138,24 +195,41 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
 
         private fun RemoteViews.setActionIfPresent(
             context: Context,
+            appWidgetId: Int,
             isPresent: Boolean,
             viewId: Int,
             action: String
         ) {
             if (!isPresent) return
-            setOnClickPendingIntent(viewId, actionPendingIntent(context, action))
+            setOnClickPendingIntent(viewId, actionPendingIntent(context, appWidgetId, action))
         }
 
-        private fun actionPendingIntent(context: Context, action: String): PendingIntent {
+        private fun actionPendingIntent(
+            context: Context,
+            appWidgetId: Int,
+            action: String
+        ): PendingIntent {
             val intent = Intent(context, HomeWidgetActionActivity::class.java).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                 putExtra(HomeWidgetActionActivity.EXTRA_ACTION, action)
-                data = Uri.parse("freechat://home-widget/$action")
+                data = Uri.parse("freechat://home-widget/$appWidgetId/$action")
             }
             return PendingIntent.getActivity(
                 context,
-                action.hashCode(),
+                31 * appWidgetId + action.hashCode(),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+
+        private fun WidgetSize.withDefaults(): WidgetSize {
+            return WidgetSize(
+                minWidth = minWidth.takeIf { it > 0 } ?: DEFAULT_MIN_WIDTH_DP,
+                minHeight = minHeight.takeIf { it > 0 } ?: DEFAULT_MIN_HEIGHT_DP,
+                maxWidth = maxWidth.takeIf { it > 0 } ?: minWidth.takeIf { it > 0 }
+                    ?: DEFAULT_MIN_WIDTH_DP,
+                maxHeight = maxHeight.takeIf { it > 0 } ?: minHeight.takeIf { it > 0 }
+                    ?: DEFAULT_MIN_HEIGHT_DP
             )
         }
 

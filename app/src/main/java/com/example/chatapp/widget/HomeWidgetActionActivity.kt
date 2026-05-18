@@ -1,6 +1,7 @@
 package com.example.chatapp.widget
 
 import android.app.Activity
+import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -17,6 +18,7 @@ import java.util.Locale
 
 class HomeWidgetActionActivity : AppCompatActivity() {
     private var launched = false
+    private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private var cameraImageUri: Uri? = null
 
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -64,11 +66,28 @@ class HomeWidgetActionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         if (savedInstanceState != null) {
             launched = savedInstanceState.getBoolean(KEY_LAUNCHED, false)
+            appWidgetId = savedInstanceState.getInt(
+                KEY_APP_WIDGET_ID,
+                AppWidgetManager.INVALID_APPWIDGET_ID
+            )
             cameraImageUri = savedInstanceState.getParcelable(KEY_CAMERA_URI)
         }
         if (!launched) {
             launched = true
-            when (intent.getStringExtra(EXTRA_ACTION)) {
+            appWidgetId = intent.getIntExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID,
+                AppWidgetManager.INVALID_APPWIDGET_ID
+            )
+            val action = intent.getStringExtra(EXTRA_ACTION)
+            action?.let {
+                FreeChatAttachmentWidgetStateStore.saveAction(
+                    context = this,
+                    appWidgetId = appWidgetId,
+                    action = it,
+                    displayText = LocaleHelper.getString(this, "main_panel_input")
+                )
+            }
+            when (action) {
                 ACTION_MESSAGE -> openChat(focusInput = true)
                 ACTION_CAMERA -> launchCamera()
                 ACTION_GALLERY -> galleryLauncher.launch("image/*")
@@ -81,6 +100,7 @@ class HomeWidgetActionActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean(KEY_LAUNCHED, launched)
+        outState.putInt(KEY_APP_WIDGET_ID, appWidgetId)
         outState.putParcelable(KEY_CAMERA_URI, cameraImageUri)
         super.onSaveInstanceState(outState)
     }
@@ -147,6 +167,7 @@ class HomeWidgetActionActivity : AppCompatActivity() {
         const val ACTION_MIC = "mic"
 
         private const val KEY_LAUNCHED = "launched"
+        private const val KEY_APP_WIDGET_ID = "app_widget_id"
         private const val KEY_CAMERA_URI = "camera_uri"
     }
 }
