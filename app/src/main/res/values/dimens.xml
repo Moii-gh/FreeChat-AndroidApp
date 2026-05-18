@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="attachment_widget_root_padding">0dp</dimen>
-    <dimen name="attachment_widget_horizontal_padding">14dp</dimen>
-    <dimen name="attachment_widget_vertical_padding">14dp</dimen>
+    <dimen name="attachment_widget_horizontal_padding">16dp</dimen>
+    <dimen name="attachment_widget_vertical_padding">16dp</dimen>
     <dimen name="attachment_widget_corner_radius">32dp</dimen>
-    <dimen name="attachment_widget_control_radius">999dp</dimen>
-    <dimen name="attachment_widget_button_radius">22dp</dimen>
-    <dimen name="attachment_widget_button_gap">12dp</dimen>
-    <dimen name="attachment_widget_button_size">46dp</dimen>
-    <dimen name="attachment_widget_logo_size">24dp</dimen>
-    <dimen name="attachment_widget_icon_padding">11dp</dimen>
-    <dimen name="attachment_widget_text_gap">11dp</dimen>
+    <dimen name="attachment_widget_control_radius">27dp</dimen>
+    <dimen name="attachment_widget_button_radius">19dp</dimen>
+    <dimen name="attachment_widget_input_height">54dp</dimen>
+    <dimen name="attachment_widget_button_size">64dp</dimen>
+    <dimen name="attachment_widget_row_gap">16dp</dimen>
+    <dimen name="attachment_widget_button_gap">30dp</dimen>
+    <dimen name="attachment_widget_logo_size">23dp</dimen>
+    <dimen name="attachment_widget_icon_padding">14dp</dimen>
+    <dimen name="attachment_widget_text_gap">12dp</dimen>
 </resources>
