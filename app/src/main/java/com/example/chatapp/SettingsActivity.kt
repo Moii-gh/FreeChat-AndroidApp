@@ -147,7 +147,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.itemReport).setHapticClickListener {
-            openExternalLink(BuildConfig.SUPPORT_URL)
+            openExternalLink(REPORT_PROBLEM_URL)
         }
 
         bindDeveloperMenuEntryGesture()
@@ -490,10 +490,6 @@ class SettingsActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
-        if (intent.resolveActivity(packageManager) == null) {
-            Toast.makeText(this, LocaleHelper.getString(this, "toast_open_link_error"), Toast.LENGTH_SHORT).show()
-            return
-        }
 
         try {
             startActivity(intent)
@@ -507,8 +503,7 @@ class SettingsActivity : AppCompatActivity() {
     private companion object {
         const val DEVELOPER_MENU_ENTRY_WINDOW_MS = 5_000L
         const val PRIVACY_POLICY_URL = "https://freechat-privacy-policy.onrender.com/"
-
-        // Replace this URL here if the public repository changes.
+        const val REPORT_PROBLEM_URL = "https://t.me/of_MOII"
         const val SOURCE_CODE_URL = "https://github.com/Moii-gh/FreeChat-AndroidApp"
     }
 }
