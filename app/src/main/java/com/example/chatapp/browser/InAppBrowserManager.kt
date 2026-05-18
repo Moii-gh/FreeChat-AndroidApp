@@ -33,6 +33,7 @@ import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import com.example.chatapp.ui.BrowserSplashGradientDrawable
 import com.yandex.mobile.ads.banner.BannerAdEventListener
 import com.yandex.mobile.ads.banner.BannerAdSize
 import com.yandex.mobile.ads.banner.BannerAdView
@@ -66,6 +67,7 @@ class InAppBrowserManager(
     private var pageSplashOverlay: FrameLayout? = null
     private var pageSplashLogo: ImageView? = null
     private var pageSplashAdView: BannerAdView? = null
+    private var pageSplashBackground: BrowserSplashGradientDrawable? = null
     private var pageSplashAnimator: Animator? = null
     private var pageSplashToken = 0
     private var isBrowserVisible = false
@@ -459,6 +461,8 @@ class InAppBrowserManager(
         pageSplashToken += 1
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        pageSplashBackground?.stop()
+        pageSplashBackground = null
         destroyPageSplashAd()
         pageSplashOverlay?.let { overlay ->
             (overlay.parent as? ViewGroup)?.removeView(overlay)
@@ -538,6 +542,8 @@ class InAppBrowserManager(
 
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        pageSplashBackground?.stop()
+        pageSplashBackground = null
         destroyPageSplashAd()
         pageSplashOverlay?.let { existing ->
             (existing.parent as? ViewGroup)?.removeView(existing)
@@ -545,15 +551,11 @@ class InAppBrowserManager(
         pageSplashOverlay = null
         pageSplashLogo = null
 
+        val splashBackground = BrowserSplashGradientDrawable().apply {
+            start()
+        }
         val overlay = FrameLayout(activity).apply {
-            background = GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(
-                    Color.BLACK,
-                    Color.parseColor("#050506"),
-                    Color.BLACK
-                )
-            )
+            background = splashBackground
             alpha = 1f
             isClickable = true
             isFocusable = false
@@ -605,6 +607,7 @@ class InAppBrowserManager(
         pageSplashOverlay = overlay
         pageSplashLogo = logo
         pageSplashAdView = adView
+        pageSplashBackground = splashBackground
 
         val fadeIn = AnimatorSet().apply {
             playTogether(
@@ -703,9 +706,11 @@ class InAppBrowserManager(
                 override fun onAnimationEnd(animation: Animator) {
                     if (token != pageSplashToken || pageSplashOverlay !== overlay) return
                     (overlay.parent as? ViewGroup)?.removeView(overlay)
+                    pageSplashBackground?.stop()
                     destroyPageSplashAd()
                     pageSplashOverlay = null
                     pageSplashLogo = null
+                    pageSplashBackground = null
                     pageSplashAnimator = null
                 }
 
