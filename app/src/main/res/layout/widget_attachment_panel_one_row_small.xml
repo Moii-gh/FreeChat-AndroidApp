@@ -12,7 +12,7 @@
 
     <LinearLayout
         android:id="@+id/widgetPanel"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_attachment_widget_one_row_panel_small"
         android:baselineAligned="false"
@@ -22,11 +22,12 @@
 
         <ImageView
             android:id="@+id/widgetInput"
-            android:layout_width="@dimen/attachment_widget_one_row_small_button_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/attachment_widget_one_row_small_button_size"
+            android:layout_weight="1.35"
             android:background="@drawable/bg_attachment_widget_active_small"
             android:clickable="true"
-            android:contentDescription="@string/attachment_widget_hint"
+            android:contentDescription="@string/main_panel_input"
             android:focusable="true"
             android:padding="@dimen/attachment_widget_one_row_small_icon_padding"
             android:scaleType="fitCenter"
@@ -34,9 +35,10 @@
 
         <ImageView
             android:id="@+id/widgetMic"
-            android:layout_width="@dimen/attachment_widget_one_row_small_button_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/attachment_widget_one_row_small_button_size"
             android:layout_marginStart="@dimen/attachment_widget_one_row_small_button_gap"
+            android:layout_weight="1"
             android:background="@drawable/bg_attachment_widget_one_row_button_small"
             android:contentDescription="@string/content_desc_microphone"
             android:padding="@dimen/attachment_widget_one_row_small_icon_padding"

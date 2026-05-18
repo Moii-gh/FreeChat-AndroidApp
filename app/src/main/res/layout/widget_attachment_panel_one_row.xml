@@ -30,7 +30,7 @@
             android:layout_weight="1"
             android:background="@drawable/bg_attachment_widget_active"
             android:clickable="true"
-            android:contentDescription="@string/attachment_widget_hint"
+            android:contentDescription="@string/main_panel_input"
             android:focusable="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -55,7 +55,7 @@
                 android:gravity="center_vertical"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="@string/attachment_widget_hint"
+                android:text="@string/main_panel_input"
                 android:textColor="#F5F1F8"
                 android:textSize="16sp" />
         </LinearLayout>

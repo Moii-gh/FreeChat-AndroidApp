@@ -12,7 +12,7 @@
 
     <LinearLayout
         android:id="@+id/widgetPanel"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_attachment_widget_one_row_panel_narrow"
         android:baselineAligned="false"
@@ -25,11 +25,12 @@
 
         <ImageView
             android:id="@+id/widgetInput"
-            android:layout_width="@dimen/attachment_widget_one_row_narrow_active_width"
+            android:layout_width="0dp"
             android:layout_height="@dimen/attachment_widget_one_row_narrow_input_height"
+            android:layout_weight="1.6"
             android:background="@drawable/bg_attachment_widget_active_narrow"
             android:clickable="true"
-            android:contentDescription="@string/attachment_widget_hint"
+            android:contentDescription="@string/main_panel_input"
             android:focusable="true"
             android:padding="@dimen/attachment_widget_one_row_narrow_icon_padding"
             android:scaleType="fitCenter"
@@ -37,9 +38,10 @@
 
         <ImageView
             android:id="@+id/widgetCamera"
-            android:layout_width="@dimen/attachment_widget_one_row_narrow_button_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/attachment_widget_one_row_narrow_button_size"
             android:layout_marginStart="@dimen/attachment_widget_one_row_narrow_button_gap"
+            android:layout_weight="1"
             android:background="@drawable/bg_attachment_widget_one_row_button_narrow"
             android:contentDescription="@string/button_camera"
             android:padding="@dimen/attachment_widget_one_row_narrow_icon_padding"
@@ -49,9 +51,10 @@
 
         <ImageView
             android:id="@+id/widgetMic"
-            android:layout_width="@dimen/attachment_widget_one_row_narrow_button_size"
+            android:layout_width="0dp"
             android:layout_height="@dimen/attachment_widget_one_row_narrow_button_size"
             android:layout_marginStart="@dimen/attachment_widget_one_row_narrow_button_gap"
+            android:layout_weight="1"
             android:background="@drawable/bg_attachment_widget_one_row_button_narrow"
             android:contentDescription="@string/content_desc_microphone"
             android:padding="@dimen/attachment_widget_one_row_narrow_icon_padding"

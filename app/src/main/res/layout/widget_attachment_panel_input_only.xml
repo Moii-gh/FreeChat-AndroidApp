@@ -53,7 +53,7 @@
                 android:gravity="center_vertical"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="@string/attachment_widget_hint"
+                android:text="@string/main_panel_input"
                 android:textColor="#D0CED6"
                 android:textSize="15sp" />
         </LinearLayout>

@@ -25,7 +25,7 @@
             android:layout_height="@dimen/attachment_widget_one_row_tiny_button_height"
             android:background="@drawable/bg_attachment_widget_active_tiny"
             android:clickable="true"
-            android:contentDescription="@string/attachment_widget_hint"
+            android:contentDescription="@string/main_panel_input"
             android:focusable="true"
             android:padding="@dimen/attachment_widget_one_row_tiny_icon_padding"
             android:scaleType="fitCenter"

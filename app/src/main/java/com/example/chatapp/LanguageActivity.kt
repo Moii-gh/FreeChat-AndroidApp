@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.chatapp.util.setHapticClickListener
+import com.example.chatapp.widget.FreeChatAttachmentWidgetProvider
 
 class LanguageActivity : AppCompatActivity() {
 
@@ -48,6 +49,7 @@ class LanguageActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnSave).setOnClickListener {
             if (selectedLanguageCode != appliedLanguageCode) {
                 LocaleHelper.setSelectedLanguage(this@LanguageActivity, selectedLanguageCode)
+                FreeChatAttachmentWidgetProvider.updateAll(this@LanguageActivity)
             }
             finish()
         }

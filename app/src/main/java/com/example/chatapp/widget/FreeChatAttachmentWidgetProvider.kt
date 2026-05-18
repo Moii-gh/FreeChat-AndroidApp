@@ -3,11 +3,13 @@ package com.example.chatapp.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.RemoteViews
+import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 
 class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
@@ -47,7 +49,14 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
 
         fun buildRemoteViews(context: Context, options: Bundle? = null): RemoteViews {
             val layout = chooseLayout(options)
+            val inputHint = LocaleHelper.getString(context, "main_panel_input")
             return RemoteViews(context.packageName, layout.layoutResId).apply {
+                if (layout.hasInput) {
+                    setContentDescription(R.id.widgetInput, inputHint)
+                }
+                if (layout.hasInputText) {
+                    setTextViewText(R.id.widgetPlaceholder, inputHint)
+                }
                 setActionIfPresent(
                     context,
                     layout.hasInput,
@@ -78,6 +87,15 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                     R.id.widgetMic,
                     HomeWidgetActionActivity.ACTION_MIC
                 )
+            }
+        }
+
+        fun updateAll(context: Context) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(context, FreeChatAttachmentWidgetProvider::class.java)
+            appWidgetManager.getAppWidgetIds(componentName).forEach { appWidgetId ->
+                val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                appWidgetManager.updateAppWidget(appWidgetId, buildRemoteViews(context, options))
             }
         }
 
@@ -147,7 +165,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             val hasCamera: Boolean,
             val hasGallery: Boolean,
             val hasDocument: Boolean,
-            val hasMic: Boolean
+            val hasMic: Boolean,
+            val hasInputText: Boolean
         ) {
             TallLarge(
                 R.layout.widget_attachment_panel,
@@ -155,7 +174,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = true,
                 hasDocument = true,
-                hasMic = true
+                hasMic = true,
+                hasInputText = true
             ),
             TallCompact(
                 R.layout.widget_attachment_panel_compact,
@@ -163,7 +183,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = true,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = true
             ),
             TallNarrow(
                 R.layout.widget_attachment_panel_narrow,
@@ -171,7 +192,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = false,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = true
             ),
             TallSmall(
                 R.layout.widget_attachment_panel_small,
@@ -179,7 +201,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = false,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = false
             ),
             TallTiny(
                 R.layout.widget_attachment_panel_tiny,
@@ -187,7 +210,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = false,
                 hasGallery = false,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = false
             ),
             Large(
                 R.layout.widget_attachment_panel_one_row,
@@ -195,7 +219,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = true,
                 hasDocument = true,
-                hasMic = true
+                hasMic = true,
+                hasInputText = true
             ),
             Compact(
                 R.layout.widget_attachment_panel_one_row_compact,
@@ -203,7 +228,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = true,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = true
             ),
             Narrow(
                 R.layout.widget_attachment_panel_one_row_narrow,
@@ -211,7 +237,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = true,
                 hasGallery = false,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = false
             ),
             Small(
                 R.layout.widget_attachment_panel_one_row_small,
@@ -219,7 +246,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = false,
                 hasGallery = false,
                 hasDocument = false,
-                hasMic = true
+                hasMic = true,
+                hasInputText = false
             ),
             Tiny(
                 R.layout.widget_attachment_panel_one_row_tiny,
@@ -227,7 +255,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 hasCamera = false,
                 hasGallery = false,
                 hasDocument = false,
-                hasMic = false
+                hasMic = false,
+                hasInputText = false
             )
         }
     }
