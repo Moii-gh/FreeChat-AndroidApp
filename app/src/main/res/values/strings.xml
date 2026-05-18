@@ -71,6 +71,9 @@
     <string name="widget_config_transparency_label">Transparency</string>
     <string name="widget_config_transparency_value">%d%%</string>
     <string name="widget_config_transparency_hint">Higher transparency makes the whole widget less visible.</string>
+    <string name="widget_config_choose_background">Choose background</string>
+    <string name="widget_config_remove_background">Remove</string>
+    <string name="widget_config_background_permission_error">Could not keep access to this image</string>
     <string name="auth_about_subtitle">This information is only needed for your FreeChat profile.</string>
     <string name="auth_about_title">Tell us about yourself</string>
     <string name="auth_agreement_hint">Data is only needed to set up your FreeChat account.</string>

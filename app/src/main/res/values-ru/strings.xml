@@ -71,6 +71,9 @@
     <string name="widget_config_transparency_label">Прозрачность</string>
     <string name="widget_config_transparency_value">%d%%</string>
     <string name="widget_config_transparency_hint">Чем выше прозрачность, тем менее заметен весь виджет.</string>
+    <string name="widget_config_choose_background">Выбрать фон</string>
+    <string name="widget_config_remove_background">Убрать</string>
+    <string name="widget_config_background_permission_error">Не удалось сохранить доступ к изображению</string>
     <string name="auth_about_subtitle">Эти данные нужны только для вашего профиля FreeChat.</string>
     <string name="auth_about_title">Расскажите о себе</string>
     <string name="auth_agreement_hint">Данные понадобятся только для настройки вашего аккаунта FreeChat.</string>

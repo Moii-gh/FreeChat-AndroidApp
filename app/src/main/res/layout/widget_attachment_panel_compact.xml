@@ -24,7 +24,7 @@
             android:scaleType="centerCrop"
             android:visibility="gone" />
 
-        <View
+        <ImageView
             android:id="@+id/widgetBackgroundScrim"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

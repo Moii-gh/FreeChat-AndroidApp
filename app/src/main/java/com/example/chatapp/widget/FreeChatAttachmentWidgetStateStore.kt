@@ -19,6 +19,7 @@ internal object FreeChatAttachmentWidgetStateStore {
     private const val KEY_MAX_WIDTH = "max_width"
     private const val KEY_MAX_HEIGHT = "max_height"
     private const val KEY_TRANSPARENCY_PERCENT = "transparency_percent"
+    private const val KEY_BACKGROUND_IMAGE_URI = "background_image_uri"
     private const val KEY_LANGUAGE = "language"
     private const val KEY_UPDATED_AT = "updated_at"
 
@@ -43,6 +44,7 @@ internal object FreeChatAttachmentWidgetStateStore {
         val maxWidth: Int,
         val maxHeight: Int,
         val transparencyPercent: Int,
+        val backgroundImageUri: String?,
         val language: String,
         val updatedAtMillis: Long
     )
@@ -66,6 +68,8 @@ internal object FreeChatAttachmentWidgetStateStore {
                 key(appWidgetId, KEY_TRANSPARENCY_PERCENT),
                 DEFAULT_TRANSPARENCY_PERCENT
             ).coerceTransparency(),
+            backgroundImageUri = prefs.getString(key(appWidgetId, KEY_BACKGROUND_IMAGE_URI), null)
+                ?.takeIf { it.isNotBlank() },
             language = prefs.getString(key(appWidgetId, KEY_LANGUAGE), null) ?: language,
             updatedAtMillis = prefs.getLong(key(appWidgetId, KEY_UPDATED_AT), 0L)
         )
@@ -100,6 +104,7 @@ internal object FreeChatAttachmentWidgetStateStore {
                 key(appWidgetId, KEY_TRANSPARENCY_PERCENT),
                 DEFAULT_TRANSPARENCY_PERCENT
             )
+            .putStringIfAbsent(prefs, key(appWidgetId, KEY_BACKGROUND_IMAGE_URI), "")
             .putString(key(appWidgetId, KEY_LANGUAGE), language)
             .putLong(key(appWidgetId, KEY_UPDATED_AT), System.currentTimeMillis())
             .commit()
@@ -132,6 +137,28 @@ internal object FreeChatAttachmentWidgetStateStore {
             .commit()
     }
 
+    fun saveBackgroundImageUri(context: Context, appWidgetId: Int, backgroundImageUri: String) {
+        if (!isValidWidgetId(appWidgetId)) return
+        val prefs = prefs(context)
+        prefs.edit()
+            .registerWidget(prefs, appWidgetId)
+            .putString(key(appWidgetId, KEY_BACKGROUND_IMAGE_URI), backgroundImageUri)
+            .putString(key(appWidgetId, KEY_LANGUAGE), LocaleHelper.getSelectedLanguage(context))
+            .putLong(key(appWidgetId, KEY_UPDATED_AT), System.currentTimeMillis())
+            .commit()
+    }
+
+    fun clearBackgroundImageUri(context: Context, appWidgetId: Int) {
+        if (!isValidWidgetId(appWidgetId)) return
+        val prefs = prefs(context)
+        prefs.edit()
+            .registerWidget(prefs, appWidgetId)
+            .remove(key(appWidgetId, KEY_BACKGROUND_IMAGE_URI))
+            .putString(key(appWidgetId, KEY_LANGUAGE), LocaleHelper.getSelectedLanguage(context))
+            .putLong(key(appWidgetId, KEY_UPDATED_AT), System.currentTimeMillis())
+            .commit()
+    }
+
     fun restoreIds(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
         val prefs = prefs(context)
         val editor = prefs.edit()
@@ -146,6 +173,7 @@ internal object FreeChatAttachmentWidgetStateStore {
             copyKey(prefs, editor, oldId, newId, KEY_MAX_WIDTH, ValueType.IntValue)
             copyKey(prefs, editor, oldId, newId, KEY_MAX_HEIGHT, ValueType.IntValue)
             copyKey(prefs, editor, oldId, newId, KEY_TRANSPARENCY_PERCENT, ValueType.IntValue)
+            copyKey(prefs, editor, oldId, newId, KEY_BACKGROUND_IMAGE_URI, ValueType.StringValue)
             copyKey(prefs, editor, oldId, newId, KEY_LANGUAGE, ValueType.StringValue)
             copyKey(prefs, editor, oldId, newId, KEY_UPDATED_AT, ValueType.LongValue)
             editor.removeWidgetData(oldId)
@@ -272,6 +300,7 @@ internal object FreeChatAttachmentWidgetStateStore {
         remove(key(appWidgetId, KEY_MAX_WIDTH))
         remove(key(appWidgetId, KEY_MAX_HEIGHT))
         remove(key(appWidgetId, KEY_TRANSPARENCY_PERCENT))
+        remove(key(appWidgetId, KEY_BACKGROUND_IMAGE_URI))
         remove(key(appWidgetId, KEY_LANGUAGE))
         remove(key(appWidgetId, KEY_UPDATED_AT))
         return this

@@ -10,18 +10,37 @@
     android:paddingEnd="@dimen/attachment_widget_root_padding"
     android:paddingBottom="@dimen/attachment_widget_root_padding">
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/widgetPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_attachment_widget_one_row_panel"
-        android:baselineAligned="false"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/attachment_widget_one_row_horizontal_padding"
-        android:paddingTop="@dimen/attachment_widget_one_row_vertical_padding"
-        android:paddingEnd="@dimen/attachment_widget_one_row_horizontal_padding"
-        android:paddingBottom="@dimen/attachment_widget_one_row_vertical_padding">
+        android:clipToOutline="true">
+
+        <ImageView
+            android:id="@+id/widgetBackgroundImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/widgetBackgroundScrim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#66000000"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/attachment_widget_one_row_horizontal_padding"
+            android:paddingTop="@dimen/attachment_widget_one_row_vertical_padding"
+            android:paddingEnd="@dimen/attachment_widget_one_row_horizontal_padding"
+            android:paddingBottom="@dimen/attachment_widget_one_row_vertical_padding">
 
         <LinearLayout
             android:id="@+id/widgetInput"
@@ -107,5 +126,6 @@
             android:scaleType="fitCenter"
             android:src="@drawable/ic_mic"
             android:tint="#FFFFFF" />
-    </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
 </LinearLayout>

@@ -65,102 +65,161 @@
             android:textColor="#8E8E93"
             android:textSize="14sp" />
 
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/widgetConfigPreviewPanel"
             android:layout_width="match_parent"
             android:layout_height="150dp"
             android:layout_marginTop="24dp"
             android:background="@drawable/bg_attachment_widget_panel"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingHorizontal="18dp"
-            android:paddingVertical="18dp">
+            android:clipToOutline="true">
+
+            <ImageView
+                android:id="@+id/widgetConfigPreviewBackgroundImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/widgetConfigPreviewBackgroundScrim"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#66000000"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/attachment_widget_input_height"
-                android:background="@drawable/bg_attachment_widget_input"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp">
-
-                <ImageView
-                    android:layout_width="@dimen/attachment_widget_logo_size"
-                    android:layout_height="@dimen/attachment_widget_logo_size"
-                    android:alpha="0.62"
-                    android:contentDescription="@string/app_brand"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/freechat_logo_white_transparent" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center_vertical"
-                    android:includeFontPadding="false"
-                    android:maxLines="1"
-                    android:text="@string/main_panel_input"
-                    android:textColor="#D0CED6"
-                    android:textSize="16sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="14dp"
-                android:baselineAligned="false"
+                android:layout_height="match_parent"
                 android:gravity="center"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:paddingHorizontal="18dp"
+                android:paddingVertical="18dp">
 
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_attachment_widget_button"
-                    android:contentDescription="@string/button_camera"
-                    android:padding="11dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_camera_new"
-                    android:tint="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/attachment_widget_input_height"
+                    android:background="@drawable/bg_attachment_widget_input"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp">
 
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_attachment_widget_button"
-                    android:contentDescription="@string/content_desc_open_gallery"
-                    android:padding="11dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_photo_new"
-                    android:tint="#FFFFFF" />
+                    <ImageView
+                        android:layout_width="@dimen/attachment_widget_logo_size"
+                        android:layout_height="@dimen/attachment_widget_logo_size"
+                        android:alpha="0.62"
+                        android:contentDescription="@string/app_brand"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/freechat_logo_white_transparent" />
 
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_attachment_widget_button"
-                    android:contentDescription="@string/button_files"
-                    android:padding="11dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_file_new"
-                    android:tint="#FFFFFF" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:gravity="center_vertical"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:text="@string/main_panel_input"
+                        android:textColor="#D0CED6"
+                        android:textSize="16sp" />
+                </LinearLayout>
 
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_attachment_widget_button"
-                    android:contentDescription="@string/content_desc_microphone"
-                    android:padding="11dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_mic"
-                    android:tint="#FFFFFF" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="14dp"
+                    android:baselineAligned="false"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attachment_widget_button"
+                        android:contentDescription="@string/button_camera"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_camera_new"
+                        android:tint="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attachment_widget_button"
+                        android:contentDescription="@string/content_desc_open_gallery"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_photo_new"
+                        android:tint="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attachment_widget_button"
+                        android:contentDescription="@string/button_files"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_file_new"
+                        android:tint="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attachment_widget_button"
+                        android:contentDescription="@string/content_desc_microphone"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_mic"
+                        android:tint="#FFFFFF" />
+                </LinearLayout>
             </LinearLayout>
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/widgetBackgroundActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnWidgetChooseBackground"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_purple_pill"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="@string/widget_config_choose_background"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnWidgetRemoveBackground"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_cancel_grey_bg"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="@string/widget_config_remove_background"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout

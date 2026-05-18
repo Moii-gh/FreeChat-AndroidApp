@@ -6,11 +6,15 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.RemoteViews
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
+import kotlin.math.max
 
 class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
@@ -85,6 +89,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         private const val DEFAULT_MIN_WIDTH_DP = 300
         private const val DEFAULT_MIN_HEIGHT_DP = 130
         private const val ONE_ROW_MAX_HEIGHT_DP = 116
+        private const val MAX_BACKGROUND_BITMAP_SIDE_PX = 480
 
         fun buildRemoteViews(
             context: Context,
@@ -103,6 +108,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 displayText = inputHint
             )
             return RemoteViews(context.packageName, layout.layoutResId).apply {
+                applyBackgroundImage(context, state.backgroundImageUri)
                 setFloat(
                     R.id.widgetPanel,
                     "setAlpha",
@@ -151,6 +157,60 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                     R.id.widgetMic,
                     HomeWidgetActionActivity.ACTION_MIC
                 )
+            }
+        }
+
+        private fun RemoteViews.applyBackgroundImage(context: Context, uriString: String?) {
+            val bitmap = uriString?.let { loadWidgetBackgroundBitmap(context, it) }
+            if (bitmap == null) {
+                setViewVisibility(R.id.widgetBackgroundImage, View.GONE)
+                setViewVisibility(R.id.widgetBackgroundScrim, View.GONE)
+                return
+            }
+
+            setImageViewBitmap(R.id.widgetBackgroundImage, bitmap)
+            setViewVisibility(R.id.widgetBackgroundImage, View.VISIBLE)
+            setViewVisibility(R.id.widgetBackgroundScrim, View.VISIBLE)
+        }
+
+        private fun loadWidgetBackgroundBitmap(context: Context, uriString: String): Bitmap? {
+            val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: return null
+            return runCatching {
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    BitmapFactory.decodeStream(input, null, bounds)
+                }
+
+                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight)
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    BitmapFactory.decodeStream(input, null, options)
+                }?.scaleDownToMaxSide(MAX_BACKGROUND_BITMAP_SIDE_PX)
+            }.getOrNull()
+        }
+
+        private fun sampleSizeFor(width: Int, height: Int): Int {
+            var sampleSize = 1
+            val largestSide = max(width, height)
+            while (largestSide / sampleSize > MAX_BACKGROUND_BITMAP_SIDE_PX) {
+                sampleSize *= 2
+            }
+            return sampleSize
+        }
+
+        private fun Bitmap.scaleDownToMaxSide(maxSide: Int): Bitmap {
+            val largestSide = max(width, height)
+            if (largestSide <= maxSide) return this
+
+            val scale = maxSide.toFloat() / largestSide
+            val targetWidth = (width * scale).toInt().coerceAtLeast(1)
+            val targetHeight = (height * scale).toInt().coerceAtLeast(1)
+            return Bitmap.createScaledBitmap(this, targetWidth, targetHeight, true).also {
+                if (it != this) recycle()
             }
         }
 
