@@ -13,4 +13,51 @@
     <dimen name="attachment_widget_logo_size">23dp</dimen>
     <dimen name="attachment_widget_icon_padding">14dp</dimen>
     <dimen name="attachment_widget_text_gap">12dp</dimen>
+
+    <dimen name="attachment_widget_wide_horizontal_padding">14dp</dimen>
+    <dimen name="attachment_widget_wide_vertical_padding">12dp</dimen>
+    <dimen name="attachment_widget_wide_corner_radius">28dp</dimen>
+    <dimen name="attachment_widget_wide_button_radius">18dp</dimen>
+    <dimen name="attachment_widget_wide_button_size">54dp</dimen>
+    <dimen name="attachment_widget_wide_button_gap">18dp</dimen>
+    <dimen name="attachment_widget_wide_icon_padding">13dp</dimen>
+
+    <dimen name="attachment_widget_compact_horizontal_padding">14dp</dimen>
+    <dimen name="attachment_widget_compact_vertical_padding">13dp</dimen>
+    <dimen name="attachment_widget_compact_corner_radius">28dp</dimen>
+    <dimen name="attachment_widget_compact_control_radius">23dp</dimen>
+    <dimen name="attachment_widget_compact_button_radius">17dp</dimen>
+    <dimen name="attachment_widget_compact_input_height">44dp</dimen>
+    <dimen name="attachment_widget_compact_button_size">52dp</dimen>
+    <dimen name="attachment_widget_compact_row_gap">12dp</dimen>
+    <dimen name="attachment_widget_compact_button_gap">22dp</dimen>
+    <dimen name="attachment_widget_compact_logo_size">21dp</dimen>
+    <dimen name="attachment_widget_compact_icon_padding">12dp</dimen>
+    <dimen name="attachment_widget_compact_text_gap">10dp</dimen>
+
+    <dimen name="attachment_widget_narrow_horizontal_padding">12dp</dimen>
+    <dimen name="attachment_widget_narrow_vertical_padding">12dp</dimen>
+    <dimen name="attachment_widget_narrow_corner_radius">26dp</dimen>
+    <dimen name="attachment_widget_narrow_control_radius">21dp</dimen>
+    <dimen name="attachment_widget_narrow_button_radius">16dp</dimen>
+    <dimen name="attachment_widget_narrow_input_height">40dp</dimen>
+    <dimen name="attachment_widget_narrow_button_size">48dp</dimen>
+    <dimen name="attachment_widget_narrow_row_gap">10dp</dimen>
+    <dimen name="attachment_widget_narrow_button_gap">30dp</dimen>
+    <dimen name="attachment_widget_narrow_logo_size">20dp</dimen>
+    <dimen name="attachment_widget_narrow_icon_padding">12dp</dimen>
+    <dimen name="attachment_widget_narrow_text_gap">9dp</dimen>
+
+    <dimen name="attachment_widget_small_padding">10dp</dimen>
+    <dimen name="attachment_widget_small_corner_radius">24dp</dimen>
+    <dimen name="attachment_widget_small_button_radius">17dp</dimen>
+    <dimen name="attachment_widget_small_button_size">48dp</dimen>
+    <dimen name="attachment_widget_small_button_gap">14dp</dimen>
+    <dimen name="attachment_widget_small_icon_padding">11dp</dimen>
+
+    <dimen name="attachment_widget_tiny_padding">8dp</dimen>
+    <dimen name="attachment_widget_tiny_corner_radius">24dp</dimen>
+    <dimen name="attachment_widget_tiny_button_radius">18dp</dimen>
+    <dimen name="attachment_widget_tiny_button_size">54dp</dimen>
+    <dimen name="attachment_widget_tiny_icon_padding">13dp</dimen>
 </resources>

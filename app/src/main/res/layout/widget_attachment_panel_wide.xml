@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/attachment_widget_root_padding"
+    android:paddingTop="@dimen/attachment_widget_root_padding"
+    android:paddingEnd="@dimen/attachment_widget_root_padding"
+    android:paddingBottom="@dimen/attachment_widget_root_padding">
+
+    <LinearLayout
+        android:id="@+id/widgetPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_attachment_widget_panel_wide"
+        android:baselineAligned="false"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/attachment_widget_wide_horizontal_padding"
+        android:paddingTop="@dimen/attachment_widget_wide_vertical_padding"
+        android:paddingEnd="@dimen/attachment_widget_wide_horizontal_padding"
+        android:paddingBottom="@dimen/attachment_widget_wide_vertical_padding">
+
+        <ImageView
+            android:id="@+id/widgetMic"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/attachment_widget_wide_button_size"
+            android:layout_weight="1"
+            android:background="@drawable/bg_attachment_widget_button_wide"
+            android:contentDescription="@string/content_desc_microphone"
+            android:padding="@dimen/attachment_widget_wide_icon_padding"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_mic"
+            android:tint="#FFFFFF" />
+
+        <ImageView
+            android:id="@+id/widgetInput"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/attachment_widget_wide_button_size"
+            android:layout_marginStart="@dimen/attachment_widget_wide_button_gap"
+            android:layout_weight="1"
+            android:alpha="0.72"
+            android:background="@drawable/bg_attachment_widget_button_wide"
+            android:contentDescription="@string/app_brand"
+            android:padding="@dimen/attachment_widget_wide_icon_padding"
+            android:scaleType="fitCenter"
+            android:src="@drawable/freechat_logo_white_transparent"
+            android:tint="#FFFFFF" />
+
+        <ImageView
+            android:id="@+id/widgetCamera"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/attachment_widget_wide_button_size"
+            android:layout_marginStart="@dimen/attachment_widget_wide_button_gap"
+            android:layout_weight="1"
+            android:background="@drawable/bg_attachment_widget_button_wide"
+            android:contentDescription="@string/button_camera"
+            android:padding="@dimen/attachment_widget_wide_icon_padding"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_camera_new"
+            android:tint="#FFFFFF" />
+
+        <ImageView
+            android:id="@+id/widgetGallery"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/attachment_widget_wide_button_size"
+            android:layout_marginStart="@dimen/attachment_widget_wide_button_gap"
+            android:layout_weight="1"
+            android:background="@drawable/bg_attachment_widget_button_wide"
+            android:contentDescription="@string/content_desc_open_gallery"
+            android:padding="@dimen/attachment_widget_wide_icon_padding"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_photo_new"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+</LinearLayout>
