@@ -465,6 +465,7 @@ class PopupMenuHelper(
         val dialog = Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
         var isSaving = false
         var isDismissing = false
+        var enterAnimationStarted = false
 
         val root = FrameLayout(activity).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -517,6 +518,28 @@ class PopupMenuHelper(
                     }
                 }
                 .start()
+        }
+
+        fun playEnterAnimationOnce() {
+            if (enterAnimationStarted || isDismissing) return
+            enterAnimationStarted = true
+            dialogView.post {
+                dialogView.pivotX = dialogView.width / 2f
+                dialogView.pivotY = dialogView.height.toFloat()
+                scrim.animate()
+                    .alpha(1f)
+                    .setDuration(180L)
+                    .setInterpolator(android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f))
+                    .start()
+                dialogView.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(260L)
+                    .setInterpolator(android.view.animation.PathInterpolator(0.16f, 1f, 0.3f, 1f))
+                    .start()
+            }
         }
 
         scrim.setOnClickListener {
@@ -669,7 +692,11 @@ class PopupMenuHelper(
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
             val navBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            val isImeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             updatePanelBottomMargin(maxOf(imeBottom, navBottom))
+            if (isImeVisible && imeBottom > 0) {
+                playEnterAnimationOnce()
+            }
             insets
         }
 
@@ -680,6 +707,9 @@ class PopupMenuHelper(
             val keyboardHeight = (screenHeight - visibleFrame.bottom).coerceAtLeast(0)
             val bottomInset = if (keyboardHeight > 80.dpToPx()) keyboardHeight else 0
             updatePanelBottomMargin(bottomInset)
+            if (bottomInset > 0) {
+                playEnterAnimationOnce()
+            }
         }
         root.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
         dialog.setOnDismissListener {
@@ -714,28 +744,12 @@ class PopupMenuHelper(
 
         input.requestFocus()
         ViewCompat.requestApplyInsets(root)
-        dialogView.post {
-            dialogView.pivotX = dialogView.width / 2f
-            dialogView.pivotY = dialogView.height.toFloat()
-            scrim.animate()
-                .alpha(1f)
-                .setDuration(180L)
-                .setInterpolator(android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f))
-                .start()
-            dialogView.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(260L)
-                .setInterpolator(android.view.animation.PathInterpolator(0.16f, 1f, 0.3f, 1f))
-                .start()
-        }
         input.post {
             val inputMethodManager = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
                 as android.view.inputmethod.InputMethodManager
             inputMethodManager.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }
+        root.postDelayed({ playEnterAnimationOnce() }, 360L)
     }
 
     private fun createMenuDivider() = View(activity).apply {
