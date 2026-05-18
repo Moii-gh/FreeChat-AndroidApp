@@ -65,6 +65,8 @@
     <string name="attachment_read_error">Could not read attachment</string>
     <string name="attachment_text_truncated">[File content truncated]</string>
     <string name="attachment_too_large">Attachment is too large to analyze</string>
+    <string name="attachment_widget_hint" translatable="false">Message...</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="auth_about_subtitle">This information is only needed for your FreeChat profile.</string>
     <string name="auth_about_title">Tell us about yourself</string>
     <string name="auth_agreement_hint">Data is only needed to set up your FreeChat account.</string>
@@ -374,6 +376,7 @@
     <string name="toast_share_links_revoked">Shared links disabled</string>
     <string name="toast_share_revoke_error">Failed to disable shared links</string>
     <string name="toast_table_copied">Table copied</string>
+    <string name="toast_text_too_large_to_copy">Text is too large to copy. Use Share instead.</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="untitled_chat">Untitled</string>

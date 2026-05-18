@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit
  */
 object FileUtils {
     private const val MAX_CACHE_FILE_BYTES = 20 * 1024 * 1024
+    private const val MAX_CLIPBOARD_TEXT_CHARS = 200_000
     private const val CACHE_SHARE_DIR = "shared_files"
     private const val GENERATED_IMAGE_DIR = "generated_images"
     private val imageHttpClient by lazy {
@@ -314,14 +315,26 @@ object FileUtils {
 
     /** Копирует текст в системный буфер обмена */
     fun copyToClipboard(context: Context, text: String) {
-        runCatching {
+        if (text.length > MAX_CLIPBOARD_TEXT_CHARS) {
+            Toast.makeText(
+                context,
+                LocaleHelper.getString(context, "toast_text_too_large_to_copy"),
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        try {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("copied_text", text))
-        }.onSuccess {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_copied"), Toast.LENGTH_SHORT).show()
-        }.onFailure {
-            SafeLog.w("FileUtils", "Could not copy text", it)
-            Toast.makeText(context, LocaleHelper.getString(context, "toast_error"), Toast.LENGTH_SHORT).show()
+        } catch (error: RuntimeException) {
+            SafeLog.w("FileUtils", "Could not copy text", error)
+            Toast.makeText(
+                context,
+                LocaleHelper.getString(context, "toast_text_too_large_to_copy"),
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 

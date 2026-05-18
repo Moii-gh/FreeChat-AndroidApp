@@ -384,6 +384,7 @@
     <string name="welcome_question">Добро пожаловать в FreeChat</string>
     <string name="toast_open_link_error">Не удалось открыть ссылку</string>
     <string name="toast_table_copied">Table copied</string>
+    <string name="toast_text_too_large_to_copy">Текст слишком большой для копирования. Используйте «Поделиться».</string>
     <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
     <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Цифровой помощник</string>

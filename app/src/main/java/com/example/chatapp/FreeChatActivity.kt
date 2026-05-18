@@ -84,6 +84,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     companion object {
         const val EXTRA_PREFILL_INPUT = "com.example.chatapp.EXTRA_PREFILL_INPUT"
+        const val EXTRA_FOCUS_INPUT = "com.example.chatapp.EXTRA_FOCUS_INPUT"
+        const val EXTRA_WIDGET_ATTACHMENT_URI = "com.example.chatapp.EXTRA_WIDGET_ATTACHMENT_URI"
         const val EXTRA_SKIP_BIOMETRIC_ONCE = "com.example.chatapp.EXTRA_SKIP_BIOMETRIC_ONCE"
         const val EXTRA_OPEN_CHAT_ID = "com.example.chatapp.EXTRA_OPEN_CHAT_ID"
 
@@ -326,6 +328,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         handleOpenChatIntent(intent)
         handleAssistantHandoffIntent(intent)
         handlePrefillInputIntent(intent)
+        handleFocusInputIntent(intent)
+        handleWidgetAttachmentIntent(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -447,6 +451,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         handleOpenChatIntent(startIntent)
         handleAssistantHandoffIntent(startIntent)
         handlePrefillInputIntent(startIntent)
+        handleFocusInputIntent(startIntent)
+        handleWidgetAttachmentIntent(startIntent)
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
     }
@@ -612,6 +618,28 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         intent.removeExtra(EXTRA_PREFILL_INPUT)
         clearInputContext()
         updateInputText(prefill, keepSuggestions = false)
+        binding.etInput.requestFocus()
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun handleFocusInputIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_FOCUS_INPUT, false) != true) return
+        intent.removeExtra(EXTRA_FOCUS_INPUT)
+        binding.etInput.requestFocus()
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(binding.etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun handleWidgetAttachmentIntent(intent: Intent?) {
+        val uri = intent?.getStringExtra(EXTRA_WIDGET_ATTACHMENT_URI)
+            ?.takeIf { it.isNotBlank() }
+            ?.let(Uri::parse)
+            ?: return
+        intent.removeExtra(EXTRA_WIDGET_ATTACHMENT_URI)
+        showFilePreview(uri)
         binding.etInput.requestFocus()
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
             as android.view.inputmethod.InputMethodManager
