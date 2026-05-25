@@ -27,7 +27,7 @@
         android:focusable="false"
         android:importantForAccessibility="no"
         android:scaleY="0"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <View
             android:id="@+id/focusGlowLeft"

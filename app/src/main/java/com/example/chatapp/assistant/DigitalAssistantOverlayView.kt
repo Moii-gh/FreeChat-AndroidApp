@@ -6,7 +6,9 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.RenderEffect
 import android.graphics.Rect
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
@@ -67,6 +69,7 @@ class DigitalAssistantOverlayView(
     )
 
     private val smoothOut = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)
+    private val premiumOut = PathInterpolator(0.22f, 1f, 0.36f, 1f)
     private val panelOut = DecelerateInterpolator(1.55f)
     private val markwon = Markwon.builder(context)
         .usePlugin(io.noties.markwon.inlineparser.MarkwonInlineParserPlugin.create())
@@ -94,6 +97,7 @@ class DigitalAssistantOverlayView(
     private var endInset = 0
     private var keyboardInset = 0
     private var keyboardVisible = false
+    private var panelBlurAnimator: ValueAnimator? = null
     private var typingAnimator: Animator? = null
     private var typingView: TextView? = null
     private var dragStartY = 0f
@@ -137,6 +141,8 @@ class DigitalAssistantOverlayView(
 
     override fun onDetachedFromWindow() {
         stopTypingDots()
+        panelBlurAnimator?.cancel()
+        clearPanelBlur()
         binding.focusEdgeGlow.animate().cancel()
         viewModel.removeListener(listener)
         super.onDetachedFromWindow()
@@ -308,6 +314,7 @@ class DigitalAssistantOverlayView(
     private fun animateFocusEdgeGlow(visible: Boolean) {
         val glow = binding.focusEdgeGlow
         glow.animate().cancel()
+        glow.visibility = View.VISIBLE
         glow.pivotX = if (glow.width > 0) glow.width / 2f else width / 2f
         glow.pivotY = when {
             glow.height > 0 -> glow.height.toFloat()
@@ -316,29 +323,28 @@ class DigitalAssistantOverlayView(
         }
 
         if (visible) {
-            glow.isVisible = true
             if (glow.scaleY <= 0f) {
-                glow.scaleY = 0.05f
+                glow.scaleY = 0f
                 glow.alpha = 0f
             }
             glow.animate()
                 .alpha(1f)
                 .scaleY(1f)
                 .setStartDelay(0L)
-                .setDuration(420L)
-                .setInterpolator(smoothOut)
+                .setDuration(560L)
+                .setInterpolator(premiumOut)
                 .start()
         } else {
             glow.animate()
                 .alpha(0f)
-                .scaleY(0.05f)
+                .scaleY(0f)
                 .setStartDelay(0L)
-                .setDuration(280L)
-                .setInterpolator(smoothOut)
+                .setDuration(380L)
+                .setInterpolator(premiumOut)
                 .withEndAction {
                     if (!binding.inputField.hasFocus()) {
-                        glow.isGone = true
                         glow.scaleY = 0f
+                        glow.alpha = 0f
                     }
                 }
                 .start()
@@ -1307,6 +1313,7 @@ class DigitalAssistantOverlayView(
         binding.dimView.animate().cancel()
         binding.dimView.setBackgroundColor(Color.TRANSPARENT)
         binding.dimView.alpha = 1f
+        panelBlurAnimator?.cancel()
 
         listOf(
             binding.bottomPanel,
@@ -1317,16 +1324,28 @@ class DigitalAssistantOverlayView(
             binding.sendButton
         ).forEach { it.animate().cancel() }
 
+        binding.bottomPanel.visibility = View.VISIBLE
+        binding.bottomPanel.pivotX = if (binding.bottomPanel.width > 0) {
+            binding.bottomPanel.width / 2f
+        } else {
+            resources.displayMetrics.widthPixels / 2f
+        }
+        binding.bottomPanel.pivotY = if (binding.bottomPanel.height > 0) {
+            binding.bottomPanel.height.toFloat()
+        } else {
+            dp(72).toFloat()
+        }
         binding.bottomPanel.alpha = 0f
-        binding.bottomPanel.scaleX = 0.99f
-        binding.bottomPanel.scaleY = 0.99f
-        binding.bottomPanel.translationY = dp(18).toFloat()
+        binding.bottomPanel.scaleX = 0.96f
+        binding.bottomPanel.scaleY = 0.96f
+        binding.bottomPanel.translationY = dp(24).toFloat()
+        setPanelBlur(dp(8).toFloat())
 
         prepareIntroStep(binding.inputCapsule, offsetY = dp(16), startScale = 0.96f)
-        prepareIntroStep(binding.addButton, offsetY = dp(10), startScale = 0.86f)
+        prepareIntroStep(binding.addButton, offsetY = dp(10), startScale = 0.9f)
         prepareIntroStep(binding.inputField, offsetY = dp(8), startScale = 0.98f)
-        prepareIntroStep(binding.micIcon, offsetY = dp(8), startScale = 0.88f)
-        prepareIntroStep(binding.sendButton, offsetY = dp(10), startScale = 0.86f)
+        prepareIntroStep(binding.micIcon, offsetY = dp(8), startScale = 0.92f)
+        prepareIntroStep(binding.sendButton, offsetY = dp(10), startScale = 0.9f)
 
         binding.bottomPanel.animate()
             .alpha(1f)
@@ -1334,15 +1353,16 @@ class DigitalAssistantOverlayView(
             .scaleY(1f)
             .translationY(0f)
             .setStartDelay(0L)
-            .setDuration(220L)
-            .setInterpolator(smoothOut)
+            .setDuration(560L)
+            .setInterpolator(premiumOut)
             .start()
 
-        playIntroStep(binding.inputCapsule, delay = 35L, duration = 240L)
-        playIntroStep(binding.addButton, delay = 115L, duration = 210L)
-        playIntroStep(binding.inputField, delay = 160L, duration = 210L)
-        playIntroStep(binding.micIcon, delay = 205L, duration = 200L)
-        playIntroStep(binding.sendButton, delay = 250L, duration = 210L)
+        animatePanelBlur(fromPx = dp(8).toFloat(), toPx = 0f, duration = 560L)
+        playIntroStep(binding.inputCapsule, delay = 60L, duration = 520L)
+        playIntroStep(binding.addButton, delay = 160L, duration = 340L)
+        playIntroStep(binding.inputField, delay = 220L, duration = 340L)
+        playIntroStep(binding.micIcon, delay = 280L, duration = 320L)
+        playIntroStep(binding.sendButton, delay = 340L, duration = 320L)
     }
 
     private fun prepareIntroStep(view: View, offsetY: Int, startScale: Float) {
@@ -1360,8 +1380,60 @@ class DigitalAssistantOverlayView(
             .scaleY(1f)
             .setStartDelay(delay)
             .setDuration(duration)
-            .setInterpolator(smoothOut)
+            .setInterpolator(premiumOut)
             .start()
+    }
+
+    private fun animatePanelBlur(fromPx: Float, toPx: Float, duration: Long) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        panelBlurAnimator?.cancel()
+        panelBlurAnimator = ValueAnimator.ofFloat(fromPx, toPx).apply {
+            this.duration = duration
+            interpolator = premiumOut
+            addUpdateListener { animator ->
+                setPanelBlur(animator.animatedValue as Float)
+            }
+            doOnEndCompat {
+                if (toPx <= 0f) {
+                    clearPanelBlur()
+                }
+                panelBlurAnimator = null
+            }
+            start()
+        }
+    }
+
+    private fun setPanelBlur(radiusPx: Float) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        if (radiusPx <= 0f) {
+            clearPanelBlur()
+            return
+        }
+        binding.bottomPanel.setRenderEffect(
+            RenderEffect.createBlurEffect(
+                radiusPx,
+                radiusPx,
+                Shader.TileMode.CLAMP
+            )
+        )
+    }
+
+    private fun clearPanelBlur() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.bottomPanel.setRenderEffect(null)
+        }
+    }
+
+    private inline fun ValueAnimator.doOnEndCompat(crossinline action: () -> Unit) {
+        addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                action()
+            }
+
+            override fun onAnimationCancel(animation: Animator) {
+                action()
+            }
+        })
     }
 
     private fun playSendTap() {
@@ -1427,8 +1499,9 @@ class DigitalAssistantOverlayView(
             .translationY(0f)
             .scaleX(1f)
             .scaleY(1f)
+            .setStartDelay(0L)
             .setDuration(210L)
-            .setInterpolator(panelOut)
+            .setInterpolator(premiumOut)
             .start()
     }
 
@@ -1473,15 +1546,19 @@ class DigitalAssistantOverlayView(
             .start()
         binding.bottomPanel.animate()
             .alpha(0f)
-            .scaleX(0.98f)
-            .scaleY(0.98f)
-            .translationY(dp(52).toFloat())
-            .setDuration(235L)
-            .setInterpolator(smoothOut)
+            .scaleX(0.96f)
+            .scaleY(0.96f)
+            .translationY(dp(24).toFloat())
+            .setStartDelay(0L)
+            .setDuration(320L)
+            .setInterpolator(premiumOut)
             .withEndAction {
+                panelBlurAnimator?.cancel()
+                clearPanelBlur()
                 host.closeAssistant(force = force)
             }
             .start()
+        animatePanelBlur(fromPx = 0f, toPx = dp(6).toFloat(), duration = 320L)
         binding.dimView.animate().cancel()
         binding.dimView.alpha = 1f
     }
