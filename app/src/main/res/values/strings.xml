@@ -217,6 +217,9 @@
     <string name="label_new_chat">New chat</string>
     <string name="label_personalization">Personalization</string>
     <string name="label_personalization_instructions">Custom instructions</string>
+    <string name="label_launcher_icon">App icon</string>
+    <string name="label_launcher_icon_default">Standard</string>
+    <string name="label_launcher_icon_transparent">Transparent background</string>
     <string name="label_select_language">Select language</string>
     <string name="label_user">User</string>
     <string name="label_your_password">Your password</string>
@@ -365,6 +368,8 @@
     <string name="toast_image_copy_error">Error copying image</string>
     <string name="toast_incognito_info">Anonymous chat is not saved in history</string>
     <string name="toast_instructions_saved">Instructions saved</string>
+    <string name="toast_launcher_icon_updated">App icon updated. The launcher may need a few seconds.</string>
+    <string name="toast_launcher_icon_update_failed">Could not update the app icon.</string>
     <string name="toast_liked">Liked!</string>
     <string name="toast_limits_added">Limits successfully added! +5 requests.</string>
     <string name="toast_limits_exhausted">You have run out of free requests for today! Click the +5 button above.</string>

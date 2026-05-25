@@ -217,6 +217,9 @@
     <string name="label_new_chat">Новый чат</string>
     <string name="label_personalization">Персонализация</string>
     <string name="label_personalization_instructions">Пользовательские инструкции</string>
+    <string name="label_launcher_icon">Иконка приложения</string>
+    <string name="label_launcher_icon_default">Стандартная</string>
+    <string name="label_launcher_icon_transparent">Прозрачный фон</string>
     <string name="label_select_language">Выбрать язык</string>
     <string name="label_user">Пользователь</string>
     <string name="label_your_password">Ваш пароль</string>
@@ -365,6 +368,8 @@
     <string name="toast_image_copy_error">Ошибка копирования изображения</string>
     <string name="toast_incognito_info">Инкогнито-чат не сохраняется в истории</string>
     <string name="toast_instructions_saved">Инструкции сохранены</string>
+    <string name="toast_launcher_icon_updated">Иконка обновлена. Лаунчеру может понадобиться несколько секунд.</string>
+    <string name="toast_launcher_icon_update_failed">Не удалось обновить иконку приложения.</string>
     <string name="toast_liked">Понравилось!</string>
     <string name="toast_limits_added">Лимиты успешно добавлены! +5 запросов.</string>
     <string name="toast_limits_exhausted">У вас закончились бесплатные запросы на сегодня! Нажмите кнопку +5 сверху.</string>
