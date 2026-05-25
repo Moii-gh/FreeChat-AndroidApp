@@ -30,11 +30,6 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private val activeAnimators = mutableMapOf<Any, ValueAnimator>()
 
     private val sizeHeights = mapOf(
-        "1x1" to 60,
-        "1x2" to 90,
-        "1x3" to 120,
-        "1x4" to 150,
-        "2x1" to 60,
         "2x2" to 90,
         "2x3" to 120,
         "2x4" to 150
@@ -428,21 +423,11 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
 
     private fun bindSizeButtons() {
         sizeButtons = mapOf(
-            "1x1" to findViewById(R.id.widgetSize1x1),
-            "1x2" to findViewById(R.id.widgetSize1x2),
-            "1x3" to findViewById(R.id.widgetSize1x3),
-            "1x4" to findViewById(R.id.widgetSize1x4),
-            "2x1" to findViewById(R.id.widgetSize2x1),
             "2x2" to findViewById(R.id.widgetSize2x2),
             "2x3" to findViewById(R.id.widgetSize2x3),
             "2x4" to findViewById(R.id.widgetSize2x4)
         )
         sizeSelectedBgs = mapOf(
-            "1x1" to findViewById(R.id.widgetSize1x1SelectedBg),
-            "1x2" to findViewById(R.id.widgetSize1x2SelectedBg),
-            "1x3" to findViewById(R.id.widgetSize1x3SelectedBg),
-            "1x4" to findViewById(R.id.widgetSize1x4SelectedBg),
-            "2x1" to findViewById(R.id.widgetSize2x1SelectedBg),
             "2x2" to findViewById(R.id.widgetSize2x2SelectedBg),
             "2x3" to findViewById(R.id.widgetSize2x3SelectedBg),
             "2x4" to findViewById(R.id.widgetSize2x4SelectedBg)
@@ -503,11 +488,6 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
 
     private fun getLayoutViewForSize(size: String): View? {
         return when (size) {
-            "1x1" -> findViewById(R.id.layoutPreview1x1)
-            "1x2" -> findViewById(R.id.layoutPreview1x2)
-            "1x3" -> findViewById(R.id.layoutPreview1x3)
-            "1x4" -> findViewById(R.id.layoutPreview1x4)
-            "2x1" -> findViewById(R.id.layoutPreview2x1)
             "2x2" -> findViewById(R.id.layoutPreview2x2)
             "2x3" -> findViewById(R.id.layoutPreview2x3)
             "2x4" -> findViewById(R.id.layoutPreview2x4)
