@@ -163,7 +163,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             size: WidgetSize,
             layoutName: String
         ) {
-            if (WidgetStyleResources.effectiveStyle(context, state) == WidgetStyle.Dark) {
+            val effectiveStyle = WidgetStyleResources.effectiveStyle(context, state)
+            if (effectiveStyle == WidgetStyle.Dark || effectiveStyle == WidgetStyle.LiquidGlass) {
                 setViewVisibility(R.id.widgetBackgroundImage, View.GONE)
                 setViewVisibility(R.id.widgetBackgroundScrim, View.GONE)
                 return

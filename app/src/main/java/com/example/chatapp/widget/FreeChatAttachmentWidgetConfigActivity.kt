@@ -169,7 +169,7 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
             button.setColorFilter(style.iconTint)
         }
 
-        if (effectiveStyle == WidgetStyle.Dark) {
+        if (effectiveStyle == WidgetStyle.Dark || effectiveStyle == WidgetStyle.LiquidGlass) {
             previewBackgroundImage.visibility = View.GONE
             previewBackgroundScrim.visibility = View.GONE
         } else {
