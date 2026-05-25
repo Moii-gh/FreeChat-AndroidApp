@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
@@ -21,6 +23,15 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private var selectedStyle = WidgetStyle.LiquidGlass
     private var selectedSize = "2x4"
+
+    private val previewSizes = listOf("2x4", "2x2", "2x3")
+    private val previewCycleHandler = Handler(Looper.getMainLooper())
+    private val previewCycleRunnable = object : Runnable {
+        override fun run() {
+            cyclePreviewSize()
+            previewCycleHandler.postDelayed(this, 5000)
+        }
+    }
 
     private lateinit var styleButtons: Map<WidgetStyle, TextView>
     private lateinit var styleSelectedBgs: Map<WidgetStyle, View>
@@ -110,6 +121,16 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
 
         bindViews()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        previewCycleHandler.postDelayed(previewCycleRunnable, 5000)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        previewCycleHandler.removeCallbacks(previewCycleRunnable)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -484,6 +505,13 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
 
         updateSizeButtons()
         applyPreview()
+    }
+
+    private fun cyclePreviewSize() {
+        val currentIndex = previewSizes.indexOf(selectedSize)
+        val nextIndex = (currentIndex + 1) % previewSizes.size
+        val nextSize = previewSizes[nextIndex]
+        updateSizeSelection(nextSize)
     }
 
     private fun getLayoutViewForSize(size: String): View? {

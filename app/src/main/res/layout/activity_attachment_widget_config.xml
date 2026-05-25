@@ -390,7 +390,8 @@
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_widget_config_card"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="16dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="match_parent"
