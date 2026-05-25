@@ -197,45 +197,6 @@
             </FrameLayout>
 
             <LinearLayout
-                android:id="@+id/widgetBackgroundActions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/btnWidgetChooseBackground"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_widget_config_primary_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="@string/widget_config_choose_background"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btnWidgetRemoveBackground"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_widget_config_secondary_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="@string/widget_config_remove_background"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <LinearLayout
                 android:id="@+id/widgetStyleSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -274,53 +235,31 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/widgetStyleDarkMatte"
+                        android:id="@+id/widgetStyleDark"
                         android:layout_width="0dp"
                         android:layout_height="52dp"
-                        android:layout_marginStart="10dp"
+                        android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_widget_config_option"
                         android:clickable="true"
                         android:focusable="true"
                         android:gravity="center"
-                        android:text="@string/widget_style_dark_matte"
-                        android:textColor="#A8B1BE"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/widgetStyleSolid"
-                        android:layout_width="0dp"
-                        android:layout_height="52dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_widget_config_option"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:text="@string/widget_style_solid"
+                        android:text="@string/widget_style_dark"
                         android:textColor="#A8B1BE"
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/widgetStyleAdaptiveSystem"
+                        android:id="@+id/widgetStyleAdaptive"
                         android:layout_width="0dp"
                         android:layout_height="52dp"
-                        android:layout_marginStart="10dp"
+                        android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_widget_config_option"
                         android:clickable="true"
                         android:focusable="true"
                         android:gravity="center"
-                        android:text="@string/widget_style_adaptive_system"
+                        android:text="@string/widget_style_adaptive"
                         android:textColor="#A8B1BE"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -328,7 +267,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/widgetGlassSettingsSection"
+                android:id="@+id/widgetManualSettingsSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -339,61 +278,13 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_config_glass_settings"
+                    android:text="@string/widget_config_manual_settings"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <include layout="@layout/widget_config_slider_blur" />
                 <include layout="@layout/widget_config_slider_transparency" />
-                <include layout="@layout/widget_config_slider_border_glow" />
                 <include layout="@layout/widget_config_slider_corner_radius" />
-                <include layout="@layout/widget_config_slider_glass_depth" />
-
-                <TextView
-                    android:id="@+id/toggleWidgetNoiseTexture"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_widget_config_toggle_on"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:text="@string/widget_config_noise_texture"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/toggleWidgetDynamicReflections"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_widget_config_toggle_on"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:text="@string/widget_config_dynamic_reflections"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/toggleWidgetMatchWallpaper"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_widget_config_toggle_on"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:text="@string/widget_config_match_wallpaper"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

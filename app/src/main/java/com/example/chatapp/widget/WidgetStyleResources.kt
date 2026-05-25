@@ -25,23 +25,15 @@ internal object WidgetStyleResources {
                 textColor = 0xFFF8FBFF.toInt(),
                 iconTint = 0xFFFFFFFF.toInt()
             )
-            WidgetStyle.DarkMatte -> RemoteStyle(
-                panelBackgroundResId = mattePanelBackground(state.cornerRadiusDp),
-                inputBackgroundResId = R.drawable.bg_attachment_widget_matte_input,
-                activeInputBackgroundResId = R.drawable.bg_attachment_widget_matte_active,
-                buttonBackgroundResId = R.drawable.bg_attachment_widget_matte_button,
-                textColor = 0xFFE9E7EF.toInt(),
+            WidgetStyle.Dark -> RemoteStyle(
+                panelBackgroundResId = R.drawable.bg_attachment_widget_panel,
+                inputBackgroundResId = R.drawable.bg_attachment_widget_input,
+                activeInputBackgroundResId = R.drawable.bg_attachment_widget_active,
+                buttonBackgroundResId = R.drawable.bg_attachment_widget_button,
+                textColor = 0xFFD0CED6.toInt(),
                 iconTint = 0xFFFFFFFF.toInt()
             )
-            WidgetStyle.Solid -> RemoteStyle(
-                panelBackgroundResId = solidPanelBackground(state.cornerRadiusDp),
-                inputBackgroundResId = R.drawable.bg_attachment_widget_solid_input,
-                activeInputBackgroundResId = R.drawable.bg_attachment_widget_solid_active,
-                buttonBackgroundResId = R.drawable.bg_attachment_widget_solid_button,
-                textColor = 0xFF1B1D24.toInt(),
-                iconTint = 0xFF171A22.toInt()
-            )
-            WidgetStyle.AdaptiveSystem -> error("Adaptive style must be resolved before use")
+            WidgetStyle.Adaptive -> error("Adaptive style must be resolved before use")
         }
     }
 
@@ -49,8 +41,8 @@ internal object WidgetStyleResources {
         context: Context,
         state: FreeChatAttachmentWidgetStateStore.State
     ): WidgetStyle {
-        if (state.widgetStyle != WidgetStyle.AdaptiveSystem) return state.widgetStyle
-        return if (context.isNightMode()) WidgetStyle.LiquidGlass else WidgetStyle.Solid
+        if (state.widgetStyle != WidgetStyle.Adaptive) return state.widgetStyle
+        return if (context.isNightMode()) WidgetStyle.Dark else WidgetStyle.LiquidGlass
     }
 
     private fun liquidPanelBackground(cornerRadiusDp: Int): Int {
@@ -58,22 +50,6 @@ internal object WidgetStyleResources {
             in 0..25 -> R.drawable.bg_attachment_widget_liquid_panel_soft
             in 26..38 -> R.drawable.bg_attachment_widget_liquid_panel_medium
             else -> R.drawable.bg_attachment_widget_liquid_panel_round
-        }
-    }
-
-    private fun mattePanelBackground(cornerRadiusDp: Int): Int {
-        return when (cornerRadiusDp) {
-            in 0..25 -> R.drawable.bg_attachment_widget_matte_panel_soft
-            in 26..38 -> R.drawable.bg_attachment_widget_matte_panel_medium
-            else -> R.drawable.bg_attachment_widget_matte_panel_round
-        }
-    }
-
-    private fun solidPanelBackground(cornerRadiusDp: Int): Int {
-        return when (cornerRadiusDp) {
-            in 0..25 -> R.drawable.bg_attachment_widget_solid_panel_soft
-            in 26..38 -> R.drawable.bg_attachment_widget_solid_panel_medium
-            else -> R.drawable.bg_attachment_widget_solid_panel_round
         }
     }
 

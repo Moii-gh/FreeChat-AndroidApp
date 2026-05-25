@@ -163,6 +163,11 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             size: WidgetSize,
             layoutName: String
         ) {
+            if (WidgetStyleResources.effectiveStyle(context, state) == WidgetStyle.Dark) {
+                setViewVisibility(R.id.widgetBackgroundImage, View.GONE)
+                setViewVisibility(R.id.widgetBackgroundScrim, View.GONE)
+                return
+            }
             val surface = runCatching {
                 WidgetGlassSurfaceRenderer.render(context, state, size, layoutName)
             }.getOrNull()
@@ -181,6 +186,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             state: FreeChatAttachmentWidgetStateStore.State,
             layout: WidgetLayout
         ) {
+            if (WidgetStyleResources.effectiveStyle(context, state) == WidgetStyle.Dark) return
             val style = WidgetStyleResources.remoteStyle(context, state)
             setInt(R.id.widgetPanel, "setBackgroundResource", style.panelBackgroundResId)
             if (layout.hasInput) {
