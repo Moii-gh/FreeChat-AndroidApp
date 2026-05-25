@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 1. Outer Glow (Subtle White Accent) -->
     <item>
         <shape android:shape="oval">
             <solid android:color="#26FFFFFF" />
-            <size android:width="24dp" android:height="24dp" />
+            <size android:width="26dp" android:height="26dp" />
         </shape>
     </item>
-    <item android:top="6dp" android:left="6dp" android:right="6dp" android:bottom="6dp">
+    <!-- 2. Main White Body -->
+    <item android:top="3dp" android:left="3dp" android:right="3dp" android:bottom="3dp">
         <shape android:shape="oval">
             <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+    <!-- 3. Inner Tech Core (Matching Grey Dot) -->
+    <item android:top="9dp" android:left="9dp" android:right="9dp" android:bottom="9dp">
+        <shape android:shape="oval">
+            <solid android:color="#8E8E93" />
         </shape>
     </item>
 </layer-list>
