@@ -117,6 +117,7 @@ class DigitalAssistantOverlayView(
         configureStaticText()
         configureInput()
         configureClicks()
+        configureInputFeedback()
         binding.bottomPanel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateMessageMaxWidths()
             updateFloatingPositions()
@@ -203,6 +204,9 @@ class DigitalAssistantOverlayView(
                 InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                 InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             doAfterTextChanged { updateSendButton() }
+            setOnFocusChangeListener { _, hasFocus ->
+                animateInputFocus(hasFocus)
+            }
             setOnEditorActionListener { _, _, _ ->
                 if (binding.sendButton.isEnabled) {
                     submitFromInput()
@@ -242,6 +246,59 @@ class DigitalAssistantOverlayView(
         }
         binding.cancelCloseButton.setHapticClickListener { binding.confirmPanel.isGone = true }
         binding.confirmCloseButton.setHapticClickListener { closeWithAnimation(force = true) }
+    }
+
+    private fun configureInputFeedback() {
+        addPressFeedback(binding.addButton, pressedScale = 0.92f)
+        addPressFeedback(binding.sendButton, pressedScale = 0.9f)
+
+        binding.inputCapsule.setOnHoverListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_HOVER_ENTER -> animateInputFocus(hasFocus = true)
+                MotionEvent.ACTION_HOVER_EXIT -> animateInputFocus(binding.inputField.hasFocus())
+            }
+            false
+        }
+    }
+
+    private fun addPressFeedback(view: View, pressedScale: Float) {
+        view.setOnTouchListener { target, event ->
+            if (!target.isEnabled) return@setOnTouchListener false
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    target.animate().cancel()
+                    target.animate()
+                        .scaleX(pressedScale)
+                        .scaleY(pressedScale)
+                        .setDuration(70L)
+                        .setInterpolator(smoothOut)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    target.animate().cancel()
+                    target.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(150L)
+                        .setInterpolator(panelOut)
+                        .start()
+                }
+            }
+            false
+        }
+    }
+
+    private fun animateInputFocus(hasFocus: Boolean) {
+        binding.inputCapsule.animate().cancel()
+        binding.inputCapsule.animate()
+            .scaleX(if (hasFocus) 1.006f else 1f)
+            .scaleY(if (hasFocus) 1.006f else 1f)
+            .translationZ(if (hasFocus) dp(5).toFloat() else 0f)
+            .setDuration(if (hasFocus) 180L else 150L)
+            .setInterpolator(smoothOut)
+            .start()
     }
 
     private fun expandDragHandleTouchTarget() {
@@ -382,7 +439,7 @@ class DigitalAssistantOverlayView(
         binding.assistantTitle.isVisible = expanded
         binding.messagesFrame.isVisible = expanded
         binding.sheetContent.gravity = if (expanded) Gravity.NO_GRAVITY else Gravity.BOTTOM
-        setInputRowBottomMargin(if (expanded) dp(14) else dp(4))
+        setInputRowBottomMargin(if (expanded) dp(16) else dp(6))
         binding.bottomPanel.clipChildren = expanded
         binding.bottomPanel.clipToPadding = expanded
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -1179,7 +1236,7 @@ class DigitalAssistantOverlayView(
             !latestState.isGenerating
         binding.sendButton.isEnabled = enabled
         binding.sendButton.alpha = 1f
-        binding.sendButton.setColorFilter(if (enabled) Color.BLACK else Color.parseColor("#1F1F1F"))
+        binding.sendButton.setColorFilter(if (enabled) Color.BLACK else Color.parseColor("#252528"))
     }
 
     private fun startTypingDots(view: TextView) {
@@ -1341,6 +1398,7 @@ class DigitalAssistantOverlayView(
     }
 
     private fun updateInsets(insets: WindowInsets) {
+        val wasKeyboardVisible = keyboardVisible
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val nav = insets.getInsets(WindowInsets.Type.navigationBars())
             val gestures = insets.getInsets(WindowInsets.Type.systemGestures())
@@ -1371,6 +1429,21 @@ class DigitalAssistantOverlayView(
             bottomInset = if (keyboardVisible) 0 else navBottomInset
         }
         updateFloatingPositions()
+        if (wasKeyboardVisible != keyboardVisible) {
+            animateKeyboardTransition(visible = keyboardVisible)
+        }
+    }
+
+    private fun animateKeyboardTransition(visible: Boolean) {
+        binding.inputRow.animate().cancel()
+        binding.inputRow.alpha = 0.96f
+        binding.inputRow.translationY = if (visible) dp(10).toFloat() else -dp(6).toFloat()
+        binding.inputRow.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(if (visible) 220L else 170L)
+            .setInterpolator(smoothOut)
+            .start()
     }
 
     private fun updateFloatingPositions() {
@@ -1381,7 +1454,7 @@ class DigitalAssistantOverlayView(
             bottomInset + dp(6)
         }
         val targetHeight = if (compact) {
-            if (latestState.attachment != null) dp(158) else dp(48)
+            if (latestState.attachment != null) dp(188) else dp(72)
         } else {
             val availableHeight = if (height > 0) {
                 height - topInset - bottom - dp(8)
