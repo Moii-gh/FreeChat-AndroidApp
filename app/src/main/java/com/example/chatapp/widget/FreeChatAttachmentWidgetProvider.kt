@@ -225,10 +225,11 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                     setTextColor(R.id.widgetPlaceholder, colors.textColor)
                 }
 
-                setAdaptiveButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, colors.buttonBg, colors.iconTint)
-                setAdaptiveButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, colors.buttonBg, colors.iconTint)
-                setAdaptiveButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, colors.buttonBg, colors.iconTint)
-                setAdaptiveButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, colors.buttonBg, colors.iconTint)
+                val isOneRow = !layout.name.startsWith("Tall")
+                setAdaptiveButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, colors.buttonBg, colors.iconTint, isOneRow)
+                setAdaptiveButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, colors.buttonBg, colors.iconTint, isOneRow)
+                setAdaptiveButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, colors.buttonBg, colors.iconTint, isOneRow)
+                setAdaptiveButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, colors.buttonBg, colors.iconTint, isOneRow)
             } else {
                 val style = WidgetStyleResources.remoteStyle(context, state)
                 setInt(R.id.widgetPanel, "setBackgroundResource", style.panelBackgroundResId)
@@ -243,10 +244,16 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 if (layout.hasInputText) {
                     setTextColor(R.id.widgetPlaceholder, style.textColor)
                 }
-                setButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, style.buttonBackgroundResId, style.iconTint)
-                setButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, style.buttonBackgroundResId, style.iconTint)
-                setButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, style.buttonBackgroundResId, style.iconTint)
-                setButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, style.buttonBackgroundResId, style.iconTint)
+                val isOneRow = !layout.name.startsWith("Tall")
+                val buttonBg = if (isOneRow) {
+                    R.drawable.bg_attachment_widget_liquid_button_one_row
+                } else {
+                    style.buttonBackgroundResId
+                }
+                setButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, buttonBg, style.iconTint)
+                setButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, buttonBg, style.iconTint)
+                setButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, buttonBg, style.iconTint)
+                setButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, buttonBg, style.iconTint)
             }
         }
 
@@ -265,11 +272,16 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             isPresent: Boolean,
             viewId: Int,
             buttonBgColor: Int,
-            iconTint: Int
+            iconTint: Int,
+            isOneRow: Boolean
         ) {
             if (!isPresent) return
-            // Use standard shape drawable for dynamic button background
-            setInt(viewId, "setBackgroundResource", R.drawable.bg_attachment_widget_button)
+            val bgResId = if (isOneRow) {
+                R.drawable.bg_attachment_widget_button_one_row
+            } else {
+                R.drawable.bg_attachment_widget_button
+            }
+            setInt(viewId, "setBackgroundResource", bgResId)
             setColorStateList(
                 viewId,
                 "setBackgroundTintList",
