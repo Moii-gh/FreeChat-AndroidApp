@@ -48,49 +48,6 @@
             app:tint="#FFFFFF"/>
     </RelativeLayout>
 
-    <TextView
-        android:id="@+id/tvLauncherIconLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/label_launcher_icon"
-        android:textColor="#8E8E93"
-        android:textSize="14sp" />
-
-    <RadioGroup
-        android:id="@+id/rgLauncherIcon"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:background="@drawable/edit_text_bg"
-        android:orientation="vertical"
-        android:padding="8dp">
-
-        <RadioButton
-            android:id="@+id/rbLauncherIconDefault"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:buttonTint="#FFFFFF"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="8dp"
-            android:text="@string/label_launcher_icon_default"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp" />
-
-        <RadioButton
-            android:id="@+id/rbLauncherIconTransparent"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:buttonTint="#FFFFFF"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="8dp"
-            android:text="@string/label_launcher_icon_transparent"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp" />
-    </RadioGroup>
-
     <!-- Instruction label -->
     <TextView
         android:id="@+id/tvInstructionsLabel"
