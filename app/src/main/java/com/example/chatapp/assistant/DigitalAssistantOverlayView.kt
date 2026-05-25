@@ -1,7 +1,6 @@
 package com.example.chatapp.assistant
 
 import android.animation.Animator
-import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
@@ -138,6 +137,7 @@ class DigitalAssistantOverlayView(
 
     override fun onDetachedFromWindow() {
         stopTypingDots()
+        binding.focusEdgeGlow.animate().cancel()
         viewModel.removeListener(listener)
         super.onDetachedFromWindow()
     }
@@ -206,6 +206,7 @@ class DigitalAssistantOverlayView(
             doAfterTextChanged { updateSendButton() }
             setOnFocusChangeListener { _, hasFocus ->
                 animateInputFocus(hasFocus)
+                animateFocusEdgeGlow(hasFocus)
             }
             setOnEditorActionListener { _, _, _ ->
                 if (binding.sendButton.isEnabled) {
@@ -270,6 +271,7 @@ class DigitalAssistantOverlayView(
                     target.animate()
                         .scaleX(pressedScale)
                         .scaleY(pressedScale)
+                        .setStartDelay(0L)
                         .setDuration(70L)
                         .setInterpolator(smoothOut)
                         .start()
@@ -281,6 +283,7 @@ class DigitalAssistantOverlayView(
                     target.animate()
                         .scaleX(1f)
                         .scaleY(1f)
+                        .setStartDelay(0L)
                         .setDuration(150L)
                         .setInterpolator(panelOut)
                         .start()
@@ -296,9 +299,50 @@ class DigitalAssistantOverlayView(
             .scaleX(if (hasFocus) 1.006f else 1f)
             .scaleY(if (hasFocus) 1.006f else 1f)
             .translationZ(if (hasFocus) dp(5).toFloat() else 0f)
+            .setStartDelay(0L)
             .setDuration(if (hasFocus) 180L else 150L)
             .setInterpolator(smoothOut)
             .start()
+    }
+
+    private fun animateFocusEdgeGlow(visible: Boolean) {
+        val glow = binding.focusEdgeGlow
+        glow.animate().cancel()
+        glow.pivotX = if (glow.width > 0) glow.width / 2f else width / 2f
+        glow.pivotY = when {
+            glow.height > 0 -> glow.height.toFloat()
+            height > 0 -> height.toFloat()
+            else -> resources.displayMetrics.heightPixels.toFloat()
+        }
+
+        if (visible) {
+            glow.isVisible = true
+            if (glow.scaleY <= 0f) {
+                glow.scaleY = 0.05f
+                glow.alpha = 0f
+            }
+            glow.animate()
+                .alpha(1f)
+                .scaleY(1f)
+                .setStartDelay(0L)
+                .setDuration(420L)
+                .setInterpolator(smoothOut)
+                .start()
+        } else {
+            glow.animate()
+                .alpha(0f)
+                .scaleY(0.05f)
+                .setStartDelay(0L)
+                .setDuration(280L)
+                .setInterpolator(smoothOut)
+                .withEndAction {
+                    if (!binding.inputField.hasFocus()) {
+                        glow.isGone = true
+                        glow.scaleY = 0f
+                    }
+                }
+                .start()
+        }
     }
 
     private fun expandDragHandleTouchTarget() {
@@ -1264,17 +1308,60 @@ class DigitalAssistantOverlayView(
         binding.dimView.setBackgroundColor(Color.TRANSPARENT)
         binding.dimView.alpha = 1f
 
-        AnimatorSet().apply {
-            playTogether(
-                ObjectAnimator.ofFloat(binding.bottomPanel, View.SCALE_X, 0.98f, 1f),
-                ObjectAnimator.ofFloat(binding.bottomPanel, View.SCALE_Y, 0.98f, 1f),
-                ObjectAnimator.ofFloat(binding.bottomPanel, View.ALPHA, 0f, 1f),
-                ObjectAnimator.ofFloat(binding.bottomPanel, View.TRANSLATION_Y, dp(52).toFloat(), 0f)
-            )
-            duration = 360L
-            interpolator = panelOut
-            start()
-        }
+        listOf(
+            binding.bottomPanel,
+            binding.inputCapsule,
+            binding.addButton,
+            binding.inputField,
+            binding.micIcon,
+            binding.sendButton
+        ).forEach { it.animate().cancel() }
+
+        binding.bottomPanel.alpha = 0f
+        binding.bottomPanel.scaleX = 0.99f
+        binding.bottomPanel.scaleY = 0.99f
+        binding.bottomPanel.translationY = dp(18).toFloat()
+
+        prepareIntroStep(binding.inputCapsule, offsetY = dp(16), startScale = 0.96f)
+        prepareIntroStep(binding.addButton, offsetY = dp(10), startScale = 0.86f)
+        prepareIntroStep(binding.inputField, offsetY = dp(8), startScale = 0.98f)
+        prepareIntroStep(binding.micIcon, offsetY = dp(8), startScale = 0.88f)
+        prepareIntroStep(binding.sendButton, offsetY = dp(10), startScale = 0.86f)
+
+        binding.bottomPanel.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .translationY(0f)
+            .setStartDelay(0L)
+            .setDuration(220L)
+            .setInterpolator(smoothOut)
+            .start()
+
+        playIntroStep(binding.inputCapsule, delay = 35L, duration = 240L)
+        playIntroStep(binding.addButton, delay = 115L, duration = 210L)
+        playIntroStep(binding.inputField, delay = 160L, duration = 210L)
+        playIntroStep(binding.micIcon, delay = 205L, duration = 200L)
+        playIntroStep(binding.sendButton, delay = 250L, duration = 210L)
+    }
+
+    private fun prepareIntroStep(view: View, offsetY: Int, startScale: Float) {
+        view.alpha = 0f
+        view.translationY = offsetY.toFloat()
+        view.scaleX = startScale
+        view.scaleY = startScale
+    }
+
+    private fun playIntroStep(view: View, delay: Long, duration: Long) {
+        view.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setStartDelay(delay)
+            .setDuration(duration)
+            .setInterpolator(smoothOut)
+            .start()
     }
 
     private fun playSendTap() {
@@ -1282,12 +1369,14 @@ class DigitalAssistantOverlayView(
         binding.sendButton.animate()
             .scaleX(0.9f)
             .scaleY(0.9f)
+            .setStartDelay(0L)
             .setDuration(70L)
             .setInterpolator(smoothOut)
             .withEndAction {
                 binding.sendButton.animate()
                     .scaleX(1f)
                     .scaleY(1f)
+                    .setStartDelay(0L)
                     .setDuration(130L)
                     .setInterpolator(panelOut)
                     .start()
