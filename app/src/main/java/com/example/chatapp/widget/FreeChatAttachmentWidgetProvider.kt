@@ -164,7 +164,7 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             layoutName: String
         ) {
             val effectiveStyle = WidgetStyleResources.effectiveStyle(context, state)
-            if (effectiveStyle == WidgetStyle.Dark || effectiveStyle == WidgetStyle.LiquidGlass) {
+            if (effectiveStyle == WidgetStyle.Dark || effectiveStyle == WidgetStyle.LiquidGlass || effectiveStyle == WidgetStyle.Adaptive) {
                 setViewVisibility(R.id.widgetBackgroundImage, View.GONE)
                 setViewVisibility(R.id.widgetBackgroundScrim, View.GONE)
                 return
@@ -187,24 +187,67 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             state: FreeChatAttachmentWidgetStateStore.State,
             layout: WidgetLayout
         ) {
-            if (WidgetStyleResources.effectiveStyle(context, state) == WidgetStyle.Dark) return
-            val style = WidgetStyleResources.remoteStyle(context, state)
-            setInt(R.id.widgetPanel, "setBackgroundResource", style.panelBackgroundResId)
-            if (layout.hasInput) {
-                val inputBackground = if (layout.name.startsWith("Tall")) {
-                    style.inputBackgroundResId
-                } else {
-                    style.activeInputBackgroundResId
+            val effectiveStyle = WidgetStyleResources.effectiveStyle(context, state)
+            if (effectiveStyle == WidgetStyle.Dark) return
+
+            if (effectiveStyle == WidgetStyle.Adaptive) {
+                val isDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                        android.content.res.Configuration.UI_MODE_NIGHT_YES
+                val accentColor = WidgetStyleResources.getSystemAccentColor(context)
+                val colors = WidgetStyleResources.resolveAdaptiveColors(accentColor, isDark)
+
+                // Dynamic panel background set using standard shape drawable to avoid cropping issues
+                val panelBackground = WidgetStyleResources.liquidPanelBackground(state.cornerRadiusDp)
+                setInt(R.id.widgetPanel, "setBackgroundResource", panelBackground)
+                setColorStateList(
+                    R.id.widgetPanel,
+                    "setBackgroundTintList",
+                    android.content.res.ColorStateList.valueOf(colors.panelBg)
+                )
+
+                if (layout.hasInput) {
+                    val inputBackground = if (layout.name.startsWith("Tall")) {
+                        R.drawable.bg_attachment_widget_input
+                    } else {
+                        R.drawable.bg_attachment_widget_active
+                    }
+                    setInt(R.id.widgetInput, "setBackgroundResource", inputBackground)
+                    setColorStateList(
+                        R.id.widgetInput,
+                        "setBackgroundTintList",
+                        android.content.res.ColorStateList.valueOf(colors.inputBg)
+                    )
+                    // Tint the logo for perfect readability
+                    setInt(R.id.widgetLogo, "setColorFilter", colors.iconTint)
                 }
-                setInt(R.id.widgetInput, "setBackgroundResource", inputBackground)
+
+                if (layout.hasInputText) {
+                    setTextColor(R.id.widgetPlaceholder, colors.textColor)
+                }
+
+                setAdaptiveButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, colors.buttonBg, colors.iconTint)
+                setAdaptiveButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, colors.buttonBg, colors.iconTint)
+                setAdaptiveButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, colors.buttonBg, colors.iconTint)
+                setAdaptiveButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, colors.buttonBg, colors.iconTint)
+            } else {
+                val style = WidgetStyleResources.remoteStyle(context, state)
+                setInt(R.id.widgetPanel, "setBackgroundResource", style.panelBackgroundResId)
+                if (layout.hasInput) {
+                    val inputBackground = if (layout.name.startsWith("Tall")) {
+                        style.inputBackgroundResId
+                    } else {
+                        style.activeInputBackgroundResId
+                    }
+                    setInt(R.id.widgetInput, "setBackgroundResource", inputBackground)
+                }
+                if (layout.hasInputText) {
+                    setTextColor(R.id.widgetPlaceholder, style.textColor)
+                }
+                setButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, style.buttonBackgroundResId, style.iconTint)
+                setButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, style.buttonBackgroundResId, style.iconTint)
+                setButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, style.buttonBackgroundResId, style.iconTint)
+                setButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, style.buttonBackgroundResId, style.iconTint)
             }
-            if (layout.hasInputText) {
-                setTextColor(R.id.widgetPlaceholder, style.textColor)
-            }
-            setButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, style.buttonBackgroundResId, style.iconTint)
-            setButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, style.buttonBackgroundResId, style.iconTint)
-            setButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, style.buttonBackgroundResId, style.iconTint)
-            setButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, style.buttonBackgroundResId, style.iconTint)
         }
 
         private fun RemoteViews.setButtonStyleIfPresent(
@@ -215,6 +258,23 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         ) {
             if (!isPresent) return
             setInt(viewId, "setBackgroundResource", backgroundResId)
+            setInt(viewId, "setColorFilter", iconTint)
+        }
+
+        private fun RemoteViews.setAdaptiveButtonStyleIfPresent(
+            isPresent: Boolean,
+            viewId: Int,
+            buttonBgColor: Int,
+            iconTint: Int
+        ) {
+            if (!isPresent) return
+            // Use standard shape drawable for dynamic button background
+            setInt(viewId, "setBackgroundResource", R.drawable.bg_attachment_widget_button)
+            setColorStateList(
+                viewId,
+                "setBackgroundTintList",
+                android.content.res.ColorStateList.valueOf(buttonBgColor)
+            )
             setInt(viewId, "setColorFilter", iconTint)
         }
 

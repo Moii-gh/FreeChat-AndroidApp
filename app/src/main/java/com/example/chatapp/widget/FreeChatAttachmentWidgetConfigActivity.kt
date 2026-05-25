@@ -156,20 +156,49 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private fun applyPreview() {
         val state = currentState()
         val effectiveStyle = WidgetStyleResources.effectiveStyle(this, state)
-        val style = WidgetStyleResources.remoteStyle(this, state)
-        previewPanel.setBackgroundResource(style.panelBackgroundResId)
-        previewPanel.alpha = FreeChatAttachmentWidgetStateStore.alphaForTransparency(
-            state.transparencyPercent
-        )
-        previewInput.setBackgroundResource(style.inputBackgroundResId)
-        previewPlaceholder.setTextColor(style.textColor)
-        previewLogo.setColorFilter(style.iconTint)
-        previewButtons.forEach { button ->
-            button.setBackgroundResource(style.buttonBackgroundResId)
-            button.setColorFilter(style.iconTint)
+
+        if (effectiveStyle == WidgetStyle.Adaptive) {
+            val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val accentColor = WidgetStyleResources.getSystemAccentColor(this)
+            val colors = WidgetStyleResources.resolveAdaptiveColors(accentColor, isDark)
+
+            val panelBackground = WidgetStyleResources.liquidPanelBackground(state.cornerRadiusDp)
+            previewPanel.setBackgroundResource(panelBackground)
+            previewPanel.backgroundTintList = android.content.res.ColorStateList.valueOf(colors.panelBg)
+            previewPanel.alpha = FreeChatAttachmentWidgetStateStore.alphaForTransparency(
+                state.transparencyPercent
+            )
+
+            previewInput.setBackgroundResource(R.drawable.bg_attachment_widget_active)
+            previewInput.backgroundTintList = android.content.res.ColorStateList.valueOf(colors.inputBg)
+            previewPlaceholder.setTextColor(colors.textColor)
+            previewLogo.setColorFilter(colors.iconTint)
+
+            previewButtons.forEach { button ->
+                button.setBackgroundResource(R.drawable.bg_attachment_widget_button)
+                button.backgroundTintList = android.content.res.ColorStateList.valueOf(colors.buttonBg)
+                button.setColorFilter(colors.iconTint)
+            }
+        } else {
+            val style = WidgetStyleResources.remoteStyle(this, state)
+            previewPanel.setBackgroundResource(style.panelBackgroundResId)
+            previewPanel.backgroundTintList = null
+            previewPanel.alpha = FreeChatAttachmentWidgetStateStore.alphaForTransparency(
+                state.transparencyPercent
+            )
+            previewInput.setBackgroundResource(style.inputBackgroundResId)
+            previewInput.backgroundTintList = null
+            previewPlaceholder.setTextColor(style.textColor)
+            previewLogo.setColorFilter(style.iconTint)
+            previewButtons.forEach { button ->
+                button.setBackgroundResource(style.buttonBackgroundResId)
+                button.backgroundTintList = null
+                button.setColorFilter(style.iconTint)
+            }
         }
 
-        if (effectiveStyle == WidgetStyle.Dark || effectiveStyle == WidgetStyle.LiquidGlass) {
+        if (effectiveStyle == WidgetStyle.Dark || effectiveStyle == WidgetStyle.LiquidGlass || effectiveStyle == WidgetStyle.Adaptive) {
             previewBackgroundImage.visibility = View.GONE
             previewBackgroundScrim.visibility = View.GONE
         } else {

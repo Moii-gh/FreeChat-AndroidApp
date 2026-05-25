@@ -11,6 +11,7 @@ import android.graphics.Path
 import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
+import androidx.core.graphics.ColorUtils
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -36,7 +37,7 @@ internal object WidgetGlassSurfaceRenderer {
         )
         val canvas = Canvas(bitmap)
         val rect = RectF(0f, 0f, dimensions.width.toFloat(), dimensions.height.toFloat())
-        val radius = dp(context, state.cornerRadiusDp.toFloat())
+        val radius = (dp(context, state.cornerRadiusDp.toFloat()) * dimensions.scale)
             .coerceAtMost(min(rect.width(), rect.height()) / 2f)
         val clipPath = Path().apply {
             addRoundRect(rect, radius, radius, Path.Direction.CW)
@@ -49,7 +50,7 @@ internal object WidgetGlassSurfaceRenderer {
         when (effectiveStyle) {
             WidgetStyle.LiquidGlass -> drawLiquidGlass(canvas, rect, state, palette)
             WidgetStyle.Dark -> drawDark(canvas, rect)
-            WidgetStyle.Adaptive -> Unit
+            WidgetStyle.Adaptive -> drawAdaptive(canvas, rect, context)
         }
         canvas.restore()
 
@@ -75,7 +76,8 @@ internal object WidgetGlassSurfaceRenderer {
         ).coerceAtMost(1f)
         return SurfaceDimensions(
             width = (rawWidth * scale).roundToInt().coerceAtLeast(96),
-            height = (rawHeight * scale).roundToInt().coerceAtLeast(72)
+            height = (rawHeight * scale).roundToInt().coerceAtLeast(72),
+            scale = scale
         )
     }
 
@@ -329,9 +331,42 @@ internal object WidgetGlassSurfaceRenderer {
         )
     }
 
+    private fun drawAdaptive(canvas: Canvas, rect: RectF, context: Context) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val isDark = context.isNightMode()
+        val accentColor = WidgetStyleResources.getSystemAccentColor(context)
+        val colors = WidgetStyleResources.resolveAdaptiveColors(accentColor, isDark)
+
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(colors.panelBg, hsl)
+        val h = hsl[0]
+        val s = hsl[1]
+        val l = hsl[2]
+
+        // Vertical depth gradient (premium "аккуратная глубина")
+        val topLightness = (l + 0.03f).coerceAtMost(1.0f)
+        val bottomLightness = (l - 0.03f).coerceAtLeast(0.0f)
+
+        val topColor = ColorUtils.HSLToColor(floatArrayOf(h, s, topLightness))
+        val bottomColor = ColorUtils.HSLToColor(floatArrayOf(h, s, bottomLightness))
+
+        val alpha = Color.alpha(colors.panelBg)
+        val finalTopColor = (topColor and 0x00FFFFFF) or (alpha shl 24)
+        val finalBottomColor = (bottomColor and 0x00FFFFFF) or (alpha shl 24)
+
+        paint.shader = LinearGradient(
+            0f, 0f, 0f, rect.height(),
+            finalTopColor, finalBottomColor,
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(rect, paint)
+        paint.shader = null
+    }
+
     private data class SurfaceDimensions(
         val width: Int,
-        val height: Int
+        val height: Int,
+        val scale: Float
     )
 
     private data class WallpaperPalette(
