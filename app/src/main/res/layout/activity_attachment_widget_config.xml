@@ -217,52 +217,6 @@
                         android:paddingHorizontal="14dp"
                         android:paddingVertical="6dp"
                         android:visibility="gone">
-
-                        <LinearLayout
-                            android:id="@+id/widgetConfigPreviewInput2x1"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_attachment_widget_liquid_input"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="12dp">
-
-                            <ImageView
-                                android:id="@+id/widgetConfigPreviewLogo2x1"
-                                android:layout_width="@dimen/attachment_widget_logo_size"
-                                android:layout_height="@dimen/attachment_widget_logo_size"
-                                android:alpha="0.72"
-                                android:contentDescription="@string/app_brand"
-                                android:scaleType="fitCenter"
-                                android:src="@drawable/freechat_logo_white_transparent" />
-
-                            <TextView
-                                android:id="@+id/widgetConfigPreviewPlaceholder2x1"
-                                android:layout_width="0dp"
-                                android:layout_height="match_parent"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:ellipsize="end"
-                                android:gravity="center_vertical"
-                                android:includeFontPadding="false"
-                                android:maxLines="1"
-                                android:text="@string/main_panel_input"
-                                android:textColor="#F8FBFF"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:id="@+id/widgetConfigPreviewMic2x1"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="10dp"
-                            android:background="@drawable/bg_attachment_widget_liquid_button"
-                            android:contentDescription="@string/content_desc_microphone"
-                            android:padding="9dp"
-                            android:scaleType="fitCenter"
-                            android:src="@drawable/ic_mic"
-                            android:tint="#FFFFFF" />
                     </LinearLayout>
 
                     <!-- 2x2 Layout -->
@@ -433,6 +387,50 @@
                                 android:tint="#FFFFFF" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <!-- 1x1 Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview1x1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp"
+                        android:visibility="gone">
+                    </LinearLayout>
+
+                    <!-- 1x2 Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview1x2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp"
+                        android:visibility="gone">
+                    </LinearLayout>
+
+                    <!-- 1x3 Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview1x3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp"
+                        android:visibility="gone">
+                    </LinearLayout>
+
+                    <!-- 1x4 Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview1x4"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="6dp"
+                        android:visibility="gone">
+                    </LinearLayout>
                 </FrameLayout>
             </FrameLayout>
 
@@ -454,10 +452,139 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
+                <!-- Row 1: 1x Column Sizes -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <!-- 1x1 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1">
+                        <View
+                            android:id="@+id/widgetSize1x1UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+                        <View
+                            android:id="@+id/widgetSize1x1SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+                        <TextView
+                            android:id="@+id/widgetSize1x1"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="1x1"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- 1x2 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1">
+                        <View
+                            android:id="@+id/widgetSize1x2UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+                        <View
+                            android:id="@+id/widgetSize1x2SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+                        <TextView
+                            android:id="@+id/widgetSize1x2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="1x2"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- 1x3 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1">
+                        <View
+                            android:id="@+id/widgetSize1x3UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+                        <View
+                            android:id="@+id/widgetSize1x3SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+                        <TextView
+                            android:id="@+id/widgetSize1x3"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="1x3"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- 1x4 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1">
+                        <View
+                            android:id="@+id/widgetSize1x4UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+                        <View
+                            android:id="@+id/widgetSize1x4SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+                        <TextView
+                            android:id="@+id/widgetSize1x4"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="1x4"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+                </LinearLayout>
+
+                <!-- Row 2: 2x Column Sizes -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
@@ -466,20 +593,17 @@
                         android:layout_width="0dp"
                         android:layout_height="40dp"
                         android:layout_weight="1">
-
                         <View
                             android:id="@+id/widgetSize2x1UnselectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_unselected" />
-
                         <View
                             android:id="@+id/widgetSize2x1SelectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_selected"
                             android:alpha="0.0" />
-
                         <TextView
                             android:id="@+id/widgetSize2x1"
                             android:layout_width="match_parent"
@@ -499,20 +623,17 @@
                         android:layout_height="40dp"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1">
-
                         <View
                             android:id="@+id/widgetSize2x2UnselectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_unselected" />
-
                         <View
                             android:id="@+id/widgetSize2x2SelectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_selected"
                             android:alpha="0.0" />
-
                         <TextView
                             android:id="@+id/widgetSize2x2"
                             android:layout_width="match_parent"
@@ -532,20 +653,17 @@
                         android:layout_height="40dp"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1">
-
                         <View
                             android:id="@+id/widgetSize2x3UnselectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_unselected" />
-
                         <View
                             android:id="@+id/widgetSize2x3SelectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_selected"
                             android:alpha="0.0" />
-
                         <TextView
                             android:id="@+id/widgetSize2x3"
                             android:layout_width="match_parent"
@@ -565,20 +683,17 @@
                         android:layout_height="40dp"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1">
-
                         <View
                             android:id="@+id/widgetSize2x4UnselectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_unselected" />
-
                         <View
                             android:id="@+id/widgetSize2x4SelectedBg"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/bg_widget_option_selected"
                             android:alpha="0.0" />
-
                         <TextView
                             android:id="@+id/widgetSize2x4"
                             android:layout_width="match_parent"

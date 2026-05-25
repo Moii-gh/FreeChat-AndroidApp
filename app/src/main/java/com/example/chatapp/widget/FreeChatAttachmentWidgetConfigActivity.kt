@@ -30,6 +30,10 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private val activeAnimators = mutableMapOf<Any, ValueAnimator>()
 
     private val sizeHeights = mapOf(
+        "1x1" to 60,
+        "1x2" to 90,
+        "1x3" to 120,
+        "1x4" to 150,
         "2x1" to 60,
         "2x2" to 90,
         "2x3" to 120,
@@ -37,39 +41,35 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     )
 
     private val allInputs by lazy {
-        listOf(
+        listOfNotNull(
             findViewById<View>(R.id.widgetConfigPreviewInput),
-            findViewById<View>(R.id.widgetConfigPreviewInput2x1),
             findViewById<View>(R.id.widgetConfigPreviewInput2x2),
             findViewById<View>(R.id.widgetConfigPreviewInput2x3)
         )
     }
 
     private val allPlaceholders by lazy {
-        listOf(
+        listOfNotNull(
             findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder),
-            findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder2x1),
             findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder2x2),
             findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder2x3)
         )
     }
 
     private val allLogos by lazy {
-        listOf(
+        listOfNotNull(
             findViewById<ImageView>(R.id.widgetConfigPreviewLogo),
-            findViewById<ImageView>(R.id.widgetConfigPreviewLogo2x1),
             findViewById<ImageView>(R.id.widgetConfigPreviewLogo2x2),
             findViewById<ImageView>(R.id.widgetConfigPreviewLogo2x3)
         )
     }
 
     private val allButtons by lazy {
-        listOf(
+        listOfNotNull(
             findViewById<ImageView>(R.id.widgetConfigPreviewCamera),
             findViewById<ImageView>(R.id.widgetConfigPreviewGallery),
             findViewById<ImageView>(R.id.widgetConfigPreviewDocument),
             findViewById<ImageView>(R.id.widgetConfigPreviewMic),
-            findViewById<ImageView>(R.id.widgetConfigPreviewMic2x1),
             findViewById<ImageView>(R.id.widgetConfigPreviewCamera2x2),
             findViewById<ImageView>(R.id.widgetConfigPreviewMic2x2),
             findViewById<ImageView>(R.id.widgetConfigPreviewCamera2x3),
@@ -127,6 +127,12 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
         bindSizeButtons()
         bindPreviewViews()
         bindControls()
+
+        // Set initial preview size (default is 2x4 layout with 150dp height and MATCH_PARENT width)
+        val params = previewPanel.layoutParams
+        params.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        params.height = (150 * resources.displayMetrics.density).toInt()
+        previewPanel.layoutParams = params
 
         val state = FreeChatAttachmentWidgetStateStore.load(this, appWidgetId)
         selectedStyle = state.widgetStyle
@@ -422,12 +428,20 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
 
     private fun bindSizeButtons() {
         sizeButtons = mapOf(
+            "1x1" to findViewById(R.id.widgetSize1x1),
+            "1x2" to findViewById(R.id.widgetSize1x2),
+            "1x3" to findViewById(R.id.widgetSize1x3),
+            "1x4" to findViewById(R.id.widgetSize1x4),
             "2x1" to findViewById(R.id.widgetSize2x1),
             "2x2" to findViewById(R.id.widgetSize2x2),
             "2x3" to findViewById(R.id.widgetSize2x3),
             "2x4" to findViewById(R.id.widgetSize2x4)
         )
         sizeSelectedBgs = mapOf(
+            "1x1" to findViewById(R.id.widgetSize1x1SelectedBg),
+            "1x2" to findViewById(R.id.widgetSize1x2SelectedBg),
+            "1x3" to findViewById(R.id.widgetSize1x3SelectedBg),
+            "1x4" to findViewById(R.id.widgetSize1x4SelectedBg),
             "2x1" to findViewById(R.id.widgetSize2x1SelectedBg),
             "2x2" to findViewById(R.id.widgetSize2x2SelectedBg),
             "2x3" to findViewById(R.id.widgetSize2x3SelectedBg),
@@ -440,7 +454,7 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
         val oldSize = selectedSize
         selectedSize = newSize
 
-        // 1. Smoothly animate layout height
+        // 1. Smoothly animate layout height while maintaining full width
         val targetHeightDp = sizeHeights[newSize] ?: 150
         val targetHeightPx = (targetHeightDp * resources.displayMetrics.density).toInt()
         val currentHeightPx = previewPanel.height
@@ -489,6 +503,10 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
 
     private fun getLayoutViewForSize(size: String): View? {
         return when (size) {
+            "1x1" -> findViewById(R.id.layoutPreview1x1)
+            "1x2" -> findViewById(R.id.layoutPreview1x2)
+            "1x3" -> findViewById(R.id.layoutPreview1x3)
+            "1x4" -> findViewById(R.id.layoutPreview1x4)
             "2x1" -> findViewById(R.id.layoutPreview2x1)
             "2x2" -> findViewById(R.id.layoutPreview2x2)
             "2x3" -> findViewById(R.id.layoutPreview2x3)
