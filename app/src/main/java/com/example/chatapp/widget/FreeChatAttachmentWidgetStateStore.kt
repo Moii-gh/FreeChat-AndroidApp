@@ -118,7 +118,7 @@ internal object FreeChatAttachmentWidgetStateStore {
             .putStringIfAbsent(
                 prefs,
                 key(appWidgetId, KEY_WIDGET_STYLE),
-                WidgetStyle.LiquidGlass.prefValue
+                WidgetStyle.Dark.prefValue
             )
             .putIntIfAbsent(
                 prefs,
@@ -402,7 +402,7 @@ internal enum class WidgetStyle(val prefValue: String) {
                 Adaptive.prefValue,
                 "adaptive_system",
                 "solid" -> Adaptive
-                else -> LiquidGlass
+                else -> Dark
             }
         }
     }

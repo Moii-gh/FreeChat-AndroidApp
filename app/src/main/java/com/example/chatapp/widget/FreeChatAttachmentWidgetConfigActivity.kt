@@ -21,7 +21,7 @@ import com.example.chatapp.R
 
 class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private var selectedStyle = WidgetStyle.LiquidGlass
+    private var selectedStyle = WidgetStyle.Dark
     private var selectedSize = "2x4"
 
     private val previewSizes = listOf("2x4", "2x2", "2x3")
