@@ -85,7 +85,8 @@
                 <FrameLayout
                     android:id="@+id/widgetConfigPreviewPanel"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
                     android:background="@drawable/bg_attachment_widget_liquid_panel_medium"
                     android:clipToOutline="true">
 
@@ -101,13 +102,16 @@
                         android:layout_height="match_parent"
                         android:visibility="gone" />
 
+                    <!-- 2x4 Layout (Default Tall Large) -->
                     <LinearLayout
+                        android:id="@+id/layoutPreview2x4"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:paddingHorizontal="18dp"
-                        android:paddingVertical="18dp">
+                        android:paddingVertical="12dp"
+                        android:visibility="visible">
 
                         <LinearLayout
                             android:id="@+id/widgetConfigPreviewInput"
@@ -202,8 +206,393 @@
                                 android:tint="#FFFFFF" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <!-- 2x1 Layout (Single Row) -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview2x1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="6dp"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:id="@+id/widgetConfigPreviewInput2x1"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_attachment_widget_liquid_input"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewLogo2x1"
+                                android:layout_width="@dimen/attachment_widget_logo_size"
+                                android:layout_height="@dimen/attachment_widget_logo_size"
+                                android:alpha="0.72"
+                                android:contentDescription="@string/app_brand"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/freechat_logo_white_transparent" />
+
+                            <TextView
+                                android:id="@+id/widgetConfigPreviewPlaceholder2x1"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="center_vertical"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:text="@string/main_panel_input"
+                                android:textColor="#F8FBFF"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:id="@+id/widgetConfigPreviewMic2x1"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="10dp"
+                            android:background="@drawable/bg_attachment_widget_liquid_button"
+                            android:contentDescription="@string/content_desc_microphone"
+                            android:padding="9dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_mic"
+                            android:tint="#FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- 2x2 Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview2x2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="6dp"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:id="@+id/widgetConfigPreviewInput2x2"
+                            android:layout_width="match_parent"
+                            android:layout_height="32dp"
+                            android:background="@drawable/bg_attachment_widget_liquid_input"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewLogo2x2"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:alpha="0.72"
+                                android:contentDescription="@string/app_brand"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/freechat_logo_white_transparent" />
+
+                            <TextView
+                                android:id="@+id/widgetConfigPreviewPlaceholder2x2"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="center_vertical"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:text="@string/main_panel_input"
+                                android:textColor="#F8FBFF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="32dp"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewCamera2x2"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_attachment_widget_liquid_button"
+                                android:contentDescription="@string/button_camera"
+                                android:padding="7dp"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_camera_new"
+                                android:tint="#FFFFFF" />
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewMic2x2"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_attachment_widget_liquid_button"
+                                android:contentDescription="@string/content_desc_microphone"
+                                android:padding="7dp"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_mic"
+                                android:tint="#FFFFFF" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 2x3 Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutPreview2x3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:id="@+id/widgetConfigPreviewInput2x3"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_attachment_widget_liquid_input"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewLogo2x3"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:alpha="0.72"
+                                android:contentDescription="@string/app_brand"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/freechat_logo_white_transparent" />
+
+                            <TextView
+                                android:id="@+id/widgetConfigPreviewPlaceholder2x3"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:gravity="center_vertical"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:text="@string/main_panel_input"
+                                android:textColor="#F8FBFF"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewCamera2x3"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_attachment_widget_liquid_button"
+                                android:contentDescription="@string/button_camera"
+                                android:padding="9dp"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_camera_new"
+                                android:tint="#FFFFFF" />
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewGallery2x3"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_attachment_widget_liquid_button"
+                                android:contentDescription="@string/content_desc_open_gallery"
+                                android:padding="9dp"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_photo_new"
+                                android:tint="#FFFFFF" />
+
+                            <ImageView
+                                android:id="@+id/widgetConfigPreviewMic2x3"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_attachment_widget_liquid_button"
+                                android:contentDescription="@string/content_desc_microphone"
+                                android:padding="9dp"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_mic"
+                                android:tint="#FFFFFF" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </FrameLayout>
             </FrameLayout>
+
+            <!-- Widget Size Section Card -->
+            <LinearLayout
+                android:id="@+id/widgetSizeSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_widget_config_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_config_size_section"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <!-- 2x1 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1">
+
+                        <View
+                            android:id="@+id/widgetSize2x1UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+
+                        <View
+                            android:id="@+id/widgetSize2x1SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+
+                        <TextView
+                            android:id="@+id/widgetSize2x1"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="2x1"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- 2x2 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1">
+
+                        <View
+                            android:id="@+id/widgetSize2x2UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+
+                        <View
+                            android:id="@+id/widgetSize2x2SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+
+                        <TextView
+                            android:id="@+id/widgetSize2x2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="2x2"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- 2x3 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1">
+
+                        <View
+                            android:id="@+id/widgetSize2x3UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+
+                        <View
+                            android:id="@+id/widgetSize2x3SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+
+                        <TextView
+                            android:id="@+id/widgetSize2x3"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="2x3"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- 2x4 Option Frame -->
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1">
+
+                        <View
+                            android:id="@+id/widgetSize2x4UnselectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_unselected" />
+
+                        <View
+                            android:id="@+id/widgetSize2x4SelectedBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_widget_option_selected"
+                            android:alpha="0.0" />
+
+                        <TextView
+                            android:id="@+id/widgetSize2x4"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:text="2x4"
+                            android:textColor="#A8B1BE"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/widgetStyleSection"

@@ -20,11 +20,63 @@ import com.example.chatapp.R
 class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private var selectedStyle = WidgetStyle.LiquidGlass
+    private var selectedSize = "2x4"
 
     private lateinit var styleButtons: Map<WidgetStyle, TextView>
     private lateinit var styleSelectedBgs: Map<WidgetStyle, View>
+    private lateinit var sizeButtons: Map<String, TextView>
+    private lateinit var sizeSelectedBgs: Map<String, View>
     private var isFirstLoad = true
     private val activeAnimators = mutableMapOf<Any, ValueAnimator>()
+
+    private val sizeHeights = mapOf(
+        "2x1" to 60,
+        "2x2" to 90,
+        "2x3" to 120,
+        "2x4" to 150
+    )
+
+    private val allInputs by lazy {
+        listOf(
+            findViewById<View>(R.id.widgetConfigPreviewInput),
+            findViewById<View>(R.id.widgetConfigPreviewInput2x1),
+            findViewById<View>(R.id.widgetConfigPreviewInput2x2),
+            findViewById<View>(R.id.widgetConfigPreviewInput2x3)
+        )
+    }
+
+    private val allPlaceholders by lazy {
+        listOf(
+            findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder),
+            findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder2x1),
+            findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder2x2),
+            findViewById<TextView>(R.id.widgetConfigPreviewPlaceholder2x3)
+        )
+    }
+
+    private val allLogos by lazy {
+        listOf(
+            findViewById<ImageView>(R.id.widgetConfigPreviewLogo),
+            findViewById<ImageView>(R.id.widgetConfigPreviewLogo2x1),
+            findViewById<ImageView>(R.id.widgetConfigPreviewLogo2x2),
+            findViewById<ImageView>(R.id.widgetConfigPreviewLogo2x3)
+        )
+    }
+
+    private val allButtons by lazy {
+        listOf(
+            findViewById<ImageView>(R.id.widgetConfigPreviewCamera),
+            findViewById<ImageView>(R.id.widgetConfigPreviewGallery),
+            findViewById<ImageView>(R.id.widgetConfigPreviewDocument),
+            findViewById<ImageView>(R.id.widgetConfigPreviewMic),
+            findViewById<ImageView>(R.id.widgetConfigPreviewMic2x1),
+            findViewById<ImageView>(R.id.widgetConfigPreviewCamera2x2),
+            findViewById<ImageView>(R.id.widgetConfigPreviewMic2x2),
+            findViewById<ImageView>(R.id.widgetConfigPreviewCamera2x3),
+            findViewById<ImageView>(R.id.widgetConfigPreviewGallery2x3),
+            findViewById<ImageView>(R.id.widgetConfigPreviewMic2x3)
+        )
+    }
 
     private lateinit var transparencySeekBar: SeekBar
     private lateinit var transparencyValue: TextView
@@ -72,6 +124,7 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
 
     private fun bindViews() {
         bindStyleButtons()
+        bindSizeButtons()
         bindPreviewViews()
         bindControls()
 
@@ -102,9 +155,16 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
             }
         }
 
+        sizeButtons.forEach { (size, button) ->
+            button.setOnClickListener {
+                updateSizeSelection(size)
+            }
+        }
+
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnSave).setOnClickListener { saveAndFinish() }
 
+        updateSizeButtons()
         applyPreview()
     }
 
@@ -183,12 +243,17 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
                 state.transparencyPercent
             )
 
-            previewInput.setBackgroundResource(R.drawable.bg_attachment_widget_active)
-            previewInput.backgroundTintList = android.content.res.ColorStateList.valueOf(colors.inputBg)
-            previewPlaceholder.setTextColor(colors.textColor)
-            previewLogo.setColorFilter(colors.iconTint)
-
-            previewButtons.forEach { button ->
+            allInputs.forEach { input ->
+                input.setBackgroundResource(R.drawable.bg_attachment_widget_active)
+                input.backgroundTintList = android.content.res.ColorStateList.valueOf(colors.inputBg)
+            }
+            allPlaceholders.forEach { placeholder ->
+                placeholder.setTextColor(colors.textColor)
+            }
+            allLogos.forEach { logo ->
+                logo.setColorFilter(colors.iconTint)
+            }
+            allButtons.forEach { button ->
                 button.setBackgroundResource(R.drawable.bg_attachment_widget_button)
                 button.backgroundTintList = android.content.res.ColorStateList.valueOf(colors.buttonBg)
                 button.setColorFilter(colors.iconTint)
@@ -200,11 +265,17 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
             previewPanel.alpha = FreeChatAttachmentWidgetStateStore.alphaForTransparency(
                 state.transparencyPercent
             )
-            previewInput.setBackgroundResource(style.inputBackgroundResId)
-            previewInput.backgroundTintList = null
-            previewPlaceholder.setTextColor(style.textColor)
-            previewLogo.setColorFilter(style.iconTint)
-            previewButtons.forEach { button ->
+            allInputs.forEach { input ->
+                input.setBackgroundResource(style.inputBackgroundResId)
+                input.backgroundTintList = null
+            }
+            allPlaceholders.forEach { placeholder ->
+                placeholder.setTextColor(style.textColor)
+            }
+            allLogos.forEach { logo ->
+                logo.setColorFilter(style.iconTint)
+            }
+            allButtons.forEach { button ->
                 button.setBackgroundResource(style.buttonBackgroundResId)
                 button.backgroundTintList = null
                 button.setColorFilter(style.iconTint)
@@ -347,6 +418,100 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
             Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         )
         finish()
+    }
+
+    private fun bindSizeButtons() {
+        sizeButtons = mapOf(
+            "2x1" to findViewById(R.id.widgetSize2x1),
+            "2x2" to findViewById(R.id.widgetSize2x2),
+            "2x3" to findViewById(R.id.widgetSize2x3),
+            "2x4" to findViewById(R.id.widgetSize2x4)
+        )
+        sizeSelectedBgs = mapOf(
+            "2x1" to findViewById(R.id.widgetSize2x1SelectedBg),
+            "2x2" to findViewById(R.id.widgetSize2x2SelectedBg),
+            "2x3" to findViewById(R.id.widgetSize2x3SelectedBg),
+            "2x4" to findViewById(R.id.widgetSize2x4SelectedBg)
+        )
+    }
+
+    private fun updateSizeSelection(newSize: String) {
+        if (selectedSize == newSize) return
+        val oldSize = selectedSize
+        selectedSize = newSize
+
+        // 1. Smoothly animate layout height
+        val targetHeightDp = sizeHeights[newSize] ?: 150
+        val targetHeightPx = (targetHeightDp * resources.displayMetrics.density).toInt()
+        val currentHeightPx = previewPanel.height
+
+        val heightAnimator = ValueAnimator.ofInt(currentHeightPx, targetHeightPx).apply {
+            duration = 300
+            interpolator = DecelerateInterpolator()
+            addUpdateListener { animator ->
+                val params = previewPanel.layoutParams
+                params.height = animator.animatedValue as Int
+                previewPanel.layoutParams = params
+            }
+        }
+        activeAnimators[previewPanel]?.cancel()
+        activeAnimators[previewPanel] = heightAnimator
+        heightAnimator.start()
+
+        // 2. Smoothly cross-fade layout contents
+        val oldLayout = getLayoutViewForSize(oldSize)
+        val newLayout = getLayoutViewForSize(newSize)
+
+        if (oldLayout != null && newLayout != null) {
+            newLayout.visibility = View.VISIBLE
+            newLayout.alpha = 0f
+
+            val fadeAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 300
+                interpolator = DecelerateInterpolator()
+                addUpdateListener { animator ->
+                    val value = animator.animatedValue as Float
+                    oldLayout.alpha = 1f - value
+                    newLayout.alpha = value
+                }
+            }
+            fadeAnimator.addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    oldLayout.visibility = View.GONE
+                }
+            })
+            fadeAnimator.start()
+        }
+
+        updateSizeButtons()
+        applyPreview()
+    }
+
+    private fun getLayoutViewForSize(size: String): View? {
+        return when (size) {
+            "2x1" -> findViewById(R.id.layoutPreview2x1)
+            "2x2" -> findViewById(R.id.layoutPreview2x2)
+            "2x3" -> findViewById(R.id.layoutPreview2x3)
+            "2x4" -> findViewById(R.id.layoutPreview2x4)
+            else -> null
+        }
+    }
+
+    private fun updateSizeButtons() {
+        sizeButtons.forEach { (size, button) ->
+            val selected = size == selectedSize
+            val selectedBg = sizeSelectedBgs[size] ?: return@forEach
+
+            val targetAlpha = if (selected) 1.0f else 0.0f
+            val targetTextColor = if (selected) 0xFF0B0E14.toInt() else 0xFFA8B1BE.toInt()
+
+            if (isFirstLoad) {
+                selectedBg.alpha = targetAlpha
+                button.setTextColor(targetTextColor)
+            } else {
+                animateButtonState(button, selectedBg, targetAlpha, targetTextColor)
+            }
+        }
     }
 
     private fun SeekBar.currentValue(min: Int): Int {
