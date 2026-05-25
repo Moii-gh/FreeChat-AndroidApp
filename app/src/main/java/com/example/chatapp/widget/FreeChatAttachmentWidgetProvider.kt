@@ -6,15 +6,12 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
-import kotlin.math.max
 
 class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
@@ -89,7 +86,6 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
         private const val DEFAULT_MIN_WIDTH_DP = 300
         private const val DEFAULT_MIN_HEIGHT_DP = 130
         private const val ONE_ROW_MAX_HEIGHT_DP = 116
-        private const val MAX_BACKGROUND_BITMAP_SIDE_PX = 480
 
         fun buildRemoteViews(
             context: Context,
@@ -108,7 +104,8 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
                 displayText = inputHint
             )
             return RemoteViews(context.packageName, layout.layoutResId).apply {
-                applyBackgroundImage(context, state.backgroundImageUri)
+                applyAppearanceSurface(context, state, size.withDefaults(), layout.name)
+                applyControlStyle(context, state, layout)
                 setFloat(
                     R.id.widgetPanel,
                     "setAlpha",
@@ -160,58 +157,58 @@ class FreeChatAttachmentWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun RemoteViews.applyBackgroundImage(context: Context, uriString: String?) {
-            val bitmap = uriString?.let { loadWidgetBackgroundBitmap(context, it) }
-            if (bitmap == null) {
+        private fun RemoteViews.applyAppearanceSurface(
+            context: Context,
+            state: FreeChatAttachmentWidgetStateStore.State,
+            size: WidgetSize,
+            layoutName: String
+        ) {
+            val surface = runCatching {
+                WidgetGlassSurfaceRenderer.render(context, state, size, layoutName)
+            }.getOrNull()
+            if (surface == null) {
                 setViewVisibility(R.id.widgetBackgroundImage, View.GONE)
                 setViewVisibility(R.id.widgetBackgroundScrim, View.GONE)
                 return
             }
-
-            setImageViewBitmap(R.id.widgetBackgroundImage, bitmap)
+            setImageViewBitmap(R.id.widgetBackgroundImage, surface)
             setViewVisibility(R.id.widgetBackgroundImage, View.VISIBLE)
-            setViewVisibility(R.id.widgetBackgroundScrim, View.VISIBLE)
+            setViewVisibility(R.id.widgetBackgroundScrim, View.GONE)
         }
 
-        private fun loadWidgetBackgroundBitmap(context: Context, uriString: String): Bitmap? {
-            val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: return null
-            return runCatching {
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    BitmapFactory.decodeStream(input, null, bounds)
+        private fun RemoteViews.applyControlStyle(
+            context: Context,
+            state: FreeChatAttachmentWidgetStateStore.State,
+            layout: WidgetLayout
+        ) {
+            val style = WidgetStyleResources.remoteStyle(context, state)
+            setInt(R.id.widgetPanel, "setBackgroundResource", style.panelBackgroundResId)
+            if (layout.hasInput) {
+                val inputBackground = if (layout.name.startsWith("Tall")) {
+                    style.inputBackgroundResId
+                } else {
+                    style.activeInputBackgroundResId
                 }
-
-                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
-
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight)
-                    inPreferredConfig = Bitmap.Config.RGB_565
-                }
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    BitmapFactory.decodeStream(input, null, options)
-                }?.scaleDownToMaxSide(MAX_BACKGROUND_BITMAP_SIDE_PX)
-            }.getOrNull()
+                setInt(R.id.widgetInput, "setBackgroundResource", inputBackground)
+            }
+            if (layout.hasInputText) {
+                setTextColor(R.id.widgetPlaceholder, style.textColor)
+            }
+            setButtonStyleIfPresent(layout.hasCamera, R.id.widgetCamera, style.buttonBackgroundResId, style.iconTint)
+            setButtonStyleIfPresent(layout.hasGallery, R.id.widgetGallery, style.buttonBackgroundResId, style.iconTint)
+            setButtonStyleIfPresent(layout.hasDocument, R.id.widgetDocument, style.buttonBackgroundResId, style.iconTint)
+            setButtonStyleIfPresent(layout.hasMic, R.id.widgetMic, style.buttonBackgroundResId, style.iconTint)
         }
 
-        private fun sampleSizeFor(width: Int, height: Int): Int {
-            var sampleSize = 1
-            val largestSide = max(width, height)
-            while (largestSide / sampleSize > MAX_BACKGROUND_BITMAP_SIDE_PX) {
-                sampleSize *= 2
-            }
-            return sampleSize
-        }
-
-        private fun Bitmap.scaleDownToMaxSide(maxSide: Int): Bitmap {
-            val largestSide = max(width, height)
-            if (largestSide <= maxSide) return this
-
-            val scale = maxSide.toFloat() / largestSide
-            val targetWidth = (width * scale).toInt().coerceAtLeast(1)
-            val targetHeight = (height * scale).toInt().coerceAtLeast(1)
-            return Bitmap.createScaledBitmap(this, targetWidth, targetHeight, true).also {
-                if (it != this) recycle()
-            }
+        private fun RemoteViews.setButtonStyleIfPresent(
+            isPresent: Boolean,
+            viewId: Int,
+            backgroundResId: Int,
+            iconTint: Int
+        ) {
+            if (!isPresent) return
+            setInt(viewId, "setBackgroundResource", backgroundResId)
+            setInt(viewId, "setColorFilter", iconTint)
         }
 
         fun updateAll(context: Context) {
