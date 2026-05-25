@@ -92,6 +92,10 @@ class AssistantMessageWrapper(
     private var pulseAnimator: ValueAnimator? = null
     private var textShimmerAnimator: ValueAnimator? = null
     private val markwon = Markwon.builder(context)
+        .usePlugin(io.noties.markwon.inlineparser.MarkwonInlineParserPlugin.create())
+        .usePlugin(io.noties.markwon.ext.latex.JLatexMathPlugin.create(16f * context.resources.displayMetrics.density) { builder ->
+            builder.inlinesEnabled(true)
+        })
         .usePlugin(object : AbstractMarkwonPlugin() {
             override fun configureTheme(builder: io.noties.markwon.core.MarkwonTheme.Builder) {
                 builder.linkColor(LINK_COLOR)

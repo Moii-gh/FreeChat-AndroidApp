@@ -69,7 +69,12 @@ class DigitalAssistantOverlayView(
 
     private val smoothOut = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)
     private val panelOut = DecelerateInterpolator(1.55f)
-    private val markwon = Markwon.create(context)
+    private val markwon = Markwon.builder(context)
+        .usePlugin(io.noties.markwon.inlineparser.MarkwonInlineParserPlugin.create())
+        .usePlugin(io.noties.markwon.ext.latex.JLatexMathPlugin.create(14f * context.resources.displayMetrics.density) { builder ->
+            builder.inlinesEnabled(true)
+        })
+        .build()
     private val messageTextViews = mutableMapOf<Long, TextView>()
     private val assistantContentViews = mutableMapOf<Long, LinearLayout>()
     private val attachmentRows = mutableMapOf<Long, View>()
@@ -946,7 +951,8 @@ class DigitalAssistantOverlayView(
                             movementMethod = LinkMovementMethod.getInstance()
                             linksClickable = true
                         }
-                        markwon.setMarkdown(tv, chunk.content)
+                        val normalizedContent = com.example.chatapp.network.MathLatexNormalizer.normalize(chunk.content)
+                        markwon.setMarkdown(tv, normalizedContent)
                         content.addView(tv, LinearLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT

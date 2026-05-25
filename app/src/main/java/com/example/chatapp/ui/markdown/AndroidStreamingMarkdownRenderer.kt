@@ -154,8 +154,9 @@ internal class AndroidStreamingMarkdownRenderer(
             return
         }
 
+        val normalizedContent = com.example.chatapp.network.MathLatexNormalizer.normalize(chunk.content)
         val markdown = StreamingLinkExtractor.canonicalizeMarkdownLinks(
-            rewriteHtmlAnchors(chunk.content)
+            rewriteHtmlAnchors(normalizedContent)
         )
         markwon.setMarkdown(textView, markdown)
         val spannable = SpannableStringBuilder(textView.text)

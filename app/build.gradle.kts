@@ -223,6 +223,8 @@ dependencies {
 
     implementation("com.google.mlkit:text-recognition:16.0.0")
     implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:ext-latex:4.6.2")
+    implementation("io.noties.markwon:inline-parser:4.6.2")
     implementation("io.coil-kt:coil:2.7.0")
     implementation("com.yandex.android:mobileads:7.18.5")
 
