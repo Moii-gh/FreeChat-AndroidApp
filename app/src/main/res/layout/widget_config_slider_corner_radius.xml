@@ -2,14 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="14dp"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp">
 
         <TextView
             android:id="@+id/tvWidgetCornerRadiusLabel"
@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_config_corner_radius"
-            android:textColor="#F4F7FB"
+            android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -32,9 +32,12 @@
     <SeekBar
         android:id="@+id/widgetCornerRadiusSeekBar"
         android:layout_width="match_parent"
-        android:layout_height="42dp"
-        android:layout_marginTop="4dp"
-        android:progressBackgroundTint="#33404A58"
-        android:progressTint="#CDEEFF"
-        android:thumbTint="#FFFFFF" />
+        android:layout_height="32dp"
+        android:layout_marginTop="10dp"
+        android:splitTrack="false"
+        android:progressDrawable="@drawable/slider_progress_drawable"
+        android:thumb="@drawable/slider_thumb"
+        android:thumbOffset="8dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp" />
 </LinearLayout>

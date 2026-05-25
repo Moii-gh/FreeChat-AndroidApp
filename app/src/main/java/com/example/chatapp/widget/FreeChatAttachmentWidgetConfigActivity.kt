@@ -1,11 +1,15 @@
 package com.example.chatapp.widget
 
+import android.animation.ArgbEvaluator
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
@@ -18,6 +22,10 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private var selectedStyle = WidgetStyle.LiquidGlass
 
     private lateinit var styleButtons: Map<WidgetStyle, TextView>
+    private lateinit var styleSelectedBgs: Map<WidgetStyle, View>
+    private var isFirstLoad = true
+    private val activeAnimators = mutableMapOf<Any, ValueAnimator>()
+
     private lateinit var transparencySeekBar: SeekBar
     private lateinit var transparencyValue: TextView
     private lateinit var cornerRadiusSeekBar: SeekBar
@@ -105,6 +113,11 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
             WidgetStyle.LiquidGlass to findViewById(R.id.widgetStyleLiquidGlass),
             WidgetStyle.Dark to findViewById(R.id.widgetStyleDark),
             WidgetStyle.Adaptive to findViewById(R.id.widgetStyleAdaptive)
+        )
+        styleSelectedBgs = mapOf(
+            WidgetStyle.LiquidGlass to findViewById(R.id.widgetStyleLiquidGlassSelectedBg),
+            WidgetStyle.Dark to findViewById(R.id.widgetStyleDarkSelectedBg),
+            WidgetStyle.Adaptive to findViewById(R.id.widgetStyleAdaptiveSelectedBg)
         )
     }
 
@@ -224,14 +237,64 @@ class FreeChatAttachmentWidgetConfigActivity : AppCompatActivity() {
     private fun updateStyleButtons() {
         styleButtons.forEach { (style, button) ->
             val selected = style == selectedStyle
-            button.setBackgroundResource(
-                if (selected) {
-                    R.drawable.bg_widget_config_option_selected
-                } else {
-                    R.drawable.bg_widget_config_option
+            val selectedBg = styleSelectedBgs[style] ?: return@forEach
+
+            val targetAlpha = if (selected) 1.0f else 0.0f
+            val targetTextColor = if (selected) 0xFF0B0E14.toInt() else 0xFFA8B1BE.toInt()
+
+            if (isFirstLoad) {
+                // Apply instantly on first load to prevent flickering
+                selectedBg.alpha = targetAlpha
+                button.setTextColor(targetTextColor)
+            } else {
+                // Smooth animated transition
+                animateButtonState(button, selectedBg, targetAlpha, targetTextColor)
+            }
+        }
+        isFirstLoad = false
+    }
+
+    private fun animateButtonState(
+        button: TextView,
+        selectedBg: View,
+        targetAlpha: Float,
+        targetTextColor: Int
+    ) {
+        activeAnimators[selectedBg]?.cancel()
+        activeAnimators[button]?.cancel()
+
+        // 1. Selected background alpha fade anim
+        val startAlpha = selectedBg.alpha
+        if (startAlpha != targetAlpha) {
+            val bgAnimator = ObjectAnimator.ofFloat(
+                selectedBg,
+                "alpha",
+                startAlpha,
+                targetAlpha
+            ).apply {
+                duration = 240
+                interpolator = DecelerateInterpolator()
+            }
+            activeAnimators[selectedBg] = bgAnimator
+            bgAnimator.start()
+        }
+
+        // 2. Text color transition anim
+        val startTextColor = button.textColors.defaultColor
+        if (startTextColor != targetTextColor) {
+            val colorAnimator = ValueAnimator.ofObject(
+                ArgbEvaluator(),
+                startTextColor,
+                targetTextColor
+            ).apply {
+                duration = 240
+                interpolator = DecelerateInterpolator()
+                addUpdateListener { animator ->
+                    button.setTextColor(animator.animatedValue as Int)
                 }
-            )
-            button.setTextColor(if (selected) Color.WHITE else 0xFFA8B1BE.toInt())
+            }
+            activeAnimators[button] = colorAnimator
+            colorAnimator.start()
         }
     }
 
