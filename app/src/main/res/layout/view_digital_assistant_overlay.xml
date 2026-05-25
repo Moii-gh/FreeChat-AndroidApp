@@ -220,6 +220,17 @@
                 android:gravity="bottom"
                 android:orientation="horizontal">
 
+                <ImageButton
+                    android:id="@+id/addButton"
+                    android:layout_width="58dp"
+                    android:layout_height="58dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/bg_da_plus_button"
+                    android:contentDescription="@string/content_desc_add_attachment"
+                    android:padding="13dp"
+                    android:src="@drawable/ic_plus"
+                    app:tint="#A8A8AD" />
+
                 <LinearLayout
                     android:id="@+id/inputCapsule"
                     android:layout_width="0dp"
@@ -239,43 +250,84 @@
 
                     <FrameLayout
                         android:id="@+id/previewContainer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="48dp"
-                        android:layout_marginTop="5dp"
-                        android:layout_marginBottom="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="138dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="2dp"
                         android:clipChildren="false"
                         android:clipToPadding="false"
                         android:visibility="gone">
 
                         <FrameLayout
                             android:id="@+id/previewFrame"
-                            android:layout_width="64dp"
-                            android:layout_height="104dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
                             android:clipChildren="false"
                             android:clipToPadding="false">
 
-                            <ImageView
-                                android:id="@+id/previewImage"
+                            <TextView
+                                android:id="@+id/previewTitle"
                                 android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@drawable/bg_da_preview"
-                                android:clipToOutline="true"
-                                android:contentDescription="@string/digital_assistant_screen_analysis"
-                                android:scaleType="centerCrop" />
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|center_horizontal"
+                                android:layout_marginStart="96dp"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginEnd="44dp"
+                                android:ellipsize="middle"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:textColor="#82FFFFFF"
+                                android:textSize="11sp" />
 
-                            <ImageButton
-                                android:id="@+id/removePreview"
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:layout_gravity="top|end"
-                                android:layout_marginTop="-7dp"
-                                android:layout_marginEnd="-7dp"
-                                android:background="@drawable/bg_da_preview_close"
-                                android:contentDescription="@string/digital_assistant_close"
-                                android:padding="3dp"
-                                android:src="@drawable/ic_assistant_close"
-                                app:tint="#FFFFFFFF" />
+                            <TextView
+                                android:id="@+id/previewSubtitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|center_horizontal"
+                                android:layout_marginStart="96dp"
+                                android:layout_marginTop="27dp"
+                                android:layout_marginEnd="44dp"
+                                android:ellipsize="end"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:maxLines="1"
+                                android:textColor="#42FFFFFF"
+                                android:textSize="10sp" />
+
+                            <FrameLayout
+                                android:layout_width="88dp"
+                                android:layout_height="124dp"
+                                android:layout_gravity="top|start"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="0dp"
+                                android:clipChildren="false"
+                                android:clipToPadding="false">
+
+                                <ImageView
+                                    android:id="@+id/previewImage"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:background="@drawable/bg_da_preview_media"
+                                    android:clipToOutline="true"
+                                    android:contentDescription="@string/digital_assistant_screen_analysis"
+                                    android:scaleType="centerCrop" />
+
+                                <ImageButton
+                                    android:id="@+id/removePreview"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="top|end"
+                                    android:layout_marginTop="-6dp"
+                                    android:layout_marginEnd="-6dp"
+                                    android:background="@drawable/bg_da_preview_close"
+                                    android:contentDescription="@string/digital_assistant_close"
+                                    android:padding="6dp"
+                                    android:src="@drawable/ic_assistant_close"
+                                    app:tint="#E8FFFFFF" />
+                            </FrameLayout>
                         </FrameLayout>
                     </FrameLayout>
 
@@ -286,17 +338,6 @@
                         android:gravity="center_vertical"
                         android:minHeight="46dp"
                         android:orientation="horizontal">
-
-                        <ImageButton
-                            android:id="@+id/addButton"
-                            android:layout_width="46dp"
-                            android:layout_height="46dp"
-                            android:layout_marginEnd="4dp"
-                            android:background="@drawable/bg_da_plus_button"
-                            android:contentDescription="@string/content_desc_add_attachment"
-                            android:padding="10dp"
-                            android:src="@drawable/ic_plus"
-                            app:tint="#A8A8AD" />
 
                         <EditText
                             android:id="@+id/inputField"

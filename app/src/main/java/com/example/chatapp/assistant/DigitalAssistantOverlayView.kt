@@ -88,6 +88,7 @@ class DigitalAssistantOverlayView(
     private var lastRenderedMessageIds = emptyList<Long>()
     private var lastHasAttachment = false
     private var lastAttachmentId: String? = null
+    private var previewVisibleForAnimation = false
     private var expandedPanelVisible: Boolean? = null
     private var closingStarted = false
     private var attachmentMenuVisible = false
@@ -97,7 +98,14 @@ class DigitalAssistantOverlayView(
     private var endInset = 0
     private var keyboardInset = 0
     private var keyboardVisible = false
+    private var inputIntroFinished = false
+    private var compactActionsTargetVisible = false
+    private var compactActionsVisible = false
+    private var compactActionsAnimating = false
     private var panelBlurAnimator: ValueAnimator? = null
+    private var previewBlurAnimator: ValueAnimator? = null
+    private var panelHeightAnimator: ValueAnimator? = null
+    private val modeActionBlurAnimators = mutableMapOf<View, ValueAnimator>()
     private var typingAnimator: Animator? = null
     private var typingView: TextView? = null
     private var dragStartY = 0f
@@ -121,6 +129,7 @@ class DigitalAssistantOverlayView(
         configureInput()
         configureClicks()
         configureInputFeedback()
+        prepareModeActionsHidden()
         binding.bottomPanel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateMessageMaxWidths()
             updateFloatingPositions()
@@ -142,7 +151,13 @@ class DigitalAssistantOverlayView(
     override fun onDetachedFromWindow() {
         stopTypingDots()
         panelBlurAnimator?.cancel()
+        previewBlurAnimator?.cancel()
+        panelHeightAnimator?.cancel()
+        modeActionBlurAnimators.values.toList().forEach { it.cancel() }
+        modeActionBlurAnimators.clear()
         clearPanelBlur()
+        clearViewBlur(binding.previewFrame)
+        modeActionButtons().forEach(::clearViewBlur)
         binding.focusEdgeGlow.animate().cancel()
         viewModel.removeListener(listener)
         super.onDetachedFromWindow()
@@ -514,7 +529,11 @@ class DigitalAssistantOverlayView(
                 }
             }
         } else {
-            binding.bottomPanel.background = null
+            if (state.attachment != null || previewVisibleForAnimation) {
+                binding.bottomPanel.setBackgroundResource(R.drawable.bg_da_attachment_backplate)
+            } else {
+                binding.bottomPanel.background = null
+            }
             binding.responseScroll.scrollTo(0, 0)
         }
 
@@ -533,36 +552,152 @@ class DigitalAssistantOverlayView(
     }
 
     private fun setCompactActionsVisible(visible: Boolean, animate: Boolean = true) {
+        compactActionsTargetVisible = visible
         binding.actionsColumn.animate().cancel()
         if (visible) {
-            binding.actionsColumn.isVisible = true
+            binding.actionsColumn.visibility = View.VISIBLE
+            if (!inputIntroFinished || previewVisibleForAnimation) {
+                prepareModeActionsHidden()
+                return
+            }
+            if (compactActionsVisible || compactActionsAnimating) return
             if (animate) {
-                binding.actionsColumn.animate()
-                    .alpha(1f)
-                    .translationY(0f)
-                    .setDuration(190L)
-                    .setInterpolator(smoothOut)
-                    .start()
+                playModeActionsEnter(startDelay = 0L)
             } else {
-                binding.actionsColumn.alpha = 1f
-                binding.actionsColumn.translationY = 0f
+                showModeActionsImmediately()
             }
         } else if (animate) {
-            binding.actionsColumn.animate()
-                .alpha(0f)
-                .translationY(dp(14).toFloat())
-                .setDuration(140L)
-                .setInterpolator(smoothOut)
+            playModeActionsExit()
+        } else {
+            prepareModeActionsHidden()
+        }
+    }
+
+    private fun modeActionButtons(): List<View> = listOf(
+        binding.askScreenButton,
+        binding.translateScreenButton,
+        binding.openFreeChatButton
+    )
+
+    private fun prepareModeActionsHidden() {
+        compactActionsVisible = false
+        compactActionsAnimating = false
+        binding.actionsColumn.animate().cancel()
+        binding.actionsColumn.visibility = View.VISIBLE
+        binding.actionsColumn.alpha = 1f
+        binding.actionsColumn.translationY = 0f
+        setModeActionsInteractive(false)
+        modeActionButtons().forEach { button ->
+            button.animate().cancel()
+            cancelModeActionBlur(button)
+            button.alpha = 0f
+            button.translationY = dp(16).toFloat()
+            button.scaleX = 0.96f
+            button.scaleY = 0.96f
+            setViewBlur(button, dp(6).toFloat())
+        }
+    }
+
+    private fun showModeActionsImmediately() {
+        compactActionsVisible = true
+        compactActionsAnimating = false
+        binding.actionsColumn.visibility = View.VISIBLE
+        binding.actionsColumn.alpha = 1f
+        binding.actionsColumn.translationY = 0f
+        modeActionButtons().forEach { button ->
+            button.animate().cancel()
+            cancelModeActionBlur(button)
+            button.alpha = 1f
+            button.translationY = 0f
+            button.scaleX = 1f
+            button.scaleY = 1f
+            clearViewBlur(button)
+        }
+        setModeActionsInteractive(true)
+    }
+
+    private fun playModeActionsEnter(startDelay: Long) {
+        compactActionsAnimating = true
+        compactActionsVisible = false
+        binding.actionsColumn.visibility = View.VISIBLE
+        binding.actionsColumn.alpha = 1f
+        binding.actionsColumn.translationY = 0f
+        setModeActionsInteractive(false)
+
+        modeActionButtons().forEachIndexed { index, button ->
+            button.animate().cancel()
+            cancelModeActionBlur(button)
+            button.alpha = 0f
+            button.translationY = dp(16).toFloat()
+            button.scaleX = 0.96f
+            button.scaleY = 0.96f
+            setViewBlur(button, dp(6).toFloat())
+
+            val delay = startDelay + index * 70L
+            button.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setStartDelay(delay)
+                .setDuration(480L)
+                .setInterpolator(premiumOut)
                 .withEndAction {
-                    if (latestState.messages.isNotEmpty() || latestState.attachment != null || closingStarted) {
-                        binding.actionsColumn.isGone = true
+                    if (index == modeActionButtons().lastIndex) {
+                        compactActionsAnimating = false
+                        if (compactActionsTargetVisible) {
+                            compactActionsVisible = true
+                            setModeActionsInteractive(true)
+                        } else {
+                            playModeActionsExit()
+                        }
                     }
                 }
                 .start()
-        } else {
-            binding.actionsColumn.isGone = true
-            binding.actionsColumn.alpha = 0f
-            binding.actionsColumn.translationY = dp(14).toFloat()
+            animateModeActionBlur(button, fromPx = dp(6).toFloat(), toPx = 0f, delay = delay, duration = 480L)
+        }
+    }
+
+    private fun playModeActionsExit() {
+        if (!compactActionsVisible && !compactActionsAnimating) {
+            prepareModeActionsHidden()
+            return
+        }
+        compactActionsAnimating = true
+        compactActionsVisible = false
+        setModeActionsInteractive(false)
+
+        modeActionButtons().asReversed().forEachIndexed { index, button ->
+            button.animate().cancel()
+            cancelModeActionBlur(button)
+            val delay = index * 60L
+            button.animate()
+                .alpha(0f)
+                .translationY(dp(14).toFloat())
+                .scaleX(0.96f)
+                .scaleY(0.96f)
+                .setStartDelay(delay)
+                .setDuration(260L)
+                .setInterpolator(premiumOut)
+                .withEndAction {
+                    if (index == modeActionButtons().lastIndex) {
+                        compactActionsAnimating = false
+                        if (compactActionsTargetVisible) {
+                            playModeActionsEnter(startDelay = 0L)
+                        } else {
+                            prepareModeActionsHidden()
+                        }
+                    }
+                }
+                .start()
+            animateModeActionBlur(button, fromPx = 0f, toPx = dp(6).toFloat(), delay = delay, duration = 260L)
+        }
+    }
+
+    private fun setModeActionsInteractive(enabled: Boolean) {
+        modeActionButtons().forEach { button ->
+            button.isClickable = enabled
+            button.isFocusable = enabled
         }
     }
 
@@ -572,6 +707,12 @@ class DigitalAssistantOverlayView(
         val attachmentId = attachment?.cacheFilePath ?: attachment?.fileName
 
         if (hasAttachment && attachmentId != lastAttachmentId) {
+            binding.previewTitle.text = attachment?.fileName
+                ?.takeIf { it.isNotBlank() }
+                ?: LocaleHelper.getString(context, "digital_assistant_screen_analysis")
+            binding.previewSubtitle.text = attachment?.mimeType
+                ?.takeIf { it.isNotBlank() }
+                ?: LocaleHelper.getString(context, "label_file_analysis")
             if (attachment?.mimeType?.startsWith("image/", ignoreCase = true) == true) {
                 binding.previewImage.setPadding(0, 0, 0, 0)
                 binding.previewImage.clearColorFilter()
@@ -580,11 +721,11 @@ class DigitalAssistantOverlayView(
                     imageView = binding.previewImage,
                     base64Data = attachment.base64Data,
                     fileName = attachment.fileName,
-                    widthPx = dp(64),
-                    heightPx = dp(104)
+                    widthPx = dp(88),
+                    heightPx = dp(124)
                 )
             } else {
-                binding.previewImage.setPadding(dp(16), dp(16), dp(16), dp(16))
+                binding.previewImage.setPadding(dp(29), dp(47), dp(29), dp(47))
                 binding.previewImage.setColorFilter(Color.parseColor("#8E8E93"))
                 binding.previewImage.scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
                 binding.previewImage.setImageResource(R.drawable.ic_file_new)
@@ -594,8 +735,25 @@ class DigitalAssistantOverlayView(
         when {
             hasAttachment && !lastHasAttachment -> showPreview()
             !hasAttachment && lastHasAttachment -> hidePreview()
-            hasAttachment -> binding.previewContainer.isVisible = true
-            else -> binding.previewContainer.isGone = true
+            hasAttachment -> {
+                previewVisibleForAnimation = true
+                binding.previewContainer.visibility = View.VISIBLE
+                binding.previewContainer.alpha = 1f
+                binding.previewFrame.alpha = 1f
+                binding.previewFrame.translationY = 0f
+                binding.previewFrame.scaleX = 1f
+                binding.previewFrame.scaleY = 1f
+                clearViewBlur(binding.previewFrame)
+            }
+            else -> {
+                previewVisibleForAnimation = false
+                binding.previewContainer.isGone = true
+                binding.previewFrame.alpha = 0f
+                binding.previewFrame.translationY = dp(14).toFloat()
+                binding.previewFrame.scaleX = 0.96f
+                binding.previewFrame.scaleY = 0.96f
+                clearViewBlur(binding.previewFrame)
+            }
         }
 
         lastHasAttachment = hasAttachment
@@ -603,39 +761,70 @@ class DigitalAssistantOverlayView(
     }
 
     private fun showPreview() {
-        binding.previewContainer.isVisible = true
+        previewVisibleForAnimation = true
+        binding.previewContainer.visibility = View.VISIBLE
+        binding.previewContainer.animate().cancel()
+        binding.previewFrame.animate().cancel()
+        previewBlurAnimator?.cancel()
+        binding.previewContainer.alpha = 1f
         binding.previewFrame.alpha = 0f
-        binding.previewFrame.scaleX = 0.9f
-        binding.previewFrame.scaleY = 0.9f
+        binding.previewFrame.translationY = dp(14).toFloat()
+        binding.previewFrame.scaleX = 0.96f
+        binding.previewFrame.scaleY = 0.96f
+        setViewBlur(binding.previewFrame, dp(6).toFloat())
         binding.previewFrame.animate()
             .alpha(1f)
+            .translationY(0f)
             .scaleX(1f)
             .scaleY(1f)
-            .setDuration(240L)
-            .setInterpolator(smoothOut)
+            .setStartDelay(40L)
+            .setDuration(460L)
+            .setInterpolator(premiumOut)
             .start()
+        animatePreviewBlur(fromPx = dp(6).toFloat(), toPx = 0f, delay = 40L, duration = 460L)
     }
 
     private fun hidePreview() {
+        binding.previewFrame.animate().cancel()
+        previewBlurAnimator?.cancel()
         binding.previewFrame.animate()
             .alpha(0f)
-            .scaleX(0.9f)
-            .scaleY(0.9f)
-            .setDuration(160L)
-            .setInterpolator(smoothOut)
+            .translationY(dp(12).toFloat())
+            .scaleX(0.96f)
+            .scaleY(0.96f)
+            .setStartDelay(0L)
+            .setDuration(300L)
+            .setInterpolator(premiumOut)
             .withEndAction {
                 if (latestState.attachment == null) {
                     binding.previewImage.setImageDrawable(null)
                     binding.previewImage.clearColorFilter()
                     binding.previewImage.setPadding(0, 0, 0, 0)
+                    binding.previewTitle.text = ""
+                    binding.previewSubtitle.text = ""
                     binding.previewContainer.isGone = true
-                    binding.previewFrame.alpha = 1f
-                    binding.previewFrame.scaleX = 1f
-                    binding.previewFrame.scaleY = 1f
+                    binding.previewFrame.alpha = 0f
+                    binding.previewFrame.translationY = dp(14).toFloat()
+                    binding.previewFrame.scaleX = 0.96f
+                    binding.previewFrame.scaleY = 0.96f
+                    clearViewBlur(binding.previewFrame)
+                    previewVisibleForAnimation = false
+                    if (latestState.messages.isEmpty()) {
+                        binding.bottomPanel.background = null
+                    }
                     updateFloatingPositions()
+                    if (
+                        compactActionsTargetVisible &&
+                        inputIntroFinished &&
+                        latestState.messages.isEmpty() &&
+                        !closingStarted
+                    ) {
+                        playModeActionsEnter(startDelay = 380L)
+                    }
                 }
             }
             .start()
+        animatePreviewBlur(fromPx = 0f, toPx = dp(6).toFloat(), delay = 0L, duration = 300L)
     }
 
     private fun renderMessages(messages: List<AssistantMessage>) {
@@ -1314,6 +1503,10 @@ class DigitalAssistantOverlayView(
         binding.dimView.setBackgroundColor(Color.TRANSPARENT)
         binding.dimView.alpha = 1f
         panelBlurAnimator?.cancel()
+        inputIntroFinished = false
+        if (!compactActionsTargetVisible) {
+            prepareModeActionsHidden()
+        }
 
         listOf(
             binding.bottomPanel,
@@ -1355,6 +1548,12 @@ class DigitalAssistantOverlayView(
             .setStartDelay(0L)
             .setDuration(560L)
             .setInterpolator(premiumOut)
+            .withEndAction {
+                inputIntroFinished = true
+                if (compactActionsTargetVisible && latestState.messages.isEmpty() && latestState.attachment == null && !closingStarted) {
+                    playModeActionsEnter(startDelay = 260L)
+                }
+            }
             .start()
 
         animatePanelBlur(fromPx = dp(8).toFloat(), toPx = 0f, duration = 560L)
@@ -1403,13 +1602,67 @@ class DigitalAssistantOverlayView(
         }
     }
 
+    private fun animateModeActionBlur(
+        view: View,
+        fromPx: Float,
+        toPx: Float,
+        delay: Long,
+        duration: Long
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        cancelModeActionBlur(view)
+        modeActionBlurAnimators[view] = ValueAnimator.ofFloat(fromPx, toPx).apply {
+            startDelay = delay
+            this.duration = duration
+            interpolator = premiumOut
+            addUpdateListener { animator ->
+                setViewBlur(view, animator.animatedValue as Float)
+            }
+            doOnEndCompat {
+                if (toPx <= 0f) {
+                    clearViewBlur(view)
+                }
+                modeActionBlurAnimators.remove(view)
+            }
+            start()
+        }
+    }
+
+    private fun cancelModeActionBlur(view: View) {
+        modeActionBlurAnimators.remove(view)?.cancel()
+    }
+
+    private fun animatePreviewBlur(fromPx: Float, toPx: Float, delay: Long, duration: Long) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        previewBlurAnimator?.cancel()
+        previewBlurAnimator = ValueAnimator.ofFloat(fromPx, toPx).apply {
+            startDelay = delay
+            this.duration = duration
+            interpolator = premiumOut
+            addUpdateListener { animator ->
+                setViewBlur(binding.previewFrame, animator.animatedValue as Float)
+            }
+            doOnEndCompat {
+                if (toPx <= 0f) {
+                    clearViewBlur(binding.previewFrame)
+                }
+                previewBlurAnimator = null
+            }
+            start()
+        }
+    }
+
     private fun setPanelBlur(radiusPx: Float) {
+        setViewBlur(binding.bottomPanel, radiusPx)
+    }
+
+    private fun setViewBlur(view: View, radiusPx: Float) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         if (radiusPx <= 0f) {
-            clearPanelBlur()
+            clearViewBlur(view)
             return
         }
-        binding.bottomPanel.setRenderEffect(
+        view.setRenderEffect(
             RenderEffect.createBlurEffect(
                 radiusPx,
                 radiusPx,
@@ -1419,8 +1672,12 @@ class DigitalAssistantOverlayView(
     }
 
     private fun clearPanelBlur() {
+        clearViewBlur(binding.bottomPanel)
+    }
+
+    private fun clearViewBlur(view: View) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            binding.bottomPanel.setRenderEffect(null)
+            view.setRenderEffect(null)
         }
     }
 
@@ -1538,19 +1795,15 @@ class DigitalAssistantOverlayView(
         stopTypingDots()
         hideAttachmentMenu(immediate = true)
         binding.confirmPanel.isGone = true
-        binding.actionsColumn.animate()
-            .alpha(0f)
-            .translationY(dp(14).toFloat())
-            .setDuration(150L)
-            .setInterpolator(smoothOut)
-            .start()
+        compactActionsTargetVisible = false
+        playModeActionsExit()
         binding.bottomPanel.animate()
             .alpha(0f)
             .scaleX(0.96f)
             .scaleY(0.96f)
             .translationY(dp(24).toFloat())
             .setStartDelay(0L)
-            .setDuration(320L)
+            .setDuration(420L)
             .setInterpolator(premiumOut)
             .withEndAction {
                 panelBlurAnimator?.cancel()
@@ -1558,7 +1811,7 @@ class DigitalAssistantOverlayView(
                 host.closeAssistant(force = force)
             }
             .start()
-        animatePanelBlur(fromPx = 0f, toPx = dp(6).toFloat(), duration = 320L)
+        animatePanelBlur(fromPx = 0f, toPx = dp(6).toFloat(), duration = 420L)
         binding.dimView.animate().cancel()
         binding.dimView.alpha = 1f
     }
@@ -1614,13 +1867,14 @@ class DigitalAssistantOverlayView(
 
     private fun updateFloatingPositions() {
         val compact = latestState.messages.isEmpty()
+        val attachmentPreviewActive = latestState.attachment != null || previewVisibleForAnimation
         val bottom = if (keyboardVisible) {
             keyboardInset + dp(6)
         } else {
             bottomInset + dp(6)
         }
         val targetHeight = if (compact) {
-            if (latestState.attachment != null) dp(188) else dp(72)
+            if (attachmentPreviewActive) dp(226) else dp(72)
         } else {
             val availableHeight = if (height > 0) {
                 height - topInset - bottom - dp(8)
@@ -1634,7 +1888,8 @@ class DigitalAssistantOverlayView(
             start = startInset + dp(6),
             end = endInset + dp(6),
             bottom = bottom,
-            height = targetHeight
+            height = targetHeight,
+            animateHeight = compact && inputIntroFinished
         )
         setFrameLayoutParams(
             binding.actionsColumn,
@@ -1654,7 +1909,8 @@ class DigitalAssistantOverlayView(
         start: Int? = null,
         end: Int? = null,
         bottom: Int? = null,
-        height: Int? = null
+        height: Int? = null,
+        animateHeight: Boolean = false
     ) {
         val params = view.layoutParams as LayoutParams
         var changed = false
@@ -1672,12 +1928,67 @@ class DigitalAssistantOverlayView(
             changed = true
         }
         if (height != null && params.height != height) {
-            params.height = height
-            changed = true
+            if (animateHeight && view === binding.bottomPanel && view.height > 0) {
+                animateFrameHeight(view, height)
+            } else {
+                panelHeightAnimator?.cancel()
+                params.height = height
+                changed = true
+            }
         }
         if (changed) {
             view.layoutParams = params
         }
+    }
+
+    private fun animateFrameHeight(view: View, targetHeight: Int) {
+        val params = view.layoutParams as LayoutParams
+        val startHeight = view.height.takeIf { it > 0 } ?: params.height
+        if (startHeight == targetHeight) return
+        panelHeightAnimator?.cancel()
+        panelHeightAnimator = ValueAnimator.ofInt(startHeight, targetHeight).apply {
+            duration = 360L
+            interpolator = premiumOut
+            addUpdateListener { animator ->
+                val animatedParams = view.layoutParams as LayoutParams
+                animatedParams.height = animator.animatedValue as Int
+                view.layoutParams = animatedParams
+                updateFloatingPositionsForCurrentHeight()
+            }
+            var cancelled = false
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!cancelled) {
+                        val finalParams = view.layoutParams as LayoutParams
+                        finalParams.height = targetHeight
+                        view.layoutParams = finalParams
+                        updateFloatingPositionsForCurrentHeight()
+                    }
+                    if (panelHeightAnimator === animation) {
+                        panelHeightAnimator = null
+                    }
+                }
+            })
+            start()
+        }
+    }
+
+    private fun updateFloatingPositionsForCurrentHeight() {
+        val currentHeight = binding.bottomPanel.layoutParams.height
+        val bottom = if (keyboardVisible) {
+            keyboardInset + dp(6)
+        } else {
+            bottomInset + dp(6)
+        }
+        setFrameLayoutParams(
+            binding.actionsColumn,
+            start = startInset + dp(6),
+            bottom = bottom + currentHeight + dp(6)
+        )
     }
 
     private fun dp(value: Int): Int =
