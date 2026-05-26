@@ -372,6 +372,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         chatViewModel.performSync()
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
+        updateImeOptionsForIncognito()
     }
 
     override fun onPause() {
@@ -473,6 +474,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         handleWidgetAttachmentIntent(startIntent)
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
+        updateImeOptionsForIncognito()
     }
 
     private fun applyTranslations() {
@@ -1833,6 +1835,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         updateSendState()
         refreshDrawerSelection()
         ChatGenerationManager.setVisibleChat(null, lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        updateImeOptionsForIncognito()
     }
 
     private fun toggleAnonymousChat() {
@@ -1844,6 +1847,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             chatViewModel.isAnonymousChat = true
             showAnonymousWelcomeState()
         }
+        updateImeOptionsForIncognito()
     }
 
     private fun updateTopBarIcons() {
@@ -1854,10 +1858,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnAddLimits.isVisible = true
     }
 
+    private fun updateImeOptionsForIncognito() {
+        val isAnon = chatViewModel.isAnonymousChat
+        val currentImeOptions = binding.etInput.imeOptions
+        val newImeOptions = if (isAnon) {
+            currentImeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+        } else {
+            currentImeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING.inv()
+        }
+        if (currentImeOptions != newImeOptions) {
+            binding.etInput.imeOptions = newImeOptions
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.restartInput(binding.etInput)
+        }
+    }
+
     private fun startAnonymousChat() {
         startFreshChat()
         chatViewModel.isAnonymousChat = true
         showAnonymousWelcomeState()
+        updateImeOptionsForIncognito()
     }
 
     private fun loadChats(openActiveGeneration: Boolean = true) {
@@ -2004,6 +2024,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             updateSendState()
             ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, true)
             binding.drawerLayout.closeDrawer(GravityCompat.START)
+            updateImeOptionsForIncognito()
             onOpened?.invoke()
         }
     }
