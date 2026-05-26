@@ -18,7 +18,7 @@
             android:layout_height="match_parent"
             android:fillViewport="true"
             android:clipToPadding="false"
-            android:paddingTop="68dp"
+            android:paddingTop="70dp"
             android:scrollbars="none"
             android:overScrollMode="never"
             android:requiresFadingEdge="vertical"
@@ -87,7 +87,7 @@
         <LinearLayout
             android:id="@+id/defaultHeaderContent"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="42dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
@@ -112,8 +112,8 @@
 
                 <ImageView
                     android:id="@+id/currentChatItem"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
                     android:src="@drawable/ic_telegram_outline"
                     android:padding="3dp"
                     android:contentDescription="@string/content_desc_telegram_bot"
@@ -123,20 +123,19 @@
 
                 <ImageView
                     android:id="@+id/btnDrawerSearch"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
                     android:src="@drawable/ic_search"
-                    android:padding="6dp"
+                    android:padding="3dp"
                     app:tint="#FFFFFF"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
                     android:focusable="true"
                     android:layout_marginStart="4dp"/>
-
                 <FrameLayout
                     android:id="@+id/btnSettings"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
                     android:layout_marginStart="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
@@ -174,8 +173,8 @@
         <!-- Строка Поиска (скрыта по умолчанию, анимируется поверх) -->
         <LinearLayout
             android:id="@+id/drawerSearchContainer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_gravity="end|center_vertical"
             android:orientation="horizontal"
             android:gravity="center"
@@ -185,8 +184,8 @@
 
             <ImageView
                 android:id="@+id/ivSearchBarIcon"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="21dp"
+                android:layout_height="21dp"
                 android:src="@drawable/ic_search"
                 app:tint="#8E8E93"/>
 
