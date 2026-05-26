@@ -294,9 +294,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun aiProviderSummary(): String {
-        val provider = aiProviderSettings.getProvider().displayLabel
-        val model = aiProviderSettings.getSelectedModel().displayName
-        return "$provider / $model"
+        return aiProviderSettings.getSelectedModel().displayName
     }
 
     private fun handleLogoutClick() {

@@ -48,39 +48,25 @@ class AiProviderActivity : AppCompatActivity() {
     }
 
     private fun setupProviderSelection() {
-        findViewById<View>(R.id.optionOpenai).setHapticClickListener {
-            providerSettings.setProvider(AiProvider.OPENAI)
-            updateUi()
-        }
-
-        findViewById<View>(R.id.optionVsegpt).setHapticClickListener {
-            providerSettings.setProvider(AiProvider.VSEGPT)
-            updateUi()
-        }
+        // No-op because provider selection is hidden
     }
 
     private fun updateUi() {
-        val currentProvider = providerSettings.getProvider()
-        val isOpenAi = currentProvider == AiProvider.OPENAI
-
-        findViewById<ImageView>(R.id.ivOpenaiCheck).visibility =
-            if (isOpenAi) View.VISIBLE else View.GONE
-        findViewById<ImageView>(R.id.ivVsegptCheck).visibility =
-            if (!isOpenAi) View.VISIBLE else View.GONE
-
         findViewById<LinearLayout>(R.id.modelInfoSection).visibility = View.VISIBLE
-        renderModelOptions(currentProvider)
+        renderModelOptions()
 
         findViewById<TextView>(R.id.tvToolsInfo)?.visibility = View.GONE
     }
 
-    private fun renderModelOptions(provider: AiProvider) {
+    private fun renderModelOptions() {
         val container = findViewById<LinearLayout>(R.id.modelOptionsContainer)
         container.removeAllViews()
 
         val selectedModelKey = providerSettings.getModelKey()
-        modelsForProvider(provider).forEach { model ->
-            container.addView(createModelOptionView(model, model.modelKey == selectedModelKey))
+        val selectedProvider = providerSettings.getProvider()
+        availableModels.forEach { model ->
+            val isSelected = model.provider == selectedProvider && model.modelKey == selectedModelKey
+            container.addView(createModelOptionView(model, isSelected))
         }
     }
 
@@ -116,22 +102,12 @@ class AiProviderActivity : AppCompatActivity() {
         })
 
         row.setHapticClickListener {
+            providerSettings.setProvider(model.provider)
             providerSettings.setModelKey(model.modelKey)
             updateUi()
         }
 
         return row
-    }
-
-    private fun modelsForProvider(provider: AiProvider): List<AiModelOption> {
-        val models = availableModels.filter { it.provider == provider }
-            .ifEmpty { AiModelCatalog.modelsFor(provider) }
-
-        if (provider == AiProvider.OPENAI) {
-            return listOf(AiModelCatalog.find(provider, AiModelCatalog.OPENAI_DEFAULT_MODEL_KEY))
-        }
-
-        return models
     }
 
     private fun loadServerModels() {
@@ -157,7 +133,8 @@ class AiProviderActivity : AppCompatActivity() {
             }
 
             if (remoteModels.isNotEmpty()) {
-                availableModels = remoteModels
+                val allowedModelKeys = setOf("gpt54", "gemini3", "deepseek")
+                availableModels = remoteModels.filter { it.modelKey in allowedModelKeys }
                 updateUi()
             }
         }

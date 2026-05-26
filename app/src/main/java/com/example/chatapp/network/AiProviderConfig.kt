@@ -51,16 +51,6 @@ object AiModelCatalog {
         ),
         AiModelOption(
             provider = AiProvider.VSEGPT,
-            modelKey = "gpt55",
-            displayName = "GPT-5.5",
-            capabilities = setOf(
-                AiCapabilities.TEXT,
-                AiCapabilities.WEB_SEARCH,
-                AiCapabilities.IMAGE_GENERATION
-            )
-        ),
-        AiModelOption(
-            provider = AiProvider.VSEGPT,
             modelKey = VSEGPT_DEFAULT_MODEL_KEY,
             displayName = "Gemini-3",
             isDefault = true,
