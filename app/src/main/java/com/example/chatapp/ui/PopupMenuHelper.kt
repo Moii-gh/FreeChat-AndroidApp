@@ -238,7 +238,7 @@ class PopupMenuHelper(
             onShare(chat)
         })
 
-        popupView.addView(createPopupMenuItem(R.drawable.ic_shortcut_last_chat, LocaleHelper.getString(activity, "menu_add_to_home_screen"), Color.WHITE) {
+        popupView.addView(createPopupMenuItem(R.drawable.ic_home, LocaleHelper.getString(activity, "menu_add_to_home_screen"), Color.WHITE) {
             popupWindow.dismiss()
             pinChatShortcut(activity, chat)
         })
@@ -778,10 +778,12 @@ class PopupMenuHelper(
                 flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
 
-            val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(
-                context,
-                R.drawable.ic_shortcut_last_chat
-            )
+            val iconResource = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                R.mipmap.ic_shortcut_chat
+            } else {
+                R.drawable.ic_shortcut_chat
+            }
+            val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(context, iconResource)
 
             val shortcutInfo = androidx.core.content.pm.ShortcutInfoCompat.Builder(context, shortcutId)
                 .setShortLabel(chat.title)
