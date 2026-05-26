@@ -11,9 +11,9 @@
 
     <path
         android:fillColor="#00000000"
-        android:pathData="M24.9,14C31.5,14 36.6,18.4 36.6,23.9C36.6,29.5 31.5,33.9 24.9,33.9C22.6,33.9 20.4,33.4 18.6,32.5L13.4,34.4L15.2,29.4C13.9,27.8 13.2,25.9 13.2,23.9C13.2,18.4 18.3,14 24.9,14Z"
+        android:pathData="M25.2,15C30,15 34,19 34,23.9C34,28.9 30,32.8 25.2,32.8C23.2,32.8 21.4,32.2 19.9,31.3L16.2,32.7L17.6,28.6C16.8,27.2 16.5,25.6 16.5,23.9C16.5,19 20.4,15 25.2,15Z"
         android:strokeColor="#000000"
-        android:strokeWidth="2.8"
+        android:strokeWidth="2.45"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
 </vector>
