@@ -6,9 +6,12 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -216,6 +219,8 @@ object MarkdownTableRenderer {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_table_card)
+            clipToOutline = true
+            outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
             val pad = (4 * density).toInt()
             setPadding(0, 0, 0, pad)
             layoutParams = LinearLayout.LayoutParams(
@@ -268,7 +273,7 @@ object MarkdownTableRenderer {
 
         // ── Строка заголовков ──
         val headerRow = TableRow(context).apply {
-            setBackgroundColor(Color.parseColor("#2C2C2E"))
+            background = ContextCompat.getDrawable(context, R.drawable.bg_table_header)
         }
         table.headers.forEachIndexed { colIdx, header ->
             val tv = TextView(context).apply {
@@ -386,18 +391,18 @@ object MarkdownTableRenderer {
             Toast.makeText(context, LocaleHelper.getString(context, "toast_table_copied"), Toast.LENGTH_SHORT).show()
         }
 
-        val xmlBtn = buildSmallButton(
+        val xlsxBtn = buildSmallButton(
             context = context,
-            label = LocaleHelper.getString(context, "table_export_xml_label"),
+            label = LocaleHelper.getString(context, "table_export_xlsx_label"),
             iconRes = R.drawable.ic_download_simple,
             density = density
         ) {
-            exportTableAsXml(context, table)
+            exportTableAsXlsx(context, table)
         }
 
         btnRow.addView(copyBtn)
         btnRow.addView(
-            xmlBtn,
+            xlsxBtn,
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
