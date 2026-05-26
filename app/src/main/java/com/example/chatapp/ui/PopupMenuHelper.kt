@@ -238,6 +238,11 @@ class PopupMenuHelper(
             onShare(chat)
         })
 
+        popupView.addView(createPopupMenuItem(R.drawable.ic_shortcut_last_chat, LocaleHelper.getString(activity, "menu_add_to_home_screen"), Color.WHITE) {
+            popupWindow.dismiss()
+            pinChatShortcut(activity, chat)
+        })
+
 
         popupView.addView(createMenuDivider())
 
@@ -762,5 +767,35 @@ class PopupMenuHelper(
             marginEnd = 14.dpToPx()
         }
         setBackgroundColor(Color.parseColor("#4E4E52"))
+    }
+
+    private fun pinChatShortcut(context: android.content.Context, chat: ChatEntity) {
+        if (androidx.core.content.pm.ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+            val shortcutId = "chat_${chat.id}"
+            val intent = android.content.Intent(context, com.example.chatapp.FreeChatActivity::class.java).apply {
+                action = android.content.Intent.ACTION_VIEW
+                putExtra(com.example.chatapp.FreeChatActivity.EXTRA_OPEN_CHAT_ID, chat.id)
+                flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+
+            val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(
+                context,
+                R.drawable.ic_shortcut_last_chat
+            )
+
+            val shortcutInfo = androidx.core.content.pm.ShortcutInfoCompat.Builder(context, shortcutId)
+                .setShortLabel(chat.title)
+                .setLongLabel(chat.title)
+                .setIcon(icon)
+                .setIntent(intent)
+                .build()
+
+            androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
+
+            val msg = LocaleHelper.getString(context, "toast_shortcut_added") ?: "Shortcut request sent"
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            android.widget.Toast.makeText(context, "Not supported on this launcher", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 }

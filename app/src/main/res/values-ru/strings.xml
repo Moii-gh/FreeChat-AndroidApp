@@ -474,4 +474,6 @@
     <string name="debug_logs_clear_title">Очистить логи?</string>
     <string name="debug_logs_clear_confirm">Последние локальные логи будут удалены из процесса приложения.</string>
     <string name="debug_logs_clip_label">Логи FreeChat</string>
+    <string name="menu_add_to_home_screen">Добавить на главный экран</string>
+    <string name="toast_shortcut_added">Запрос на создание ярлыка отправлен</string>
 </resources>
