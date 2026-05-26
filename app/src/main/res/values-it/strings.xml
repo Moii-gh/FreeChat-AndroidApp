@@ -398,8 +398,8 @@
     <string name="toast_share_revoke_error">Disattivazione dei link non riuscita</string>
     <string name="toast_table_copied">Tabella copiata</string>
     <string name="toast_text_too_large_to_copy">Il testo è troppo grande per essere copiato. Usa Condividi.</string>
-    <string name="toast_xml_saved_with_name">XML salvato in Download: %s</string>
-    <string name="table_export_xml_label">XML</string>
+    <string name="toast_xlsx_saved_with_name">XLSX salvato in Download: %s</string>
+    <string name="table_export_xlsx_label">XLSX</string>
     <string name="untitled_chat">Senza titolo</string>
     <string name="welcome_prompt_1">Come posso aiutarti?</string>
     <string name="welcome_prompt_2">Cosa vuoi sapere?</string>

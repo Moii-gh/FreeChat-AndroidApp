@@ -398,8 +398,8 @@
     <string name="toast_share_revoke_error">Не удалось отключить ссылки</string>
     <string name="toast_table_copied">Таблица скопирована</string>
     <string name="toast_text_too_large_to_copy">Текст слишком большой для копирования. Используйте «Поделиться».</string>
-    <string name="toast_xml_saved_with_name">XML сохранён в Загрузки: %s</string>
-    <string name="table_export_xml_label">XML</string>
+    <string name="toast_xlsx_saved_with_name">XLSX сохранён в Загрузки: %s</string>
+    <string name="table_export_xlsx_label">XLSX</string>
     <string name="untitled_chat">Без названия</string>
     <string name="welcome_prompt_1">Чем могу помочь?</string>
     <string name="welcome_prompt_2">Что хотите узнать?</string>

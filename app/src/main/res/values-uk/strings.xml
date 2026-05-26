@@ -398,8 +398,8 @@
     <string name="toast_share_revoke_error">Не вдалося вимкнути посилання</string>
     <string name="toast_table_copied">Таблицю скопійовано</string>
     <string name="toast_text_too_large_to_copy">Текст завеликий для копіювання. Використайте «Поділитися».</string>
-    <string name="toast_xml_saved_with_name">XML збережено в Завантаження: %s</string>
-    <string name="table_export_xml_label">XML</string>
+    <string name="toast_xlsx_saved_with_name">XLSX збережено в Завантаження: %s</string>
+    <string name="table_export_xlsx_label">XLSX</string>
     <string name="untitled_chat">Без назви</string>
     <string name="welcome_prompt_1">Чим можу допомогти?</string>
     <string name="welcome_prompt_2">Що хочете дізнатися?</string>

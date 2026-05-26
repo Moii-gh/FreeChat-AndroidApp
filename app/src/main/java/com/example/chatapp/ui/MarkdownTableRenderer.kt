@@ -460,145 +460,280 @@ object MarkdownTableRenderer {
         return btn
     }
 
-    // ─────────── XML экспорт ───────────
+    // ─────────── XLSX экспорт ───────────
 
-    private fun exportTableAsXml(context: Context, table: ParsedTable) {
-        val xmlContent = buildXmlContent(table)
-        val fileName = "table_export_${System.currentTimeMillis()}.xml"
+    private fun exportTableAsXlsx(context: Context, table: ParsedTable) {
+        val fileName = "table_export_${System.currentTimeMillis()}.xlsx"
 
-        val success = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            saveViaMediaStore(context, fileName, xmlContent)
+        val savedUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveXlsxViaMediaStore(context, fileName, table)
         } else {
-            shareXmlFallback(context, fileName, xmlContent)
-            true // Запасной вариант считается успешным, если открыт системный диалог.
+            saveXlsxToDownloadsLegacy(context, fileName, table)
         }
 
-        if (success) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Toast.makeText(
-                    context,
-                    LocaleHelper.formatString(context, "toast_xml_saved_with_name", fileName),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+        if (savedUri != null) {
+            Toast.makeText(
+                context,
+                LocaleHelper.formatString(context, "toast_xlsx_saved_with_name", fileName),
+                Toast.LENGTH_LONG
+            ).show()
+            openFileInExplorer(context, savedUri, fileName)
         } else {
-            // Если MediaStore не сработал, пробуем системный intent шаринга.
-            shareXmlFallback(context, fileName, xmlContent)
+            Toast.makeText(
+                context,
+                LocaleHelper.getString(context, "toast_error"),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     /**
      * Android 10+ (API 29+): сохранение через MediaStore.Downloads.
-     * Не требует разрешений WRITE_EXTERNAL_STORAGE.
+     * Возвращает URI сохранённого файла или null при ошибке.
      */
-    private fun saveViaMediaStore(context: Context, fileName: String, content: String): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runCatching {
-                val resolver = context.contentResolver
-                val values = ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-                    put(MediaStore.Downloads.MIME_TYPE, "application/xml")
-                    put(MediaStore.Downloads.IS_PENDING, 1)
-                }
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                    ?: return false
-                resolver.openOutputStream(uri)?.use { out ->
-                    out.write(content.toByteArray(Charsets.UTF_8))
-                }
-                values.clear()
-                values.put(MediaStore.Downloads.IS_PENDING, 0)
-                resolver.update(uri, values, null, null)
-                true
-            }.getOrElse { false }
-        } else {
-            false
-        }
-    }
-
-    /**
-     * Fallback: share-intent с текстом XML.
-     * Работает на Android 9 и ниже, либо если MediaStore недоступен.
-     */
-    private fun shareXmlFallback(context: Context, fileName: String, content: String) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, content)
-            putExtra(Intent.EXTRA_SUBJECT, fileName)
-        }
-        val chooser = Intent.createChooser(intent, "Поделиться XML")
-        if (context !is android.app.Activity) {
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        runCatching { context.startActivity(chooser) }
-    }
-
-    /**
-     * Строит XML-строку из таблицы.
-     * Правила нормализации XML-тегов:
-     *  - транслитерация кириллицы
-     *  - пробелы → подчёркивание
-     *  - удаление недопустимых символов
-     *  - если начинается с цифры или пустая → col_N
-     */
-    fun buildXmlContent(table: ParsedTable): String {
-        val sb = StringBuilder()
-        sb.appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
-        sb.appendLine("<table>")
-
-        val tagNames = table.headers.mapIndexed { idx, h ->
-            normalizeXmlTag(h, idx + 1)
-        }
-
-        table.rows.forEach { cells ->
-            sb.appendLine("  <row>")
-            val padded = padCells(cells, table.headers.size)
-            padded.forEachIndexed { i, cell ->
-                val tag = tagNames[i]
-                val escaped = escapeXml(cell)
-                sb.appendLine("    <$tag>$escaped</$tag>")
+    private fun saveXlsxViaMediaStore(context: Context, fileName: String, table: ParsedTable): Uri? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        return runCatching {
+            val resolver = context.contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                put(MediaStore.Downloads.IS_PENDING, 1)
             }
-            sb.appendLine("  </row>")
-        }
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: return null
+            resolver.openOutputStream(uri)?.use { out ->
+                writeXlsxBytes(table, out)
+            }
+            values.clear()
+            values.put(MediaStore.Downloads.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            uri
+        }.getOrNull()
+    }
 
-        sb.append("</table>")
+    /**
+     * Fallback для Android 9 и ниже: пишем в публичную папку Downloads.
+     */
+    @Suppress("DEPRECATION")
+    private fun saveXlsxToDownloadsLegacy(context: Context, fileName: String, table: ParsedTable): Uri? {
+        return runCatching {
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (!dir.exists()) dir.mkdirs()
+            val file = java.io.File(dir, fileName)
+            file.outputStream().use { out ->
+                writeXlsxBytes(table, out)
+            }
+            Uri.fromFile(file)
+        }.getOrNull()
+    }
+
+    /**
+     * Открывает файл в проводнике / файловом менеджере.
+     * Сначала пробует открыть конкретный файл через ACTION_VIEW.
+     * Если не получается — открывает папку Downloads.
+     */
+    private fun openFileInExplorer(context: Context, uri: Uri, fileName: String) {
+        runCatching {
+            // Пробуем открыть конкретный файл
+            val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(viewIntent)
+        }.onFailure {
+            // Если не удалось открыть файл напрямую — открываем папку Downloads
+            runCatching {
+                val downloadsIntent = Intent(Intent.ACTION_VIEW).apply {
+                    val downloadsUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                    } else {
+                        Uri.fromFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
+                    }
+                    setDataAndType(downloadsUri, "resource/folder")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(downloadsIntent)
+            }.onFailure {
+                // Последний вариант — открыть проводник через Document UI
+                runCatching {
+                    val browseIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        type = "*/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(browseIntent)
+                }
+            }
+        }
+    }
+
+    // ─────────── XLSX генерация ───────────
+
+    /**
+     * Записывает полный XLSX файл в выходной поток.
+     * XLSX — это ZIP-архив с Open XML Spreadsheet.
+     */
+    private fun writeXlsxBytes(table: ParsedTable, output: java.io.OutputStream) {
+        val zip = ZipOutputStream(output)
+
+        // Собираем все строки (shared strings)
+        val allStrings = mutableListOf<String>()
+        table.headers.forEach { allStrings.add(it) }
+        table.rows.forEach { row ->
+            padCells(row, table.headers.size).forEach { allStrings.add(it) }
+        }
+        val stringIndex = mutableMapOf<String, Int>()
+        allStrings.forEachIndexed { idx, s ->
+            if (s !in stringIndex) stringIndex[s] = stringIndex.size
+        }
+        val uniqueStrings = stringIndex.entries.sortedBy { it.value }.map { it.key }
+
+        // [Content_Types].xml
+        zip.putNextEntry(ZipEntry("[Content_Types].xml"))
+        zip.write(xlsxContentTypes().toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        // _rels/.rels
+        zip.putNextEntry(ZipEntry("_rels/.rels"))
+        zip.write(xlsxRels().toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        // xl/_rels/workbook.xml.rels
+        zip.putNextEntry(ZipEntry("xl/_rels/workbook.xml.rels"))
+        zip.write(xlsxWorkbookRels().toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        // xl/workbook.xml
+        zip.putNextEntry(ZipEntry("xl/workbook.xml"))
+        zip.write(xlsxWorkbook().toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        // xl/styles.xml (жирный заголовок)
+        zip.putNextEntry(ZipEntry("xl/styles.xml"))
+        zip.write(xlsxStyles().toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        // xl/sharedStrings.xml
+        zip.putNextEntry(ZipEntry("xl/sharedStrings.xml"))
+        zip.write(xlsxSharedStrings(uniqueStrings).toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        // xl/worksheets/sheet1.xml
+        zip.putNextEntry(ZipEntry("xl/worksheets/sheet1.xml"))
+        zip.write(xlsxSheet(table, stringIndex).toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+
+        zip.finish()
+        zip.flush()
+    }
+
+    private fun xlsxContentTypes(): String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>"""
+
+    private fun xlsxRels(): String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>"""
+
+    private fun xlsxWorkbookRels(): String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>"""
+
+    private fun xlsxWorkbook(): String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Table" sheetId="1" r:id="rId1"/>
+  </sheets>
+</workbook>"""
+
+    private fun xlsxStyles(): String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="2">
+    <font><sz val="11"/><name val="Calibri"/></font>
+    <font><b/><sz val="11"/><name val="Calibri"/></font>
+  </fonts>
+  <fills count="2">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+  </fills>
+  <borders count="1">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="2">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+  </cellXfs>
+</styleSheet>"""
+
+    private fun xlsxSharedStrings(strings: List<String>): String {
+        val sb = StringBuilder()
+        sb.append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""")
+        sb.append("""<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strings.size}" uniqueCount="${strings.size}">""")
+        strings.forEach { s ->
+            sb.append("<si><t>")
+            sb.append(escapeXml(s))
+            sb.append("</t></si>")
+        }
+        sb.append("</sst>")
         return sb.toString()
     }
 
-    /**
-     * Нормализует заголовок колонки в допустимый XML-тег.
-     * Запасной вариант: col_N (где N — порядковый номер от 1).
-     */
-    private fun normalizeXmlTag(header: String, colNumber: Int): String {
-        // Транслит кириллицы
-        var result = transliterateCyrillic(header)
-        // Заменяем пробелы и дефисы на подчёркивание
-        result = result.replace(Regex("[\\s\\-]+"), "_")
-        // Убираем всё, кроме букв, цифр и подчёркивания
-        result = result.replace(Regex("[^a-zA-Z0-9_]"), "")
-        // Убираем ведущие цифры и подчёркивания
-        result = result.trimStart('_').trimStart { it.isDigit() }.trimStart('_')
+    private fun xlsxSheet(table: ParsedTable, stringIndex: Map<String, Int>): String {
+        val sb = StringBuilder()
+        sb.append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""")
+        sb.append("""<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">""")
+        sb.append("<sheetData>")
 
-        return if (result.isBlank()) "col_$colNumber" else result
+        // Строка заголовков (row 1, style=1 = bold)
+        sb.append("""<row r="1">""")
+        table.headers.forEachIndexed { colIdx, header ->
+            val colRef = columnLetter(colIdx) + "1"
+            val sIdx = stringIndex[header] ?: 0
+            sb.append("""<c r="$colRef" t="s" s="1"><v>$sIdx</v></c>""")
+        }
+        sb.append("</row>")
+
+        // Строки данных
+        table.rows.forEachIndexed { rowIdx, cells ->
+            val rowNum = rowIdx + 2
+            sb.append("""<row r="$rowNum">""")
+            val padded = padCells(cells, table.headers.size)
+            padded.forEachIndexed { colIdx, cell ->
+                val colRef = columnLetter(colIdx) + rowNum
+                val sIdx = stringIndex[cell] ?: 0
+                sb.append("""<c r="$colRef" t="s"><v>$sIdx</v></c>""")
+            }
+            sb.append("</row>")
+        }
+
+        sb.append("</sheetData></worksheet>")
+        return sb.toString()
     }
 
-    private fun transliterateCyrillic(input: String): String {
-        val map = mapOf(
-            'а' to "a", 'б' to "b", 'в' to "v", 'г' to "g", 'д' to "d",
-            'е' to "e", 'ё' to "yo", 'ж' to "zh", 'з' to "z", 'и' to "i",
-            'й' to "j", 'к' to "k", 'л' to "l", 'м' to "m", 'н' to "n",
-            'о' to "o", 'п' to "p", 'р' to "r", 'с' to "s", 'т' to "t",
-            'у' to "u", 'ф' to "f", 'х' to "kh", 'ц' to "ts", 'ч' to "ch",
-            'ш' to "sh", 'щ' to "sch", 'ъ' to "", 'ы' to "y", 'ь' to "",
-            'э' to "e", 'ю' to "yu", 'я' to "ya",
-            'А' to "A", 'Б' to "B", 'В' to "V", 'Г' to "G", 'Д' to "D",
-            'Е' to "E", 'Ё' to "Yo", 'Ж' to "Zh", 'З' to "Z", 'И' to "I",
-            'Й' to "J", 'К' to "K", 'Л' to "L", 'М' to "M", 'Н' to "N",
-            'О' to "O", 'П' to "P", 'Р' to "R", 'С' to "S", 'Т' to "T",
-            'У' to "U", 'Ф' to "F", 'Х' to "Kh", 'Ц' to "Ts", 'Ч' to "Ch",
-            'Ш' to "Sh", 'Щ' to "Sch", 'Ъ' to "", 'Ы' to "Y", 'Ь' to "",
-            'Э' to "E", 'Ю' to "Yu", 'Я' to "Ya"
-        )
-        return input.map { ch -> map[ch] ?: ch.toString() }.joinToString("")
+    /** Преобразует индекс колонки (0-based) в букву Excel: 0→A, 1→B, ..., 25→Z, 26→AA */
+    private fun columnLetter(index: Int): String {
+        var result = ""
+        var n = index
+        while (true) {
+            result = ('A' + n % 26) + result
+            n = n / 26 - 1
+            if (n < 0) break
+        }
+        return result
     }
 
     private fun escapeXml(text: String): String = text

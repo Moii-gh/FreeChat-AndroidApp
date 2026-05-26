@@ -398,8 +398,8 @@
     <string name="toast_share_revoke_error">Échec de la désactivation des liens partagés</string>
     <string name="toast_table_copied">Tableau copi?</string>
     <string name="toast_text_too_large_to_copy">Le texte est trop long pour être copié. Utilisez Partager.</string>
-    <string name="toast_xml_saved_with_name">XML enregistr? dans T?l?chargements : %s</string>
-    <string name="table_export_xml_label">XML</string>
+    <string name="toast_xlsx_saved_with_name">XLSX enregistr? dans T?l?chargements : %s</string>
+    <string name="table_export_xlsx_label">XLSX</string>
     <string name="untitled_chat">Sans titre</string>
     <string name="welcome_prompt_1">Comment puis-je vous aider?</string>
     <string name="welcome_prompt_2">Que voulez-vous savoir?</string>

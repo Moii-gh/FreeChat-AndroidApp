@@ -398,8 +398,8 @@
     <string name="toast_share_revoke_error">Failed to disable shared links</string>
     <string name="toast_table_copied">Table copied</string>
     <string name="toast_text_too_large_to_copy">Text is too large to copy. Use Share instead.</string>
-    <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
-    <string name="table_export_xml_label">XML</string>
+    <string name="toast_xlsx_saved_with_name">XLSX saved to Downloads: %s</string>
+    <string name="table_export_xlsx_label">XLSX</string>
     <string name="untitled_chat">Untitled</string>
     <string name="welcome_prompt_1">What can I help you with?</string>
     <string name="welcome_prompt_2">What would you like to know?</string>
