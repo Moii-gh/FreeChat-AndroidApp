@@ -1367,51 +1367,60 @@ class DigitalAssistantOverlayView(
     }
 
     private fun showAssistantMessageMenu(anchor: View, messageId: Long) {
+        val menuWidth = dp(230)
         val menu = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            background = context.getDrawable(R.drawable.popup_menu_bg)
-            setPadding(dp(8), dp(8), dp(8), dp(8))
-            addView(createMenuItem(R.drawable.ic_copy, LocaleHelper.getString(context, "menu_copy_text")) {
+            background = context.getDrawable(R.drawable.bg_popup_menu_pill)
+            setPadding(dp(12), dp(4), dp(12), dp(4))
+            addView(createMenuItem(R.drawable.ic_copy, LocaleHelper.getString(context, "menu_copy_text"), compact = true) {
                 FileUtils.copyToClipboard(context, messageTextById(messageId))
             })
-            addView(createMenuItem(R.drawable.ic_share, LocaleHelper.getString(context, "share")) {
+            addView(createMenuItem(R.drawable.ic_share, LocaleHelper.getString(context, "share"), compact = true) {
                 FileUtils.shareText(context, messageTextById(messageId))
             })
-            addView(createMenuItem(android.R.drawable.ic_popup_sync, LocaleHelper.getString(context, "menu_regenerate")) {
+            addView(createMenuItem(android.R.drawable.ic_popup_sync, LocaleHelper.getString(context, "menu_regenerate"), compact = true) {
                 viewModel.retry()
             })
         }
-        val popup = PopupWindow(menu, dp(230), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+        val popup = PopupWindow(menu, menuWidth, ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             isOutsideTouchable = true
             elevation = dp(14).toFloat()
         }
-        popup.showAsDropDown(anchor, -dp(184), dp(2))
+        val xOffset = anchor.width - menuWidth
+        popup.showAsDropDown(anchor, xOffset, dp(2))
     }
 
     private fun messageTextById(messageId: Long): String =
         latestState.messages.firstOrNull { it.id == messageId }?.text.orEmpty()
 
-    private fun createMenuItem(icon: Int, label: String, onClick: () -> Unit): View =
+    private fun createMenuItem(icon: Int, label: String, compact: Boolean = false, onClick: () -> Unit): View =
         LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(44)
-            setPadding(dp(12), dp(10), dp(12), dp(10))
+            minimumHeight = if (compact) dp(36) else dp(44)
+            
+            val pH = if (compact) dp(12) else dp(12)
+            val pV = if (compact) dp(6) else dp(10)
+            setPadding(pH, pV, pH, pV)
+            
             background = selectableItemDrawable()
             isClickable = true
             isFocusable = true
             addView(ImageView(context).apply {
                 setImageResource(icon)
                 setColorFilter(Color.WHITE)
-                layoutParams = LinearLayout.LayoutParams(dp(18), dp(18)).apply {
-                    marginEnd = dp(12)
+                layoutParams = LinearLayout.LayoutParams(
+                    if (compact) dp(16) else dp(18),
+                    if (compact) dp(16) else dp(18)
+                ).apply {
+                    marginEnd = if (compact) dp(10) else dp(12)
                 }
             })
             addView(TextView(context).apply {
                 text = label
                 setTextColor(Color.WHITE)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, if (compact) 13f else 14f)
             })
             setOnClickListener { onClick() }
         }

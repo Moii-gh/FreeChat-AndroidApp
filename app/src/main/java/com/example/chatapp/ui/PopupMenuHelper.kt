@@ -276,9 +276,9 @@ class PopupMenuHelper(
     fun showAssistantMessageOptionsMenu(anchorView: View, wrapper: AssistantMessageWrapper) {
         val popupView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_bg)
+            background = ContextCompat.getDrawable(activity, R.drawable.bg_popup_menu_pill)
             elevation = 24f
-            setPadding(8.dpToPx(), 10.dpToPx(), 8.dpToPx(), 10.dpToPx())
+            setPadding(12.dpToPx(), 4.dpToPx(), 12.dpToPx(), 4.dpToPx())
         }
 
         val popupWindow = PopupWindow(
@@ -295,7 +295,8 @@ class PopupMenuHelper(
         popupView.addView(createPopupMenuItem(
             android.R.drawable.ic_popup_sync,
             LocaleHelper.getString(activity, "menu_regenerate"),
-            Color.WHITE
+            Color.WHITE,
+            compact = true
         ) {
             popupWindow.dismiss()
             onRegenerate?.invoke(wrapper)
@@ -306,7 +307,8 @@ class PopupMenuHelper(
             popupView.addView(createPopupMenuItem(
                 R.drawable.ic_share,
                 LocaleHelper.getString(activity, "share"),
-                Color.WHITE
+                Color.WHITE,
+                compact = true
             ) {
                 popupWindow.dismiss()
                 FileUtils.shareImageFromUrl(activity, imageUrl)
@@ -315,7 +317,8 @@ class PopupMenuHelper(
             popupView.addView(createPopupMenuItem(
                 R.drawable.ic_download_simple,
                 LocaleHelper.getString(activity, "button_save"),
-                Color.WHITE
+                Color.WHITE,
+                compact = true
             ) {
                 popupWindow.dismiss()
                 FileUtils.saveImageFromUrl(activity, imageUrl)
@@ -397,17 +400,22 @@ class PopupMenuHelper(
         iconRes: Int,
         text: String,
         tintColor: Int,
+        compact: Boolean = false,
         onClick: () -> Unit
     ): LinearLayout {
         return LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(14.dpToPx(), 12.dpToPx(), 14.dpToPx(), 12.dpToPx())
+            
+            val pHorizontal = if (compact) 12.dpToPx() else 14.dpToPx()
+            val pVertical = if (compact) 6.dpToPx() else 12.dpToPx()
+            setPadding(pHorizontal, pVertical, pHorizontal, pVertical)
+            
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-            minimumHeight = 46.dpToPx()
+            minimumHeight = if (compact) 36.dpToPx() else 46.dpToPx()
             isClickable = true
             isFocusable = true
             val outValue = TypedValue()
@@ -417,14 +425,17 @@ class PopupMenuHelper(
             addView(ImageView(activity).apply {
                 setImageResource(iconRes)
                 setColorFilter(tintColor)
-                layoutParams = LinearLayout.LayoutParams(18.dpToPx(), 18.dpToPx())
+                layoutParams = LinearLayout.LayoutParams(
+                    if (compact) 16.dpToPx() else 18.dpToPx(),
+                    if (compact) 16.dpToPx() else 18.dpToPx()
+                )
             })
 
             addView(TextView(activity).apply {
                 this.text = text
                 setTextColor(tintColor)
-                textSize = 15f
-                setPadding(12.dpToPx(), 0, 0, 0)
+                textSize = if (compact) 14f else 15f
+                setPadding(if (compact) 10.dpToPx() else 12.dpToPx(), 0, 0, 0)
             })
 
             setOnClickListener { onClick() }
