@@ -277,6 +277,9 @@ internal class ChatAttachmentPreviewController(
             extension == "pdf" || mimeType.contains("pdf", ignoreCase = true) -> R.drawable.ic_file_pdf
             extension in setOf("doc", "docx") || mimeType.contains("word", ignoreCase = true) || mimeType.contains("msword", ignoreCase = true) -> R.drawable.ic_file_word
             extension in setOf("xls", "xlsx") || mimeType.contains("excel", ignoreCase = true) || mimeType.contains("sheet", ignoreCase = true) -> R.drawable.ic_file_excel
+            extension in setOf("ppt", "pptx") || mimeType.contains("presentation", ignoreCase = true) || mimeType.contains("powerpoint", ignoreCase = true) -> R.drawable.ic_file_ppt
+            extension in setOf("kt", "java", "py", "js", "ts", "html", "css", "xml", "json", "c", "cpp", "h", "cs", "sh", "go", "rs", "php", "rb", "swift", "yaml", "yml", "gradle") || 
+                mimeType.contains("json", ignoreCase = true) || mimeType.contains("javascript", ignoreCase = true) || mimeType.contains("xml", ignoreCase = true) -> R.drawable.ic_file_code
             extension == "txt" || mimeType.contains("text/plain", ignoreCase = true) -> R.drawable.ic_file_txt
             else -> R.drawable.ic_file_new
         }

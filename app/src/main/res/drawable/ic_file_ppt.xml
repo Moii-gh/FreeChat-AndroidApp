@@ -1,0 +1,34 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Document frame -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7,3.5h7.2L19,8.3v11.2c0,0.8 -0.7,1.5 -1.5,1.5h-11C5.7,21 5,20.3 5,19.5v-14C5,4.2 5.7,3.5 7,3.5z" />
+
+    <!-- Folded corner -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M14,3.8v4.7h4.7" />
+
+    <!-- Stylized "PPT" inside document -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7.5,12v4 M7.5,12h2c0.5,0 1,0.3 1,0.8v0.4c0,0.5 -0.5,0.8 -1,0.8h-2 M11.5,12v4 M11.5,12h2c0.5,0 1,0.3 1,0.8v0.4c0,0.5 -0.5,0.8 -1,0.8h-2 M16.5,12h3 M18,12v4" />
+
+</vector>
