@@ -3,6 +3,8 @@ const { env } = require("../config/env");
 const PROVIDER_OPENAI = "openai";
 const PROVIDER_VSEGPT = "vsegpt";
 const DEFAULT_PROVIDER = PROVIDER_OPENAI;
+const VSEGPT_DEEPSEEK_MODEL_KEY = "deepseek";
+const VSEGPT_DEEPSEEK_MODEL_ID = "deepseek/deepseek-v4-flash";
 
 const DEFAULT_MODEL_BY_PROVIDER = {
   [PROVIDER_OPENAI]: "gpt54",
@@ -83,13 +85,6 @@ function allModelDefinitions() {
     }),
     createModel({
       provider: PROVIDER_VSEGPT,
-      modelKey: "gpt55",
-      modelId: env.vsegptGpt55ModelId,
-      displayName: "GPT-5.5",
-      capabilities: ["text", "webSearch", "imageGeneration"]
-    }),
-    createModel({
-      provider: PROVIDER_VSEGPT,
       modelKey: "gemini3",
       modelId: env.vsegptGemini3ModelId,
       displayName: "Gemini-3",
@@ -97,8 +92,8 @@ function allModelDefinitions() {
     }),
     createModel({
       provider: PROVIDER_VSEGPT,
-      modelKey: "deepseek",
-      modelId: env.vsegptDeepSeekModelId,
+      modelKey: VSEGPT_DEEPSEEK_MODEL_KEY,
+      modelId: normalizeVseGptModelId(env.vsegptDeepSeekModelId, VSEGPT_DEEPSEEK_MODEL_ID),
       displayName: "DeepSeek",
       capabilities: ["text", "webSearch", "imageGeneration"]
     })
@@ -133,6 +128,10 @@ function normalizeModelKey(provider, modelKey) {
     return "gpt54";
   }
 
+  if (provider === PROVIDER_VSEGPT && normalized.toLowerCase().includes("deepseek")) {
+    return VSEGPT_DEEPSEEK_MODEL_KEY;
+  }
+
   return normalized || DEFAULT_MODEL_BY_PROVIDER[provider] || "";
 }
 
@@ -149,8 +148,15 @@ function resolveRequestedModel({ provider, modelKey } = {}) {
     throw createHttpError(400, "Unknown AI provider");
   }
 
-  const normalizedModelKey = normalizeModelKey(normalizedProvider, modelKey);
-  const model = findModel(normalizedProvider, normalizedModelKey);
+  let normalizedModelKey = normalizeModelKey(normalizedProvider, modelKey);
+  let model = findModel(normalizedProvider, normalizedModelKey);
+  let fallbackReason = "";
+  if (!model && normalizedProvider === PROVIDER_VSEGPT) {
+    normalizedModelKey = DEFAULT_MODEL_BY_PROVIDER[PROVIDER_VSEGPT];
+    model = findModel(normalizedProvider, normalizedModelKey);
+    fallbackReason = "legacy_or_unknown_vsegpt_model_key";
+  }
+
   if (!model) {
     throw createHttpError(400, "Unknown AI model");
   }
@@ -159,7 +165,8 @@ function resolveRequestedModel({ provider, modelKey } = {}) {
     provider: normalizedProvider,
     modelKey: normalizedModelKey,
     model,
-    providerSettings
+    providerSettings,
+    fallbackReason
   };
 }
 
@@ -210,6 +217,43 @@ function firstConfigured(...values) {
   return values.find((value) => typeof value === "string" && value.trim().length > 0) || "";
 }
 
+function normalizeModelId(value) {
+  return String(value || "").trim();
+}
+
+function isRetiredVseGptGptAlias(value) {
+  const normalized = normalizeModelId(value).toLowerCase();
+  return (
+    /^openai\/gpt-[a-z0-9.-]*nano$/i.test(normalized) ||
+    /^gpt-?5[.-]?5$/i.test(normalized)
+  );
+}
+
+function isRetiredDeepSeekModelId(value) {
+  const normalized = normalizeModelId(value).toLowerCase();
+  return (
+    /^deepseek\/?deepseek-r\d+/i.test(normalized) ||
+    (normalized.startsWith("deepseek/") && normalized.includes("flash-alt"))
+  );
+}
+
+function normalizeVseGptModelId(modelId, fallbackModelId = "") {
+  const normalized = normalizeModelId(modelId);
+  if (!normalized) {
+    return normalizeModelId(fallbackModelId);
+  }
+
+  if (isRetiredVseGptGptAlias(normalized)) {
+    return normalizeModelId(fallbackModelId);
+  }
+
+  if (isRetiredDeepSeekModelId(normalized)) {
+    return VSEGPT_DEEPSEEK_MODEL_ID;
+  }
+
+  return normalized;
+}
+
 function assertSelectionConfigured(selection) {
   const providerSettings = selection.providerSettings;
   if (!providerSettings.apiKey) {
@@ -226,10 +270,14 @@ function assertSelectionConfigured(selection) {
 }
 
 function createSelection({ requestSelection, model, upstreamUrl, modelId, modelConfigError = "" }) {
+  const normalizedModelId = requestSelection.provider === PROVIDER_VSEGPT
+    ? normalizeVseGptModelId(modelId, model.modelId)
+    : modelId;
+
   return {
     provider: requestSelection.provider,
     modelKey: requestSelection.modelKey,
-    model: modelId,
+    model: normalizedModelId,
     modelDefinition: model,
     modelConfigError,
     upstreamUrl,
@@ -313,7 +361,7 @@ function resolveTitleRequestedModel({ provider, modelKey } = {}) {
     const vsegptSettings = providerConfig(PROVIDER_VSEGPT);
 
     if (!openAiSettings.apiKey && vsegptSettings.apiKey) {
-      const requestedModelKey = String(modelKey || "").trim();
+      const requestedModelKey = normalizeModelKey(PROVIDER_VSEGPT, modelKey);
       const fallbackModelKey = findModel(PROVIDER_VSEGPT, requestedModelKey)
         ? requestedModelKey
         : DEFAULT_MODEL_BY_PROVIDER[PROVIDER_VSEGPT];

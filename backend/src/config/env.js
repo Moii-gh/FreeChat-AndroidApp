@@ -104,11 +104,10 @@ const env = {
     process.env.VSEGPT_IMAGE_URL ||
     process.env.AI_IMAGE_URL ||
     "https://api.vsegpt.ru/v1/images/generations",
-  vsegptGpt55ModelId: process.env.VSEGPT_GPT55_MODEL_ID || "openai/gpt-5.4-nano",
   vsegptGemini3ModelId:
     process.env.VSEGPT_GEMINI3_MODEL_ID || "google/gemma-4-26b-a4b-it",
   vsegptDeepSeekModelId:
-    process.env.VSEGPT_DEEPSEEK_MODEL_ID || "deepseek/deepseek-v4-flash-alt",
+    process.env.VSEGPT_DEEPSEEK_MODEL_ID || "deepseek/deepseek-v4-flash",
   aiImageFallbackProvider: process.env.AI_IMAGE_FALLBACK_PROVIDER || "vsegpt",
   aiImageFallbackModelKey: process.env.AI_IMAGE_FALLBACK_MODEL_KEY || "gemini3",
   aiApiKey: process.env.AI_API_KEY || "",

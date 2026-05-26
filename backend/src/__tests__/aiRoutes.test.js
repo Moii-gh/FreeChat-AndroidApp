@@ -78,7 +78,6 @@ function setAiEnv(overrides = {}) {
     vsegptApiKey: env.vsegptApiKey,
     vsegptChatUrl: env.vsegptChatUrl,
     vsegptImageUrl: env.vsegptImageUrl,
-    vsegptGpt55ModelId: env.vsegptGpt55ModelId,
     vsegptGemini3ModelId: env.vsegptGemini3ModelId,
     vsegptDeepSeekModelId: env.vsegptDeepSeekModelId,
     aiImageFallbackProvider: env.aiImageFallbackProvider,
@@ -107,9 +106,8 @@ function setAiEnv(overrides = {}) {
     vsegptApiKey: "vsegpt-test-key",
     vsegptChatUrl: "https://vsegpt.example.test/v1/chat/completions",
     vsegptImageUrl: "https://vsegpt.example.test/v1/images/generations",
-    vsegptGpt55ModelId: "openai/gpt-5.4-nano",
     vsegptGemini3ModelId: "google/gemma-4-26b-a4b-it",
-    vsegptDeepSeekModelId: "deepseek/deepseek-v4-flash-alt",
+    vsegptDeepSeekModelId: "deepseek/deepseek-v4-flash",
     aiImageFallbackProvider: "vsegpt",
     aiImageFallbackModelKey: "gemini3",
     aiApiKey: "test-key",
@@ -1014,10 +1012,15 @@ test("GET /api/ai/models returns public model metadata without technical model i
         "imageEdit"
       ]
     });
+    const vsegptModelKeys = response.body.models
+      .filter((model) => model.provider === "vsegpt")
+      .map((model) => model.modelKey)
+      .sort();
+    assert.deepEqual(vsegptModelKeys, ["deepseek", "gemini3"]);
     assert.ok(response.body.models.some((model) =>
       model.provider === "vsegpt" &&
-      model.modelKey === "gpt55" &&
-      model.displayName === "GPT-5.5"
+      model.modelKey === "gemini3" &&
+      model.displayName === "Gemini-3"
     ));
     assert.ok(response.body.models.some((model) =>
       model.provider === "vsegpt" &&
@@ -1027,15 +1030,52 @@ test("GET /api/ai/models returns public model metadata without technical model i
     assert.ok(openAiModels[0].capabilities.includes("webSearch"));
     assert.ok(openAiModels[0].capabilities.includes("imageEdit"));
     assert.equal(JSON.stringify(response.body).includes("gpt-5.4-mini"), false);
-    assert.equal(JSON.stringify(response.body).includes("openai/gpt-5.4-nano"), false);
-    assert.equal(JSON.stringify(response.body).includes("deepseek/deepseek-v4-flash-alt"), false);
+    assert.equal(JSON.stringify(response.body).includes("deepseek/deepseek-v4-flash"), false);
     assert.equal(JSON.stringify(response.body).includes("openai-test-key"), false);
   } finally {
     restoreEnv();
   }
 });
 
-test("POST /api/ai/chat routes VseGPT GPT-5.5 display slot to openai/gpt-5.4-nano", async () => {
+test("POST /api/ai/chat falls back from retired VseGPT model keys", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  const retiredModelKey = ["gpt", "55"].join("");
+  let upstreamBody = null;
+  global.fetch = async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream"
+      }
+    });
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "vsegpt",
+        modelKey: retiredModelKey,
+        request: {
+          messages: [
+            { role: "user", content: "Hello" }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(upstreamBody.model, "google/gemma-4-26b-a4b-it");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat maps legacy DeepSeek request keys to the current model", async () => {
   const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
   let upstreamBody = null;
@@ -1056,7 +1096,7 @@ test("POST /api/ai/chat routes VseGPT GPT-5.5 display slot to openai/gpt-5.4-nan
       .set("Authorization", authHeader(user))
       .send({
         provider: "vsegpt",
-        modelKey: "gpt55",
+        modelKey: "deepseek-r1",
         request: {
           messages: [
             { role: "user", content: "Hello" }
@@ -1065,38 +1105,22 @@ test("POST /api/ai/chat routes VseGPT GPT-5.5 display slot to openai/gpt-5.4-nan
       });
 
     assert.equal(response.status, 200);
-    assert.equal(upstreamBody.model, "openai/gpt-5.4-nano");
+    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
   }
 });
 
-test("POST /api/ai/chat converts images to text before sending to VseGPT GPT-5.5 nano slot", async () => {
-  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+test("POST /api/ai/chat normalizes retired DeepSeek env model ids", async () => {
+  const restoreEnv = setAiEnv({
+    dailyAiRequestLimit: 5,
+    vsegptDeepSeekModelId: "deepseek/deepseek-r1"
+  });
   const originalFetch = global.fetch;
-  const calls = [];
-  global.fetch = async (url, init) => {
-    const body = JSON.parse(init.body);
-    calls.push({ url, body });
-
-    if (calls.length === 1) {
-      return new Response(JSON.stringify({
-        choices: [
-          {
-            message: {
-              content: "The image shows a printed receipt with a total."
-            }
-          }
-        ]
-      }), {
-        status: 200,
-        headers: {
-          "content-type": "application/json"
-        }
-      });
-    }
-
+  let upstreamBody = null;
+  global.fetch = async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
     return new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n', {
       status: 200,
       headers: {
@@ -1112,29 +1136,56 @@ test("POST /api/ai/chat converts images to text before sending to VseGPT GPT-5.5
       .set("Authorization", authHeader(user))
       .send({
         provider: "vsegpt",
-        modelKey: "gpt55",
+        modelKey: "deepseek",
         request: {
           messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Read this." },
-                {
-                  type: "image_url",
-                  image_url: { url: "data:image/png;base64,aW1hZ2U=" }
-                }
-              ]
-            }
+            { role: "user", content: "Hello" }
           ]
         }
       });
 
     assert.equal(response.status, 200);
-    assert.equal(calls.length, 2);
-    assert.equal(calls[0].body.model, "google/gemma-4-26b-a4b-it");
-    assert.equal(calls[1].body.model, "openai/gpt-5.4-nano");
-    assert.equal(JSON.stringify(calls[1].body).includes("image_url"), false);
-    assert.match(calls[1].body.messages[0].content, /printed receipt/);
+    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
+test("POST /api/ai/chat ignores retired VseGPT search overrides", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  const retiredSearchModel = ["openai", ["gpt", "5.4", "nano"].join("-")].join("/");
+  env.aiSearchModel = retiredSearchModel;
+  let upstreamBody = null;
+  global.fetch = async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream"
+      }
+    });
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", authHeader(user))
+      .send({
+        provider: "vsegpt",
+        modelKey: "deepseek",
+        currentMode: "search",
+        request: {
+          messages: [
+            { role: "user", content: "Find current news." }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -1445,7 +1496,7 @@ test("POST /api/ai/chat converts images to text before sending to VseGPT DeepSee
     assert.equal(calls.length, 2);
     assert.equal(calls[0].body.model, "google/gemma-4-26b-a4b-it");
     assert.equal(calls[0].body.messages[1].content[1].type, "image_url");
-    assert.equal(calls[1].body.model, "deepseek/deepseek-v4-flash-alt");
+    assert.equal(calls[1].body.model, "deepseek/deepseek-v4-flash");
     assert.equal(JSON.stringify(calls[1].body).includes("image_url"), false);
     assert.match(
       calls[1].body.messages[0].content,
