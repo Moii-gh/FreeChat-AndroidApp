@@ -134,6 +134,10 @@ class PopupMenuHelper(
             onShare(chat)
         })
 
+        menuLayout.addView(createPopupMenuItem(R.drawable.ic_home, LocaleHelper.getString(activity, "menu_add_to_home_screen"), Color.WHITE) {
+            dialog.dismiss()
+            pinChatShortcut(activity, chat)
+        })
 
         menuLayout.addView(createMenuDivider())
 
