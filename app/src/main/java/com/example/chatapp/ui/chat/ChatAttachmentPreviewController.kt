@@ -192,7 +192,7 @@ internal class ChatAttachmentPreviewController(
                 setPadding(dp(8), dp(12), dp(8), dp(8))
             }
             val icon = ImageView(context).apply {
-                setImageResource(R.drawable.ic_file_new)
+                setImageResource(getFileIconResource(fileName, mimeType))
                 setColorFilter(Color.parseColor("#8E8E93"))
             }
             fileColumn.addView(
@@ -269,6 +269,17 @@ internal class ChatAttachmentPreviewController(
             sourceUri = uri.toString(),
             isLocalCopy = false
         )
+    }
+
+    private fun getFileIconResource(fileName: String, mimeType: String): Int {
+        val extension = fileName.substringAfterLast('.', "").lowercase()
+        return when {
+            extension == "pdf" || mimeType.contains("pdf", ignoreCase = true) -> R.drawable.ic_file_pdf
+            extension in setOf("doc", "docx") || mimeType.contains("word", ignoreCase = true) || mimeType.contains("msword", ignoreCase = true) -> R.drawable.ic_file_word
+            extension in setOf("xls", "xlsx") || mimeType.contains("excel", ignoreCase = true) || mimeType.contains("sheet", ignoreCase = true) -> R.drawable.ic_file_excel
+            extension == "txt" || mimeType.contains("text/plain", ignoreCase = true) -> R.drawable.ic_file_txt
+            else -> R.drawable.ic_file_new
+        }
     }
 
     private fun dp(value: Int): Int =
