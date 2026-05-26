@@ -1355,7 +1355,25 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         )
     }
 
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        adjustDrawerWidth()
+    }
+
+    private fun adjustDrawerWidth() {
+        val drawerHistory = findViewById<View>(R.id.drawerHistory)
+        drawerHistory?.let { drawer ->
+            val metrics = resources.displayMetrics
+            val params = drawer.layoutParams as? androidx.drawerlayout.widget.DrawerLayout.LayoutParams
+            if (params != null) {
+                params.width = metrics.widthPixels
+                drawer.layoutParams = params
+            }
+        }
+    }
+
     private fun setupDrawer() {
+        adjustDrawerWidth()
         val chatsContainer = findViewById<LinearLayout>(R.id.chatsContainer)
         drawerManager = DrawerManager(
             context = this,

@@ -725,6 +725,7 @@
 
     <!-- БОКОВОЕ МЕНЮ (DRAWER) ИЗ ОТДЕЛЬНОГО ФАЙЛА -->
     <include
+        android:id="@+id/drawerHistory"
         layout="@layout/drawer_chat_history"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
