@@ -793,9 +793,6 @@ class PopupMenuHelper(
                 .build()
 
             androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
-
-            val msg = LocaleHelper.getString(context, "toast_shortcut_added") ?: "Shortcut request sent"
-            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
         } else {
             android.widget.Toast.makeText(context, "Not supported on this launcher", android.widget.Toast.LENGTH_SHORT).show()
         }
