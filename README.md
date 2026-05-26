@@ -397,23 +397,6 @@ npm test
 
 В проекте есть unit-тесты для auth logic, AI provider config, API service, sync conflict resolver, deep links, security localization и Compose auth flow.
 
-## Важные замечания
-
-- Не коммитьте `.env`, API-ключи, JWT secrets и реальные database credentials.
-- `JWT_SECRET` и `VERIFICATION_CODE_SECRET` обязательны для production-like запуска backend.
-- Android release build запрещает cleartext HTTP через `ALLOW_HTTP_BASE_URL=false`; для production используйте HTTPS.
-- `CHAT_SHARE_PUBLIC_BASE_URL` должен быть абсолютным HTTP/HTTPS URL, так как используется для app links и публичных ссылок.
-- Для Telegram Login Widget нужен публичный backend URL, доступный Telegram.
-- Для физического Android-устройства `localhost` указывает на само устройство, поэтому в `APP_API_BASE_URL` нужен IP компьютера с backend.
-
-## Направления развития
-
-- Настроить CI для backend и Android tests.
-- Добавить release pipeline и версионирование APK/AAB.
-- Добавить скриншоты интерфейса в README.
-- Вынести production uploads в S3-compatible storage.
-- Расширить стратегию conflict resolution при синхронизации.
-- Добавить OpenAPI-спецификацию для backend.
 
 ---
 
