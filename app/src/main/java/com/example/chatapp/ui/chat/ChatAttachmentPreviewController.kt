@@ -95,26 +95,16 @@ internal class ChatAttachmentPreviewController(
             attachments.isNotEmpty() -> {
                 binding.previewContainer.isVisible = true
                 attachments.forEachIndexed { index, attachment ->
-                    binding.previewItemsContainer.addView(
-                        createPendingAttachmentView(attachment, index),
-                        LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                        ).apply {
-                            marginEnd = dp(8)
-                        }
-                    )
+                    val view = createPendingAttachmentView(attachment, index)
+                    val params = view.layoutParams as LinearLayout.LayoutParams
+                    params.marginEnd = dp(8)
+                    binding.previewItemsContainer.addView(view, params)
                 }
             }
             retainedEditingAttachment != null -> {
                 binding.previewContainer.isVisible = true
-                binding.previewItemsContainer.addView(
-                    createRetainedAttachmentView(retainedEditingAttachment!!),
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                )
+                val view = createRetainedAttachmentView(retainedEditingAttachment!!)
+                binding.previewItemsContainer.addView(view, view.layoutParams)
             }
             else -> {
                 binding.previewContainer.isGone = true
@@ -162,7 +152,7 @@ internal class ChatAttachmentPreviewController(
         onRemove: () -> Unit
     ): View {
         val isImage = mimeType.startsWith("image/", ignoreCase = true)
-        val width = if (isImage) dp(80) else dp(184)
+        val width = dp(80)
         val height = dp(80)
 
         val root = FrameLayout(context).apply {
@@ -196,47 +186,38 @@ internal class ChatAttachmentPreviewController(
                 else -> imageView.setImageResource(R.drawable.ic_image)
             }
         } else {
-            val fileRow = LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(12), dp(10), dp(30), dp(10))
+            val fileColumn = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(dp(8), dp(12), dp(8), dp(8))
             }
             val icon = ImageView(context).apply {
                 setImageResource(R.drawable.ic_file_new)
-                setColorFilter(Color.parseColor("#D1D1D6"))
+                setColorFilter(Color.parseColor("#8E8E93"))
             }
-            fileRow.addView(
+            fileColumn.addView(
                 icon,
-                LinearLayout.LayoutParams(dp(28), dp(28)).apply {
-                    marginEnd = dp(10)
+                LinearLayout.LayoutParams(dp(32), dp(32)).apply {
+                    bottomMargin = dp(6)
                 }
             )
-            val textColumn = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-            }
             val nameView = TextView(context).apply {
                 text = fileName
                 setTextColor(Color.WHITE)
-                textSize = 13f
-                setTypeface(null, Typeface.BOLD)
-                maxLines = 2
-                ellipsize = TextUtils.TruncateAt.MIDDLE
-            }
-            val typeView = TextView(context).apply {
-                text = mimeType.substringAfterLast('/').uppercase()
-                setTextColor(Color.parseColor("#8E8E93"))
                 textSize = 10f
-                maxLines = 1
+                gravity = Gravity.CENTER
+                maxLines = 2
                 ellipsize = TextUtils.TruncateAt.END
             }
-            textColumn.addView(nameView)
-            textColumn.addView(typeView)
-            fileRow.addView(
-                textColumn,
-                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            fileColumn.addView(
+                nameView,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
             )
             root.addView(
-                fileRow,
+                fileColumn,
                 FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
