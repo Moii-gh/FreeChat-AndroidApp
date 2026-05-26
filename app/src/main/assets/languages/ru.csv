@@ -321,7 +321,7 @@ welcome_prompt_6;Задайте любой вопрос
 welcome_prompt_7;С чего начнем?
 welcome_prompt_8;Готов помочь
 
-ai_provider_title;AI Провайдер
+ai_provider_title;Выбор нейросети
 ai_provider_section;Провайдер ИИ
 ai_provider_vsegpt_title;VseGPT (сервер)
 ai_provider_vsegpt_desc;Запросы идут через наш сервер. API ключ не нужен.

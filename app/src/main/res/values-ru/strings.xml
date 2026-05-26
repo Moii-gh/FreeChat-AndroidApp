@@ -26,7 +26,7 @@
     <string name="ai_provider_openai_desc">OpenAI через сервер. API-ключ не хранится в приложении.</string>
     <string name="ai_provider_openai_title">OpenAI API</string>
     <string name="ai_provider_section">Провайдер ИИ</string>
-    <string name="ai_provider_title">AI Провайдер</string>
+    <string name="ai_provider_title">Выбор нейросети</string>
     <string name="ai_provider_tools_info">Изображения обрабатываются автоматически для выбранной модели.</string>
     <string name="ai_provider_vsegpt_desc">Альтернативный провайдер через сервер.</string>
     <string name="ai_provider_vsegpt_title">VseGPT (сервер)</string>
