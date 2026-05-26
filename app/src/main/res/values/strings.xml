@@ -216,6 +216,7 @@
     <string name="image_creating">Creating images...</string>
     <string name="image_ready">Image ready</string>
     <string name="label_email">Email</string>
+    <string name="label_apps">Apps</string>
     <string name="label_file_analysis">File/photo analysis</string>
     <string name="label_limits_requests">Requests</string>
     <string name="label_name">Name</string>
@@ -384,6 +385,7 @@
     <string name="toast_logout">You have been logged out</string>
     <string name="toast_name_empty">Name cannot be empty</string>
     <string name="toast_open_link_error">Could not open link</string>
+    <string name="toast_open_attachment_error">Failed to open attachment</string>
     <string name="toast_open_attachment_error_with_message">Failed to open attachment: %s</string>
     <string name="toast_profile_saved">Profile saved</string>
     <string name="toast_share_error">Error sharing</string>

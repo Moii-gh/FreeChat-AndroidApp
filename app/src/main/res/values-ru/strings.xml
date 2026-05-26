@@ -2,8 +2,8 @@
 <resources>
     <string name="action_create_image">Создать изображение</string>
     <string name="adult_badge">18+</string>
-    <string name="adult_mode_title">18+ mode</string>
-    <string name="adult_replies_title">Adult replies</string>
+    <string name="adult_mode_title">Режим 18+</string>
+    <string name="adult_replies_title">Ответы 18+</string>
     <string name="ai_default_image_prompt">Креативное изображение</string>
     <string name="ai_mode_server_routing_desc">Модели и лимиты выбираются на сервере для текущего аккаунта.</string>
     <string name="ai_mode_server_routing_title">Серверная маршрутизация</string>
@@ -30,7 +30,7 @@
     <string name="ai_provider_tools_info">Изображения обрабатываются автоматически для выбранной модели.</string>
     <string name="ai_provider_vsegpt_desc">Альтернативный провайдер через сервер.</string>
     <string name="ai_provider_vsegpt_title">VseGPT (сервер)</string>
-    <string name="ai_provider_with_tools">with tools</string>
+    <string name="ai_provider_with_tools">с инструментами</string>
     <string name="ai_summary_file_excerpt_label">Выдержка из файла</string>
     <string name="ai_summary_file_label">Файл</string>
     <string name="ai_summary_prompt">Сделай краткую сводку важных фактов из этой части переписки:</string>
@@ -68,11 +68,11 @@
     <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="widget_config_title">Настройки виджета</string>
     <string name="widget_config_description">Выберите стиль виджета и настройте только прозрачность и радиус углов.</string>
-    <string name="widget_config_style_section">Widget Style</string>
+    <string name="widget_config_style_section">Стиль виджета</string>
     <string name="widget_config_size_section">Размер виджета</string>
     <string name="widget_style_liquid_glass">Liquid Glass</string>
-    <string name="widget_style_dark">Dark</string>
-    <string name="widget_style_adaptive">Adaptive</string>
+    <string name="widget_style_dark">Тёмный</string>
+    <string name="widget_style_adaptive">Адаптивный</string>
     <string name="widget_config_manual_settings">Ручные настройки</string>
     <string name="widget_config_transparency_label">Прозрачность</string>
     <string name="widget_config_transparency_value">%d%%</string>
@@ -216,6 +216,7 @@
     <string name="image_creating">Создание изображений...</string>
     <string name="image_ready">Изображение готово</string>
     <string name="label_email">Почта</string>
+    <string name="label_apps">Приложения</string>
     <string name="label_file_analysis">Анализ файла/фото</string>
     <string name="label_limits_requests">Запросы</string>
     <string name="label_name">Имя</string>
@@ -383,6 +384,8 @@
     <string name="logout_limit_message_less_than_hour">Вы сможете выйти снова менее чем через час.</string>
     <string name="toast_logout">Вы вышли из профиля</string>
     <string name="toast_name_empty">Имя не может быть пустым</string>
+    <string name="toast_open_link_error">Не удалось открыть ссылку</string>
+    <string name="toast_open_attachment_error">Не удалось открыть вложение</string>
     <string name="toast_open_attachment_error_with_message">Не удалось открыть вложение: %s</string>
     <string name="toast_profile_saved">Профиль сохранён</string>
     <string name="toast_share_error">Ошибка при попытке поделиться</string>
@@ -393,6 +396,10 @@
     <string name="toast_share_links_not_found">Активных ссылок нет</string>
     <string name="toast_share_links_revoked">Доступ по ссылкам отключен</string>
     <string name="toast_share_revoke_error">Не удалось отключить ссылки</string>
+    <string name="toast_table_copied">Таблица скопирована</string>
+    <string name="toast_text_too_large_to_copy">Текст слишком большой для копирования. Используйте «Поделиться».</string>
+    <string name="toast_xml_saved_with_name">XML сохранён в Загрузки: %s</string>
+    <string name="table_export_xml_label">XML</string>
     <string name="untitled_chat">Без названия</string>
     <string name="welcome_prompt_1">Чем могу помочь?</string>
     <string name="welcome_prompt_2">Что хотите узнать?</string>
@@ -403,11 +410,6 @@
     <string name="welcome_prompt_7">С чего начнем?</string>
     <string name="welcome_prompt_8">Готов помочь</string>
     <string name="welcome_question">Добро пожаловать в FreeChat</string>
-    <string name="toast_open_link_error">Не удалось открыть ссылку</string>
-    <string name="toast_table_copied">Table copied</string>
-    <string name="toast_text_too_large_to_copy">Текст слишком большой для копирования. Используйте «Поделиться».</string>
-    <string name="toast_xml_saved_with_name">XML saved to Downloads: %s</string>
-    <string name="table_export_xml_label">XML</string>
     <string name="digital_assistant_title">Цифровой помощник</string>
     <string name="digital_assistant_short_title">Ассистент [beta]</string>
     <string name="digital_assistant_description">Показывает FreeChat поверх других приложений и позволяет задавать вопросы по текущему экрану.</string>
@@ -442,7 +444,7 @@
     <string name="digital_assistant_how_it_works_desc">Ассистент позволяет вызывать FreeChat из любого приложения зажатием кнопки домой или жестом. Он может анализировать содержимое экрана для ответов на ваши вопросы.</string>
     <string name="debug_menu_entry_hint">Ещё раз зажмите, чтобы открыть меню разработчика</string>
     <string name="debug_menu_title">Меню разработчика</string>
-    <string name="debug_menu_header">Debug panel</string>
+    <string name="debug_menu_header">Панель отладки</string>
     <string name="debug_menu_subtitle">Локальные инструменты диагностики и обслуживания FreeChat. Логи остаются на этом устройстве.</string>
     <string name="debug_menu_build">FreeChat Android %s</string>
     <string name="debug_menu_tools_section">Инструменты</string>
