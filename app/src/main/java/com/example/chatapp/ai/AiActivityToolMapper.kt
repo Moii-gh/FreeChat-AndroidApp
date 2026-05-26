@@ -154,15 +154,43 @@ object AiActivityToolMapper {
     }
 
     private fun hasImageInput(message: JSONObject): Boolean {
+        attachmentItems(message).takeIf { it.isNotEmpty() }?.let { attachments ->
+            return attachments.any { attachment ->
+                attachment.optString("base64").isNotBlank() &&
+                    attachment.optString("mimeType").startsWith("image/", ignoreCase = true)
+            }
+        }
+
         val mimeType = message.optString("mimeType", "image/jpeg").ifBlank { "image/jpeg" }
         return message.optString("base64").isNotBlank() && mimeType.startsWith("image/", ignoreCase = true)
     }
 
     private fun hasFileInput(message: JSONObject): Boolean {
+        attachmentItems(message).takeIf { it.isNotEmpty() }?.let { attachments ->
+            return attachments.any { attachment ->
+                val mimeType = attachment.optString("mimeType")
+                attachment.optString("fileName").isNotBlank() ||
+                    attachment.optString("fileContext").isNotBlank() ||
+                    (
+                        attachment.optString("base64").isNotBlank() &&
+                            !mimeType.startsWith("image/", ignoreCase = true)
+                    )
+            }
+        }
+
         val hasBinaryFile = message.optString("base64").isNotBlank() && !hasImageInput(message)
         return hasBinaryFile ||
             message.optString("fileContext").isNotBlank() ||
             message.optString("fileName").isNotBlank()
+    }
+
+    private fun attachmentItems(message: JSONObject): List<JSONObject> {
+        val attachments = message.optJSONArray("attachments") ?: return emptyList()
+        return buildList {
+            for (index in 0 until attachments.length()) {
+                attachments.optJSONObject(index)?.let(::add)
+            }
+        }
     }
 
     private fun normalize(value: String?): String =

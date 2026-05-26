@@ -10,6 +10,8 @@ import com.example.chatapp.ChatGenerationStatus
 import com.example.chatapp.ChatEntity
 import com.example.chatapp.ChatRepository
 import com.example.chatapp.LocaleHelper
+import com.example.chatapp.AttachmentPayload
+import com.example.chatapp.PendingAttachment
 import com.example.chatapp.ai.AiActivityState
 import com.example.chatapp.ai.AiActivityStateManager
 import com.example.chatapp.ai.AiActivityToolMapper
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
@@ -107,9 +110,38 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     var popularNewsQueries: List<String> = emptyList()
         private set
     var selectedFileUri: Uri? = null
+        private set
+    val pendingInputAttachments = mutableListOf<PendingAttachment>()
     private var activeResponseJob: Job? = null
     private var activeAssistantSyncId: String? = null
     var onChatListUpdated: (() -> Unit)? = null
+
+    fun setPendingInputAttachments(attachments: List<PendingAttachment>) {
+        pendingInputAttachments.clear()
+        pendingInputAttachments.addAll(attachments)
+        selectedFileUri = pendingInputAttachments.firstOrNull()?.uri
+    }
+
+    fun addPendingInputAttachments(attachments: List<PendingAttachment>) {
+        val knownUris = pendingInputAttachments.map { it.uri.toString() }.toMutableSet()
+        attachments.forEach { attachment ->
+            if (knownUris.add(attachment.uri.toString())) {
+                pendingInputAttachments.add(attachment)
+            }
+        }
+        selectedFileUri = pendingInputAttachments.firstOrNull()?.uri
+    }
+
+    fun removePendingInputAttachment(index: Int) {
+        if (index !in pendingInputAttachments.indices) return
+        pendingInputAttachments.removeAt(index)
+        selectedFileUri = pendingInputAttachments.firstOrNull()?.uri
+    }
+
+    fun clearPendingInputAttachments() {
+        pendingInputAttachments.clear()
+        selectedFileUri = null
+    }
 
     /** Накопленная информация о всех файлах, прикреплённых за сессию чата */
     private val attachedFilesRegistry = mutableListOf<String>()
@@ -481,6 +513,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         mimeType: String?,
         fileName: String?,
         fileContext: String?,
+        attachmentItems: List<AttachmentPayload> = emptyList(),
         activityGenerationId: Long = System.currentTimeMillis(),
         onError: (String) -> Unit,
         onChunk: (String) -> Unit,
@@ -488,14 +521,41 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         val now = System.currentTimeMillis()
         val userSyncId = UUID.randomUUID().toString()
+        val effectiveAttachments = attachmentItems.ifEmpty {
+            listOfNotNull(
+                if (
+                    base64Data != null ||
+                    fileUri != null ||
+                    mimeType != null ||
+                    fileName != null ||
+                    fileContext != null
+                ) {
+                    AttachmentPayload(
+                        fileUri = fileUri.orEmpty(),
+                        mimeType = mimeType ?: "application/octet-stream",
+                        fileName = fileName,
+                        base64Data = base64Data,
+                        attachmentContext = fileContext
+                    )
+                } else {
+                    null
+                }
+            )
+        }
+        val primaryAttachment = effectiveAttachments.firstOrNull()
+        val storedFileContext = combinedAttachmentContext(effectiveAttachments)
+            ?: primaryAttachment?.attachmentContext
         val userMessage = JSONObject().apply {
             put("role", "user")
             put("content", contentForUserMessage(content))
-            if (base64Data != null) put("base64", base64Data)
-            if (fileUri != null) put("imageUri", fileUri)
-            if (mimeType != null) put("mimeType", mimeType)
-            if (fileName != null) put("fileName", fileName)
-            if (fileContext != null) put("fileContext", fileContext)
+            if (primaryAttachment?.base64Data != null) put("base64", primaryAttachment.base64Data)
+            if (!primaryAttachment?.fileUri.isNullOrBlank()) put("imageUri", primaryAttachment?.fileUri)
+            if (primaryAttachment?.mimeType != null) put("mimeType", primaryAttachment.mimeType)
+            if (primaryAttachment?.fileName != null) put("fileName", primaryAttachment.fileName)
+            if (storedFileContext != null) put("fileContext", storedFileContext)
+            if (effectiveAttachments.size > 1) {
+                put("attachments", attachmentsJson(effectiveAttachments))
+            }
             put("syncId", userSyncId)
             put("timestamp", now)
             put("updatedAt", now)
@@ -505,8 +565,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         chatHistory.add(userMessage)
 
         // Регистрируем файл, чтобы модель всегда помнила его содержимое
-        if (fileName != null || fileContext != null) {
-            registerAttachedFile(fileName, mimeType, fileContext)
+        effectiveAttachments.forEach { attachment ->
+            if (attachment.fileName != null || attachment.attachmentContext != null) {
+                registerAttachedFile(
+                    attachment.fileName,
+                    attachment.mimeType,
+                    attachment.attachmentContext
+                )
+            }
         }
 
         // Сохраняем сразу, если чат уже существует
@@ -515,11 +581,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 repository.addUserMessage(
                     chatId = it,
                     content = userMessage.getString("content"),
-                    imageUrl = fileUri,
-                    attachmentData = base64Data,
-                    attachmentMimeType = mimeType,
-                    attachmentFileName = fileName,
-                    attachmentContext = fileContext,
+                    imageUrl = primaryAttachment?.fileUri?.takeIf { uri -> uri.isNotBlank() },
+                    attachmentData = primaryAttachment?.base64Data,
+                    attachmentMimeType = primaryAttachment?.mimeType,
+                    attachmentFileName = primaryAttachment?.fileName,
+                    attachmentContext = storedFileContext,
                     syncId = userSyncId,
                     timestamp = now,
                     updatedAt = now
@@ -1031,6 +1097,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         isAnonymousChat = false
         currentMode = null
         selectedFileUri = null
+        pendingInputAttachments.clear()
         detachActiveResponseObserver()
         attachedFilesRegistry.clear()
     }
@@ -1067,6 +1134,35 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val allContexts = (attachedFilesRegistry + restoredFileContexts).distinct()
         if (allContexts.isEmpty()) return ""
         return allContexts.joinToString("\n\n")
+    }
+
+    private fun attachmentsJson(attachments: List<AttachmentPayload>): JSONArray {
+        return JSONArray().apply {
+            attachments.forEach { attachment ->
+                put(JSONObject().apply {
+                    if (attachment.fileUri.isNotBlank()) put("fileUri", attachment.fileUri)
+                    put("mimeType", attachment.mimeType)
+                    attachment.fileName?.let { put("fileName", it) }
+                    attachment.base64Data?.let { put("base64", it) }
+                    attachment.attachmentContext?.let { put("fileContext", it) }
+                    attachment.sizeBytes?.let { put("sizeBytes", it) }
+                })
+            }
+        }
+    }
+
+    private fun combinedAttachmentContext(attachments: List<AttachmentPayload>): String? {
+        val contexts = attachments.mapNotNull { attachment ->
+            attachment.attachmentContext?.takeIf { it.isNotBlank() }?.let { context ->
+                buildString {
+                    if (!attachment.fileName.isNullOrBlank()) {
+                        append(attachment.fileName).append("\n")
+                    }
+                    append(context)
+                }
+            }
+        }
+        return contexts.takeIf { it.isNotEmpty() }?.joinToString("\n\n")
     }
 
     private fun contentForUserMessage(content: String): String {
@@ -1130,7 +1226,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val message = chatHistory[historyIndex]
-        listOf("base64", "imageUri", "imageUrl", "mimeType", "fileName", "fileContext").forEach {
+        listOf("base64", "imageUri", "imageUrl", "mimeType", "fileName", "fileContext", "attachments").forEach {
             message.remove(it)
         }
 

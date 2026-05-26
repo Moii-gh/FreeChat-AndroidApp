@@ -39,6 +39,13 @@ object AiApiService {
             "or HTML <a href=\"URL\">meaningful link text</a>. Do not leave raw plain-text URLs. " +
             "The link text must describe the target, not repeat the URL."
 
+    private data class RequestAttachment(
+        val base64: String?,
+        val mimeType: String,
+        val fileName: String?,
+        val fileContext: String?
+    )
+
     fun buildSystemPrompt(
         currentMode: String?,
         customInstructions: String,
@@ -108,9 +115,18 @@ object AiApiService {
                 }
 
                 messagesToKeep.forEach { msg ->
-                    val messageText = buildMessageText(msg)
-                    val mimeType = normalizedMimeType(msg)
-                    if (msg.has("base64") && isImageMimeType(mimeType)) {
+                    val attachments = requestAttachments(msg)
+                    val messageText = buildMessageText(msg, attachments)
+                    val imageAttachments = attachments.filter {
+                        !it.base64.isNullOrBlank() && isImageMimeType(it.mimeType)
+                    }
+                    attachments
+                        .filter { !it.base64.isNullOrBlank() && !isImageMimeType(it.mimeType) }
+                        .forEach { attachment ->
+                            buildFileSearchAttachment(attachment)?.let { fileSearchFiles.put(it) }
+                        }
+
+                    if (imageAttachments.isNotEmpty()) {
                         messages.put(
                             JSONObject().apply {
                                 put("role", msg.optString("role", "user"))
@@ -119,17 +135,18 @@ object AiApiService {
                                         put("type", "text")
                                         put("text", messageText)
                                     })
-                                    put(JSONObject().apply {
-                                        put("type", "image_url")
-                                        put("image_url", JSONObject().apply {
-                                            put("url", "data:$mimeType;base64," + msg.getString("base64"))
+                                    imageAttachments.forEach { attachment ->
+                                        put(JSONObject().apply {
+                                            put("type", "image_url")
+                                            put("image_url", JSONObject().apply {
+                                                put("url", "data:${attachment.mimeType};base64,${attachment.base64}")
+                                            })
                                         })
-                                    })
+                                    }
                                 })
                             }
                         )
                     } else {
-                        buildFileSearchAttachment(msg, mimeType)?.let { fileSearchFiles.put(it) }
                         messages.put(JSONObject().apply {
                             put("role", msg.optString("role", "user"))
                             put("content", messageText)
@@ -195,6 +212,82 @@ object AiApiService {
         return ""
     }
 
+    private fun buildMessageText(msg: JSONObject, attachments: List<RequestAttachment>): String {
+        val content = msg.optString("content", "")
+            .replace(
+                Regex("!\\[[^]]*]\\((?:data:image/|content://|file://|https?://)[^)]+\\)"),
+                "[Generated image]"
+            )
+        if (attachments.isEmpty()) return content
+
+        return buildString {
+            append(content)
+            if (isNotBlank()) append("\n\n")
+            append(if (attachments.size == 1) "Attached file" else "Attached files")
+            attachments.forEachIndexed { index, attachment ->
+                if (attachments.size > 1) {
+                    append("\n\n").append(index + 1).append(".")
+                }
+                attachment.fileName?.takeIf { it.isNotBlank() }?.let { append(" ").append(it) }
+                append("\nMIME: ").append(attachment.mimeType)
+                if (!attachment.fileContext.isNullOrBlank()) {
+                    append("\n\nShort excerpt:\n")
+                    append(attachment.fileContext)
+                } else if (!attachment.base64.isNullOrBlank() && !isImageMimeType(attachment.mimeType)) {
+                    append("\n\n(Binary file without text excerpt)")
+                }
+            }
+        }
+    }
+
+    private fun requestAttachments(message: JSONObject): List<RequestAttachment> {
+        val array = message.optJSONArray("attachments")
+        if (array != null && array.length() > 0) {
+            return buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    val mimeType = item.optString("mimeType", "application/octet-stream")
+                        .ifBlank { "application/octet-stream" }
+                    add(
+                        RequestAttachment(
+                            base64 = item.optString("base64").takeIf { it.isNotBlank() },
+                            mimeType = mimeType,
+                            fileName = item.optString("fileName").takeIf { it.isNotBlank() },
+                            fileContext = item.optString("fileContext").takeIf { it.isNotBlank() }
+                        )
+                    )
+                }
+            }
+        }
+
+        val base64 = message.optString("base64").takeIf { it.isNotBlank() }
+        val fileName = message.optString("fileName").takeIf { it.isNotBlank() }
+        val fileContext = message.optString("fileContext")
+            .ifBlank { message.optString("fileText") }
+            .takeIf { it.isNotBlank() }
+        val mimeType = message.optString("mimeType", "")
+            .ifBlank {
+                when {
+                    base64 != null -> "image/jpeg"
+                    fileName != null || fileContext != null -> "application/octet-stream"
+                    else -> ""
+                }
+            }
+
+        if (base64 == null && fileName == null && fileContext == null && mimeType.isBlank()) {
+            return emptyList()
+        }
+
+        return listOf(
+            RequestAttachment(
+                base64 = base64,
+                mimeType = mimeType.ifBlank { "application/octet-stream" },
+                fileName = fileName,
+                fileContext = fileContext
+            )
+        )
+    }
+
     private fun buildMessageText(msg: JSONObject): String {
         val content = msg.optString("content", "")
             .replace(
@@ -236,6 +329,18 @@ object AiApiService {
         val result = JSONArray()
         if (message == null) return result
 
+        val attachments = requestAttachments(message)
+        if (attachments.isNotEmpty()) {
+            attachments
+                .filter { !it.base64.isNullOrBlank() && isImageMimeType(it.mimeType) }
+                .forEach { attachment ->
+                    result.put(JSONObject().apply {
+                        put("image_url", "data:${attachment.mimeType};base64,${attachment.base64}")
+                    })
+                }
+            return result
+        }
+
         val mimeType = normalizedMimeType(message)
         val base64 = message.optString("base64").takeIf { it.isNotBlank() }
         if (base64 != null && isImageMimeType(mimeType)) {
@@ -245,6 +350,19 @@ object AiApiService {
         }
 
         return result
+    }
+
+    private fun buildFileSearchAttachment(attachment: RequestAttachment): JSONObject? {
+        if (isImageMimeType(attachment.mimeType)) return null
+        val base64 = attachment.base64?.takeIf { it.isNotBlank() } ?: return null
+
+        return JSONObject().apply {
+            put("base64", base64)
+            put("mimeType", attachment.mimeType)
+            attachment.fileName?.takeIf { it.isNotBlank() }?.let {
+                put("fileName", it)
+            }
+        }
     }
 
     private fun buildFileSearchAttachment(message: JSONObject, mimeType: String): JSONObject? {

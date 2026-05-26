@@ -16,7 +16,8 @@ data class AttachmentPayload(
     val mimeType: String,
     val fileName: String?,
     val base64Data: String?,
-    val attachmentContext: String?
+    val attachmentContext: String?,
+    val sizeBytes: Long? = null
 )
 
 /**
@@ -35,14 +36,43 @@ class ChatAttachmentHelper(private val context: Context) {
     suspend fun buildAttachmentPayload(uri: Uri?): AttachmentPayload? = withContext(Dispatchers.IO) {
         if (uri == null) return@withContext null
 
-        val fileName = FileUtils.getFileName(context, uri)
+        buildAttachmentPayloadInternal(
+            uri = uri,
+            knownFileName = null,
+            knownMimeType = null,
+            knownSizeBytes = null
+        )
+    }
+
+    suspend fun buildAttachmentPayloads(attachments: List<PendingAttachment>): List<AttachmentPayload> =
+        withContext(Dispatchers.IO) {
+            attachments.map { attachment ->
+                buildAttachmentPayloadInternal(
+                    uri = attachment.uri,
+                    knownFileName = attachment.displayName,
+                    knownMimeType = attachment.mimeType,
+                    knownSizeBytes = attachment.sizeBytes
+                )
+            }
+        }
+
+    private fun buildAttachmentPayloadInternal(
+        uri: Uri,
+        knownFileName: String?,
+        knownMimeType: String?,
+        knownSizeBytes: Long?
+    ): AttachmentPayload {
+        val fileName = knownFileName?.takeIf { it.isNotBlank() }
+            ?: FileUtils.getFileName(context, uri)
             .takeIf { it.isNotBlank() }
-        val mimeType = resolveMimeType(uri, fileName)
+        val mimeType = knownMimeType
+            ?.takeIf { it.isNotBlank() }
+            ?: resolveMimeType(uri, fileName)
         val isImage = mimeType.startsWith("image/", ignoreCase = true)
         val prepared = if (isImage) {
             prepareImageAttachment(uri, mimeType, fileName)
         } else {
-            PreparedBytes(readAttachmentBytes(uri), mimeType, fileName)
+            PreparedBytes(readAttachmentBytes(uri, knownSizeBytes), mimeType, fileName)
         }
 
         val extractedText = if (!isImage) {
@@ -59,12 +89,13 @@ class ChatAttachmentHelper(private val context: Context) {
 
         val base64Data = Base64.encodeToString(prepared.bytes, Base64.NO_WRAP)
 
-        return@withContext AttachmentPayload(
+        return AttachmentPayload(
             fileUri = uri.toString(),
             mimeType = prepared.mimeType,
             fileName = prepared.fileName,
             base64Data = base64Data,
-            attachmentContext = attachmentContext
+            attachmentContext = attachmentContext,
+            sizeBytes = knownSizeBytes ?: queryAttachmentSize(uri)
         )
     }
 
@@ -186,8 +217,8 @@ class ChatAttachmentHelper(private val context: Context) {
             ?: "application/octet-stream"
     }
 
-    private fun readAttachmentBytes(uri: Uri): ByteArray {
-        val declaredSize = queryAttachmentSize(uri)
+    private fun readAttachmentBytes(uri: Uri, knownSizeBytes: Long? = null): ByteArray {
+        val declaredSize = knownSizeBytes ?: queryAttachmentSize(uri)
         if (declaredSize != null && declaredSize > MAX_ATTACHMENT_BYTES) {
             throw IllegalArgumentException(LocaleHelper.getString(context, "attachment_too_large"))
         }

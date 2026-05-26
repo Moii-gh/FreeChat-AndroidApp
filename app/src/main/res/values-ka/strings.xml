@@ -63,6 +63,7 @@
     <string name="attachment_context_truncated">[კონტექსტი კონფიდენციალურობისა და ტოკენების გამო შემოკლებულია]</string>
     <string name="attachment_empty_text">[ფაილი/სურათი ტექსტის გარეშე]</string>
     <string name="attachment_read_error">დანართის წაკითხვა ვერ მოხერხდა</string>
+    <string name="attachment_unsupported_type">Unsupported attachment type</string>
     <string name="attachment_text_truncated">[ფაილის შინაარსი შემოკლებულია]</string>
     <string name="attachment_too_large">დანართი ანალიზისთვის ძალიან დიდია</string>
     <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>

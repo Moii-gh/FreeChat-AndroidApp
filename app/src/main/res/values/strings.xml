@@ -63,6 +63,7 @@
     <string name="attachment_context_truncated">[Context truncated for privacy and token safety]</string>
     <string name="attachment_empty_text">[File/Image without text]</string>
     <string name="attachment_read_error">Could not read attachment</string>
+    <string name="attachment_unsupported_type">Unsupported attachment type</string>
     <string name="attachment_text_truncated">[File content truncated]</string>
     <string name="attachment_too_large">Attachment is too large to analyze</string>
     <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>

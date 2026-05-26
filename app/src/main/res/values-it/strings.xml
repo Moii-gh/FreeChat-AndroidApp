@@ -63,6 +63,7 @@
     <string name="attachment_context_truncated">[Contesto troncato per privacy e token]</string>
     <string name="attachment_empty_text">[File/Immagine senza testo]</string>
     <string name="attachment_read_error">Impossibile leggere l\'allegato</string>
+    <string name="attachment_unsupported_type">Unsupported attachment type</string>
     <string name="attachment_text_truncated">[Contenuto del file troncato]</string>
     <string name="attachment_too_large">L\'allegato è troppo grande da analizzare</string>
     <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>

@@ -551,68 +551,24 @@
                 android:paddingVertical="4dp">
 
                 <!-- Контейнер для превью -->
-                <FrameLayout
+                <HorizontalScrollView
                     android:id="@+id/previewContainer"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:layout_marginStart="4dp"
                     android:layout_marginTop="4dp"
-                    android:visibility="gone">
-
-                    <!-- To ensure rounding is applied: clipToOutline=true -->
-                    <ImageView
-                        android:id="@+id/previewImage"
-                        android:layout_width="80dp"
-                        android:layout_height="80dp"
-                        android:scaleType="centerCrop"
-                        android:visibility="gone"
-                        android:background="@drawable/preview_background"
-                        android:clipToOutline="true" />
+                    android:visibility="gone"
+                    android:fillViewport="false"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
 
                     <LinearLayout
-                        android:id="@+id/previewFileContainer"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="@drawable/preview_background"
-                        android:visibility="gone"
-                        android:padding="16dp"
-                        android:clipToOutline="true">
-
-                        <ImageView
-                            android:id="@+id/previewFileIcon"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@drawable/ic_file_new"
-                            app:tint="#8E8E93"/>
-
-                        <TextView
-                            android:id="@+id/previewFileName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="#FFFFFF"
-                            android:textSize="12sp"
-                            android:gravity="center"
-                            android:layout_marginTop="8dp"
-                            android:maxLines="2"
-                            android:ellipsize="end"/>
-                    </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/btnRemovePreview"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="top|end"
-                        android:layout_margin="6dp"
-                        android:background="@drawable/circle_button_bg"
-                        android:padding="4dp"
-                        android:src="@android:drawable/ic_menu_close_clear_cancel"
-                        app:tint="#FFFFFF"
-                        android:clickable="true"
-                        android:focusable="true"/>
-                </FrameLayout>
+                        android:id="@+id/previewItemsContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
 
                 <!-- Контейнер для чипа -->
                 <LinearLayout

@@ -118,6 +118,48 @@ class AiApiServiceTest {
     }
 
     @Test
+    fun `request includes multiple shared attachments`() {
+        val message = JSONObject().apply {
+            put("role", "user")
+            put("content", "Compare these files and photo")
+            put("attachments", org.json.JSONArray().apply {
+                put(JSONObject().apply {
+                    put("base64", "ZG9j")
+                    put("mimeType", "application/pdf")
+                    put("fileName", "paper.pdf")
+                })
+                put(JSONObject().apply {
+                    put("base64", "aW1hZ2U=")
+                    put("mimeType", "image/jpeg")
+                    put("fileName", "photo.jpg")
+                })
+            })
+        }
+
+        val body = JSONObject(
+            AiApiService.buildRequestBody(
+                isImageGeneration = false,
+                messagesToKeep = listOf(message),
+                systemPrompt = null
+            )
+        )
+
+        val content = body.getJSONArray("messages")
+            .getJSONObject(0)
+            .getJSONArray("content")
+        assertTrue(content.getJSONObject(0).getString("text").contains("paper.pdf"))
+        assertEquals(
+            "data:image/jpeg;base64,aW1hZ2U=",
+            content.getJSONObject(1).getJSONObject("image_url").getString("url")
+        )
+
+        val fileSearchFile = body.getJSONArray("fileSearchFiles").getJSONObject(0)
+        assertEquals("ZG9j", fileSearchFile.getString("base64"))
+        assertEquals("application/pdf", fileSearchFile.getString("mimeType"))
+        assertEquals("paper.pdf", fileSearchFile.getString("fileName"))
+    }
+
+    @Test
     fun `image generation request keeps source image for backend image edit routing`() {
         val message = JSONObject().apply {
             put("role", "user")

@@ -75,7 +75,11 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         if (
             accountSessionStore.isSignedIn() &&
-            (ChatShareDeepLink.extractToken(intent.data) != null || FreeChatShortcut.fromIntent(intent) != null)
+            (
+                ChatShareDeepLink.extractToken(intent.data) != null ||
+                    FreeChatShortcut.fromIntent(intent) != null ||
+                    FileIntentHandler.isFileIntent(intent)
+            )
         ) {
             openChatActivity(intent)
             finish()
@@ -107,6 +111,7 @@ class MainActivity : ComponentActivity() {
             if (intent?.getBooleanExtra(EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, false) == true) {
                 putExtra(FreeChatActivity.EXTRA_SKIP_BIOMETRIC_ONCE, true)
             }
+            copyIncomingFileIntentFrom(intent)
         }
     }
 
@@ -121,7 +126,23 @@ class MainActivity : ComponentActivity() {
                 FreeChatShortcut.copyToIntent(shortcut, this)
                 putExtra(FreeChatActivity.EXTRA_SKIP_LAUNCH_ANIMATION, true)
             }
+            copyIncomingFileIntentFrom(sourceIntent)
         })
+    }
+
+    private fun Intent.copyIncomingFileIntentFrom(sourceIntent: Intent?) {
+        if (!FileIntentHandler.isFileIntent(sourceIntent)) return
+        action = sourceIntent?.action
+        setDataAndType(sourceIntent?.data, sourceIntent?.type)
+        clipData = sourceIntent?.clipData
+        sourceIntent?.extras?.let(::putExtras)
+        addFlags(
+            sourceIntent?.flags?.and(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                    Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+            ) ?: 0
+        )
     }
 
     private fun handleTelegramLoginRedirect(intent: Intent?) {

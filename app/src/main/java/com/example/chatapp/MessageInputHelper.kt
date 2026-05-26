@@ -18,6 +18,18 @@ object MessageInputHelper {
     }
 
     fun attachmentPayloadFromHistory(message: JSONObject): AttachmentPayload? {
+        message.optJSONArray("attachments")?.optJSONObject(0)?.let { attachment ->
+            return AttachmentPayload(
+                fileUri = attachment.optNonBlankString("fileUri").orEmpty(),
+                mimeType = attachment.optNonBlankString("mimeType")
+                    ?: ChatAttachmentHelper.resolveMimeTypeFromName(attachment.optNonBlankString("fileName")),
+                fileName = attachment.optNonBlankString("fileName"),
+                base64Data = attachment.optNonBlankString("base64"),
+                attachmentContext = attachment.optNonBlankString("fileContext"),
+                sizeBytes = attachment.optLong("sizeBytes", -1L).takeIf { it >= 0L }
+            )
+        }
+
         val base64Data = message.optNonBlankString("base64")
         val fileUri = message.optNonBlankString("imageUri")
         val mimeType = message.optNonBlankString("mimeType")

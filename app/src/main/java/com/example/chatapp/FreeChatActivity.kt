@@ -112,6 +112,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var biometricGateController: BiometricGateController
     private lateinit var attachmentPreviewController: ChatAttachmentPreviewController
     private val attachmentHelper by lazy { ChatAttachmentHelper(this) }
+    private val fileIntentHandler by lazy { FileIntentHandler(this) }
     private val lastChatStore by lazy { LastChatStore(applicationContext) }
     private val shortcutImagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null && isChatUiInitialized) {
@@ -345,6 +346,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         handlePrefillInputIntent(intent)
         handleFocusInputIntent(intent)
         handleWidgetAttachmentIntent(intent)
+        handleIncomingFileIntent(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -472,6 +474,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         handlePrefillInputIntent(startIntent)
         handleFocusInputIntent(startIntent)
         handleWidgetAttachmentIntent(startIntent)
+        handleIncomingFileIntent(startIntent)
+        attachmentPreviewController.renderCurrentAttachments()
         applyTranslations()
         scheduleFreeChatAttentionAfterIdle()
         updateImeOptionsForIncognito()
@@ -493,7 +497,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnPlus.contentDescription = LocaleHelper.getString(this, "content_desc_add_attachment")
         binding.btnMic.contentDescription = LocaleHelper.getString(this, "content_desc_microphone")
         binding.btnSend.contentDescription = LocaleHelper.getString(this, "content_desc_send")
-        binding.btnRemovePreview.contentDescription = LocaleHelper.getString(this, "content_desc_remove_attachment")
         binding.btnCloseChip.contentDescription = LocaleHelper.getString(this, "content_desc_clear_mode")
         binding.tvEditMessageTitle.text = LocaleHelper.getString(this, "menu_edit_message")
 
@@ -657,6 +660,32 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         focusInput()
     }
 
+    private fun handleIncomingFileIntent(intent: Intent?) {
+        if (!FileIntentHandler.isFileIntent(intent)) return
+
+        lifecycleScope.launch {
+            val result = fileIntentHandler.handle(intent)
+            FileIntentHandler.consume(intent)
+
+            if (!isChatUiInitialized) return@launch
+
+            result.prefillText?.let { text ->
+                clearInputContext()
+                updateInputText(text, keepSuggestions = false)
+            }
+
+            if (result.attachments.isNotEmpty()) {
+                clearInputContext()
+                attachmentPreviewController.addAttachments(result.attachments)
+                focusInput()
+            } else if (!result.prefillText.isNullOrBlank()) {
+                focusInput()
+            }
+
+            result.errors.firstOrNull()?.let { toast(it) }
+        }
+    }
+
     private fun focusInput() {
         binding.etInput.requestFocus()
         val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
@@ -755,7 +784,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun syncQuickSuggestions(query: String) {
-        if (suppressSuggestionUpdates || attachmentPreviewController.currentPreviewUri != null || isSending || hasCompletedChatExchange()) {
+        if (suppressSuggestionUpdates || attachmentPreviewController.hasAttachment || isSending || hasCompletedChatExchange()) {
             hideQuickSuggestions()
             return
         }
@@ -907,7 +936,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun showPopularNewsQueries(queries: List<String>) {
         val visibleQueries = queries.filter { it.isNotBlank() }.take(4)
-        if (visibleQueries.isEmpty() || chatViewModel.currentMode != ChatMode.SEARCH || attachmentPreviewController.currentPreviewUri != null || isSending) {
+        if (visibleQueries.isEmpty() || chatViewModel.currentMode != ChatMode.SEARCH || attachmentPreviewController.hasAttachment || isSending) {
             hideQuickSuggestions()
             return
         }
@@ -1328,7 +1357,6 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         setupPressAnimation(binding.btnSend)
         setupPressAnimation(binding.btnCloseChip, pressedScale = 0.88f)
         setupPressAnimation(binding.btnCloseEditMessage, pressedScale = 0.88f)
-        setupPressAnimation(binding.btnRemovePreview, pressedScale = 0.88f)
     }
 
     private fun setupPressAnimation(
@@ -1718,9 +1746,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun setupPreview() {
-        binding.btnRemovePreview.setOnClickListener {
-            clearPreview()
-        }
+        attachmentPreviewController.renderCurrentAttachments()
     }
 
     private fun setupAds() {
@@ -2114,8 +2140,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
 
-        val previewUri = attachmentPreviewController.currentPreviewUri
-        if (text.isBlank() && previewUri == null) return
+        val pendingAttachments = attachmentPreviewController.currentAttachments
+        if (text.isBlank() && pendingAttachments.isEmpty()) return
 
         if (!chatViewModel.consumeLimit()) {
             refreshDailyQuotaUi()
@@ -2126,8 +2152,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         isSending = true
         updateSendState()
         pendingSendJob = lifecycleScope.launch {
-            val attachmentPayload = try {
-                attachmentHelper.buildAttachmentPayload(previewUri)
+            val attachmentPayloads = try {
+                attachmentHelper.buildAttachmentPayloads(pendingAttachments)
             } catch (e: IllegalArgumentException) {
                 if (isActive) {
                     isSending = false
@@ -2139,12 +2165,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
             pendingSendJob = null
             if (!isActive || !isSending) return@launch
-            startPreparedSend(text, previewUri, attachmentPayload)
+            startPreparedSend(text, attachmentPayloads)
         }
     }
 
-    private fun startPreparedSend(text: String, previewUri: Uri?, attachmentPayload: AttachmentPayload?) {
-        val mimeType = attachmentPayload?.mimeType
+    private fun startPreparedSend(text: String, attachmentPayloads: List<AttachmentPayload>) {
+        val primaryAttachment = attachmentPayloads.firstOrNull()
         val userHistoryIndex = chatViewModel.chatHistory.size
 
         val shouldAnimateTopActions = chatViewModel.isFirstMessage && binding.topRightMain.isVisible
@@ -2154,16 +2180,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         showMessagesState(animateTopActions = shouldAnimateTopActions)
         refreshDailyQuotaUi()
 
-        when {
-            previewUri == null -> messageRenderer.addUserMessage(text, userHistoryIndex)
-            mimeType?.startsWith("image/") == true -> messageRenderer.addUserMessageWithImage(text, previewUri, userHistoryIndex)
-            else -> messageRenderer.addUserMessageWithFile(text, previewUri, userHistoryIndex)
-        }
+        renderUserDraftMessageWithAttachments(text, attachmentPayloads, userHistoryIndex)
 
         if (chatViewModel.isFirstMessage) {
             chatViewModel.currentChatTitle = when {
                 text.isNotBlank() -> text.take(60)
-                previewUri != null -> LocaleHelper.getString(this, "label_file_analysis")
+                primaryAttachment != null -> primaryAttachment.fileName?.take(60)
+                    ?: LocaleHelper.getString(this, "label_file_analysis")
                 else -> LocaleHelper.getString(this, "label_new_chat")
             }
             chatViewModel.isFirstMessage = false
@@ -2184,11 +2207,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         var lastAccumulated = ""
         chatViewModel.addToChatHistoryAndSend(
             content = text,
-            base64Data = attachmentPayload?.base64Data,
-            fileUri = attachmentPayload?.fileUri,
-            mimeType = mimeType,
-            fileName = attachmentPayload?.fileName,
-            fileContext = attachmentPayload?.attachmentContext,
+            base64Data = primaryAttachment?.base64Data,
+            fileUri = primaryAttachment?.fileUri,
+            mimeType = primaryAttachment?.mimeType,
+            fileName = primaryAttachment?.fileName,
+            fileContext = primaryAttachment?.attachmentContext,
+            attachmentItems = attachmentPayloads,
             activityGenerationId = requestId,
             onError = { error ->
                 runOnUiThread {
@@ -2411,6 +2435,24 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         for (i in binding.messagesContainer.childCount - 1 downTo firstViewIndex) {
             binding.messagesContainer.removeViewAt(i)
+        }
+    }
+
+    private fun renderUserDraftMessageWithAttachments(
+        text: String,
+        attachmentPayloads: List<AttachmentPayload>,
+        historyIndex: Int
+    ) {
+        if (attachmentPayloads.isEmpty()) {
+            messageRenderer.addUserMessage(text, historyIndex)
+            return
+        }
+
+        attachmentPayloads.forEach { attachment ->
+            renderUserDraftMessage("", attachment, historyIndex)
+        }
+        if (text.isNotBlank()) {
+            messageRenderer.addUserMessage(text, historyIndex)
         }
     }
 

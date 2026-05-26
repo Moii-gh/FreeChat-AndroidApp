@@ -63,6 +63,7 @@
     <string name="attachment_context_truncated">[Контекст обрезан для приватности и экономии токенов]</string>
     <string name="attachment_empty_text">[Файл/Изображение без текста]</string>
     <string name="attachment_read_error">Не удалось прочитать вложение</string>
+    <string name="attachment_unsupported_type">Unsupported attachment type</string>
     <string name="attachment_text_truncated">[Содержимое файла обрезано]</string>
     <string name="attachment_too_large">Вложение слишком большое для анализа</string>
     <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
