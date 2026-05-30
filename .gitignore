@@ -15,6 +15,7 @@ Desktop.ini
 .env.*
 !.env.example
 !**/.env.example
+release.properties
 local.properties
 backend/secrets/
 backend/scratch_ssh/
@@ -65,3 +66,4 @@ outputs/
 
 # Local helper files
 codex_askpass.cmd
+pepk.jar

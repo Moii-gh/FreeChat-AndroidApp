@@ -1,0 +1,14 @@
+# Copy this file to release.properties and keep the copy private.
+# release.properties is ignored by git because it can contain signing secrets.
+
+# Pick a final unique package name before the first RuStore publication.
+# Do not change it after publishing unless you intentionally create a new app.
+FREECHAT_APPLICATION_ID=ru.moii.freechat
+FREECHAT_VERSION_CODE=1
+FREECHAT_VERSION_NAME=1.0.0
+
+# Relative paths are resolved from the project root.
+FREECHAT_RELEASE_STORE_FILE=freechat-release.jks
+FREECHAT_RELEASE_STORE_PASSWORD=fqqI__7H77
+FREECHAT_RELEASE_KEY_ALIAS=freechat
+FREECHAT_RELEASE_KEY_PASSWORD=fqqI__7H77

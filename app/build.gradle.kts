@@ -1,5 +1,7 @@
 import org.gradle.api.GradleException
+import java.io.File
 import java.net.URI
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -15,7 +17,7 @@ if (envFile.exists()) {
         val trimmed = line.trim()
         if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && trimmed.contains("=")) {
             val (key, value) = trimmed.split("=", limit = 2)
-            envVars[key.trim()] = value.trim()
+            envVars[key.trim().removePrefix("\uFEFF")] = value.trim()
         }
     }
 }
@@ -24,6 +26,9 @@ fun String.toBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 val configuredApiBaseUrl = envVars["APP_API_BASE_URL"] ?: "https://api.example.com/api/"
+val releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("release", ignoreCase = true)
+}
 
 fun parseAbsoluteDeepLinkUri(configName: String, value: String): URI {
     val uri = runCatching { URI(value) }.getOrElse {
@@ -73,17 +78,69 @@ val configuredChatSharePublicBaseUri =
 val configuredVkIdClientId = envVars["VKID_CLIENT_ID"] ?: ""
 val configuredVkIdScopes = envVars["VKID_SCOPES"] ?: "email"
 val vkIdManifestClientId = configuredVkIdClientId.ifBlank { "0" }
+val isVkNativeLoginConfigured = configuredVkIdClientId.isNotBlank()
+val releasePropertiesFile = rootProject.file("release.properties")
+val releaseProperties = Properties().apply {
+    if (releasePropertiesFile.exists()) {
+        releasePropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun localReleaseValue(name: String): String? =
+    providers.gradleProperty(name).orNull
+        ?: providers.environmentVariable(name).orNull
+        ?: releaseProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+
+val allowHttpInRelease = (localReleaseValue("FREECHAT_ALLOW_HTTP_IN_RELEASE") ?: "false").toBoolean()
+
+if (releaseTaskRequested && !allowHttpInRelease) {
+    val releaseApiUri = parseAbsoluteWebUri("APP_API_BASE_URL", configuredApiBaseUrl)
+    if (releaseApiUri.scheme?.lowercase() != "https") {
+        throw GradleException("APP_API_BASE_URL must use https for release builds")
+    }
+}
+
+fun parsePositiveVersionCode(rawValue: String?): Int {
+    if (rawValue.isNullOrBlank()) {
+        return 1
+    }
+    val parsed = rawValue.toIntOrNull()
+    if (parsed == null || parsed <= 0) {
+        throw GradleException("FREECHAT_VERSION_CODE must be a positive integer")
+    }
+    return parsed
+}
+
+fun resolveRootRelativeFile(path: String): File {
+    val file = File(path)
+    return if (file.isAbsolute) file else rootProject.file(path)
+}
+
+val configuredApplicationId = localReleaseValue("FREECHAT_APPLICATION_ID") ?: "com.example.chatapp"
+val configuredVersionCode = parsePositiveVersionCode(localReleaseValue("FREECHAT_VERSION_CODE"))
+val configuredVersionName = localReleaseValue("FREECHAT_VERSION_NAME") ?: "1.0"
+
+val releaseStoreFilePath = localReleaseValue("FREECHAT_RELEASE_STORE_FILE").orEmpty()
+val releaseStorePassword = localReleaseValue("FREECHAT_RELEASE_STORE_PASSWORD").orEmpty()
+val releaseKeyAlias = localReleaseValue("FREECHAT_RELEASE_KEY_ALIAS").orEmpty()
+val releaseKeyPassword = localReleaseValue("FREECHAT_RELEASE_KEY_PASSWORD").orEmpty()
+val releaseStoreFile = releaseStoreFilePath.takeIf { it.isNotBlank() }?.let(::resolveRootRelativeFile)
+val isReleaseSigningConfigured =
+    releaseStoreFile?.exists() == true &&
+        releaseStorePassword.isNotBlank() &&
+        releaseKeyAlias.isNotBlank() &&
+        releaseKeyPassword.isNotBlank()
 
 android {
     namespace = "com.example.chatapp"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.chatapp"
+        applicationId = configuredApplicationId
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = configuredVersionCode
+        versionName = configuredVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -112,8 +169,7 @@ android {
         buildConfigField("String", "TELEGRAM_LOGIN_SCOPES", telegramLoginScopes.toBuildConfigString())
         buildConfigField("String", "VKID_CLIENT_ID", configuredVkIdClientId.toBuildConfigString())
         buildConfigField("String", "VKID_SCOPES", configuredVkIdScopes.toBuildConfigString())
-        // TODO: вернуть true только после server-side VK flow без секрета в APK.
-        buildConfigField("boolean", "VKID_NATIVE_LOGIN_ENABLED", "false")
+        buildConfigField("boolean", "VKID_NATIVE_LOGIN_ENABLED", isVkNativeLoginConfigured.toString())
         manifestPlaceholders["telegramLoginRedirectScheme"] = runCatching {
             telegramLoginRedirectParsedUri.scheme
         }.getOrNull().orEmpty()
@@ -130,11 +186,22 @@ android {
             configuredChatSharePublicBaseUri.host
         }.getOrNull().orEmpty().ifBlank { "example.com" }
         manifestPlaceholders["VKIDClientID"] = vkIdManifestClientId
-        // TODO: если VK SDK потребует секрет клиента, перенести обмен на backend и не встраивать секрет в APK.
-        manifestPlaceholders["VKIDClientSecret"] = "0"
+        // VK SDK reads this manifest value as String during init. Do not put the real secret in APK.
+        manifestPlaceholders["VKIDClientSecret"] = "unused"
         manifestPlaceholders["VKIDRedirectHost"] = "vk.ru"
         manifestPlaceholders["VKIDRedirectScheme"] = "vk$vkIdManifestClientId"
 
+    }
+
+    signingConfigs {
+        if (isReleaseSigningConfigured) {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -143,8 +210,11 @@ android {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
         }
         release {
-            buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", "false")
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
+            buildConfigField("boolean", "ALLOW_HTTP_BASE_URL", allowHttpInRelease.toString())
+            manifestPlaceholders["usesCleartextTraffic"] = allowHttpInRelease.toString()
+            if (isReleaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
