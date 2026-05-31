@@ -34,6 +34,7 @@ object AiApiService {
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
     private const val MAX_AI_REQUEST_ATTEMPTS = 2
     private const val RETRY_DELAY_MS = 700L
+    private const val NO_INTERNET_ERROR = "Извините, сейчас интеренета нету, попробуйте позже"
     private const val LINK_FORMAT_INSTRUCTION =
         "When you include links in the answer, format them as Markdown [meaningful link text](URL) " +
             "or HTML <a href=\"URL\">meaningful link text</a>. Do not leave raw plain-text URLs. " +
@@ -545,12 +546,19 @@ object AiApiService {
                 }
             } catch (error: CancellationException) {
                 throw error
+            } catch (error: IOException) {
+                if (!currentCoroutineContext().isActive) {
+                    throw CancellationException("AI response was cancelled", error)
+                }
+                withContext(Dispatchers.Main) {
+                    callback.onError(NO_INTERNET_ERROR)
+                }
             } catch (error: Exception) {
                 if (!currentCoroutineContext().isActive) {
                     throw CancellationException("AI response was cancelled", error)
                 }
                 withContext(Dispatchers.Main) {
-                    callback.onError("Network error: ${error.message}")
+                    callback.onError(normalizeNetworkErrorMessage("Network error: ${error.message.orEmpty()}"))
                 }
             }
         }
@@ -683,9 +691,32 @@ object AiApiService {
         }.getOrDefault("")
 
         return when {
-            parsedMessage.isNotBlank() -> parsedMessage
+            parsedMessage.isNotBlank() -> normalizeNetworkErrorMessage(parsedMessage)
             else -> "Request failed: HTTP $statusCode"
         }
+    }
+
+    private fun normalizeNetworkErrorMessage(message: String): String {
+        val normalized = message.trim().lowercase()
+        val isNetworkError = normalized.startsWith("network error") ||
+            normalized.contains("failed to connect") ||
+            normalized.contains("unable to resolve host") ||
+            normalized.contains("no address associated") ||
+            normalized.contains("connection reset") ||
+            normalized.contains("connection refused") ||
+            normalized.contains("connection abort") ||
+            normalized.contains("timed out") ||
+            normalized.contains("timeout") ||
+            normalized.contains("unknownhost") ||
+            normalized.contains("sockettimeoutexception") ||
+            normalized.contains("ioexception") ||
+            normalized.contains("java.net") ||
+            normalized.contains("fetch failed") ||
+            normalized.contains("econn") ||
+            normalized.contains("enotfound") ||
+            normalized.contains("etimedout")
+
+        return if (isNetworkError) NO_INTERNET_ERROR else message
     }
 
     private fun isRetryableHttpStatus(statusCode: Int): Boolean =

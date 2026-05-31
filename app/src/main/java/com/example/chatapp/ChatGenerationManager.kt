@@ -145,13 +145,14 @@ object ChatGenerationManager {
             suspend fun fail(errorMessage: String) {
                 if (terminalHandled) return
                 terminalHandled = true
+                val resolvedErrorMessage = errorMessage.ifBlank { ERROR_TEXT }
                 delayedSaveJob?.cancel()
                 val chatId = request.chatId
                 if (chatId != null) {
                     withContext(Dispatchers.IO) {
                         repository.updateAssistantMessage(
                             syncId = request.assistantSyncId,
-                            content = ERROR_TEXT,
+                            content = resolvedErrorMessage,
                             imageUrl = null,
                             attachmentData = null,
                             attachmentMimeType = null,
@@ -163,9 +164,9 @@ object ChatGenerationManager {
                 removeActiveGeneration(appContext, request.assistantSyncId)
                 updateSnapshot(
                     snapshotFor(request).copy(
-                        accumulatedText = errorMessage.ifBlank { ERROR_TEXT },
+                        accumulatedText = resolvedErrorMessage,
                         status = ChatGenerationStatus.FAILED,
-                        errorMessage = errorMessage.ifBlank { ERROR_TEXT },
+                        errorMessage = resolvedErrorMessage,
                         streamStarted = true
                     )
                 )
