@@ -137,11 +137,12 @@ class InAppBrowserManager(
         refreshToolbar()
         if (!controller.isLoading && controller.progress >= 100) {
             val currentToken = pageSplashToken
+            val randomDelay = (5000..10000).random().toLong()
             webContainer?.postDelayed({
                 if (currentToken == pageSplashToken) {
                     hidePageLoadingSplash()
                 }
-            }, 7500L) // Задержка 7.5 секунд
+            }, randomDelay)
         }
     }
 
@@ -555,7 +556,7 @@ class InAppBrowserManager(
         progressBar?.isVisible = true
         progressBar?.progress = 0
         progressAnimator = ValueAnimator.ofInt(0, 95).apply {
-            duration = 9000L // Анимируем до 95% за 9 секунд
+            duration = 11000L // Анимируем до 95% за 11 секунд
             addUpdateListener { animator ->
                 if (token == pageSplashToken) {
                     progressBar?.progress = animator.animatedValue as Int
