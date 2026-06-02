@@ -4,9 +4,10 @@ const {
   generateTitle,
   generateSummary,
   generateTrendingQueries,
-  classifyNotification
+  classifyNotification,
+  isImageRequest
 } = require("../services/aiService");
-const { publicModels } = require("../services/aiModelRegistry");
+const { publicModels, selectChatModel } = require("../services/aiModelRegistry");
 
 const MAX_CHAT_MESSAGES = 60;
 const MAX_ARRAY_ITEMS = 128;
@@ -152,7 +153,20 @@ function createAiController({ aiUsageModel }) {
 
         validateChatRequestPayload(requestBody);
 
-        const isImage = isImageMode(validatedBody.currentMode);
+        const selection = await selectChatModel({
+          userId: user.id,
+          provider: validatedBody.provider,
+          modelKey: validatedBody.modelKey,
+          currentMode: validatedBody.currentMode,
+          requestBody,
+          adultMode: validatedBody.adultMode
+        });
+
+        const isImage = isImageRequest({
+          provider: selection.provider,
+          currentMode: validatedBody.currentMode,
+          requestBody
+        });
 
         // Check text quota
         const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {

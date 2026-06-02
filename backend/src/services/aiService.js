@@ -1613,10 +1613,27 @@ async function generateTrendingQueries({ user, locale = "ru" }) {
     .slice(0, 4);
 }
 
+function isImageRequest({ provider, currentMode, requestBody }) {
+  if (provider === "openai") {
+    const route = determineOpenAiRoute({ currentMode, requestBody });
+    return route === "imageGeneration" || route === "imageEdit";
+  } else {
+    const mode = normalizeMode(currentMode);
+    return (
+      OPENAI_IMAGE_EDIT_MODES.has(mode) ||
+      requestBody?.imageEdit ||
+      requestBody?.image_edit ||
+      (mode === "create_image" && requestHasImageEditInput(requestBody)) ||
+      mode === "create_image"
+    );
+  }
+}
+
 module.exports = {
   proxyAiRequest,
   generateTitle,
   generateSummary,
   generateTrendingQueries,
-  classifyNotification
+  classifyNotification,
+  isImageRequest
 };
