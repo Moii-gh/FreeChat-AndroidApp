@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
+    android:layout_width="72dp"
     android:layout_height="wrap_content"
-    android:padding="6dp">
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="6dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
 
     <androidx.cardview.widget.CardView
         android:layout_width="40dp"
@@ -20,4 +25,16 @@
             android:scaleType="fitCenter"
             android:contentDescription="@null" />
     </androidx.cardview.widget.CardView>
-</FrameLayout>
+
+    <TextView
+        android:id="@+id/tvSelectedAppLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+</LinearLayout>

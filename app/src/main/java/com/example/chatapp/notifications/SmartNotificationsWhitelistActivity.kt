@@ -33,15 +33,18 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
     private lateinit var tvEmptyState: TextView
     private lateinit var selectedAppsHeader: View
     private lateinit var rvSelectedApps: RecyclerView
-    private lateinit var tvSelectedCount: TextView
+    private lateinit var layoutCollapsedHeader: View
+    private lateinit var tvSelectedCountPill: TextView
     private lateinit var rvAppsList: RecyclerView
     private lateinit var etSearch: EditText
 
+    private val selectionOrder = mutableListOf<String>()
     private var allApps: List<AppItem> = emptyList()
     private var filteredApps: List<AppItem> = emptyList()
 
     private lateinit var whitelistAdapter: WhitelistAppsAdapter
     private lateinit var selectedAdapter: SelectedAppsAdapter
+    private var isHeaderCollapsed = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -59,7 +62,8 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
         tvEmptyState = findViewById(R.id.tvEmptyState)
         selectedAppsHeader = findViewById(R.id.selectedAppsHeader)
         rvSelectedApps = findViewById(R.id.rvSelectedApps)
-        tvSelectedCount = findViewById(R.id.tvSelectedCount)
+        layoutCollapsedHeader = findViewById(R.id.layoutCollapsedHeader)
+        tvSelectedCountPill = findViewById(R.id.tvSelectedCountPill)
         rvAppsList = findViewById(R.id.rvAppsList)
         etSearch = findViewById(R.id.etSearch)
 
@@ -94,6 +98,10 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
         selectedAdapter = SelectedAppsAdapter()
         rvSelectedApps.adapter = selectedAdapter
 
+        // Add snapping helper to allow beautiful snapping swiping/page flipping gesture horizontally
+        val snapHelper = androidx.recyclerview.widget.LinearSnapHelper()
+        snapHelper.attachToRecyclerView(rvSelectedApps)
+
         // Scroll listener to collapse/expand selected apps top bar
         rvAppsList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -103,25 +111,31 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
 
                 if (firstVisible == 0) {
                     // Force expanded when at the absolute top of the list
-                    if (rvSelectedApps.visibility == View.GONE) {
-                        rvSelectedApps.visibility = View.VISIBLE
-                        tvSelectedCount.visibility = View.GONE
-                    }
+                    setHeaderCollapsed(false)
                 } else if (dy > 0) {
                     // Scrolling down - collapse
-                    if (rvSelectedApps.visibility == View.VISIBLE) {
-                        rvSelectedApps.visibility = View.GONE
-                        tvSelectedCount.visibility = View.VISIBLE
-                    }
+                    setHeaderCollapsed(true)
                 } else if (dy < 0) {
                     // Scrolling up - expand
-                    if (rvSelectedApps.visibility == View.GONE) {
-                        rvSelectedApps.visibility = View.VISIBLE
-                        tvSelectedCount.visibility = View.GONE
-                    }
+                    setHeaderCollapsed(false)
                 }
             }
         })
+    }
+
+    private fun setHeaderCollapsed(collapsed: Boolean) {
+        if (isHeaderCollapsed == collapsed) return
+        isHeaderCollapsed = collapsed
+
+        if (collapsed) {
+            rvSelectedApps.visibility = View.GONE
+            layoutCollapsedHeader.visibility = View.VISIBLE
+            selectedAppsHeader.setBackgroundResource(R.drawable.bg_outer_pill)
+        } else {
+            rvSelectedApps.visibility = View.VISIBLE
+            layoutCollapsedHeader.visibility = View.GONE
+            selectedAppsHeader.setBackgroundResource(R.drawable.bg_assistant_card)
+        }
     }
 
     private fun setupSearch() {
@@ -167,6 +181,11 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
             }
 
             allApps = resolvedApps
+
+            // Populate the selectionOrder list to preserve initial whitelisted apps
+            selectionOrder.clear()
+            selectionOrder.addAll(allApps.filter { it.isWhitelisted }.map { it.packageName })
+
             filterApps(etSearch.text.toString())
             progressBar.visibility = View.GONE
             updateHeaderState()
@@ -190,8 +209,12 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
         val currentSet = settingsStore.whitelist.toMutableSet()
         if (item.isWhitelisted) {
             currentSet.add(item.packageName)
+            if (!selectionOrder.contains(item.packageName)) {
+                selectionOrder.add(item.packageName)
+            }
         } else {
             currentSet.remove(item.packageName)
+            selectionOrder.remove(item.packageName)
         }
         settingsStore.whitelist = currentSet
     }
@@ -204,12 +227,60 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
             selectedAppsHeader.visibility = View.VISIBLE
             selectedAdapter.submitList(whitelisted)
 
-            // Keep the collapsed count text updated
-            tvSelectedCount.text = LocaleHelper.formatString(
+            // Sync background with current collapse state
+            if (isHeaderCollapsed) {
+                rvSelectedApps.visibility = View.GONE
+                layoutCollapsedHeader.visibility = View.VISIBLE
+                selectedAppsHeader.setBackgroundResource(R.drawable.bg_outer_pill)
+            } else {
+                rvSelectedApps.visibility = View.VISIBLE
+                layoutCollapsedHeader.visibility = View.GONE
+                selectedAppsHeader.setBackgroundResource(R.drawable.bg_assistant_card)
+            }
+
+            // Update collapsed count pill text
+            tvSelectedCountPill.text = LocaleHelper.formatString(
                 this,
                 "smart_notifications_whitelist_selected",
                 whitelisted.size
             )
+
+            // Update overlapping recent icons on the right (up to 7 icons)
+            val recentPackages = selectionOrder.takeLast(7).reversed()
+            val recentApps = recentPackages.mapNotNull { pkg -> allApps.find { it.packageName == pkg } }
+
+            val cards = listOf(
+                findViewById<View>(R.id.cardRecent1),
+                findViewById<View>(R.id.cardRecent2),
+                findViewById<View>(R.id.cardRecent3),
+                findViewById<View>(R.id.cardRecent4),
+                findViewById<View>(R.id.cardRecent5),
+                findViewById<View>(R.id.cardRecent6),
+                findViewById<View>(R.id.cardRecent7)
+            )
+            val imageViews = listOf(
+                findViewById<ImageView>(R.id.ivRecent1),
+                findViewById<ImageView>(R.id.ivRecent2),
+                findViewById<ImageView>(R.id.ivRecent3),
+                findViewById<ImageView>(R.id.ivRecent4),
+                findViewById<ImageView>(R.id.ivRecent5),
+                findViewById<ImageView>(R.id.ivRecent6),
+                findViewById<ImageView>(R.id.ivRecent7)
+            )
+
+            for (i in 0 until 7) {
+                if (i < recentApps.size) {
+                    val app = recentApps[i]
+                    cards[i].visibility = View.VISIBLE
+                    if (app.icon != null) {
+                        imageViews[i].setImageDrawable(app.icon)
+                    } else {
+                        imageViews[i].setImageResource(android.R.drawable.sym_def_app_icon)
+                    }
+                } else {
+                    cards[i].visibility = View.GONE
+                }
+            }
         }
     }
 
@@ -236,8 +307,10 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
 
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private val ivIcon: ImageView = itemView.findViewById(R.id.ivSelectedAppIcon)
+            private val tvLabel: TextView = itemView.findViewById(R.id.tvSelectedAppLabel)
 
             fun bind(item: AppItem) {
+                tvLabel.text = item.label
                 if (item.icon != null) {
                     ivIcon.setImageDrawable(item.icon)
                 } else {
