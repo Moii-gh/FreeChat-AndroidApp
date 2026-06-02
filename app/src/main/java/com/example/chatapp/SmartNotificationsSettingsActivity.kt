@@ -2,6 +2,7 @@ package com.example.chatapp
 
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -10,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.chatapp.notifications.SmartNotificationsPermissionManager
 import com.example.chatapp.notifications.SmartNotificationsSettingsStore
+import com.example.chatapp.notifications.SmartNotificationsWhitelistActivity
 import com.example.chatapp.util.setHapticClickListener
 import com.google.android.material.switchmaterial.SwitchMaterial
 
@@ -61,6 +63,10 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnSmartNotificationsAllowAccess).setHapticClickListener {
             enableSmartNotifications(openSettingsIfNeeded = true)
         }
+
+        findViewById<View>(R.id.smartNotificationsWhitelistRow).setHapticClickListener {
+            startActivity(Intent(this, SmartNotificationsWhitelistActivity::class.java))
+        }
     }
 
     private fun applyTranslations() {
@@ -76,6 +82,10 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "smart_notifications_permissions_explanation")
         findViewById<TextView>(R.id.btnSmartNotificationsAllowAccess)?.text =
             LocaleHelper.getString(this, "smart_notifications_allow_access")
+        findViewById<TextView>(R.id.tvSmartNotificationsWhitelistTitle)?.text =
+            LocaleHelper.getString(this, "smart_notifications_whitelist_title")
+        findViewById<TextView>(R.id.tvSmartNotificationsWhitelistDesc)?.text =
+            LocaleHelper.getString(this, "smart_notifications_whitelist_desc")
         findViewById<TextView>(R.id.tvHowItWorksTitle)?.text =
             LocaleHelper.getString(this, "smart_notifications_how_it_works_title")
         findViewById<TextView>(R.id.tvHowItWorksDesc)?.text =
@@ -113,6 +123,10 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
             isEffectivelyEnabled -> LocaleHelper.getString(this, "smart_notifications_status_enabled")
             else -> LocaleHelper.getString(this, "smart_notifications_status_disabled")
         }
+
+        val visibility = if (isEffectivelyEnabled) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.smartNotificationsDivider)?.visibility = visibility
+        findViewById<View>(R.id.smartNotificationsWhitelistRow)?.visibility = visibility
     }
 
     private fun openSmartNotificationsAccessSettings() {

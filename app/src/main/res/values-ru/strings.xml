@@ -343,6 +343,11 @@
     <string name="smart_notifications_privacy_title">Что отправляется?</string>
     <string name="smart_notifications_privacy_desc">Используются только данные самого уведомления: приложение, заголовок и текст.</string>
     <string name="smart_notifications_settings_unavailable">Настройки доступа к уведомлениям недоступны на этом устройстве</string>
+    <string name="smart_notifications_whitelist_title">Исключения</string>
+    <string name="smart_notifications_whitelist_desc">Уведомления от этих приложений не будут анализироваться и скрываться</string>
+    <string name="smart_notifications_whitelist_search_hint">Поиск приложений...</string>
+    <string name="smart_notifications_whitelist_empty">Приложения не найдены</string>
+    <string name="smart_notifications_whitelist_selected">Выбрано: %1$d</string>
     <string name="share">Поделиться</string>
     <string name="share_empty_response">Пустой ответ для ссылки</string>
     <string name="share_image">Поделиться изображением</string>

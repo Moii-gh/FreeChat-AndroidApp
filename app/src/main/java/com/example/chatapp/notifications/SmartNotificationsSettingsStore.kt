@@ -16,9 +16,14 @@ class SmartNotificationsSettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
+    var whitelist: Set<String>
+        get() = prefs.getStringSet(KEY_WHITELIST, emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet(KEY_WHITELIST, value).apply()
+
     companion object {
         private const val PREFS_NAME = "smart_notifications_secure_prefs"
         private const val KEY_ENABLED = "smart_notifications_enabled"
+        private const val KEY_WHITELIST = "smart_notifications_whitelist"
         private const val KEY_VSEGPT_API_KEY = "vsegpt_api_key"
 
         private fun securePrefs(context: Context): SharedPreferences {

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="6dp">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:cardBackgroundColor="#1C1C1E"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp">
+
+        <ImageView
+            android:id="@+id/ivSelectedAppIcon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null" />
+    </androidx.cardview.widget.CardView>
+</FrameLayout>

@@ -343,6 +343,11 @@
     <string name="smart_notifications_privacy_title">რა იგზავნება?</string>
     <string name="smart_notifications_privacy_desc">გამოიყენება მხოლოდ შეტყობინების მონაცემები: აპი, სათაური და ტექსტი.</string>
     <string name="smart_notifications_settings_unavailable">ამ მოწყობილობაზე შეტყობინებებზე წვდომის პარამეტრები მიუწვდომელია</string>
+    <string name="smart_notifications_whitelist_title">გამონაკლისები</string>
+    <string name="smart_notifications_whitelist_desc">ამ აპების შეტყობინებები არ გაანალიზდება და არ წაიშლება</string>
+    <string name="smart_notifications_whitelist_search_hint">აპების ძებნა...</string>
+    <string name="smart_notifications_whitelist_empty">აპები ვერ მოიძებნა</string>
+    <string name="smart_notifications_whitelist_selected">არჩეულია: %1$d</string>
     <string name="share">გაზიარება</string>
     <string name="share_empty_response">გაზიარების ცარიელი პასუხი</string>
     <string name="share_image">სურათის გაზიარება</string>

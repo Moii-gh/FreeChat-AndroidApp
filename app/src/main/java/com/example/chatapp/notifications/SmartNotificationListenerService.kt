@@ -31,6 +31,7 @@ class SmartNotificationListenerService : NotificationListenerService() {
         val notification = sbn?.notification ?: return
         if (!settingsStore.isEnabled) return
         if (sbn.packageName == packageName) return
+        if (settingsStore.whitelist.contains(sbn.packageName)) return
         if (notification.isOngoingEvent()) return
 
         val payload = notification.toSmartPayload(sbn.packageName) ?: return

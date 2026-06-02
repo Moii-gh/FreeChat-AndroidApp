@@ -343,6 +343,11 @@
     <string name="smart_notifications_privacy_title">What is sent?</string>
     <string name="smart_notifications_privacy_desc">Only notification data is used: app package, title, and text.</string>
     <string name="smart_notifications_settings_unavailable">Notification access settings are unavailable on this device</string>
+    <string name="smart_notifications_whitelist_title">Exceptions</string>
+    <string name="smart_notifications_whitelist_desc">Notifications from these apps won\'t be analyzed or cancelled</string>
+    <string name="smart_notifications_whitelist_search_hint">Search apps...</string>
+    <string name="smart_notifications_whitelist_empty">No apps found</string>
+    <string name="smart_notifications_whitelist_selected">Selected: %1$d</string>
     <string name="share">Share</string>
     <string name="share_empty_response">Empty share response</string>
     <string name="share_image">Share image</string>

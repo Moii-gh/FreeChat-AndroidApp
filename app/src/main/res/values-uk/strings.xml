@@ -343,6 +343,11 @@
     <string name="smart_notifications_privacy_title">Що надсилається?</string>
     <string name="smart_notifications_privacy_desc">Використовуються лише дані самого сповіщення: застосунок, заголовок і текст.</string>
     <string name="smart_notifications_settings_unavailable">Налаштування доступу до сповіщень недоступні на цьому пристрої</string>
+    <string name="smart_notifications_whitelist_title">Винятки</string>
+    <string name="smart_notifications_whitelist_desc">Сповіщення від цих додатків не будуть аналізуватися та приховуватися</string>
+    <string name="smart_notifications_whitelist_search_hint">Пошук додатків...</string>
+    <string name="smart_notifications_whitelist_empty">Додатки не знайдено</string>
+    <string name="smart_notifications_whitelist_selected">Вибрано: %1$d</string>
     <string name="share">Поділитися</string>
     <string name="share_empty_response">Порожня відповідь для посилання</string>
     <string name="share_image">Поділитися зображенням</string>
