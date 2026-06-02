@@ -2821,26 +2821,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 } else {
                     val base = snapshot.baseRemaining ?: 0
                     val bonus = snapshot.bonusRequests
-                    val imgRemaining = snapshot.imageRemaining ?: 0
                     val textPrefix = LocaleHelper.getString(this, "label_limits_requests")
-                    val fullText = "$textPrefix: $base + $bonus  \uD83D\uDDBC $imgRemaining"
+                    val fullText = "$textPrefix: $base + $bonus"
                     SpannableString(fullText).apply {
                         val plusIndex = fullText.indexOf("+")
-                        val imgIndex = fullText.indexOf("\uD83D\uDDBC")
-                        if (plusIndex != -1 && imgIndex != -1) {
-                            setSpan(
-                                ForegroundColorSpan(Color.parseColor("#d1a3ff")),
-                                plusIndex,
-                                imgIndex - 1,
-                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                            )
-                            setSpan(
-                                ForegroundColorSpan(Color.parseColor("#a3d1ff")),
-                                imgIndex,
-                                fullText.length,
-                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                            )
-                        } else if (plusIndex != -1) {
+                        if (plusIndex != -1) {
                             setSpan(
                                 ForegroundColorSpan(Color.parseColor("#d1a3ff")),
                                 plusIndex,
@@ -2851,8 +2836,16 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     }
                 }
                 binding.tvLimitsCount.text = label
+                
+                // Также обновляем лимиты в открытом BottomSheetMenuFragment, если он виден
+                val fragment = supportFragmentManager.findFragmentByTag("bottom_sheet_menu") as? BottomSheetMenuFragment
+                fragment?.refreshQuotaUi()
             }
         }
+    }
+
+    fun showRewardedAd() {
+        adManager?.show()
     }
 
     private fun toast(message: String) {

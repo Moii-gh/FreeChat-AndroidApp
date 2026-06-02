@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -92,6 +93,18 @@
                 <TextView android:id="@+id/tvOptCreateImageTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="16sp" android:fontFamily="sans-serif-medium"/>
                 <TextView android:id="@+id/tvOptCreateImageDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8E8E93" android:textSize="14sp" android:layout_marginTop="2dp"/>
             </LinearLayout>
+            <TextView
+                android:id="@+id/tvImageLimitCircle"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="16dp"
+                android:background="@drawable/bg_limit_circle"
+                android:gravity="center"
+                android:textColor="#a3d1ff"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                tools:text="5"/>
         </LinearLayout>
 
         <LinearLayout android:id="@+id/optSearch" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="16dp" android:paddingBottom="16dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true">

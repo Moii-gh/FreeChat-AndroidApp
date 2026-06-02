@@ -173,6 +173,16 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             )
             dismiss()
         }
+
+        refreshQuotaUi()
+    }
+
+    fun refreshQuotaUi() {
+        val view = view ?: return
+        val context = context ?: return
+        val sessionStore = com.example.chatapp.data.SharedPrefsAccountSessionStore(context)
+        val imageRemaining = sessionStore.getRemainingImageRequests() ?: 0
+        view.findViewById<android.widget.TextView>(R.id.tvImageLimitCircle)?.text = imageRemaining.toString()
     }
 
     override fun onStart() {
