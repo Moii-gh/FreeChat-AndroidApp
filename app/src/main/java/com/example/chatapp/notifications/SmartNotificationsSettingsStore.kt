@@ -8,20 +8,13 @@ import androidx.security.crypto.MasterKey
 class SmartNotificationsSettingsStore(context: Context) {
     private val prefs = securePrefs(context.applicationContext)
 
+    init {
+        prefs.edit().remove(KEY_VSEGPT_API_KEY).apply()
+    }
+
     var isEnabled: Boolean
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
-
-    fun getVseGptApiKey(): String =
-        prefs.getString(KEY_VSEGPT_API_KEY, null)?.trim().orEmpty()
-
-    fun hasVseGptApiKey(): Boolean = getVseGptApiKey().isNotBlank()
-
-    fun saveVseGptApiKey(apiKey: String) {
-        val normalized = apiKey.trim()
-        if (normalized.isBlank()) return
-        prefs.edit().putString(KEY_VSEGPT_API_KEY, normalized).apply()
-    }
 
     companion object {
         private const val PREFS_NAME = "smart_notifications_secure_prefs"

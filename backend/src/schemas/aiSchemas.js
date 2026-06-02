@@ -38,8 +38,23 @@ const aiSummarySchema = z.object({
   promptText: z.string().trim().min(1).max(16000)
 }).strict();
 
+const aiNotificationFilterSchema = z.object({
+  packageName: z.string().trim().min(1).max(200),
+  title: z.string().trim().max(240).optional().default(""),
+  text: z.string().trim().max(1200).optional().default("")
+}).strict().superRefine((value, context) => {
+  if (!value.title && !value.text) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Notification title or text is required",
+      path: ["text"]
+    });
+  }
+});
+
 module.exports = {
   aiChatSchema,
   aiTitleSchema,
-  aiSummarySchema
+  aiSummarySchema,
+  aiNotificationFilterSchema
 };

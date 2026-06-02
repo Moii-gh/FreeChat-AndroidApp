@@ -2,7 +2,12 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { createAiController } = require("../controllers/aiController");
 const { validate } = require("../middleware/validate");
-const { aiChatSchema, aiTitleSchema, aiSummarySchema } = require("../schemas/aiSchemas");
+const {
+  aiChatSchema,
+  aiTitleSchema,
+  aiSummarySchema,
+  aiNotificationFilterSchema
+} = require("../schemas/aiSchemas");
 
 function createAiRouter({ userModel, aiUsageModel, authenticate }) {
   const router = express.Router();
@@ -36,6 +41,20 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
     controller.rewardAd
   );
   router.post("/chat", validate(aiChatSchema), controller.chat);
+  router.post(
+    "/notification-filter",
+    rateLimit({
+      windowMs: 60 * 1000,
+      limit: 120,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: {
+        message: "Too many notification classification requests. Try again later."
+      }
+    }),
+    validate(aiNotificationFilterSchema),
+    controller.notificationFilter
+  );
   router.post(
     "/title",
     rateLimit({

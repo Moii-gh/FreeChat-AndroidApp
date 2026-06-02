@@ -50,18 +50,11 @@
             android:orientation="vertical"
             android:paddingVertical="24dp">
 
-            <FrameLayout
-                android:layout_width="82dp"
-                android:layout_height="82dp"
-                android:background="@drawable/bg_assistant_icon">
-
-                <ImageView
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_brain"
-                    app:tint="#FFFFFF" />
-            </FrameLayout>
+            <ImageView
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:contentDescription="@string/smart_notifications_title"
+                android:src="@drawable/ic_smart_notifications" />
 
             <TextView
                 android:id="@+id/tvSmartNotificationsTitle"
@@ -161,41 +154,6 @@
                 android:textColor="#F2F2F2"
                 android:textSize="12sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvSmartNotificationsApiKeyLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:text="@string/smart_notifications_api_key_label"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/etSmartNotificationsApiKey"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/input_capsule_bg"
-                android:hint="@string/smart_notifications_api_key_hint"
-                android:inputType="textPassword|textNoSuggestions"
-                android:maxLines="1"
-                android:paddingHorizontal="16dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#7A7A7E"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/tvSmartNotificationsApiKeySavedHint"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:lineSpacingExtra="2dp"
-                android:text="@string/smart_notifications_api_key_saved_hint"
-                android:textColor="#8E8E93"
-                android:textSize="12sp"
-                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/btnSmartNotificationsAllowAccess"

@@ -31,6 +31,8 @@ const ADULT_MODE_SYSTEM_PROMPT =
   "18+ style mode is enabled. Reply in a direct adult conversational tone. " +
   "Use strong language and profanity naturally when it fits the user's tone, " +
   "but keep the answer useful and do not target protected groups or encourage harm.";
+const NOTIFICATION_FILTER_SYSTEM_PROMPT =
+  "Ты ИИ-фильтр. Оцени уведомление. Если это спам, реклама или мусор — ответь 'SPAM'. Если важное, код или личное сообщение — ответь 'KEEP'. Отвечай одним словом.";
 
 const SERVER_FEATURE_NOT_CONNECTED_MESSAGE = "Эта функция пока не подключена на сервере.";
 const OPENAI_SEARCH_MODES = new Set(["search", "shopping", "web_search"]);
@@ -1387,9 +1389,34 @@ function extractChoiceContent(data) {
   return data?.choices?.[0]?.message?.content?.trim?.() || "";
 }
 
+function sanitizeNotificationDecision(value) {
+  const normalized = String(value || "")
+    .trim()
+    .split(/\s+/)[0]
+    ?.toUpperCase();
+
+  if (normalized === "SPAM") {
+    return "SPAM";
+  }
+
+  if (normalized === "KEEP") {
+    return "KEEP";
+  }
+
+  return "KEEP";
+}
+
 function trimPromptPart(value, maxLength = 4000) {
   const text = String(value || "").trim();
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
+}
+
+function buildNotificationFilterPrompt({ packageName, title, text }) {
+  return [
+    `Пакет приложения: ${trimPromptPart(packageName, 200)}`,
+    `Заголовок: ${trimPromptPart(title, 240) || "-"}`,
+    `Текст: ${trimPromptPart(text, 1200) || "-"}`
+  ].join("\n");
 }
 
 function buildTitlePrompt({ firstUserMessage, firstAssistantMessage }) {
@@ -1426,6 +1453,45 @@ function sanitizeGeneratedTitle(value) {
     .trim()
     .slice(0, 80)
     .trim();
+}
+
+async function classifyNotification({ user, packageName, title, text }) {
+  debugAiLog("notification-filter:start", {
+    packageName,
+    hasTitle: Boolean(title),
+    hasText: Boolean(text)
+  });
+
+  const selection = selectChatModel({
+    user,
+    provider: PROVIDER_VSEGPT,
+    modelKey: "deepseek",
+    currentMode: null,
+    requestBody: { messages: [] }
+  });
+  assertSelectionConfigured(selection);
+
+  const data = await callAiJson({
+    selection,
+    body: {
+      model: selection.model,
+      stream: false,
+      temperature: 0,
+      max_tokens: 4,
+      messages: [
+        createMessagePayload("system", NOTIFICATION_FILTER_SYSTEM_PROMPT),
+        createMessagePayload("user", buildNotificationFilterPrompt({
+          packageName,
+          title,
+          text
+        }))
+      ]
+    }
+  });
+
+  const decision = sanitizeNotificationDecision(extractChoiceContent(data));
+  debugAiLog("notification-filter:result", { decision });
+  return decision;
 }
 
 async function generateTitle({ user, firstUserMessage, firstAssistantMessage, provider, modelKey }) {
@@ -1551,5 +1617,6 @@ module.exports = {
   proxyAiRequest,
   generateTitle,
   generateSummary,
-  generateTrendingQueries
+  generateTrendingQueries,
+  classifyNotification
 };

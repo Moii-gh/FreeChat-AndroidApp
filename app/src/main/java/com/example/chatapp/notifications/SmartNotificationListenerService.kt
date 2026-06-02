@@ -3,6 +3,7 @@ package com.example.chatapp.notifications
 import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.util.SafeLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,18 +18,18 @@ class SmartNotificationListenerService : NotificationListenerService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val classificationLimiter = Semaphore(2)
     private lateinit var settingsStore: SmartNotificationsSettingsStore
-    private lateinit var classifier: VseGptNotificationClassifier
+    private lateinit var classifier: SmartNotificationServerClassifier
 
     override fun onCreate() {
         super.onCreate()
         settingsStore = SmartNotificationsSettingsStore(applicationContext)
-        classifier = VseGptNotificationClassifier(settingsStore::getVseGptApiKey)
+        val sessionStore = SharedPrefsAccountSessionStore(applicationContext)
+        classifier = SmartNotificationServerClassifier(sessionStore::getAuthToken)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         val notification = sbn?.notification ?: return
         if (!settingsStore.isEnabled) return
-        if (!settingsStore.hasVseGptApiKey()) return
         if (sbn.packageName == packageName) return
         if (notification.isOngoingEvent()) return
 

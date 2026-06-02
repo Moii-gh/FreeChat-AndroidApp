@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -75,12 +74,6 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "smart_notifications_enable")
         findViewById<TextView>(R.id.tvSmartNotificationsPermissions)?.text =
             LocaleHelper.getString(this, "smart_notifications_permissions_explanation")
-        findViewById<TextView>(R.id.tvSmartNotificationsApiKeyLabel)?.text =
-            LocaleHelper.getString(this, "smart_notifications_api_key_label")
-        findViewById<EditText>(R.id.etSmartNotificationsApiKey)?.hint =
-            LocaleHelper.getString(this, "smart_notifications_api_key_hint")
-        findViewById<TextView>(R.id.tvSmartNotificationsApiKeySavedHint)?.text =
-            LocaleHelper.getString(this, "smart_notifications_api_key_saved_hint")
         findViewById<TextView>(R.id.btnSmartNotificationsAllowAccess)?.text =
             LocaleHelper.getString(this, "smart_notifications_allow_access")
         findViewById<TextView>(R.id.tvHowItWorksTitle)?.text =
@@ -94,26 +87,6 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
     }
 
     private fun enableSmartNotifications(openSettingsIfNeeded: Boolean) {
-        val enteredApiKey = findViewById<EditText>(R.id.etSmartNotificationsApiKey)
-            ?.text
-            ?.toString()
-            ?.trim()
-            .orEmpty()
-        if (enteredApiKey.isNotBlank()) {
-            smartNotificationsSettings.saveVseGptApiKey(enteredApiKey)
-        }
-
-        if (!smartNotificationsSettings.hasVseGptApiKey()) {
-            smartNotificationsSettings.isEnabled = false
-            Toast.makeText(
-                this,
-                LocaleHelper.getString(this, "smart_notifications_key_missing"),
-                Toast.LENGTH_SHORT
-            ).show()
-            updateSmartNotificationsUi()
-            return
-        }
-
         smartNotificationsSettings.isEnabled = true
 
         if (
@@ -127,24 +100,19 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
     }
 
     private fun updateSmartNotificationsUi() {
-        val hasApiKey = smartNotificationsSettings.hasVseGptApiKey()
         val hasAccess = SmartNotificationsPermissionManager.hasNotificationListenerAccess(this)
-        val isEffectivelyEnabled = smartNotificationsSettings.isEnabled && hasApiKey && hasAccess
+        val isEffectivelyEnabled = smartNotificationsSettings.isEnabled && hasAccess
 
         updatingSwitch = true
         findViewById<SwitchMaterial>(R.id.switchSmartNotifications).isChecked = isEffectivelyEnabled
         updatingSwitch = false
 
         findViewById<TextView>(R.id.tvSmartNotificationsStatus)?.text = when {
-            !hasApiKey -> LocaleHelper.getString(this, "smart_notifications_status_api_key_needed")
             smartNotificationsSettings.isEnabled && !hasAccess ->
                 LocaleHelper.getString(this, "smart_notifications_status_permission_needed")
             isEffectivelyEnabled -> LocaleHelper.getString(this, "smart_notifications_status_enabled")
             else -> LocaleHelper.getString(this, "smart_notifications_status_disabled")
         }
-
-        findViewById<TextView>(R.id.tvSmartNotificationsApiKeySavedHint)?.visibility =
-            if (hasApiKey) View.VISIBLE else View.GONE
     }
 
     private fun openSmartNotificationsAccessSettings() {

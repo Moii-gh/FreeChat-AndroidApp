@@ -85,6 +85,12 @@ object NetworkModule {
             .build()
     }
 
+    fun createSmartNotificationsHttpClient(token: String): OkHttpClient {
+        return baseClientBuilder(timeoutSeconds = 15)
+            .addInterceptor(authorizationInterceptor(token))
+            .build()
+    }
+
     private fun baseClientBuilder(timeoutSeconds: Long): OkHttpClient.Builder {
         return OkHttpClient.Builder()
             .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)

@@ -3,7 +3,8 @@ const {
   proxyAiRequest,
   generateTitle,
   generateSummary,
-  generateTrendingQueries
+  generateTrendingQueries,
+  classifyNotification
 } = require("../services/aiService");
 const { publicModels } = require("../services/aiModelRegistry");
 
@@ -186,6 +187,28 @@ function createAiController({ aiUsageModel }) {
             res.setHeader("X-Daily-Quota-Resets-At", updatedSnapshot.resetAt);
           }
         });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    notificationFilter: async (req, res, next) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(404).json({
+            message: "User not found"
+          });
+        }
+
+        const decision = await classifyNotification({
+          user,
+          packageName: req.validatedBody.packageName,
+          title: req.validatedBody.title,
+          text: req.validatedBody.text
+        });
+
+        return res.status(200).json({ decision });
       } catch (error) {
         return next(error);
       }

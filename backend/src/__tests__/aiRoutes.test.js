@@ -324,6 +324,60 @@ test("POST /api/ai/title falls back to VseGPT when OpenAI key is missing", async
   }
 });
 
+test("POST /api/ai/notification-filter classifies notification through VseGPT DeepSeek", async () => {
+  const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
+  const originalFetch = global.fetch;
+  let upstreamUrl = "";
+  let upstreamBody = null;
+  let authorization = "";
+  global.fetch = async (url, init) => {
+    upstreamUrl = url;
+    upstreamBody = JSON.parse(init.body);
+    authorization = init.headers.Authorization;
+    return new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: "SPAM"
+          }
+        }
+      ]
+    }), {
+      status: 200,
+      headers: {
+        "content-type": "application/json"
+      }
+    });
+  };
+
+  try {
+    const { app, user } = createAuthedApp();
+    const response = await request(app)
+      .post("/api/ai/notification-filter")
+      .set("Authorization", authHeader(user))
+      .send({
+        packageName: "com.example.store",
+        title: "Sale",
+        text: "Only today"
+      });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, { decision: "SPAM" });
+    assert.equal(upstreamUrl, env.vsegptChatUrl);
+    assert.equal(authorization, "Bearer vsegpt-test-key");
+    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
+    assert.equal(upstreamBody.stream, false);
+    assert.equal(upstreamBody.temperature, 0);
+    assert.equal(upstreamBody.max_tokens, 4);
+    assert.match(upstreamBody.messages[0].content, /SPAM/);
+    assert.match(upstreamBody.messages[1].content, /com\.example\.store/);
+    assert.match(upstreamBody.messages[1].content, /Sale/);
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
 test("POST /api/ai/chat routes OpenAI image generation to the Images API", async () => {
   const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
