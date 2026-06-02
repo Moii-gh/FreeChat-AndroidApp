@@ -34,18 +34,22 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.example.chatapp.util.setHapticClickListener
 import android.widget.FrameLayout
-import com.yandex.mobile.ads.banner.BannerAdEventListener
-import com.yandex.mobile.ads.banner.BannerAdSize
-import com.yandex.mobile.ads.banner.BannerAdView
 import com.yandex.mobile.ads.common.AdRequest
 import com.yandex.mobile.ads.common.AdRequestError
 import com.yandex.mobile.ads.common.ImpressionData
+import com.yandex.mobile.ads.nativeads.NativeAd
+import com.yandex.mobile.ads.nativeads.NativeAdLoader
+import com.yandex.mobile.ads.nativeads.NativeAdLoadListener
+import com.yandex.mobile.ads.nativeads.NativeAdRequestConfiguration
+import com.yandex.mobile.ads.nativeads.NativeAdView
+import com.yandex.mobile.ads.nativeads.NativeAdViewBinder
 
 class SettingsActivity : AppCompatActivity() {
 
     private var ivDialogAvatar: ImageView? = null
     private var dialogAvatarLetter: TextView? = null
-    private var adView: BannerAdView? = null
+    private var nativeAd: NativeAd? = null
+    private var nativeAdLoader: NativeAdLoader? = null
 
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
     private lateinit var accountExitLimiter: AccountExitLimiter
@@ -163,7 +167,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         bindDeveloperMenuEntryGesture()
-        setupAdBanner()
+        setupNativeAd()
     }
 
     override fun onResume() {
@@ -513,41 +517,57 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupAdBanner() {
+    private fun setupNativeAd() {
         val container = findViewById<FrameLayout>(R.id.settingsAdContainer) ?: return
-        val displayMetrics = resources.displayMetrics
-        val screenWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
-        val widthDp = (screenWidthDp - 32).coerceAtLeast(320)
-        val adSize = BannerAdSize.stickySize(this, widthDp)
-
-        val banner = BannerAdView(this).apply {
-            setAdUnitId(SETTINGS_BANNER_AD_UNIT_ID)
-            setAdSize(adSize)
-            setBannerAdEventListener(object : BannerAdEventListener {
-                override fun onAdLoaded() {
-                    alpha = 0f
-                    visibility = View.VISIBLE
-                    animate().alpha(1f).setDuration(200).start()
+        val wrapper = findViewById<View>(R.id.settingsAdWrapper)
+        
+        nativeAdLoader = NativeAdLoader(this).apply {
+            setNativeAdLoadListener(object : NativeAdLoadListener {
+                override fun onAdLoaded(ad: NativeAd) {
+                    nativeAd = ad
+                    
+                    val adView = layoutInflater.inflate(R.layout.layout_settings_native_ad, container, false) as NativeAdView
+                    val binder = NativeAdViewBinder.Builder(adView)
+                        .setTitleView(adView.findViewById(R.id.ad_title))
+                        .setBodyView(adView.findViewById(R.id.ad_body))
+                        .setIconView(adView.findViewById(R.id.ad_icon))
+                        .setMediaView(adView.findViewById(R.id.ad_media))
+                        .setCallToActionView(adView.findViewById(R.id.ad_call_to_action))
+                        .setDomainView(adView.findViewById(R.id.ad_domain))
+                        .setWarningView(adView.findViewById(R.id.ad_warning))
+                        .setFeedbackView(adView.findViewById(R.id.ad_feedback))
+                        .setSponsoredView(adView.findViewById(R.id.ad_sponsored))
+                        .setPriceView(adView.findViewById(R.id.ad_price))
+                        .build()
+                        
+                    try {
+                        ad.bindNativeAd(binder)
+                        container.removeAllViews()
+                        adView.alpha = 0f
+                        adView.visibility = View.VISIBLE
+                        container.addView(adView)
+                        wrapper?.visibility = View.VISIBLE
+                        adView.animate().alpha(1f).setDuration(200).start()
+                    } catch (e: Exception) {
+                        android.util.Log.e("SettingsActivity", "Native ad binding failed", e)
+                        wrapper?.visibility = View.GONE
+                    }
                 }
 
                 override fun onAdFailedToLoad(error: AdRequestError) {
-                    visibility = View.GONE
+                    wrapper?.visibility = View.GONE
                 }
-
-                override fun onAdClicked() = Unit
-                override fun onLeftApplication() = Unit
-                override fun onReturnedToApplication() = Unit
-                override fun onImpression(impressionData: ImpressionData?) = Unit
             })
         }
-        adView = banner
-        container.addView(banner)
-        banner.loadAd(AdRequest.Builder().build())
+        
+        val requestConfig = NativeAdRequestConfiguration.Builder(SETTINGS_NATIVE_AD_UNIT_ID).build()
+        nativeAdLoader?.loadAd(requestConfig)
     }
 
     override fun onDestroy() {
-        adView?.destroy()
-        adView = null
+        nativeAd = null
+        nativeAdLoader?.setNativeAdLoadListener(null)
+        nativeAdLoader = null
         super.onDestroy()
     }
 
@@ -556,6 +576,6 @@ class SettingsActivity : AppCompatActivity() {
         const val PRIVACY_POLICY_URL = "https://freechat-privacy-policy.onrender.com/"
         const val REPORT_PROBLEM_URL = "https://t.me/of_MOII"
         const val SOURCE_CODE_URL = "https://github.com/Moii-gh/FreeChat-AndroidApp"
-        const val SETTINGS_BANNER_AD_UNIT_ID = "R-M-19376957-3"
+        const val SETTINGS_NATIVE_AD_UNIT_ID = "R-M-19376957-4"
     }
 }

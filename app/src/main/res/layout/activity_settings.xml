@@ -551,13 +551,31 @@
                 android:textSize="12sp"/>
         </LinearLayout>
 
-        <!-- Container for Yandex Ads Banner -->
-        <FrameLayout
-            android:id="@+id/settingsAdContainer"
+        <!-- Wrapper for Native Ad and Support label -->
+        <LinearLayout
+            android:id="@+id/settingsAdWrapper"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp" />
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvAdSupport"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:textColor="#8E8E93"
+                android:textSize="12sp"
+                android:text="@string/settings_ad_support" />
+
+            <FrameLayout
+                android:id="@+id/settingsAdContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal" />
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

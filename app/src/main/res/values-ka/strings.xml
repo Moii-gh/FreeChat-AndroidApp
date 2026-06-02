@@ -504,4 +504,5 @@
     <string name="menu_add_to_home_screen">მთავარ ეკრანზე დამატება</string>
     <string name="toast_shortcut_added">მალსახმობის მოთხოვნა გაგზავნილია</string>
     <string name="label_sponsored">რეკლამა</string>
+    <string name="settings_ad_support">დაგვიჭირეთ მხარი კაპიკით 👉👈</string>
 </resources>

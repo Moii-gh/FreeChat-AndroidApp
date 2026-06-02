@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.yandex.mobile.ads.nativeads.NativeAdView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/native_ad_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/settings_profile_card_bg"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="24dp">
+
+        <!-- Ad Icon -->
+        <ImageView
+            android:id="@+id/ad_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="centerCrop"
+            android:clipToOutline="true"
+            android:background="@drawable/avatar_grey_bg"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="Ad Icon" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/ad_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintStart_toEndOf="@id/ad_icon"
+            app:layout_constraintEnd_toStartOf="@id/ad_sponsored"
+            app:layout_constraintTop_toTopOf="@id/ad_icon" />
+
+        <!-- Domain / Sponsored info -->
+        <TextView
+            android:id="@+id/ad_domain"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="#8E8E93"
+            android:textSize="11sp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintStart_toStartOf="@id/ad_title"
+            app:layout_constraintEnd_toEndOf="@id/ad_title"
+            app:layout_constraintTop_toBottomOf="@id/ad_title"
+            app:layout_constraintBottom_toBottomOf="@id/ad_icon" />
+
+        <!-- Sponsored View (Ad label) -->
+        <TextView
+            android:id="@+id/ad_sponsored"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:textColor="#8E8E93"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toStartOf="@id/ad_feedback"
+            app:layout_constraintTop_toTopOf="@id/ad_feedback"
+            app:layout_constraintBottom_toBottomOf="@id/ad_feedback" />
+
+        <!-- Feedback button (Yandex Ads mandatory / recommended for reporting) -->
+        <ImageView
+            android:id="@+id/ad_feedback"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_info"
+            app:tint="#8E8E93"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="Ad Feedback" />
+
+        <!-- Media View (Ad Image/Video) -->
+        <com.yandex.mobile.ads.nativeads.MediaView
+            android:id="@+id/ad_media"
+            android:layout_width="0dp"
+            android:layout_height="130dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_settings_ad_media"
+            android:clipToOutline="true"
+            app:layout_constraintTop_toBottomOf="@id/ad_icon"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Body / Description text -->
+        <TextView
+            android:id="@+id/ad_body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#CCCCCC"
+            android:textSize="13sp"
+            app:layout_constraintTop_toBottomOf="@id/ad_media"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Price -->
+        <TextView
+            android:id="@+id/ad_price"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            app:layout_constraintTop_toBottomOf="@id/ad_body"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Call to Action (CTA) Button -->
+        <TextView
+            android:id="@+id/ad_call_to_action"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_purple_pill"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintTop_toBottomOf="@id/ad_price"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Warning / Disclaimer (Required in many regions) -->
+        <TextView
+            android:id="@+id/ad_warning"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#8E8E93"
+            android:textSize="10sp"
+            android:gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/ad_call_to_action"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.yandex.mobile.ads.nativeads.NativeAdView>

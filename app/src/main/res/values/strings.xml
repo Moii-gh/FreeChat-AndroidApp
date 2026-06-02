@@ -504,4 +504,6 @@
     <string name="debug_logs_clip_label">FreeChat logs</string>
     <string name="menu_add_to_home_screen">Add to Home screen</string>
     <string name="toast_shortcut_added">Shortcut request sent</string>
+    <string name="label_sponsored">Sponsored</string>
+    <string name="settings_ad_support">Support us with a penny 👉👈</string>
 </resources>
