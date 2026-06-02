@@ -46,6 +46,10 @@ class PopupMenuHelper(
      */
     fun showChatPopupMenu(anchorView: View, chat: ChatEntity) {
         val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
+        anchorView.visibility = View.INVISIBLE
+        dialog.setOnDismissListener {
+            anchorView.visibility = View.VISIBLE
+        }
 
         val container = FrameLayout(activity).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -304,11 +308,18 @@ class PopupMenuHelper(
      * Popup для ответа ассистента (регенерация).
      */
     fun showAssistantMessageOptionsMenu(anchorView: View, wrapper: AssistantMessageWrapper) {
+        val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
+        val hasImageActions = AssistantMessageWrapper.isRenderableImageUrl(imageUrl)
+
         val popupView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            background = ContextCompat.getDrawable(activity, R.drawable.bg_popup_menu_pill)
+            background = ContextCompat.getDrawable(
+                activity,
+                if (hasImageActions) R.drawable.bg_popup_menu_image_options else R.drawable.bg_popup_menu_pill
+            )
             elevation = 24f
-            setPadding(12.dpToPx(), 4.dpToPx(), 12.dpToPx(), 4.dpToPx())
+            val verticalPadding = if (hasImageActions) 8.dpToPx() else 4.dpToPx()
+            setPadding(12.dpToPx(), verticalPadding, 12.dpToPx(), verticalPadding)
         }
 
         val popupWindow = PopupWindow(
@@ -332,8 +343,7 @@ class PopupMenuHelper(
             onRegenerate?.invoke(wrapper)
         })
 
-        val imageUrl = AssistantMessageWrapper.extractImageUrl(wrapper.rawText)
-        if (AssistantMessageWrapper.isRenderableImageUrl(imageUrl)) {
+        if (hasImageActions) {
             popupView.addView(createPopupMenuItem(
                 R.drawable.ic_share,
                 LocaleHelper.getString(activity, "share"),
