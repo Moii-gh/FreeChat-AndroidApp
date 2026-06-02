@@ -36,6 +36,20 @@
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/btnSave"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_circle_outline"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:src="@drawable/ic_check"
+            app:tint="#FFFFFF"
+            android:contentDescription="@null" />
     </RelativeLayout>
 
     <FrameLayout
@@ -110,6 +124,24 @@
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:gravity="center" />
+
+            <!-- Elegant gap of 8dp -->
+            <View
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <!-- Clear All Whitelist Button (cross in circle outline) -->
+            <ImageView
+                android:id="@+id/btnClearAllWhitelist"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/bg_circle_outline"
+                android:padding="6dp"
+                android:src="@drawable/ic_assistant_close"
+                app:tint="#FFFFFF"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@null" />
 
             <!-- Spacer to push recent icons to the far right -->
             <View

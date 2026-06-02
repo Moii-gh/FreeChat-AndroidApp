@@ -69,6 +69,19 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btnBack).setHapticClickListener { finish() }
 
+        findViewById<View>(R.id.btnSave).setHapticClickListener {
+            val whitelistedSet = allApps.filter { it.isWhitelisted }.map { it.packageName }.toSet()
+            settingsStore.whitelist = whitelistedSet
+            finish()
+        }
+
+        findViewById<View>(R.id.btnClearAllWhitelist).setHapticClickListener {
+            selectionOrder.clear()
+            allApps.forEach { it.isWhitelisted = false }
+            whitelistAdapter.notifyDataSetChanged()
+            updateHeaderState()
+        }
+
         setupRecyclerViews()
         setupSearch()
         loadApplications()
@@ -106,18 +119,19 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
         rvAppsList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
-                val firstVisible = layoutManager?.findFirstCompletelyVisibleItemPosition() ?: 0
+                
+                // If user is actively swiping selected apps horizontally, ignore vertical scroll collapses
+                if (rvSelectedApps.scrollState != RecyclerView.SCROLL_STATE_IDLE) {
+                    return
+                }
 
-                if (firstVisible == 0) {
-                    // Force expanded when at the absolute top of the list
+                val offset = recyclerView.computeVerticalScrollOffset()
+                if (offset < 16) {
+                    // Absolute top of the list - show expanded state
                     setHeaderCollapsed(false)
-                } else if (dy > 0) {
-                    // Scrolling down - collapse
+                } else {
+                    // Scrolled away - show collapsed state
                     setHeaderCollapsed(true)
-                } else if (dy < 0) {
-                    // Scrolling up - expand
-                    setHeaderCollapsed(false)
                 }
             }
         })
@@ -206,17 +220,13 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
     }
 
     private fun saveWhitelistState(item: AppItem) {
-        val currentSet = settingsStore.whitelist.toMutableSet()
         if (item.isWhitelisted) {
-            currentSet.add(item.packageName)
             if (!selectionOrder.contains(item.packageName)) {
                 selectionOrder.add(item.packageName)
             }
         } else {
-            currentSet.remove(item.packageName)
             selectionOrder.remove(item.packageName)
         }
-        settingsStore.whitelist = currentSet
     }
 
     private fun updateHeaderState() {
@@ -308,6 +318,7 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private val ivIcon: ImageView = itemView.findViewById(R.id.ivSelectedAppIcon)
             private val tvLabel: TextView = itemView.findViewById(R.id.tvSelectedAppLabel)
+            private val btnRemove: View = itemView.findViewById(R.id.btnRemoveSelectedApp)
 
             fun bind(item: AppItem) {
                 tvLabel.text = item.label
@@ -317,13 +328,15 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
                     ivIcon.setImageResource(android.R.drawable.sym_def_app_icon)
                 }
 
-                itemView.setHapticClickListener {
-                    // Tap on top icon toggles selection off
+                val toggleOffAction = {
                     item.isWhitelisted = false
                     saveWhitelistState(item)
                     whitelistAdapter.notifyDataSetChanged()
                     updateHeaderState()
                 }
+
+                itemView.setHapticClickListener { toggleOffAction() }
+                btnRemove.setHapticClickListener { toggleOffAction() }
             }
         }
     }
