@@ -121,7 +121,7 @@ const env = {
   aiSearchModel: process.env.AI_SEARCH_MODEL || "",
   aiTitleModel: process.env.AI_TITLE_MODEL || "",
   aiSummaryModel: process.env.AI_SUMMARY_MODEL || "",
-  aiAdultTextModel: process.env.AI_ADULT_TEXT_MODEL || "x-ai/grok-4-fast-thinking",
+  aiAdultTextModel: process.env.AI_ADULT_TEXT_MODEL || "",
   aiProTextModel: process.env.AI_PRO_TEXT_MODEL || "",
   aiProVisionModel: process.env.AI_PRO_VISION_MODEL || "",
   aiProImageModel: process.env.AI_PRO_IMAGE_MODEL || "",

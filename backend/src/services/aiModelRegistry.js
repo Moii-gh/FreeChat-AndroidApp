@@ -237,18 +237,44 @@ function isRetiredDeepSeekModelId(value) {
   );
 }
 
+function isRetiredVseGptGrokFastModelId(value) {
+  const normalized = normalizeModelId(value).toLowerCase();
+  return (
+    normalized === "x-ai/grok-4-fast" ||
+    normalized === "x-ai/grok-4-fast-thinking"
+  );
+}
+
+function fallbackVseGptModelId(fallbackModelId) {
+  const fallback = normalizeModelId(fallbackModelId);
+  if (
+    !fallback ||
+    isRetiredVseGptGptAlias(fallback) ||
+    isRetiredDeepSeekModelId(fallback) ||
+    isRetiredVseGptGrokFastModelId(fallback)
+  ) {
+    return VSEGPT_DEEPSEEK_MODEL_ID;
+  }
+
+  return fallback;
+}
+
 function normalizeVseGptModelId(modelId, fallbackModelId = "") {
   const normalized = normalizeModelId(modelId);
   if (!normalized) {
-    return normalizeModelId(fallbackModelId);
+    return fallbackVseGptModelId(fallbackModelId);
   }
 
   if (isRetiredVseGptGptAlias(normalized)) {
-    return normalizeModelId(fallbackModelId);
+    return fallbackVseGptModelId(fallbackModelId);
   }
 
   if (isRetiredDeepSeekModelId(normalized)) {
     return VSEGPT_DEEPSEEK_MODEL_ID;
+  }
+
+  if (isRetiredVseGptGrokFastModelId(normalized)) {
+    return fallbackVseGptModelId(fallbackModelId);
   }
 
   return normalized;
