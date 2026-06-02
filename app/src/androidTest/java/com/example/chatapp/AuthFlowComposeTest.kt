@@ -337,4 +337,12 @@ private class FakeComposeAccountSessionStore : AccountSessionStore {
     override fun consumeDailyRequest() = Unit
 
     override fun addDailyRequests(amount: Int) = Unit
+
+    override fun getDailyImageLimit(): Int? = null
+
+    override fun getRemainingImageRequests(): Int? = null
+
+    override fun saveImageQuota(dailyImageLimit: Int?, imageRemaining: Int?) = Unit
+
+    override fun consumeImageRequest() = Unit
 }
