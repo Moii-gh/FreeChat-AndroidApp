@@ -119,27 +119,11 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
         val providerSettings = AiProviderSettings(requireContext())
         val selectedProvider = providerSettings.getProvider()
         val selectedModelKey = providerSettings.getModelKey()
-        val canCreateImages = AiModelCatalog.supports(
-            selectedProvider,
-            selectedModelKey,
-            AiCapabilities.IMAGE_GENERATION
-        )
         val canUseWebSearch = AiModelCatalog.supports(
             selectedProvider,
             selectedModelKey,
             AiCapabilities.WEB_SEARCH
         )
-
-        configureFeatureOption(view.findViewById(R.id.optCreateImage), canCreateImages) {
-            activity?.setInputContext(
-                LocaleHelper.getString(requireContext(), "panel_create_image"),
-                R.drawable.ic_palette,
-                LocaleHelper.getString(requireContext(), "main_panel_input_create_image"),
-                "#FFFFFF",
-                ChatMode.CREATE_IMAGE
-            )
-            dismiss()
-        }
 
         configureFeatureOption(view.findViewById(R.id.optSearch), canUseWebSearch) {
             activity?.setInputContext(
@@ -183,6 +167,37 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
         val sessionStore = com.example.chatapp.data.SharedPrefsAccountSessionStore(context)
         val imageRemaining = sessionStore.getRemainingImageRequests() ?: 0
         view.findViewById<android.widget.TextView>(R.id.tvImageLimitCircle)?.text = imageRemaining.toString()
+
+        val providerSettings = AiProviderSettings(context)
+        val canCreateImages = AiModelCatalog.supports(
+            providerSettings.getProvider(),
+            providerSettings.getModelKey(),
+            AiCapabilities.IMAGE_GENERATION
+        )
+        val hasImageLimit = imageRemaining > 0
+        val isImageOptionAvailable = canCreateImages && hasImageLimit
+
+        val optCreateImage = view.findViewById<View>(R.id.optCreateImage)
+        if (optCreateImage != null) {
+            optCreateImage.alpha = if (isImageOptionAvailable) 1f else 0.45f
+            optCreateImage.setHapticClickListener {
+                if (!canCreateImages) {
+                    toast(serverFeatureUnavailableMessage)
+                } else if (!hasImageLimit) {
+                    toast(LocaleHelper.getString(context, "toast_image_limits_exhausted"))
+                } else {
+                    val activity = activity as? ChatInputHost
+                    activity?.setInputContext(
+                        LocaleHelper.getString(context, "panel_create_image"),
+                        R.drawable.ic_palette,
+                        LocaleHelper.getString(context, "main_panel_input_create_image"),
+                        "#FFFFFF",
+                        ChatMode.CREATE_IMAGE
+                    )
+                    dismiss()
+                }
+            }
+        }
     }
 
     override fun onStart() {
