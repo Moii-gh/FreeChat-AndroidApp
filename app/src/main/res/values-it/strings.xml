@@ -503,4 +503,5 @@
     <string name="debug_logs_clip_label">Log FreeChat</string>
     <string name="menu_add_to_home_screen">Aggiungi alla schermata Home</string>
     <string name="toast_shortcut_added">Richiesta scorciatoia inviata</string>
+    <string name="label_sponsored">Sponsorizzato</string>
 </resources>

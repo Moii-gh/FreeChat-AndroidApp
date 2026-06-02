@@ -504,4 +504,5 @@
     <string name="debug_logs_clip_label">Журнали FreeChat</string>
     <string name="menu_add_to_home_screen">Додати на головний екран</string>
     <string name="toast_shortcut_added">Запит на створення ярлика надіслано</string>
+    <string name="label_sponsored">Реклама</string>
 </resources>

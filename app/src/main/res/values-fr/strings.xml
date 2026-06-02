@@ -503,4 +503,5 @@
     <string name="debug_logs_clip_label">Journaux FreeChat</string>
     <string name="menu_add_to_home_screen">Ajouter ? l\'?cran d\'accueil</string>
     <string name="toast_shortcut_added">Demande de raccourci envoy?e</string>
+    <string name="label_sponsored">Sponsorisé</string>
 </resources>
