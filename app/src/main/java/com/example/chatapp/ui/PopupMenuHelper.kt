@@ -52,7 +52,7 @@ class PopupMenuHelper(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#B3000000"))
+            setBackgroundColor(Color.parseColor("#26000000"))
             setOnClickListener { dialog.dismiss() }
         }
 
@@ -283,7 +283,7 @@ class PopupMenuHelper(
             val p = container.layoutParams as? WindowManager.LayoutParams
             if (p != null) {
                 p.flags = p.flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-                p.dimAmount = 0.35f
+                p.dimAmount = 0.10f
                 val wm = activity.getSystemService(android.content.Context.WINDOW_SERVICE) as WindowManager
                 wm.updateViewLayout(container, p)
             }
@@ -373,9 +373,9 @@ class PopupMenuHelper(
         val userMenuWidth = 272.dpToPx()
         val popupView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_bg)
+            background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_user_bg)
             elevation = 24f
-            setPadding(8.dpToPx(), 10.dpToPx(), 8.dpToPx(), 10.dpToPx())
+            setPadding(6.dpToPx(), 8.dpToPx(), 6.dpToPx(), 8.dpToPx())
         }
 
         val popupWindow = PopupWindow(
@@ -389,17 +389,17 @@ class PopupMenuHelper(
             isOutsideTouchable = true
         }
 
-        popupView.addView(createPopupMenuItem(R.drawable.ic_pen, LocaleHelper.getString(activity, "menu_edit_message"), Color.WHITE) {
+        popupView.addView(createUserPopupMenuItem(R.drawable.ic_pen, LocaleHelper.getString(activity, "menu_edit_message"), Color.WHITE) {
             popupWindow.dismiss()
             onEditUserMessage?.invoke(historyIndex, message)
         })
 
-        popupView.addView(createPopupMenuItem(R.drawable.ic_copy, LocaleHelper.getString(activity, "menu_copy_text"), Color.WHITE) {
+        popupView.addView(createUserPopupMenuItem(R.drawable.ic_copy, LocaleHelper.getString(activity, "menu_copy_text"), Color.WHITE) {
             popupWindow.dismiss()
             FileUtils.copyToClipboard(activity, message)
         })
 
-        popupView.addView(createPopupMenuItem(R.drawable.ic_share, LocaleHelper.getString(activity, "share"), Color.WHITE) {
+        popupView.addView(createUserPopupMenuItem(R.drawable.ic_share, LocaleHelper.getString(activity, "share"), Color.WHITE) {
             popupWindow.dismiss()
             FileUtils.shareText(activity, message)
         })
@@ -471,6 +471,51 @@ class PopupMenuHelper(
                 setTextColor(tintColor)
                 textSize = if (compact) 14f else 15f
                 setPadding(if (compact) 10.dpToPx() else 14.dpToPx(), 0, 0, 0)
+            })
+
+            setOnClickListener { onClick() }
+        }
+    }
+
+    private fun createUserPopupMenuItem(
+        iconRes: Int,
+        text: String,
+        tintColor: Int,
+        onClick: () -> Unit
+    ): LinearLayout {
+        return LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            
+            val pHorizontal = 14.dpToPx()
+            val pVertical = 8.dpToPx()
+            setPadding(pHorizontal, pVertical, pHorizontal, pVertical)
+            
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 1.dpToPx()
+                bottomMargin = 1.dpToPx()
+            }
+            minimumHeight = 40.dpToPx()
+            isClickable = true
+            isFocusable = true
+            val outValue = TypedValue()
+            activity.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+            background = ContextCompat.getDrawable(activity, outValue.resourceId)
+
+            addView(ImageView(activity).apply {
+                setImageResource(iconRes)
+                setColorFilter(tintColor)
+                layoutParams = LinearLayout.LayoutParams(18.dpToPx(), 18.dpToPx())
+            })
+
+            addView(TextView(activity).apply {
+                this.text = text
+                setTextColor(tintColor)
+                textSize = 14f
+                setPadding(12.dpToPx(), 0, 0, 0)
             })
 
             setOnClickListener { onClick() }
