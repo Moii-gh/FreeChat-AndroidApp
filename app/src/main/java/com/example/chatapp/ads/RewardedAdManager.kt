@@ -28,7 +28,7 @@ class RewardedAdManager(
 
     companion object {
         private const val TAG = "RewardedAdManager"
-        private const val AD_UNIT_ID = "R-M-19145287-2"
+        private const val AD_UNIT_ID = "R-M-19376957-1"
     }
 
     /** Инициализация загрузчика рекламы */
@@ -46,7 +46,7 @@ class RewardedAdManager(
                         isLoading = false
                         SafeLog.w(
                             TAG,
-                            "Rewarded ad failed to load: code=${error.code}"
+                            "Rewarded ad failed to load: code=${error.code}, description=${error.description}"
                         )
                         // Тихо игнорируем — реклама необязательна
                     }

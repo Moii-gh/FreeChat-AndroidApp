@@ -116,7 +116,7 @@ fun resolveRootRelativeFile(path: String): File {
     return if (file.isAbsolute) file else rootProject.file(path)
 }
 
-val configuredApplicationId = localReleaseValue("FREECHAT_APPLICATION_ID") ?: "com.example.chatapp"
+val configuredApplicationId = localReleaseValue("FREECHAT_APPLICATION_ID") ?: "com.moii.freechat"
 val configuredVersionCode = parsePositiveVersionCode(localReleaseValue("FREECHAT_VERSION_CODE"))
 val configuredVersionName = localReleaseValue("FREECHAT_VERSION_NAME") ?: "1.0"
 
