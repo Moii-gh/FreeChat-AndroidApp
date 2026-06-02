@@ -12,10 +12,6 @@ class SmartNotificationsSettingsStore(context: Context) {
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
-    var hasSeenOnboarding: Boolean
-        get() = prefs.getBoolean(KEY_ONBOARDING_SEEN, false)
-        set(value) = prefs.edit().putBoolean(KEY_ONBOARDING_SEEN, value).apply()
-
     fun getVseGptApiKey(): String =
         prefs.getString(KEY_VSEGPT_API_KEY, null)?.trim().orEmpty()
 
@@ -30,7 +26,6 @@ class SmartNotificationsSettingsStore(context: Context) {
     companion object {
         private const val PREFS_NAME = "smart_notifications_secure_prefs"
         private const val KEY_ENABLED = "smart_notifications_enabled"
-        private const val KEY_ONBOARDING_SEEN = "smart_notifications_onboarding_seen"
         private const val KEY_VSEGPT_API_KEY = "vsegpt_api_key"
 
         private fun securePrefs(context: Context): SharedPreferences {

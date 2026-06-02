@@ -24,8 +24,6 @@ import com.example.chatapp.data.AccountScopedSettings
 import com.example.chatapp.data.AccountExitLimitResult
 import com.example.chatapp.data.AccountExitLimiter
 import com.example.chatapp.developer.DeveloperMenuActivity
-import com.example.chatapp.notifications.SmartNotificationsPermissionManager
-import com.example.chatapp.notifications.SmartNotificationsSettingsStore
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.data.SharedPrefsAccountSessionStore
 import com.example.chatapp.ui.AnimatedAvatarBorderDrawable
@@ -46,12 +44,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var accountExitLimitNotificationHelper: AccountExitLimitNotificationHelper
     private lateinit var accountSettings: AccountScopedSettings
     private lateinit var aiProviderSettings: AiProviderSettings
-    private lateinit var smartNotificationsSettings: SmartNotificationsSettingsStore
     private var appliedLanguageCode: String? = null
     private var avatarBorderDrawable: AnimatedAvatarBorderDrawable? = null
     private var profileCardDrawable: AnimatedProfileCardDrawable? = null
     private var pendingLogoutLimitNotificationHours: Long? = null
-    private var updatingSmartNotificationsSwitch = false
     private var developerMenuLongPressCount = 0
     private var firstDeveloperMenuLongPressAt = 0L
 
@@ -94,7 +90,6 @@ class SettingsActivity : AppCompatActivity() {
         accountSettings = AccountScopedSettings(this)
         accountSettings.migrateLegacyDataIfNeeded()
         aiProviderSettings = AiProviderSettings(accountSettings)
-        smartNotificationsSettings = SmartNotificationsSettingsStore(this)
         appliedLanguageCode = LocaleHelper.getSelectedLanguage(this)
 
         updateProfileUi()
@@ -135,7 +130,9 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, DigitalAssistantSettingsActivity::class.java))
         }
 
-        setupSmartNotificationsSettings()
+        findViewById<View>(R.id.itemSmartNotifications).setHapticClickListener {
+            startActivity(Intent(this, SmartNotificationsSettingsActivity::class.java))
+        }
 
         findViewById<View>(R.id.itemLinks).setHapticClickListener {
             startActivity(Intent(this, SharedLinksActivity::class.java))
@@ -171,7 +168,6 @@ class SettingsActivity : AppCompatActivity() {
         appliedLanguageCode = currentLanguageCode
         updateProfileUi()
         applyTranslations()
-        updateSmartNotificationsUi()
     }
 
     override fun onPause() {
@@ -265,7 +261,6 @@ class SettingsActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "digital_assistant_short_title")
         findViewById<TextView>(R.id.tvLabelSmartNotifications)?.text =
             LocaleHelper.getString(this, "smart_notifications_title")
-        updateSmartNotificationsUi()
 
         findViewById<TextView>(R.id.tvLabelAbout)?.text = LocaleHelper.getString(this, "button_about")
         findViewById<TextView>(R.id.tvLabelReport)?.text = LocaleHelper.getString(this, "button_report_problem")
@@ -306,121 +301,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun aiProviderSummary(): String {
         return aiProviderSettings.getSelectedModel().displayName
-    }
-
-    private fun setupSmartNotificationsSettings() {
-        findViewById<View>(R.id.itemSmartNotifications).setHapticClickListener {
-            handleSmartNotificationsClick()
-        }
-
-        findViewById<SwitchMaterial>(R.id.switchSmartNotifications).setOnCheckedChangeListener { _, isChecked ->
-            if (updatingSmartNotificationsSwitch) return@setOnCheckedChangeListener
-            if (isChecked) {
-                handleSmartNotificationsClick()
-            } else {
-                smartNotificationsSettings.isEnabled = false
-                updateSmartNotificationsUi()
-            }
-        }
-    }
-
-    private fun handleSmartNotificationsClick() {
-        if (!smartNotificationsSettings.hasSeenOnboarding || !smartNotificationsSettings.hasVseGptApiKey()) {
-            showSmartNotificationsOnboardingSheet()
-            updateSmartNotificationsUi()
-            return
-        }
-
-        val hasAccess = SmartNotificationsPermissionManager.hasNotificationListenerAccess(this)
-        if (!hasAccess) {
-            smartNotificationsSettings.isEnabled = true
-            openSmartNotificationsAccessSettings()
-            updateSmartNotificationsUi()
-            return
-        }
-
-        smartNotificationsSettings.isEnabled = !smartNotificationsSettings.isEnabled
-        updateSmartNotificationsUi()
-    }
-
-    private fun updateSmartNotificationsUi() {
-        if (!::smartNotificationsSettings.isInitialized) return
-
-        val hasApiKey = smartNotificationsSettings.hasVseGptApiKey()
-        val hasAccess = SmartNotificationsPermissionManager.hasNotificationListenerAccess(this)
-        val isEffectivelyEnabled = smartNotificationsSettings.isEnabled && hasApiKey && hasAccess
-
-        updatingSmartNotificationsSwitch = true
-        findViewById<SwitchMaterial>(R.id.switchSmartNotifications)?.isChecked = isEffectivelyEnabled
-        updatingSmartNotificationsSwitch = false
-
-        findViewById<TextView>(R.id.tvSmartNotificationsValue)?.text = when {
-            !hasApiKey -> LocaleHelper.getString(this, "smart_notifications_status_api_key_needed")
-            smartNotificationsSettings.isEnabled && !hasAccess ->
-                LocaleHelper.getString(this, "smart_notifications_status_permission_needed")
-            isEffectivelyEnabled -> LocaleHelper.getString(this, "smart_notifications_status_enabled")
-            else -> LocaleHelper.getString(this, "smart_notifications_status_disabled")
-        }
-    }
-
-    private fun showSmartNotificationsOnboardingSheet() {
-        val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_smart_notifications, null)
-        dialog.setContentView(view)
-
-        dialog.setOnShowListener { dialogInterface ->
-            val sheetDialog = dialogInterface as BottomSheetDialog
-            sheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.setBackgroundColor(Color.TRANSPARENT)
-        }
-
-        val apiKeyInput = view.findViewById<EditText>(R.id.etSmartNotificationsApiKey)
-        val savedKeyHint = view.findViewById<TextView>(R.id.tvSmartNotificationsApiKeySavedHint)
-        if (smartNotificationsSettings.hasVseGptApiKey()) {
-            savedKeyHint.visibility = View.VISIBLE
-        }
-
-        view.findViewById<View>(R.id.btnSmartNotificationsAllowAccess).setHapticClickListener {
-            val enteredApiKey = apiKeyInput.text?.toString()?.trim().orEmpty()
-            if (enteredApiKey.isNotBlank()) {
-                smartNotificationsSettings.saveVseGptApiKey(enteredApiKey)
-            }
-
-            if (!smartNotificationsSettings.hasVseGptApiKey()) {
-                Toast.makeText(
-                    this,
-                    LocaleHelper.getString(this, "smart_notifications_key_missing"),
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setHapticClickListener
-            }
-
-            smartNotificationsSettings.hasSeenOnboarding = true
-            smartNotificationsSettings.isEnabled = true
-            dialog.dismiss()
-            openSmartNotificationsAccessSettings()
-            updateSmartNotificationsUi()
-        }
-
-        dialog.show()
-    }
-
-    private fun openSmartNotificationsAccessSettings() {
-        try {
-            startActivity(SmartNotificationsPermissionManager.notificationListenerSettingsIntent())
-        } catch (_: ActivityNotFoundException) {
-            Toast.makeText(
-                this,
-                LocaleHelper.getString(this, "smart_notifications_settings_unavailable"),
-                Toast.LENGTH_LONG
-            ).show()
-        } catch (_: SecurityException) {
-            Toast.makeText(
-                this,
-                LocaleHelper.getString(this, "smart_notifications_settings_unavailable"),
-                Toast.LENGTH_LONG
-            ).show()
-        }
     }
 
     private fun handleLogoutClick() {

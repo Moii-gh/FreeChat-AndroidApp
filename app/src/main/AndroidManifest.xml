@@ -239,6 +239,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
+            android:name=".SmartNotificationsSettingsActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
             android:name=".PersonalizationActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize"
