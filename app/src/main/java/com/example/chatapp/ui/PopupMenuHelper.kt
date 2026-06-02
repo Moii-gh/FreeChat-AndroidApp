@@ -38,7 +38,7 @@ class PopupMenuHelper(
     private val onRegenerate: ((AssistantMessageWrapper) -> Unit)? = null,
     private val onEditUserMessage: ((Int, String) -> Unit)? = null
 ) {
-    private val standardMenuWidth by lazy { 300.dpToPx() }
+    private val standardMenuWidth by lazy { 280.dpToPx() }
 
     /**
      * Popup при long press на элемент чата в drawer.
@@ -107,7 +107,7 @@ class PopupMenuHelper(
                 outlineSpotShadowColor = Color.parseColor("#4D000000")
                 outlineAmbientShadowColor = Color.parseColor("#4D000000")
             }
-            setPadding(12.dpToPx(), 16.dpToPx(), 12.dpToPx(), 16.dpToPx())
+            setPadding(10.dpToPx(), 12.dpToPx(), 10.dpToPx(), 12.dpToPx())
 
             layoutParams = FrameLayout.LayoutParams(standardMenuWidth, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 leftMargin = x + 72.dpToPx()
@@ -209,7 +209,7 @@ class PopupMenuHelper(
                 outlineSpotShadowColor = Color.parseColor("#4D000000")
                 outlineAmbientShadowColor = Color.parseColor("#4D000000")
             }
-            setPadding(12.dpToPx(), 16.dpToPx(), 12.dpToPx(), 16.dpToPx())
+            setPadding(10.dpToPx(), 12.dpToPx(), 10.dpToPx(), 12.dpToPx())
         }
 
         val popupWindow = PopupWindow(
@@ -229,7 +229,8 @@ class PopupMenuHelper(
             text = displayTitle
             setTextColor(Color.parseColor("#9E9E9E"))
             textSize = 15f
-            setPadding(20.dpToPx(), 16.dpToPx(), 20.dpToPx(), 10.dpToPx())
+            setTypeface(null, Typeface.BOLD)
+            setPadding(18.dpToPx(), 14.dpToPx(), 18.dpToPx(), 8.dpToPx())
         })
 
         // Переименовать
@@ -270,8 +271,13 @@ class PopupMenuHelper(
         popupView.scaleX = 0.95f
         popupView.scaleY = 0.95f
 
-        val xOffset = anchorView.width - standardMenuWidth
-        popupWindow.showAsDropDown(anchorView, xOffset, 4.dpToPx())
+        val location = IntArray(2)
+        anchorView.getLocationOnScreen(location)
+        val screenWidth = activity.resources.displayMetrics.widthPixels
+        val x = screenWidth - standardMenuWidth - 12.dpToPx()
+        val y = (location[1] - 12.dpToPx()).coerceAtLeast(16.dpToPx())
+
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y)
         try {
             val container = popupView.rootView
             val p = container.layoutParams as? WindowManager.LayoutParams
@@ -285,6 +291,8 @@ class PopupMenuHelper(
             e.printStackTrace()
         }
 
+        popupView.pivotX = standardMenuWidth.toFloat()
+        popupView.pivotY = 0f
         popupView.animate()
             .alpha(1f).scaleX(1f).scaleY(1f)
             .setDuration(220)
@@ -429,8 +437,8 @@ class PopupMenuHelper(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             
-            val pHorizontal = if (compact) 12.dpToPx() else 20.dpToPx()
-            val pVertical = if (compact) 6.dpToPx() else 14.dpToPx()
+            val pHorizontal = if (compact) 12.dpToPx() else 16.dpToPx()
+            val pVertical = if (compact) 6.dpToPx() else 10.dpToPx()
             setPadding(pHorizontal, pVertical, pHorizontal, pVertical)
             
             layoutParams = LinearLayout.LayoutParams(
@@ -438,11 +446,11 @@ class PopupMenuHelper(
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 if (!compact) {
-                    topMargin = 2.dpToPx()
-                    bottomMargin = 2.dpToPx()
+                    topMargin = 1.dpToPx()
+                    bottomMargin = 1.dpToPx()
                 }
             }
-            minimumHeight = if (compact) 36.dpToPx() else 52.dpToPx()
+            minimumHeight = if (compact) 36.dpToPx() else 48.dpToPx()
             isClickable = true
             isFocusable = true
             val outValue = TypedValue()
@@ -461,8 +469,8 @@ class PopupMenuHelper(
             addView(TextView(activity).apply {
                 this.text = text
                 setTextColor(tintColor)
-                textSize = if (compact) 14f else 16f
-                setPadding(if (compact) 10.dpToPx() else 16.dpToPx(), 0, 0, 0)
+                textSize = if (compact) 14f else 15f
+                setPadding(if (compact) 10.dpToPx() else 14.dpToPx(), 0, 0, 0)
             })
 
             setOnClickListener { onClick() }
