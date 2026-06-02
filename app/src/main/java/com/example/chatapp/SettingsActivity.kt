@@ -33,11 +33,19 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.example.chatapp.util.setHapticClickListener
+import android.widget.FrameLayout
+import com.yandex.mobile.ads.banner.BannerAdEventListener
+import com.yandex.mobile.ads.banner.BannerAdSize
+import com.yandex.mobile.ads.banner.BannerAdView
+import com.yandex.mobile.ads.common.AdRequest
+import com.yandex.mobile.ads.common.AdRequestError
+import com.yandex.mobile.ads.common.ImpressionData
 
 class SettingsActivity : AppCompatActivity() {
 
     private var ivDialogAvatar: ImageView? = null
     private var dialogAvatarLetter: TextView? = null
+    private var adView: BannerAdView? = null
 
     private lateinit var sessionStore: SharedPrefsAccountSessionStore
     private lateinit var accountExitLimiter: AccountExitLimiter
@@ -155,6 +163,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         bindDeveloperMenuEntryGesture()
+        setupAdBanner()
     }
 
     override fun onResume() {
@@ -504,10 +513,49 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupAdBanner() {
+        val container = findViewById<FrameLayout>(R.id.settingsAdContainer) ?: return
+        val displayMetrics = resources.displayMetrics
+        val screenWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
+        val widthDp = (screenWidthDp - 32).coerceAtLeast(320)
+        val adSize = BannerAdSize.stickySize(this, widthDp)
+
+        val banner = BannerAdView(this).apply {
+            setAdUnitId(SETTINGS_BANNER_AD_UNIT_ID)
+            setAdSize(adSize)
+            setBannerAdEventListener(object : BannerAdEventListener {
+                override fun onAdLoaded() {
+                    alpha = 0f
+                    visibility = View.VISIBLE
+                    animate().alpha(1f).setDuration(200).start()
+                }
+
+                override fun onAdFailedToLoad(error: AdRequestError) {
+                    visibility = View.GONE
+                }
+
+                override fun onAdClicked() = Unit
+                override fun onLeftApplication() = Unit
+                override fun onReturnedToApplication() = Unit
+                override fun onImpression(impressionData: ImpressionData?) = Unit
+            })
+        }
+        adView = banner
+        container.addView(banner)
+        banner.loadAd(AdRequest.Builder().build())
+    }
+
+    override fun onDestroy() {
+        adView?.destroy()
+        adView = null
+        super.onDestroy()
+    }
+
     private companion object {
         const val DEVELOPER_MENU_ENTRY_WINDOW_MS = 5_000L
         const val PRIVACY_POLICY_URL = "https://freechat-privacy-policy.onrender.com/"
         const val REPORT_PROBLEM_URL = "https://t.me/of_MOII"
         const val SOURCE_CODE_URL = "https://github.com/Moii-gh/FreeChat-AndroidApp"
+        const val SETTINGS_BANNER_AD_UNIT_ID = "R-M-19376957-3"
     }
 }
