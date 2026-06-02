@@ -147,6 +147,9 @@ class SmartNotificationsWhitelistActivity : AppCompatActivity() {
                     val appInfo = packageInfo.applicationInfo ?: return@mapNotNull null
                     if (appInfo.packageName == currentPkgName) return@mapNotNull null
 
+                    val isSystem = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+                    if (isSystem) return@mapNotNull null
+
                     val label = pm.getApplicationLabel(appInfo).toString()
                     val icon = try {
                         pm.getApplicationIcon(appInfo)
