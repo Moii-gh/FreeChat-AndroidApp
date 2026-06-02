@@ -38,7 +38,7 @@ class PopupMenuHelper(
     private val onRegenerate: ((AssistantMessageWrapper) -> Unit)? = null,
     private val onEditUserMessage: ((Int, String) -> Unit)? = null
 ) {
-    private val standardMenuWidth by lazy { 258.dpToPx() }
+    private val standardMenuWidth by lazy { 300.dpToPx() }
 
     /**
      * Popup при long press на элемент чата в drawer.
@@ -102,15 +102,19 @@ class PopupMenuHelper(
         val menuLayout = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_bg)
-            elevation = 24f
-            setPadding(8.dpToPx(), 10.dpToPx(), 8.dpToPx(), 10.dpToPx())
+            elevation = 28f
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                outlineSpotShadowColor = Color.parseColor("#4D000000")
+                outlineAmbientShadowColor = Color.parseColor("#4D000000")
+            }
+            setPadding(12.dpToPx(), 16.dpToPx(), 12.dpToPx(), 16.dpToPx())
 
             layoutParams = FrameLayout.LayoutParams(standardMenuWidth, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 leftMargin = x + 72.dpToPx()
             }
             alpha = 0f
-            scaleX = 0.8f
-            scaleY = 0.8f
+            scaleX = 0.95f
+            scaleY = 0.95f
         }
 
         // Пункты меню
@@ -138,8 +142,6 @@ class PopupMenuHelper(
             dialog.dismiss()
             pinChatShortcut(activity, chat)
         })
-
-        menuLayout.addView(createMenuDivider())
 
         menuLayout.addView(createPopupMenuItem(R.drawable.ic_delete, LocaleHelper.getString(activity, "button_delete"), Color.parseColor("#FF453A")) {
             dialog.dismiss()
@@ -176,7 +178,7 @@ class PopupMenuHelper(
 
                 menuLayout.animate().alpha(1f).scaleX(1f).scaleY(1f)
                     .setDuration(220)
-                    .setInterpolator(android.view.animation.OvershootInterpolator(1.1f))
+                    .setInterpolator(android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f))
                     .start()
             }
         })
@@ -185,7 +187,13 @@ class PopupMenuHelper(
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
 
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                attributes.blurBehindRadius = 45.dpToPx()
+            }
+        }
         dialog.show()
     }
 
@@ -196,8 +204,12 @@ class PopupMenuHelper(
         val popupView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_translucent_bg)
-            elevation = 24f
-            setPadding(8.dpToPx(), 10.dpToPx(), 8.dpToPx(), 10.dpToPx())
+            elevation = 28f
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                outlineSpotShadowColor = Color.parseColor("#4D000000")
+                outlineAmbientShadowColor = Color.parseColor("#4D000000")
+            }
+            setPadding(12.dpToPx(), 16.dpToPx(), 12.dpToPx(), 16.dpToPx())
         }
 
         val popupWindow = PopupWindow(
@@ -207,7 +219,7 @@ class PopupMenuHelper(
             true
         ).apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            elevation = 24f
+            elevation = 28f
             isOutsideTouchable = true
         }
 
@@ -215,9 +227,9 @@ class PopupMenuHelper(
         val displayTitle = if (chat.title.length > 25) chat.title.substring(0, 25) + "..." else chat.title
         popupView.addView(TextView(activity).apply {
             text = displayTitle
-            setTextColor(Color.parseColor("#8E8E93"))
-            textSize = 13f
-            setPadding(14.dpToPx(), 8.dpToPx(), 14.dpToPx(), 8.dpToPx())
+            setTextColor(Color.parseColor("#9E9E9E"))
+            textSize = 15f
+            setPadding(20.dpToPx(), 16.dpToPx(), 20.dpToPx(), 10.dpToPx())
         })
 
         // Переименовать
@@ -248,8 +260,6 @@ class PopupMenuHelper(
         })
 
 
-        popupView.addView(createMenuDivider())
-
         // Удалить
         popupView.addView(createPopupMenuItem(R.drawable.ic_delete, LocaleHelper.getString(activity, "button_delete"), Color.parseColor("#FF453A")) {
             popupWindow.dismiss()
@@ -257,16 +267,28 @@ class PopupMenuHelper(
         })
 
         popupView.alpha = 0f
-        popupView.scaleX = 0.92f
-        popupView.scaleY = 0.92f
+        popupView.scaleX = 0.95f
+        popupView.scaleY = 0.95f
 
         val xOffset = anchorView.width - standardMenuWidth
         popupWindow.showAsDropDown(anchorView, xOffset, 4.dpToPx())
+        try {
+            val container = popupView.rootView
+            val p = container.layoutParams as? WindowManager.LayoutParams
+            if (p != null) {
+                p.flags = p.flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
+                p.dimAmount = 0.35f
+                val wm = activity.getSystemService(android.content.Context.WINDOW_SERVICE) as WindowManager
+                wm.updateViewLayout(container, p)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         popupView.animate()
             .alpha(1f).scaleX(1f).scaleY(1f)
-            .setDuration(180)
-            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
+            .setDuration(220)
+            .setInterpolator(android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f))
             .start()
     }
 
@@ -407,15 +429,20 @@ class PopupMenuHelper(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             
-            val pHorizontal = if (compact) 12.dpToPx() else 14.dpToPx()
-            val pVertical = if (compact) 6.dpToPx() else 12.dpToPx()
+            val pHorizontal = if (compact) 12.dpToPx() else 20.dpToPx()
+            val pVertical = if (compact) 6.dpToPx() else 14.dpToPx()
             setPadding(pHorizontal, pVertical, pHorizontal, pVertical)
             
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            minimumHeight = if (compact) 36.dpToPx() else 46.dpToPx()
+            ).apply {
+                if (!compact) {
+                    topMargin = 2.dpToPx()
+                    bottomMargin = 2.dpToPx()
+                }
+            }
+            minimumHeight = if (compact) 36.dpToPx() else 52.dpToPx()
             isClickable = true
             isFocusable = true
             val outValue = TypedValue()
@@ -426,16 +453,16 @@ class PopupMenuHelper(
                 setImageResource(iconRes)
                 setColorFilter(tintColor)
                 layoutParams = LinearLayout.LayoutParams(
-                    if (compact) 16.dpToPx() else 18.dpToPx(),
-                    if (compact) 16.dpToPx() else 18.dpToPx()
+                    if (compact) 16.dpToPx() else 24.dpToPx(),
+                    if (compact) 16.dpToPx() else 24.dpToPx()
                 )
             })
 
             addView(TextView(activity).apply {
                 this.text = text
                 setTextColor(tintColor)
-                textSize = if (compact) 14f else 15f
-                setPadding(if (compact) 10.dpToPx() else 12.dpToPx(), 0, 0, 0)
+                textSize = if (compact) 14f else 16f
+                setPadding(if (compact) 10.dpToPx() else 16.dpToPx(), 0, 0, 0)
             })
 
             setOnClickListener { onClick() }
