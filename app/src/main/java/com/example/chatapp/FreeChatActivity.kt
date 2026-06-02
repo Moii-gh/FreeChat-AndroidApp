@@ -1585,7 +1585,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     }
 
     private fun openTelegramBot() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/FreeChatAI_Robot"))
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/freechat_channel"))
         runCatching { startActivity(intent) }
             .onFailure { toast(LocaleHelper.getString(this, "toast_open_link_error")) }
     }

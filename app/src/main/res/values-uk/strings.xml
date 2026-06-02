@@ -204,7 +204,7 @@
     <string name="content_desc_remove_attachment">Видалити вкладення</string>
     <string name="content_desc_scroll_to_bottom">Перейти до останнього повідомлення</string>
     <string name="content_desc_send">Надіслати</string>
-    <string name="content_desc_telegram_bot">Відкрити Telegram-бота</string>
+    <string name="content_desc_telegram_bot">Відкрити Telegram</string>
     <string name="dialog_change_password">Зміна паролю</string>
     <string name="dialog_rename_hint">Нова назва</string>
     <string name="export_sender_bot">Бот</string>
