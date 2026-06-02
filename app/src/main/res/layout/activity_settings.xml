@@ -351,6 +351,67 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/itemSmartNotifications"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="58dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@android:color/transparent">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_brain"
+                app:tint="#FFFFFF"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvLabelSmartNotifications"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/smart_notifications_title"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/tvSmartNotificationsValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="@string/smart_notifications_status_disabled"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchSmartNotifications"
+                android:layout_width="50dp"
+                android:layout_height="30dp"
+                android:minWidth="50dp"
+                android:minHeight="30dp"
+                android:paddingHorizontal="3dp"
+                android:paddingVertical="2dp"
+                android:showText="false"
+                android:splitTrack="false"
+                android:textOff=""
+                android:textOn=""
+                android:thumb="@drawable/bg_assistant_switch_thumb"
+                app:track="@drawable/bg_assistant_switch_track"
+                app:useMaterialThemeColors="false"/>
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/itemLinks"
             android:layout_width="match_parent"
             android:layout_height="58dp"
