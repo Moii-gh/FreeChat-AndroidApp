@@ -100,7 +100,7 @@
                 android:layout_marginStart="16dp"
                 android:background="@drawable/bg_limit_circle"
                 android:gravity="center"
-                android:textColor="#a3d1ff"
+                android:textColor="#FFFFFF"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:includeFontPadding="false"
