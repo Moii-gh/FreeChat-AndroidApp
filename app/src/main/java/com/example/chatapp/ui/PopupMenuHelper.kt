@@ -229,7 +229,7 @@ class PopupMenuHelper(
             text = displayTitle
             setTextColor(Color.parseColor("#9E9E9E"))
             textSize = 15f
-            setTypeface(null, Typeface.BOLD)
+            setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL))
             setPadding(18.dpToPx(), 14.dpToPx(), 18.dpToPx(), 8.dpToPx())
         })
 
@@ -389,19 +389,35 @@ class PopupMenuHelper(
             isOutsideTouchable = true
         }
 
-        popupView.addView(createUserPopupMenuItem(R.drawable.ic_pen, LocaleHelper.getString(activity, "menu_edit_message"), Color.WHITE) {
-            popupWindow.dismiss()
-            onEditUserMessage?.invoke(historyIndex, message)
+        // Заголовок времени (Сегодня, h:mm a)
+        val timeFormat = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+        val formattedTime = timeFormat.format(java.util.Date())
+        val todayStr = if (java.util.Locale.getDefault().language == "ru" || java.util.Locale.getDefault().language == "uk") "Сегодня" else "Today"
+        val headerText = "$todayStr, $formattedTime"
+
+        popupView.addView(TextView(activity).apply {
+            text = headerText
+            setTextColor(Color.parseColor("#8E8E93"))
+            textSize = 13f
+            setPadding(18.dpToPx(), 12.dpToPx(), 18.dpToPx(), 8.dpToPx())
         })
 
+        // 1. Копировать
         popupView.addView(createUserPopupMenuItem(R.drawable.ic_copy, LocaleHelper.getString(activity, "menu_copy_text"), Color.WHITE) {
             popupWindow.dismiss()
             FileUtils.copyToClipboard(activity, message)
         })
 
+        // 2. Поделиться
         popupView.addView(createUserPopupMenuItem(R.drawable.ic_share, LocaleHelper.getString(activity, "share"), Color.WHITE) {
             popupWindow.dismiss()
             FileUtils.shareText(activity, message)
+        })
+
+        // 3. Редактировать сообщение
+        popupView.addView(createUserPopupMenuItem(R.drawable.ic_pen, LocaleHelper.getString(activity, "menu_edit_message"), Color.WHITE) {
+            popupWindow.dismiss()
+            onEditUserMessage?.invoke(historyIndex, message)
         })
 
         popupView.alpha = 0f
@@ -470,6 +486,7 @@ class PopupMenuHelper(
                 this.text = text
                 setTextColor(tintColor)
                 textSize = if (compact) 14f else 15f
+                setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL))
                 setPadding(if (compact) 10.dpToPx() else 14.dpToPx(), 0, 0, 0)
             })
 
@@ -487,8 +504,8 @@ class PopupMenuHelper(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             
-            val pHorizontal = 14.dpToPx()
-            val pVertical = 8.dpToPx()
+            val pHorizontal = 18.dpToPx()
+            val pVertical = 12.dpToPx()
             setPadding(pHorizontal, pVertical, pHorizontal, pVertical)
             
             layoutParams = LinearLayout.LayoutParams(
@@ -498,7 +515,7 @@ class PopupMenuHelper(
                 topMargin = 1.dpToPx()
                 bottomMargin = 1.dpToPx()
             }
-            minimumHeight = 40.dpToPx()
+            minimumHeight = 46.dpToPx()
             isClickable = true
             isFocusable = true
             val outValue = TypedValue()
@@ -508,14 +525,15 @@ class PopupMenuHelper(
             addView(ImageView(activity).apply {
                 setImageResource(iconRes)
                 setColorFilter(tintColor)
-                layoutParams = LinearLayout.LayoutParams(18.dpToPx(), 18.dpToPx())
+                layoutParams = LinearLayout.LayoutParams(20.dpToPx(), 20.dpToPx())
             })
 
             addView(TextView(activity).apply {
                 this.text = text
                 setTextColor(tintColor)
-                textSize = 14f
-                setPadding(12.dpToPx(), 0, 0, 0)
+                textSize = 16f
+                setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL))
+                setPadding(16.dpToPx(), 0, 0, 0)
             })
 
             setOnClickListener { onClick() }
