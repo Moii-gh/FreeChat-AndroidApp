@@ -125,10 +125,18 @@
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchSmartNotifications"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:thumb="@drawable/bg_assistant_switch_thumb"
-                    app:track="@drawable/bg_assistant_switch_track"
+                    android:layout_width="50dp"
+                    android:layout_height="30dp"
+                    android:minWidth="50dp"
+                    android:minHeight="30dp"
+                    android:paddingHorizontal="3dp"
+                    android:paddingVertical="2dp"
+                    android:showText="false"
+                    android:splitTrack="false"
+                    android:textOff=""
+                    android:textOn=""
+                    android:thumb="@drawable/bg_adult_switch_thumb"
+                    app:track="@drawable/bg_adult_switch_track"
                     app:useMaterialThemeColors="false" />
             </LinearLayout>
 
