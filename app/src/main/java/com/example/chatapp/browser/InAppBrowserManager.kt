@@ -67,6 +67,7 @@ class InAppBrowserManager(
     private var pageSplashLogo: ImageView? = null
     private var pageSplashAdView: BannerAdView? = null
     private var pageSplashAnimator: Animator? = null
+    private var progressAnimator: ValueAnimator? = null
     private var pageSplashToken = 0
     private var isBrowserVisible = false
     private var isBrowserOpening = false
@@ -135,7 +136,12 @@ class InAppBrowserManager(
         if (controller !== this.controller) return
         refreshToolbar()
         if (!controller.isLoading && controller.progress >= 100) {
-            hidePageLoadingSplash()
+            val currentToken = pageSplashToken
+            webContainer?.postDelayed({
+                if (currentToken == pageSplashToken) {
+                    hidePageLoadingSplash()
+                }
+            }, 7500L) // Задержка 7.5 секунд
         }
     }
 
@@ -459,6 +465,8 @@ class InAppBrowserManager(
         pageSplashToken += 1
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        progressAnimator?.cancel()
+        progressAnimator = null
         destroyPageSplashAd()
         pageSplashOverlay?.let { overlay ->
             (overlay.parent as? ViewGroup)?.removeView(overlay)
@@ -491,8 +499,10 @@ class InAppBrowserManager(
             ?: ""
         toolbarTitle?.text = title.ifBlank { "Web" }
         toolbarSubtitle?.text = BrowserUrlSanitizer.displayHost(active?.currentUrl)
-        progressBar?.progress = active?.progress ?: 0
-        progressBar?.isVisible = active?.isLoading == true
+        if (pageSplashOverlay == null) {
+            progressBar?.progress = active?.progress ?: 0
+            progressBar?.isVisible = active?.isLoading == true
+        }
         browserRefreshButton?.isEnabled = active != null
         browserRefreshButton?.alpha = if (active != null) BROWSER_CONTROL_ALPHA else 0.38f
     }
@@ -538,7 +548,22 @@ class InAppBrowserManager(
 
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        progressAnimator?.cancel()
+        progressAnimator = null
         destroyPageSplashAd()
+        
+        progressBar?.isVisible = true
+        progressBar?.progress = 0
+        progressAnimator = ValueAnimator.ofInt(0, 95).apply {
+            duration = 9000L // Анимируем до 95% за 9 секунд
+            addUpdateListener { animator ->
+                if (token == pageSplashToken) {
+                    progressBar?.progress = animator.animatedValue as Int
+                }
+            }
+            start()
+        }
+
         pageSplashOverlay?.let { existing ->
             (existing.parent as? ViewGroup)?.removeView(existing)
         }
@@ -684,6 +709,22 @@ class InAppBrowserManager(
 
         pageSplashAnimator?.cancel()
         pageSplashAnimator = null
+        
+        progressAnimator?.cancel()
+        val currentProgress = progressBar?.progress ?: 0
+        progressAnimator = ValueAnimator.ofInt(currentProgress, 100).apply {
+            duration = 300L // 300 мс на заполнение полосы до 100%
+            addUpdateListener { animator ->
+                progressBar?.progress = animator.animatedValue as Int
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    progressBar?.isVisible = false
+                }
+            })
+            start()
+        }
+
         overlay.isClickable = false
 
         val fadeOutAnimators = mutableListOf<Animator>(
@@ -1084,9 +1125,9 @@ class InAppBrowserManager(
         const val BROWSER_REFRESH_SPIN_DURATION_MS = 260L
         const val BROWSER_SPLASH_FADE_IN_MS = 280L
         const val BROWSER_SPLASH_FADE_OUT_MS = 420L
-        const val BROWSER_SPLASH_ROTATION_DURATION_MS = 42_000L
+        const val BROWSER_SPLASH_ROTATION_DURATION_MS = 3000L
         const val BROWSER_SPLASH_BANNER_FADE_IN_MS = 180L
-        const val BROWSER_SPLASH_BANNER_AD_UNIT_ID = "R-M-19145287-1"
+        const val BROWSER_SPLASH_BANNER_AD_UNIT_ID = "R-M-19376957-2"
         const val BROWSER_SPLASH_BANNER_HORIZONTAL_MARGIN_DP = 24
         const val BROWSER_SPLASH_BANNER_TOP_MARGIN_DP = 18
         const val BROWSER_SPLASH_BANNER_MIN_WIDTH_DP = 280
