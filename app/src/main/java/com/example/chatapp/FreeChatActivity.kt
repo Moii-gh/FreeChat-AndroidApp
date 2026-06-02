@@ -2143,6 +2143,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val pendingAttachments = attachmentPreviewController.currentAttachments
         if (text.isBlank() && pendingAttachments.isEmpty()) return
 
+        if (chatViewModel.currentMode == ChatMode.CREATE_IMAGE && !chatViewModel.consumeImageLimit()) {
+            refreshDailyQuotaUi()
+            toast(LocaleHelper.getString(this, "toast_image_limits_exhausted"))
+            return
+        }
+
         if (!chatViewModel.consumeLimit()) {
             refreshDailyQuotaUi()
             toast(LocaleHelper.getString(this, "toast_limits_exhausted"))
@@ -2354,6 +2360,12 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private fun editUserMessage(historyIndex: Int, newText: String) {
         if (isSending) return
         if (historyIndex !in 0 until chatViewModel.chatHistory.size) return
+
+        if (chatViewModel.currentMode == ChatMode.CREATE_IMAGE && !chatViewModel.consumeImageLimit()) {
+            refreshDailyQuotaUi()
+            toast(LocaleHelper.getString(this, "toast_image_limits_exhausted"))
+            return
+        }
 
         if (!chatViewModel.consumeLimit()) {
             refreshDailyQuotaUi()
@@ -2809,11 +2821,26 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                 } else {
                     val base = snapshot.baseRemaining ?: 0
                     val bonus = snapshot.bonusRequests
+                    val imgRemaining = snapshot.imageRemaining ?: 0
                     val textPrefix = LocaleHelper.getString(this, "label_limits_requests")
-                    val fullText = "$textPrefix: $base + $bonus"
+                    val fullText = "$textPrefix: $base + $bonus  \uD83D\uDDBC $imgRemaining"
                     SpannableString(fullText).apply {
                         val plusIndex = fullText.indexOf("+")
-                        if (plusIndex != -1) {
+                        val imgIndex = fullText.indexOf("\uD83D\uDDBC")
+                        if (plusIndex != -1 && imgIndex != -1) {
+                            setSpan(
+                                ForegroundColorSpan(Color.parseColor("#d1a3ff")),
+                                plusIndex,
+                                imgIndex - 1,
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                            )
+                            setSpan(
+                                ForegroundColorSpan(Color.parseColor("#a3d1ff")),
+                                imgIndex,
+                                fullText.length,
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                            )
+                        } else if (plusIndex != -1) {
                             setSpan(
                                 ForegroundColorSpan(Color.parseColor("#d1a3ff")),
                                 plusIndex,

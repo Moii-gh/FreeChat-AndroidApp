@@ -9,6 +9,9 @@ data class AiLimitsResponse(
     val baseRemaining: Int,
     val bonusRequests: Int,
     val totalRemaining: Int,
+    val dailyImageLimit: Int = 1,
+    val imageUsedToday: Int = 0,
+    val imageRemaining: Int = 1,
     val resetAt: String?
 )
 

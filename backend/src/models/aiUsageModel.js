@@ -109,8 +109,74 @@ async function consumeDailyRequest(userId, { limit, now = new Date() }) {
   });
 }
 
+function buildImageSnapshot(dailyImageLimit, usedToday, now = new Date(), allowed = true) {
+  const normalizedUsedCount = Number(usedToday || 0);
+  const imageRemaining = Math.max(dailyImageLimit - normalizedUsedCount, 0);
+
+  return {
+    allowed,
+    dailyImageLimit,
+    imageUsedToday: normalizedUsedCount,
+    imageRemaining,
+    resetAt: getNextResetAt(now)
+  };
+}
+
+async function getDailyImageUsageSnapshot(userId, { limit, now = new Date() }, executor) {
+  const db = getExecutor(executor);
+
+  const result = await db.query(
+    `select request_count
+     from ai_daily_image_usage
+     where user_id = $1
+       and usage_date = $2`,
+    [userId, getUsageDate(now)]
+  );
+
+  return buildImageSnapshot(limit, result.rows[0]?.request_count || 0, now);
+}
+
+async function consumeDailyImageRequest(userId, { limit, now = new Date() }) {
+  return await withTransaction(async (db) => {
+    const usageDate = getUsageDate(now);
+
+    const usageRes = await db.query(
+      `select request_count from ai_daily_image_usage where user_id = $1 and usage_date = $2`,
+      [userId, usageDate]
+    );
+    let usedToday = usageRes.rows[0]?.request_count || 0;
+
+    if (usedToday < limit) {
+      const result = await db.query(
+        `insert into ai_daily_image_usage (
+           user_id,
+           usage_date,
+           request_count,
+           updated_at
+         )
+         values ($1, $2, 1, now())
+         on conflict (user_id, usage_date) do update set
+           request_count = ai_daily_image_usage.request_count + 1,
+           updated_at = now()
+         where ai_daily_image_usage.request_count < $3
+         returning request_count`,
+        [userId, usageDate, limit]
+      );
+
+      if (result.rows[0]) {
+        return buildImageSnapshot(limit, result.rows[0].request_count, now, true);
+      }
+    }
+
+    // Over limit
+    return buildImageSnapshot(limit, usedToday, now, false);
+  });
+}
+
 module.exports = {
   getDailyUsageSnapshot,
   consumeDailyRequest,
+  getDailyImageUsageSnapshot,
+  consumeDailyImageRequest,
   getNextResetAt
 };

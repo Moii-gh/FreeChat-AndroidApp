@@ -21,6 +21,7 @@ function createFakeUserModel() {
 
 function createFakeAiUsageModel() {
   const counts = new Map();
+  const imageCounts = new Map();
 
   return {
     async getDailyUsageSnapshot(userId, { limit }) {
@@ -58,6 +59,38 @@ function createFakeAiUsageModel() {
         bonusRequests: 0,
         baseRemaining: Math.max(limit - next, 0),
         totalRemaining: Math.max(limit - next, 0),
+        resetAt: new Date(Date.now() + 60_000).toISOString()
+      };
+    },
+    async getDailyImageUsageSnapshot(userId, { limit }) {
+      const usedCount = imageCounts.get(userId) || 0;
+      return {
+        allowed: usedCount < limit,
+        dailyImageLimit: limit,
+        imageUsedToday: usedCount,
+        imageRemaining: Math.max(limit - usedCount, 0),
+        resetAt: new Date(Date.now() + 60_000).toISOString()
+      };
+    },
+    async consumeDailyImageRequest(userId, { limit }) {
+      const current = imageCounts.get(userId) || 0;
+      if (current >= limit) {
+        return {
+          allowed: false,
+          dailyImageLimit: limit,
+          imageUsedToday: current,
+          imageRemaining: 0,
+          resetAt: new Date(Date.now() + 60_000).toISOString()
+        };
+      }
+
+      const next = current + 1;
+      imageCounts.set(userId, next);
+      return {
+        allowed: true,
+        dailyImageLimit: limit,
+        imageUsedToday: next,
+        imageRemaining: Math.max(limit - next, 0),
         resetAt: new Date(Date.now() + 60_000).toISOString()
       };
     }

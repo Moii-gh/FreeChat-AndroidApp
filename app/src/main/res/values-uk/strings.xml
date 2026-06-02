@@ -404,6 +404,7 @@
     <string name="toast_liked">Сподобалося!</string>
     <string name="toast_limits_added">Ліміти додано. +5 запитів.</string>
     <string name="toast_limits_exhausted">Ліміти запитів вичерпані!</string>
+    <string name="toast_image_limits_exhausted">Ліміт на генерацію зображень вичерпано на сьогодні!</string>
     <string name="logout_limit_title">Ліміт виходів</string>
     <string name="logout_limit_message_hours">Ви зможете вийти знову через %d год.</string>
     <string name="logout_limit_message_less_than_hour">Ви зможете вийти знову менш ніж за годину.</string>

@@ -127,6 +127,15 @@ create table if not exists ai_daily_usage (
     primary key (user_id, usage_date)
 );
 
+create table if not exists ai_daily_image_usage (
+    user_id uuid not null references users(id) on delete cascade,
+    usage_date date not null,
+    request_count integer not null default 0,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    primary key (user_id, usage_date)
+);
+
 create table if not exists messages (
     id uuid primary key,
     chat_id uuid not null references chats(id) on delete cascade,

@@ -72,6 +72,10 @@ interface AccountSessionStore {
     fun saveDailyQuota(dailyLimit: Int?, baseRemaining: Int?, bonusRequests: Int?, resetAt: String?)
     fun consumeDailyRequest()
     fun addDailyRequests(amount: Int)
+    fun getDailyImageLimit(): Int?
+    fun getRemainingImageRequests(): Int?
+    fun saveImageQuota(dailyImageLimit: Int?, imageRemaining: Int?)
+    fun consumeImageRequest()
 }
 
 class SharedPrefsAccountSessionStore(
@@ -196,6 +200,26 @@ class SharedPrefsAccountSessionStore(
         prefs.edit().putInt(KEY_REWARDED_REQUESTS, rewarded + amount).apply()
     }
 
+    override fun getDailyImageLimit(): Int? =
+        if (prefs.contains(KEY_DAILY_IMAGE_LIMIT)) prefs.getInt(KEY_DAILY_IMAGE_LIMIT, 1) else null
+
+    override fun getRemainingImageRequests(): Int? =
+        if (prefs.contains(KEY_REMAINING_IMAGE_REQUESTS)) prefs.getInt(KEY_REMAINING_IMAGE_REQUESTS, 1) else null
+
+    override fun saveImageQuota(dailyImageLimit: Int?, imageRemaining: Int?) {
+        prefs.edit()
+            .putNullableInt(KEY_DAILY_IMAGE_LIMIT, dailyImageLimit)
+            .putNullableInt(KEY_REMAINING_IMAGE_REQUESTS, imageRemaining)
+            .apply()
+    }
+
+    override fun consumeImageRequest() {
+        val remaining = prefs.getInt(KEY_REMAINING_IMAGE_REQUESTS, 0)
+        if (remaining > 0) {
+            prefs.edit().putInt(KEY_REMAINING_IMAGE_REQUESTS, remaining - 1).apply()
+        }
+    }
+
     companion object {
         const val PREFS_NAME = SECURE_PREFS_NAME
         const val KEY_AUTH_TOKEN = "auth_token"
@@ -209,6 +233,8 @@ class SharedPrefsAccountSessionStore(
         const val KEY_REMAINING_DAILY_REQUESTS = "remaining_daily_requests"
         const val KEY_REWARDED_REQUESTS = "rewarded_requests"
         const val KEY_DAILY_QUOTA_RESETS_AT = "daily_quota_resets_at"
+        const val KEY_DAILY_IMAGE_LIMIT = "daily_image_limit"
+        const val KEY_REMAINING_IMAGE_REQUESTS = "remaining_image_requests"
     }
 }
 

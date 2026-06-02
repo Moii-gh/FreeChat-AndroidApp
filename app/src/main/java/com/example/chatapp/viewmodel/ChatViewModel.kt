@@ -57,7 +57,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val bonusRequests: Int,
         val totalRemaining: Int?,
         val dailyRequestLimit: Int?,
-        val resetsAt: String?
+        val resetsAt: String?,
+        val dailyImageLimit: Int?,
+        val imageRemaining: Int?
     )
 
     data class RenameChatResult(
@@ -980,6 +982,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             bonusRequests = limits.bonusRequests,
                             resetAt = limits.resetAt
                         )
+                        sessionStore.saveImageQuota(
+                            dailyImageLimit = limits.dailyImageLimit,
+                            imageRemaining = limits.imageRemaining
+                        )
                     }
                 }
             }
@@ -996,6 +1002,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
         val current = snapshot.totalRemaining ?: return true
         if (current <= 0) return false
+        return true
+    }
+
+    /** Расходует 1 запрос на генерацию изображений. Возвращает false если лимит исчерпан. */
+    fun consumeImageLimit(): Boolean {
+        val remaining = sessionStore.getRemainingImageRequests() ?: return true
+        if (remaining <= 0) return false
         return true
     }
 
@@ -1032,6 +1045,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             baseRemaining = limits.baseRemaining,
                             bonusRequests = limits.bonusRequests,
                             resetAt = limits.resetAt
+                        )
+                        sessionStore.saveImageQuota(
+                            dailyImageLimit = limits.dailyImageLimit,
+                            imageRemaining = limits.imageRemaining
                         )
                     }
                 }
@@ -1082,7 +1099,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             bonusRequests = bonusRequests,
             totalRemaining = totalRemaining,
             dailyRequestLimit = sessionStore.getDailyRequestLimit(),
-            resetsAt = sessionStore.getDailyQuotaResetsAt()
+            resetsAt = sessionStore.getDailyQuotaResetsAt(),
+            dailyImageLimit = sessionStore.getDailyImageLimit(),
+            imageRemaining = sessionStore.getRemainingImageRequests()
         )
     }
 

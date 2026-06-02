@@ -120,6 +120,11 @@ function validateChatRequestPayload(requestBody) {
   inspectAiValue(requestBody, { totalTextChars: 0 });
 }
 
+function isImageMode(currentMode) {
+  const mode = String(currentMode || "").trim().toLowerCase().replace(/-/g, "_");
+  return mode === "create_image" || mode === "image_edit" || mode === "edit_image";
+}
+
 function createAiController({ aiUsageModel }) {
   return {
     chat: async (req, res, next) => {
@@ -147,12 +152,32 @@ function createAiController({ aiUsageModel }) {
 
         validateChatRequestPayload(requestBody);
 
+        const isImage = isImageMode(validatedBody.currentMode);
+
+        // Check text quota
         const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
           limit: env.dailyAiRequestLimit
         });
 
         if (snapshot.totalRemaining <= 0) {
           return res.status(429).json(createQuotaResponse(snapshot));
+        }
+
+        // Check image quota
+        if (isImage) {
+          const imageSnapshot = await aiUsageModel.getDailyImageUsageSnapshot(user.id, {
+            limit: env.dailyAiImageLimit
+          });
+
+          if (imageSnapshot.imageRemaining <= 0) {
+            return res.status(429).json({
+              message: "Лимит генерации изображений исчерпан",
+              dailyImageLimit: imageSnapshot.dailyImageLimit,
+              imageUsedToday: imageSnapshot.imageUsedToday,
+              imageRemaining: imageSnapshot.imageRemaining,
+              resetAt: imageSnapshot.resetAt
+            });
+          }
         }
 
         await proxyAiRequest({
@@ -180,6 +205,13 @@ function createAiController({ aiUsageModel }) {
               }
 
               return res.status(429).json(createQuotaResponse(updatedSnapshot));
+            }
+
+            // Also consume image quota for image requests
+            if (isImage) {
+              await aiUsageModel.consumeDailyImageRequest(user.id, {
+                limit: env.dailyAiImageLimit
+              });
             }
 
             res.setHeader("X-Daily-Request-Limit", String(updatedSnapshot.dailyLimit));
@@ -308,12 +340,19 @@ function createAiController({ aiUsageModel }) {
           limit: env.dailyAiRequestLimit
         });
 
+        const imageSnapshot = await aiUsageModel.getDailyImageUsageSnapshot(user.id, {
+          limit: env.dailyAiImageLimit
+        });
+
         return res.status(200).json({
           dailyLimit: snapshot.dailyLimit,
           usedToday: snapshot.usedToday,
           bonusRequests: snapshot.bonusRequests,
           baseRemaining: snapshot.baseRemaining,
           totalRemaining: snapshot.totalRemaining,
+          dailyImageLimit: imageSnapshot.dailyImageLimit,
+          imageUsedToday: imageSnapshot.imageUsedToday,
+          imageRemaining: imageSnapshot.imageRemaining,
           resetAt: snapshot.resetAt
         });
       } catch (error) {
@@ -335,12 +374,19 @@ function createAiController({ aiUsageModel }) {
           limit: env.dailyAiRequestLimit
         });
 
+        const imageSnapshot = await aiUsageModel.getDailyImageUsageSnapshot(user.id, {
+          limit: env.dailyAiImageLimit
+        });
+
         return res.status(200).json({
           dailyLimit: snapshot.dailyLimit,
           usedToday: snapshot.usedToday,
           bonusRequests: snapshot.bonusRequests,
           baseRemaining: snapshot.baseRemaining,
           totalRemaining: snapshot.totalRemaining,
+          dailyImageLimit: imageSnapshot.dailyImageLimit,
+          imageUsedToday: imageSnapshot.imageUsedToday,
+          imageRemaining: imageSnapshot.imageRemaining,
           resetAt: snapshot.resetAt
         });
       } catch (error) {
