@@ -348,6 +348,12 @@
     <string name="smart_notifications_whitelist_search_hint">Cerca app...</string>
     <string name="smart_notifications_whitelist_empty">Nessuna app trovata</string>
     <string name="smart_notifications_whitelist_selected">Selezionato: %1$d</string>
+    <string name="smart_notification_spam_detected_title">Spam filtrato</string>
+    <string name="smart_notification_spam_detected_text">FreeChat ha nascosto una notifica di spam. Puoi leggerla nelle impostazioni.</string>
+    <string name="smart_notifications_spam_button">Leggi lo spam</string>
+    <string name="smart_notifications_spam_button_desc">Visualizza le notifiche di spam filtrate dall\'IA</string>
+    <string name="smart_notifications_spam_empty_state">Nessuna notifica di spam ancora</string>
+    <string name="smart_notifications_spam_title">Notifiche spam</string>
     <string name="share">Condividi</string>
     <string name="share_empty_response">Risposta di condivisione vuota</string>
     <string name="share_image">Condividi immagine</string>

@@ -67,6 +67,10 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.smartNotificationsWhitelistRow).setHapticClickListener {
             startActivity(Intent(this, SmartNotificationsWhitelistActivity::class.java))
         }
+
+        findViewById<View>(R.id.smartNotificationsSpamRow).setHapticClickListener {
+            startActivity(Intent(this, com.example.chatapp.notifications.SmartNotificationsSpamActivity::class.java))
+        }
     }
 
     private fun applyTranslations() {
@@ -86,6 +90,10 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "smart_notifications_whitelist_title")
         findViewById<TextView>(R.id.tvSmartNotificationsWhitelistDesc)?.text =
             LocaleHelper.getString(this, "smart_notifications_whitelist_desc")
+        findViewById<TextView>(R.id.tvSmartNotificationsSpamTitle)?.text =
+            LocaleHelper.getString(this, "smart_notifications_spam_button")
+        findViewById<TextView>(R.id.tvSmartNotificationsSpamDesc)?.text =
+            LocaleHelper.getString(this, "smart_notifications_spam_button_desc")
         findViewById<TextView>(R.id.tvHowItWorksTitle)?.text =
             LocaleHelper.getString(this, "smart_notifications_how_it_works_title")
         findViewById<TextView>(R.id.tvHowItWorksDesc)?.text =
@@ -127,6 +135,11 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
         val visibility = if (isEffectivelyEnabled) View.VISIBLE else View.GONE
         findViewById<View>(R.id.smartNotificationsDivider)?.visibility = visibility
         findViewById<View>(R.id.smartNotificationsWhitelistRow)?.visibility = visibility
+
+        val hasSpam = smartNotificationsSettings.spamNotifications.isNotEmpty()
+        val spamVisibility = if (isEffectivelyEnabled && hasSpam) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.smartNotificationsSpamDivider)?.visibility = spamVisibility
+        findViewById<View>(R.id.smartNotificationsSpamRow)?.visibility = spamVisibility
     }
 
     private fun openSmartNotificationsAccessSettings() {

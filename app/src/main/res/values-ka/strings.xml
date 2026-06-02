@@ -348,6 +348,12 @@
     <string name="smart_notifications_whitelist_search_hint">აპების ძებნა...</string>
     <string name="smart_notifications_whitelist_empty">აპები ვერ მოიძებნა</string>
     <string name="smart_notifications_whitelist_selected">არჩეულია: %1$d</string>
+    <string name="smart_notification_spam_detected_title">სპამი გაფილტრულია</string>
+    <string name="smart_notification_spam_detected_text">FreeChat-მა დამალა სპამ-შეტყობინება. შეგიძლიათ წაიკითხოთ პარამეტრებში.</string>
+    <string name="smart_notifications_spam_button">სპამის წაკითხვა</string>
+    <string name="smart_notifications_spam_button_desc">ნახეთ AI-ს მიერ გაფილტრული სპამ-შეტყობინებები</string>
+    <string name="smart_notifications_spam_empty_state">სპამ-შეტყობინებები არ არის</string>
+    <string name="smart_notifications_spam_title">სპამ-შეტყობინებები</string>
     <string name="share">გაზიარება</string>
     <string name="share_empty_response">გაზიარების ცარიელი პასუხი</string>
     <string name="share_image">სურათის გაზიარება</string>

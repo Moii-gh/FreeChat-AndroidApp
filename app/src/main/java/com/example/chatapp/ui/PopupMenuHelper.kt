@@ -370,7 +370,7 @@ class PopupMenuHelper(
     }
 
     fun showUserMessageOptionsMenu(anchorView: View, message: String, historyIndex: Int) {
-        val userMenuWidth = 272.dpToPx()
+        val userMenuWidth = 280.dpToPx()
         val popupView = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(activity, R.drawable.popup_menu_user_bg)
@@ -486,7 +486,7 @@ class PopupMenuHelper(
                 this.text = text
                 setTextColor(tintColor)
                 textSize = if (compact) 14f else 15f
-                setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL))
+                setTypeface(null, Typeface.BOLD)
                 setPadding(if (compact) 10.dpToPx() else 14.dpToPx(), 0, 0, 0)
             })
 
@@ -504,8 +504,8 @@ class PopupMenuHelper(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             
-            val pHorizontal = 18.dpToPx()
-            val pVertical = 12.dpToPx()
+            val pHorizontal = 16.dpToPx()
+            val pVertical = 10.dpToPx()
             setPadding(pHorizontal, pVertical, pHorizontal, pVertical)
             
             layoutParams = LinearLayout.LayoutParams(
@@ -515,7 +515,7 @@ class PopupMenuHelper(
                 topMargin = 1.dpToPx()
                 bottomMargin = 1.dpToPx()
             }
-            minimumHeight = 46.dpToPx()
+            minimumHeight = 44.dpToPx()
             isClickable = true
             isFocusable = true
             val outValue = TypedValue()
@@ -531,9 +531,9 @@ class PopupMenuHelper(
             addView(TextView(activity).apply {
                 this.text = text
                 setTextColor(tintColor)
-                textSize = 16f
-                setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL))
-                setPadding(16.dpToPx(), 0, 0, 0)
+                textSize = 15f
+                setTypeface(null, Typeface.BOLD)
+                setPadding(14.dpToPx(), 0, 0, 0)
             })
 
             setOnClickListener { onClick() }

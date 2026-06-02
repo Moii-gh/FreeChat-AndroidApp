@@ -12,6 +12,17 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import java.util.UUID
+import android.os.Build
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.example.chatapp.LocaleHelper
+import com.example.chatapp.SmartNotificationsSettingsActivity
+import com.example.chatapp.R
 
 class SmartNotificationListenerService : NotificationListenerService() {
 
@@ -41,10 +52,68 @@ class SmartNotificationListenerService : NotificationListenerService() {
             classificationLimiter.withPermit {
                 val decision = classifier.classify(payload)
                 if (decision == SmartNotificationDecision.SPAM) {
+                    val spam = SpamNotification(
+                        id = UUID.randomUUID().toString(),
+                        packageName = sbn.packageName,
+                        title = payload.title,
+                        text = payload.text,
+                        timestamp = System.currentTimeMillis()
+                    )
+                    settingsStore.addSpamNotification(spam)
+
                     runCatching { cancelNotification(notificationKey) }
                         .onFailure { SafeLog.w(TAG, "Failed to cancel spam notification", it) }
+
+                    if (!settingsStore.hasShownSpamNotificationTip) {
+                        settingsStore.hasShownSpamNotificationTip = true
+                        showFirstTimeSpamFilteredNotification()
+                    }
                 }
             }
+        }
+    }
+
+    private fun showFirstTimeSpamFilteredNotification() {
+        val context = applicationContext
+        val notificationManager = NotificationManagerCompat.from(context)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            val channel = NotificationChannel(
+                "smart_notifications_channel",
+                LocaleHelper.getString(context, "smart_notifications_title"),
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            manager.createNotificationChannel(channel)
+        }
+
+        val openSettingsIntent = Intent(context, SmartNotificationsSettingsActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            5501,
+            openSettingsIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val title = LocaleHelper.getString(context, "smart_notification_spam_detected_title")
+        val text = LocaleHelper.getString(context, "smart_notification_spam_detected_text")
+
+        val notification = NotificationCompat.Builder(context, "smart_notifications_channel")
+            .setSmallIcon(R.drawable.ic_freechat_notification)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        runCatching {
+            notificationManager.notify(5502, notification)
+        }.onFailure { error ->
+            SafeLog.w(TAG, "Could not show spam filtered notification", error)
         }
     }
 

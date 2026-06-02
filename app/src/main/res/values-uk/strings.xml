@@ -348,6 +348,12 @@
     <string name="smart_notifications_whitelist_search_hint">Пошук додатків...</string>
     <string name="smart_notifications_whitelist_empty">Додатки не знайдено</string>
     <string name="smart_notifications_whitelist_selected">Вибрано: %1$d</string>
+    <string name="smart_notification_spam_detected_title">Спам відфільтровано</string>
+    <string name="smart_notification_spam_detected_text">FreeChat приховав спам-сповіщення. Ви можете прочитати його в налаштуваннях.</string>
+    <string name="smart_notifications_spam_button">Читати спам</string>
+    <string name="smart_notifications_spam_button_desc">Перегляньте відфільтровані ШІ спам-сповіщення</string>
+    <string name="smart_notifications_spam_empty_state">Спам-сповіщень немає</string>
+    <string name="smart_notifications_spam_title">Спам-сповіщення</string>
     <string name="share">Поділитися</string>
     <string name="share_empty_response">Порожня відповідь для посилання</string>
     <string name="share_image">Поділитися зображенням</string>
