@@ -224,5 +224,31 @@
                 style="@style/DebugActionChevron"
                 android:src="@drawable/ic_chevron_right" />
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardRuStore"
+            style="@style/DebugActionCard">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_shopping_new"
+                app:tint="@color/security_text_primary" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_rustore_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_rustore_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                style="@style/DebugActionChevron"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

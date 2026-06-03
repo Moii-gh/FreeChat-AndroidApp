@@ -20,6 +20,7 @@ import com.yandex.mobile.ads.rewarded.RewardedAdLoader
  */
 class RewardedAdManager(
     private val activity: Activity,
+    private val adUnitId: String = "R-M-19376957-1",
     private val onRewarded: () -> Unit
 ) {
     private var rewardedAd: RewardedAd? = null
@@ -28,7 +29,6 @@ class RewardedAdManager(
 
     companion object {
         private const val TAG = "RewardedAdManager"
-        private const val AD_UNIT_ID = "R-M-19376957-1"
     }
 
     /** Инициализация загрузчика рекламы */
@@ -62,7 +62,7 @@ class RewardedAdManager(
         if (isLoading || rewardedAd != null) return
 
         isLoading = true
-        val config = AdRequestConfiguration.Builder(AD_UNIT_ID).build()
+        val config = AdRequestConfiguration.Builder(adUnitId).build()
         loader.loadAd(config)
     }
 

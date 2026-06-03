@@ -112,6 +112,18 @@ class DeveloperMenuActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardLogs).setHapticClickListener {
             showLogsSheet()
         }
+
+        findViewById<View>(R.id.cardRuStore).setHapticClickListener {
+            runCatching {
+                val intent = android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://www.rustore.ru/catalog/app/com.moii.freechat")
+                )
+                startActivity(intent)
+            }.onFailure {
+                showMessage("toast_open_link_error")
+            }
+        }
     }
 
     private fun clearCache() {

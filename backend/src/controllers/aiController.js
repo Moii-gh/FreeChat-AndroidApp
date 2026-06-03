@@ -38,7 +38,7 @@ function createQuotaResponse(snapshot) {
 }
 
 function getAllowedStringLength(path, value) {
-  if (path.endsWith(".image_url.url")) {
+  if (path.endsWith(".image_url") || path.endsWith(".image_url.url")) {
     return String(value).startsWith("data:image/")
       ? MAX_DATA_URL_LENGTH
       : MAX_URL_LENGTH;
@@ -71,7 +71,7 @@ function inspectAiValue(value, state, path = "request", depth = 0) {
       throw createBadRequestError(`AI request field ${path} is too large`);
     }
 
-    const isInlineImageUrl = path.endsWith(".image_url.url") && value.startsWith("data:image/");
+    const isInlineImageUrl = (path.endsWith(".image_url") || path.endsWith(".image_url.url")) && value.startsWith("data:image/");
     if (isInlineImageUrl || isInlineFileContentPath(path)) {
       return;
     }
@@ -383,6 +383,40 @@ function createAiController({ aiUsageModel }) {
 
         const { userModel } = require("../modelRegistry");
         await userModel.addBonusRequests(user.id, 5);
+
+        const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
+          limit: env.dailyAiRequestLimit
+        });
+
+        const imageSnapshot = await aiUsageModel.getDailyImageUsageSnapshot(user.id, {
+          limit: env.dailyAiImageLimit
+        });
+
+        return res.status(200).json({
+          dailyLimit: snapshot.dailyLimit,
+          usedToday: snapshot.usedToday,
+          bonusRequests: snapshot.bonusRequests,
+          baseRemaining: snapshot.baseRemaining,
+          totalRemaining: snapshot.totalRemaining,
+          dailyImageLimit: imageSnapshot.dailyImageLimit,
+          imageUsedToday: imageSnapshot.imageUsedToday,
+          imageRemaining: imageSnapshot.imageRemaining,
+          resetAt: snapshot.resetAt
+        });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    rewardImageAd: async (req, res, next) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const { userModel } = require("../modelRegistry");
+        await userModel.addImageBonusRequests(user.id, 1);
 
         const snapshot = await aiUsageModel.getDailyUsageSnapshot(user.id, {
           limit: env.dailyAiRequestLimit

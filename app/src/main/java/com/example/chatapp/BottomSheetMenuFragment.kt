@@ -175,7 +175,20 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
             AiCapabilities.IMAGE_GENERATION
         )
         val hasImageLimit = imageRemaining > 0
-        val isImageOptionAvailable = canCreateImages && hasImageLimit
+        val isImageOptionAvailable = canCreateImages
+
+        val tvDesc = view.findViewById<android.widget.TextView>(R.id.tvOptCreateImageDesc)
+        if (tvDesc != null) {
+            if (canCreateImages && !hasImageLimit) {
+                val adCount = sessionStore.getImageAdWatchCount()
+                tvDesc.text = String.format(
+                    LocaleHelper.getString(context, "image_ad_progress_description"),
+                    adCount
+                )
+            } else {
+                tvDesc.text = LocaleHelper.getString(context, "button_create_image_description")
+            }
+        }
 
         val optCreateImage = view.findViewById<View>(R.id.optCreateImage)
         if (optCreateImage != null) {
@@ -184,7 +197,17 @@ class BottomSheetMenuFragment : BottomSheetDialogFragment() {
                 if (!canCreateImages) {
                     toast(serverFeatureUnavailableMessage)
                 } else if (!hasImageLimit) {
-                    toast(LocaleHelper.getString(context, "toast_image_limits_exhausted"))
+                    val adCount = sessionStore.getImageAdWatchCount()
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                        .setTitle(LocaleHelper.getString(context, "image_ad_warning_title"))
+                        .setMessage(String.format(LocaleHelper.getString(context, "image_ad_warning_message"), adCount))
+                        .setPositiveButton(LocaleHelper.getString(context, "button_watch_ad")) { dialog, _ ->
+                            dialog.dismiss()
+                            dismiss()
+                            (activity as? FreeChatActivity)?.showImageAd()
+                        }
+                        .setNegativeButton(LocaleHelper.getString(context, "button_cancel"), null)
+                        .show()
                 } else {
                     val activity = activity as? ChatInputHost
                     activity?.setInputContext(

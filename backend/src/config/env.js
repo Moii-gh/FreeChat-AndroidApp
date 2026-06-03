@@ -94,7 +94,7 @@ const env = {
     process.env.OPENAI_GPT54_MODEL ||
     process.env.OPENAI_GPT54_MINI_MODEL ||
     "gpt-5.4-mini",
-  openAiImageModel: process.env.OPENAI_IMAGE_MODEL || "gpt-image-1",
+  openAiImageModel: process.env.OPENAI_IMAGE_MODEL || "img-openai/gpt-image-2",
   vsegptApiKey: process.env.VSEGPT_API_KEY || process.env.AI_API_KEY || "",
   vsegptChatUrl:
     process.env.VSEGPT_CHAT_URL ||
@@ -104,10 +104,13 @@ const env = {
     process.env.VSEGPT_IMAGE_URL ||
     process.env.AI_IMAGE_URL ||
     "https://api.vsegpt.ru/v1/images/generations",
+  vsegptImageEditUrl:
+    process.env.VSEGPT_IMAGE_EDIT_URL ||
+    "https://api.vsegpt.ru/v1/images/edits",
   vsegptGemini3ModelId:
     process.env.VSEGPT_GEMINI3_MODEL_ID || "google/gemma-4-26b-a4b-it",
   vsegptDeepSeekModelId:
-    process.env.VSEGPT_DEEPSEEK_MODEL_ID || "deepseek/deepseek-v4-flash",
+    process.env.VSEGPT_DEEPSEEK_MODEL_ID || "deepseek/deepseek-chat",
   aiImageFallbackProvider: process.env.AI_IMAGE_FALLBACK_PROVIDER || "vsegpt",
   aiImageFallbackModelKey: process.env.AI_IMAGE_FALLBACK_MODEL_KEY || "gemini3",
   aiApiKey: process.env.AI_API_KEY || "",
@@ -119,6 +122,7 @@ const env = {
   aiTextModel: process.env.AI_TEXT_MODEL || "",
   aiVisionModel: process.env.AI_VISION_MODEL || "",
   aiImageModel: process.env.AI_IMAGE_MODEL || "",
+  aiImageEditModel: process.env.AI_IMAGE_EDIT_MODEL || "img2img-openai/gpt-image-2-edit-multi",
   aiSearchModel: process.env.AI_SEARCH_MODEL || "",
   aiTitleModel: process.env.AI_TITLE_MODEL || "",
   aiSummaryModel: process.env.AI_SUMMARY_MODEL || "",

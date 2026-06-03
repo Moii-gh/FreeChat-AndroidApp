@@ -404,6 +404,12 @@
     <string name="toast_liked">Aimé !</string>
     <string name="toast_limits_added">Limites ajout?es. +5 requ?tes.</string>
     <string name="toast_limits_exhausted">Vous avez épuisé vos requêtes gratuites ! Appuyez sur le bouton +5 ci-dessus.</string>
+    <string name="toast_image_limits_exhausted">Vous avez épuisé vos requêtes de génération d\'images pour aujourd\'hui !</string>
+    <string name="toast_image_ad_watched">Publicité regardée. Progression : %d/10</string>
+    <string name="image_ad_progress_description">Modèle énorme : 10 publicités requises (%d/10)</string>
+    <string name="image_ad_warning_title">Génération d\'images</string>
+    <string name="image_ad_warning_message">La génération d\'images fonctionne désormais avec un modèle d\'IA géant. En raison de coûts de calcul élevés, vous devez regarder 10 vidéos sponsorisées pour une génération.\n\nPublicités regardées : %1$d sur 10.\n\nRegarder une publicité maintenant ?</string>
+    <string name="button_watch_ad">Regarder</string>
     <string name="logout_limit_title">Limite de d?connexion</string>
     <string name="logout_limit_message_hours">Vous pourrez vous d?connecter ? nouveau dans %d heures.</string>
     <string name="logout_limit_message_less_than_hour">Vous pourrez vous d?connecter ? nouveau dans moins d\'une heure.</string>

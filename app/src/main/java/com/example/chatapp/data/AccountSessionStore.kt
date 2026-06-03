@@ -76,6 +76,8 @@ interface AccountSessionStore {
     fun getRemainingImageRequests(): Int?
     fun saveImageQuota(dailyImageLimit: Int?, imageRemaining: Int?)
     fun consumeImageRequest()
+    fun getImageAdWatchCount(): Int
+    fun saveImageAdWatchCount(count: Int)
 }
 
 class SharedPrefsAccountSessionStore(
@@ -132,6 +134,7 @@ class SharedPrefsAccountSessionStore(
             remove(KEY_REMAINING_DAILY_REQUESTS)
             remove(KEY_REWARDED_REQUESTS)
             remove(KEY_DAILY_QUOTA_RESETS_AT)
+            remove(KEY_IMAGE_AD_WATCH_COUNT)
         }.apply()
     }
 
@@ -220,6 +223,12 @@ class SharedPrefsAccountSessionStore(
         }
     }
 
+    override fun getImageAdWatchCount(): Int = prefs.getInt(KEY_IMAGE_AD_WATCH_COUNT, 0)
+
+    override fun saveImageAdWatchCount(count: Int) {
+        prefs.edit().putInt(KEY_IMAGE_AD_WATCH_COUNT, count).apply()
+    }
+
     companion object {
         const val PREFS_NAME = SECURE_PREFS_NAME
         const val KEY_AUTH_TOKEN = "auth_token"
@@ -235,6 +244,7 @@ class SharedPrefsAccountSessionStore(
         const val KEY_DAILY_QUOTA_RESETS_AT = "daily_quota_resets_at"
         const val KEY_DAILY_IMAGE_LIMIT = "daily_image_limit"
         const val KEY_REMAINING_IMAGE_REQUESTS = "remaining_image_requests"
+        const val KEY_IMAGE_AD_WATCH_COUNT = "image_ad_watch_count"
     }
 }
 

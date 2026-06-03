@@ -4,7 +4,7 @@ const PROVIDER_OPENAI = "openai";
 const PROVIDER_VSEGPT = "vsegpt";
 const DEFAULT_PROVIDER = PROVIDER_OPENAI;
 const VSEGPT_DEEPSEEK_MODEL_KEY = "deepseek";
-const VSEGPT_DEEPSEEK_MODEL_ID = "deepseek/deepseek-v4-flash";
+const VSEGPT_DEEPSEEK_MODEL_ID = "deepseek/deepseek-chat";
 
 const DEFAULT_MODEL_BY_PROVIDER = {
   [PROVIDER_OPENAI]: "gpt54",
@@ -52,10 +52,11 @@ function providerConfig(provider) {
       chatUrl: env.vsegptChatUrl,
       responsesUrl: "",
       imageUrl: env.vsegptImageUrl,
-      imageEditUrl: "",
+      imageEditUrl: env.vsegptImageEditUrl,
       filesUrl: "",
       vectorStoresUrl: "",
       imageModel: env.aiImageModel || "img-flux/flux-2-klein-4b",
+      imageEditModel: env.aiImageEditModel || "img2img-openai/gpt-image-2-edit-multi",
       adultTextModel: env.aiAdultTextModel,
       searchModel: env.aiSearchModel,
       titleModel: env.aiTitleModel,
@@ -88,14 +89,14 @@ function allModelDefinitions() {
       modelKey: "gemini3",
       modelId: env.vsegptGemini3ModelId,
       displayName: "Gemini-3",
-      capabilities: ["text", "vision", "webSearch", "imageGeneration"]
+      capabilities: ["text", "vision", "webSearch", "imageGeneration", "imageEdit"]
     }),
     createModel({
       provider: PROVIDER_VSEGPT,
       modelKey: VSEGPT_DEEPSEEK_MODEL_KEY,
       modelId: normalizeVseGptModelId(env.vsegptDeepSeekModelId, VSEGPT_DEEPSEEK_MODEL_ID),
       displayName: "DeepSeek",
-      capabilities: ["text", "webSearch", "imageGeneration"]
+      capabilities: ["text", "webSearch", "imageGeneration", "imageEdit"]
     })
   ];
 }
@@ -196,6 +197,31 @@ function requestHasImageInput(requestBody) {
   }
 
   return requestBody.messages.some((message) => contentHasImage(message.content));
+}
+
+function requestHasImageEditInput(requestBody) {
+  if (!requestBody) {
+    return false;
+  }
+
+  const images = requestBody.images || requestBody.image || requestBody.imageEdit?.images || requestBody.image_edit?.images;
+  if (images) {
+    if (Array.isArray(images) && images.length > 0) {
+      return true;
+    }
+    if (typeof images === "string" && images.trim()) {
+      return true;
+    }
+    if (typeof images === "object") {
+      return true;
+    }
+  }
+
+  if (Array.isArray(requestBody.messages)) {
+    return requestBody.messages.some((message) => contentHasImage(message?.content));
+  }
+
+  return false;
 }
 
 function requestHasToolInput(requestBody) {
@@ -324,12 +350,15 @@ function selectChatModel({
   const { model, providerSettings } = requestSelection;
   const hasImageInput = requestHasImageInput(requestBody);
 
-  if (currentMode === "create_image") {
+  const isImageMode = currentMode === "create_image" || currentMode === "image_edit" || currentMode === "edit_image";
+  if (isImageMode) {
+    const isEdit = currentMode === "image_edit" || currentMode === "edit_image" || requestHasImageEditInput(requestBody);
+    const useEdit = isEdit && requestSelection.provider !== PROVIDER_OPENAI;
     return createSelection({
       requestSelection,
       model,
-      upstreamUrl: providerSettings.imageUrl,
-      modelId: providerSettings.imageModel
+      upstreamUrl: useEdit && providerSettings.imageEditUrl ? providerSettings.imageEditUrl : providerSettings.imageUrl,
+      modelId: useEdit && providerSettings.imageEditModel ? providerSettings.imageEditModel : providerSettings.imageModel
     });
   }
 

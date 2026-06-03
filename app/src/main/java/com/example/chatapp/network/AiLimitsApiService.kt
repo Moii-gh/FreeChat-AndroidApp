@@ -22,4 +22,7 @@ interface AiLimitsApiService {
 
     @POST("ai/reward-ad")
     suspend fun rewardAd(): Response<AiLimitsResponse>
+
+    @POST("ai/reward-image-ad")
+    suspend fun rewardImageAd(): Response<AiLimitsResponse>
 }

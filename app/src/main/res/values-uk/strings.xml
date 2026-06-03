@@ -405,6 +405,11 @@
     <string name="toast_limits_added">Ліміти додано. +5 запитів.</string>
     <string name="toast_limits_exhausted">Ліміти запитів вичерпані!</string>
     <string name="toast_image_limits_exhausted">Ліміт на генерацію зображень вичерпано на сьогодні!</string>
+    <string name="toast_image_ad_watched">Реклама переглянута. Прогрес: %d/10</string>
+    <string name="image_ad_progress_description">Величезна модель: потрібно 10 реклам (%d/10)</string>
+    <string name="image_ad_warning_title">Генерація зображень</string>
+    <string name="image_ad_warning_message">Генерація зображень тепер працює на величезній моделі ШІ. Через високу обчислювальну вартість для однієї генерації необхідно переглянути 10 спонсорських відео.\n\nПереглянуто реклами: %1$d з 10.\n\nПодивитися рекламу зараз?</string>
+    <string name="button_watch_ad">Дивитися</string>
     <string name="logout_limit_title">Ліміт виходів</string>
     <string name="logout_limit_message_hours">Ви зможете вийти знову через %d год.</string>
     <string name="logout_limit_message_less_than_hour">Ви зможете вийти знову менш ніж за годину.</string>
@@ -506,4 +511,8 @@
     <string name="toast_shortcut_added">Запит на створення ярлика надіслано</string>
     <string name="label_sponsored">Реклама</string>
     <string name="settings_ad_support">Підтримайте нас копієчкою 👉👈</string>
+    <string name="invite_friends_pill">Запросити друзів</string>
+    <string name="invite_friends_text">Приєднуйся до мене у FreeChat! Завантажуй з RuStore: https://www.rustore.ru/catalog/app/com.moii.freechat</string>
+    <string name="debug_rustore_title">RuStore</string>
+    <string name="debug_rustore_subtitle">Відкрити сторінку додатка в RuStore</string>
 </resources>

@@ -24,6 +24,7 @@ const USER_COLUMNS = `
   vk_email,
   auth_provider,
   bonus_requests,
+  image_bonus_requests,
   token_invalid_before,
   avatar_file_id,
   created_at
@@ -54,7 +55,8 @@ function toPublicUser(row) {
     avatarUrl: row.avatar_url ?? null,
     avatarThumbUrl: row.avatar_thumb_url ?? null,
     authProvider: row.auth_provider,
-    bonusRequests: row.bonus_requests ?? 0
+    bonusRequests: row.bonus_requests ?? 0,
+    imageBonusRequests: row.image_bonus_requests ?? 0
   };
 }
 
@@ -461,6 +463,17 @@ async function addBonusRequests(userId, amount, executor) {
   return result.rows[0];
 }
 
+async function addImageBonusRequests(userId, amount, executor) {
+  const result = await getExecutor(executor).query(
+    `update users
+     set image_bonus_requests = image_bonus_requests + $2
+     where id = $1
+     returning ${USER_COLUMNS}`,
+    [userId, amount]
+  );
+  return result.rows[0];
+}
+
 module.exports = {
   toPublicUser,
   findById,
@@ -479,5 +492,6 @@ module.exports = {
   verifyUser,
   attachTelegramIdentity,
   updatePassword,
-  addBonusRequests
+  addBonusRequests,
+  addImageBonusRequests
 };

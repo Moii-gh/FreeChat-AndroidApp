@@ -1059,6 +1059,52 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun getImageAdWatchCount(): Int = sessionStore.getImageAdWatchCount()
+
+    fun saveImageAdWatchCount(count: Int) {
+        sessionStore.saveImageAdWatchCount(count)
+    }
+
+    fun rewardImageAd(onDone: () -> Unit) {
+        val token = sessionStore.getAuthToken()?.trim().orEmpty()
+        if (token.isBlank()) {
+            val currentRemaining = sessionStore.getRemainingImageRequests() ?: 0
+            sessionStore.saveImageQuota(
+                sessionStore.getDailyImageLimit() ?: 1,
+                currentRemaining + 1
+            )
+            onDone()
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val service = NetworkModule.createAiLimitsApiService(
+                    com.example.chatapp.BuildConfig.APP_API_BASE_URL,
+                    token
+                )
+                val response = service.rewardImageAd()
+                if (response.isSuccessful) {
+                    response.body()?.let { limits ->
+                        sessionStore.saveDailyQuota(
+                            dailyLimit = limits.dailyLimit,
+                            baseRemaining = limits.baseRemaining,
+                            bonusRequests = limits.bonusRequests,
+                            resetAt = limits.resetAt
+                        )
+                        sessionStore.saveImageQuota(
+                            dailyImageLimit = limits.dailyImageLimit,
+                            imageRemaining = limits.imageRemaining
+                        )
+                    }
+                }
+            }
+            refreshDailyQuota {
+                onDone()
+            }
+        }
+    }
+
     fun loadPopularNewsQueries(onUpdated: (List<String>) -> Unit) {
         val token = sessionStore.getAuthToken()?.trim().orEmpty()
         if (token.isBlank() || aiProviderSettings.getProvider() != AiProvider.VSEGPT) {

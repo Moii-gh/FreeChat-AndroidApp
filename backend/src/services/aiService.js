@@ -249,7 +249,14 @@ function normalizeImageRequestBody(requestBody, model) {
 function normalizeProviderRequestBody(requestBody, selection) {
   const normalized = { ...(requestBody || {}) };
 
+  const isImageReq = selection?.upstreamUrl &&
+    (selection.upstreamUrl === selection.providerSettings?.imageUrl ||
+     selection.upstreamUrl === selection.providerSettings?.imageEditUrl);
+
   CHAT_COMPLETION_BACKEND_ONLY_FIELDS.forEach((field) => {
+    if (isImageReq && (field === "images" || field === "image" || field === "mask" || field === "imageEdit" || field === "image_edit")) {
+      return;
+    }
     delete normalized[field];
   });
 

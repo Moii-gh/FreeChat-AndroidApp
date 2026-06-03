@@ -135,12 +135,12 @@ function setAiEnv(overrides = {}) {
     openAiFilesUrl: "https://openai.example.test/v1/files",
     openAiVectorStoresUrl: "https://openai.example.test/v1/vector_stores",
     openAiGpt54Model: "gpt-5.4-mini",
-    openAiImageModel: "gpt-image-1",
+    openAiImageModel: "img-openai/gpt-image-2",
     vsegptApiKey: "vsegpt-test-key",
     vsegptChatUrl: "https://vsegpt.example.test/v1/chat/completions",
     vsegptImageUrl: "https://vsegpt.example.test/v1/images/generations",
     vsegptGemini3ModelId: "google/gemma-4-26b-a4b-it",
-    vsegptDeepSeekModelId: "deepseek/deepseek-v4-flash",
+    vsegptDeepSeekModelId: "deepseek/deepseek-chat",
     aiImageFallbackProvider: "vsegpt",
     aiImageFallbackModelKey: "gemini3",
     aiApiKey: "test-key",
@@ -398,7 +398,7 @@ test("POST /api/ai/notification-filter classifies notification through VseGPT De
     assert.deepEqual(response.body, { decision: "SPAM" });
     assert.equal(upstreamUrl, env.vsegptChatUrl);
     assert.equal(authorization, "Bearer vsegpt-test-key");
-    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
+    assert.equal(upstreamBody.model, "deepseek/deepseek-chat");
     assert.equal(upstreamBody.stream, false);
     assert.equal(upstreamBody.temperature, 0);
     assert.equal(upstreamBody.max_tokens, 4);
@@ -445,7 +445,7 @@ test("POST /api/ai/chat routes OpenAI image generation to the Images API", async
 
     assert.equal(response.status, 200);
     assert.equal(upstreamUrl, env.openAiImageUrl);
-    assert.equal(upstreamBody.model, "gpt-image-1");
+    assert.equal(upstreamBody.model, "img-openai/gpt-image-2");
     assert.equal(upstreamBody.prompt, "cat");
     assert.equal(upstreamBody.size, "1024x1024");
     assert.equal(response.body.data[0].b64_json, "aW1hZ2U=");
@@ -705,7 +705,7 @@ test("POST /api/ai/chat routes natural OpenAI image generation requests to Image
 
     assert.equal(response.status, 200);
     assert.equal(upstreamUrl, env.openAiImageUrl);
-    assert.equal(upstreamBody.model, "gpt-image-1");
+    assert.equal(upstreamBody.model, "img-openai/gpt-image-2");
     assert.equal(upstreamBody.prompt, "Нарисуй картинку кота в космосе");
   } finally {
     global.fetch = originalFetch;
@@ -756,7 +756,7 @@ test("POST /api/ai/chat routes natural OpenAI image edit requests with attached 
 
     assert.equal(response.status, 200);
     assert.equal(upstreamUrl, env.openAiImageEditUrl);
-    assert.equal(upstreamBody.model, "gpt-image-1");
+    assert.equal(upstreamBody.model, "img-openai/gpt-image-2");
     assert.equal(upstreamBody.prompt, "Отредактируй фото: сделай фон ярче");
     assert.equal(upstreamBody.images[0].image_url, "data:image/png;base64,aW1hZ2U=");
   } finally {
@@ -942,7 +942,7 @@ test("POST /api/ai/chat routes OpenAI image edit to the Images edit API", async 
 
     assert.equal(response.status, 200);
     assert.equal(upstreamUrl, env.openAiImageEditUrl);
-    assert.equal(upstreamBody.model, "gpt-image-1");
+    assert.equal(upstreamBody.model, "img-openai/gpt-image-2");
     assert.equal(upstreamBody.prompt, "Make the background brighter");
     assert.equal(upstreamBody.images[0].image_url, "data:image/png;base64,aW1hZ2U=");
     assert.equal(response.body.data[0].b64_json, "ZWRpdA==");
@@ -1013,11 +1013,20 @@ test("POST /api/ai/chat returns a clear error when VseGPT key is missing", async
   }
 });
 
-test("POST /api/ai/chat rejects unsupported image edit capability before wrong endpoint routing", async () => {
+test("POST /api/ai/chat supports VseGPT image edit capability and routes to edits endpoint", async () => {
   const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
-  global.fetch = async () => {
-    throw new Error("fetch should not be called for unsupported VseGPT image edit");
+  let upstreamUrl = "";
+  let upstreamBody = null;
+  global.fetch = async (url, init) => {
+    upstreamUrl = url;
+    upstreamBody = JSON.parse(init.body);
+    return new Response(JSON.stringify({ data: [{ url: "https://example.test/edited.png" }] }), {
+      status: 200,
+      headers: {
+        "content-type": "application/json"
+      }
+    });
   };
 
   try {
@@ -1039,8 +1048,10 @@ test("POST /api/ai/chat rejects unsupported image edit capability before wrong e
         }
       });
 
-    assert.equal(response.status, 501);
-    assert.equal(response.body.message, "Эта функция пока не подключена на сервере.");
+    assert.equal(response.status, 200);
+    assert.equal(upstreamUrl, env.vsegptImageEditUrl);
+    assert.equal(upstreamBody.model, "img2img-openai/gpt-image-2-edit-multi");
+    assert.equal(upstreamBody.images[0].image_url, "data:image/png;base64,aW1hZ2U=");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -1117,7 +1128,7 @@ test("GET /api/ai/models returns public model metadata without technical model i
     assert.ok(openAiModels[0].capabilities.includes("webSearch"));
     assert.ok(openAiModels[0].capabilities.includes("imageEdit"));
     assert.equal(JSON.stringify(response.body).includes("gpt-5.4-mini"), false);
-    assert.equal(JSON.stringify(response.body).includes("deepseek/deepseek-v4-flash"), false);
+    assert.equal(JSON.stringify(response.body).includes("deepseek/deepseek-chat"), false);
     assert.equal(JSON.stringify(response.body).includes("openai-test-key"), false);
   } finally {
     restoreEnv();
@@ -1192,7 +1203,7 @@ test("POST /api/ai/chat maps legacy DeepSeek request keys to the current model",
       });
 
     assert.equal(response.status, 200);
-    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
+    assert.equal(upstreamBody.model, "deepseek/deepseek-chat");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -1232,7 +1243,7 @@ test("POST /api/ai/chat normalizes retired DeepSeek env model ids", async () => 
       });
 
     assert.equal(response.status, 200);
-    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
+    assert.equal(upstreamBody.model, "deepseek/deepseek-chat");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -1272,7 +1283,7 @@ test("POST /api/ai/chat ignores retired VseGPT search overrides", async () => {
       });
 
     assert.equal(response.status, 200);
-    assert.equal(upstreamBody.model, "deepseek/deepseek-v4-flash");
+    assert.equal(upstreamBody.model, "deepseek/deepseek-chat");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -1518,6 +1529,69 @@ test("POST /api/ai/chat maps img-flux image size to aspect_ratio", async () => {
   }
 });
 
+test("POST /api/ai/chat routes VseGPT image generation with attached images to edits endpoint", async () => {
+  const restoreEnv = setAiEnv({
+    aiImageModel: "img-flux/flux-2-klein-4b",
+    aiImageEditModel: "img2img-openai/gpt-image-2-edit-multi",
+    dailyAiRequestLimit: 5
+  });
+  const originalFetch = global.fetch;
+  let upstreamUrl = "";
+  let upstreamBody = null;
+  global.fetch = async (url, init) => {
+    upstreamUrl = url;
+    upstreamBody = JSON.parse(init.body);
+    return new Response(JSON.stringify({ data: [{ url: "https://example.test/image.png" }] }), {
+      status: 200,
+      headers: {
+        "content-type": "application/json"
+      }
+    });
+  };
+
+  try {
+    const userModel = createFakeUserModel();
+    const aiUsageModel = createFakeAiUsageModel();
+    const user = userModel.seed({
+      id: "user-1",
+      email: "free@example.com",
+      full_name: "Free User",
+      is_verified: true,
+      bonus_requests: 0,
+      token_invalid_before: null
+    });
+    const app = createApp({ userModel, aiUsageModel, rateLimitEnabled: false });
+
+    const response = await request(app)
+      .post("/api/ai/chat")
+      .set("Authorization", `Bearer ${createJwtToken(user)}`)
+      .send({
+        provider: "vsegpt",
+        currentMode: "create_image",
+        request: {
+          prompt: "cat",
+          n: 1,
+          size: "1024x1024",
+          images: [
+            {
+              image_url: "data:image/png;base64,aW1hZ2U="
+            }
+          ]
+        }
+      });
+
+    assert.equal(response.status, 200);
+    assert.equal(upstreamUrl, env.vsegptImageEditUrl);
+    assert.equal(upstreamBody.model, "img2img-openai/gpt-image-2-edit-multi");
+    assert.equal(upstreamBody.aspect_ratio, undefined);
+    assert.equal(Object.hasOwn(upstreamBody, "size"), true);
+    assert.equal(upstreamBody.images[0].image_url, "data:image/png;base64,aW1hZ2U=");
+  } finally {
+    global.fetch = originalFetch;
+    restoreEnv();
+  }
+});
+
 test("POST /api/ai/chat sends images directly to VseGPT Gemini-3", async () => {
   const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
@@ -1626,7 +1700,7 @@ test("POST /api/ai/chat converts images to text before sending to VseGPT DeepSee
     assert.equal(calls.length, 2);
     assert.equal(calls[0].body.model, "google/gemma-4-26b-a4b-it");
     assert.equal(calls[0].body.messages[1].content[1].type, "image_url");
-    assert.equal(calls[1].body.model, "deepseek/deepseek-v4-flash");
+    assert.equal(calls[1].body.model, "deepseek/deepseek-chat");
     assert.equal(JSON.stringify(calls[1].body).includes("image_url"), false);
     assert.match(
       calls[1].body.messages[0].content,

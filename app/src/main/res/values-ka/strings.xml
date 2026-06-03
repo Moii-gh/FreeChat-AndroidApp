@@ -404,6 +404,12 @@
     <string name="toast_liked">მოეწონა!</string>
     <string name="toast_limits_added">ლიმიტები დამატებულია. +5 მოთხოვნა.</string>
     <string name="toast_limits_exhausted">თქვენი უფასო მოთხოვნები ამოიწურა! დააჭირეთ ზემოთ +5 ღილაკს.</string>
+    <string name="toast_image_limits_exhausted">დღეისთვის თქვენ ამოგეწურათ სურათის გენერირების მოთხოვნები!</string>
+    <string name="toast_image_ad_watched">რეკლამა ნანახია. პროგრესი: %d/10</string>
+    <string name="image_ad_progress_description">უზარმაზარი მოდელი: საჭიროა 10 რეკლამა (%d/10)</string>
+    <string name="image_ad_warning_title">გამოსახულების გენერაცია</string>
+    <string name="image_ad_warning_message">გამოსახულების გენერაცია ახლა მუშაობს უზარმაზარ ხელოვნური ინტელექტის მოდელზე. მაღალი გამოთვლითი ხარჯების გამო, ერთი გენერაციისთვის საჭიროა 10 სპონსორული ვიდეოს ყურება.\n\nნანახი რეკლამები: %1$d 10-დან.\n\nგსურთ რეკლამის ყურება ახლა?</string>
+    <string name="button_watch_ad">ყურება</string>
     <string name="logout_limit_title">გასვლის ლიმიტი</string>
     <string name="logout_limit_message_hours">ხელახლა გასვლას შეძლებთ %d საათში.</string>
     <string name="logout_limit_message_less_than_hour">ხელახლა გასვლას შეძლებთ ერთ საათზე ნაკლებ დროში.</string>

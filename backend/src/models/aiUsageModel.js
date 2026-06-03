@@ -109,9 +109,10 @@ async function consumeDailyRequest(userId, { limit, now = new Date() }) {
   });
 }
 
-function buildImageSnapshot(dailyImageLimit, usedToday, now = new Date(), allowed = true) {
+function buildImageSnapshot(dailyImageLimit, usedToday, imageBonusRequests = 0, now = new Date(), allowed = true) {
   const normalizedUsedCount = Number(usedToday || 0);
-  const imageRemaining = Math.max(dailyImageLimit - normalizedUsedCount, 0);
+  const baseRemaining = Math.max(dailyImageLimit - normalizedUsedCount, 0);
+  const imageRemaining = baseRemaining + imageBonusRequests;
 
   return {
     allowed,
@@ -125,6 +126,9 @@ function buildImageSnapshot(dailyImageLimit, usedToday, now = new Date(), allowe
 async function getDailyImageUsageSnapshot(userId, { limit, now = new Date() }, executor) {
   const db = getExecutor(executor);
 
+  const userRes = await db.query(`SELECT image_bonus_requests FROM users WHERE id = $1`, [userId]);
+  const imageBonusRequests = userRes.rows[0]?.image_bonus_requests || 0;
+
   const result = await db.query(
     `select request_count
      from ai_daily_image_usage
@@ -133,11 +137,14 @@ async function getDailyImageUsageSnapshot(userId, { limit, now = new Date() }, e
     [userId, getUsageDate(now)]
   );
 
-  return buildImageSnapshot(limit, result.rows[0]?.request_count || 0, now);
+  return buildImageSnapshot(limit, result.rows[0]?.request_count || 0, imageBonusRequests, now);
 }
 
 async function consumeDailyImageRequest(userId, { limit, now = new Date() }) {
   return await withTransaction(async (db) => {
+    const userRes = await db.query(`SELECT image_bonus_requests FROM users WHERE id = $1 FOR UPDATE`, [userId]);
+    const imageBonusRequests = userRes.rows[0]?.image_bonus_requests || 0;
+
     const usageDate = getUsageDate(now);
 
     const usageRes = await db.query(
@@ -145,6 +152,11 @@ async function consumeDailyImageRequest(userId, { limit, now = new Date() }) {
       [userId, usageDate]
     );
     let usedToday = usageRes.rows[0]?.request_count || 0;
+
+    if (imageBonusRequests > 0) {
+      await db.query(`UPDATE users SET image_bonus_requests = image_bonus_requests - 1 WHERE id = $1`, [userId]);
+      return buildImageSnapshot(limit, usedToday, imageBonusRequests - 1, now, true);
+    }
 
     if (usedToday < limit) {
       const result = await db.query(
@@ -164,12 +176,12 @@ async function consumeDailyImageRequest(userId, { limit, now = new Date() }) {
       );
 
       if (result.rows[0]) {
-        return buildImageSnapshot(limit, result.rows[0].request_count, now, true);
+        return buildImageSnapshot(limit, result.rows[0].request_count, 0, now, true);
       }
     }
 
     // Over limit
-    return buildImageSnapshot(limit, usedToday, now, false);
+    return buildImageSnapshot(limit, usedToday, 0, now, false);
   });
 }
 

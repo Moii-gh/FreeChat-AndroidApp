@@ -27,7 +27,9 @@ function toPublicUser(row) {
     vkLastName: row.vk_last_name ?? null,
     vkPhotoUrl: row.vk_photo_url ?? null,
     vkEmail: row.vk_email ?? null,
-    authProvider: row.auth_provider
+    authProvider: row.auth_provider,
+    bonusRequests: row.bonus_requests ?? 0,
+    imageBonusRequests: row.image_bonus_requests ?? 0
   };
 }
 
@@ -338,6 +340,22 @@ async function updatePassword(userId, passwordHash) {
   return user;
 }
 
+async function addBonusRequests(userId, amount) {
+  const user = await findById(userId);
+  if (user) {
+    user.bonus_requests = (user.bonus_requests || 0) + amount;
+  }
+  return user;
+}
+
+async function addImageBonusRequests(userId, amount) {
+  const user = await findById(userId);
+  if (user) {
+    user.image_bonus_requests = (user.image_bonus_requests || 0) + amount;
+  }
+  return user;
+}
+
 module.exports = {
   toPublicUser,
   findById,
@@ -355,5 +373,7 @@ module.exports = {
   incrementVerificationAttempts,
   verifyUser,
   attachTelegramIdentity,
-  updatePassword
+  updatePassword,
+  addBonusRequests,
+  addImageBonusRequests
 };

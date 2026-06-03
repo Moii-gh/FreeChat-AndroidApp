@@ -51,6 +51,7 @@ alter table if exists users drop column if exists subscription_status;
 alter table if exists users drop column if exists plan_expires_at;
 alter table if exists users add column if not exists bonus_requests integer not null default 0;
 alter table if exists users add column if not exists token_invalid_before timestamptz;
+alter table if exists users add column if not exists image_bonus_requests integer not null default 0;
 
 drop table if exists billing_payments;
 drop table if exists subscriptions;

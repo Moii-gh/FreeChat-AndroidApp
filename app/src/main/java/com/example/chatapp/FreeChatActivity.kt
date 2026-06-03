@@ -128,6 +128,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var suppressSuggestionUpdates = false
     private var handledShareToken: String? = null
     private var adManager: RewardedAdManager? = null
+    private var imageAdManager: RewardedAdManager? = null
     private var topActionsAnimator: AnimatorSet? = null
     private var editingMessageHistoryIndex: Int? = null
     private val freeChatAttentionHandler = Handler(Looper.getMainLooper())
@@ -145,6 +146,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private var scrollToBottomController: ChatScrollToBottomController? = null
     private var pendingSendJob: Job? = null
     private var generatingChatIds: Set<String> = emptySet()
+    private var isInvitePillDismissed = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LanguageManager.applyLocale(newBase))
@@ -1646,6 +1648,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnCloseEditMessage.setHapticClickListener {
             cancelEditingUserMessage()
         }
+        binding.inviteFriendPill.setHapticClickListener {
+            val inviteText = LocaleHelper.getString(this, "invite_friends_text")
+            FileUtils.shareText(this, inviteText)
+        }
+        binding.btnDismissInvitePill.setHapticClickListener {
+            isInvitePillDismissed = true
+            binding.inviteFriendPill.isVisible = false
+        }
     }
 
     private fun updateFloatingInputPadding() {
@@ -1760,6 +1770,35 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             }
         }
         adManager?.initialize()
+
+        imageAdManager = RewardedAdManager(this, onRewarded = {
+            onImageAdRewarded()
+        }, adUnitId = "R-M-19376957-5")
+        imageAdManager?.initialize()
+    }
+
+    private fun onImageAdRewarded() {
+        val currentCount = chatViewModel.getImageAdWatchCount()
+        val nextCount = currentCount + 1
+        if (nextCount >= 10) {
+            chatViewModel.saveImageAdWatchCount(0)
+            chatViewModel.rewardImageAd {
+                runOnUiThread {
+                    toast(LocaleHelper.getString(this, "toast_limits_added"))
+                    val bottomSheet = supportFragmentManager.findFragmentByTag("bottom_sheet_menu") as? BottomSheetMenuFragment
+                    bottomSheet?.refreshQuotaUi()
+                }
+            }
+        } else {
+            chatViewModel.saveImageAdWatchCount(nextCount)
+            toast(String.format(LocaleHelper.getString(this, "toast_image_ad_watched"), nextCount))
+            val bottomSheet = supportFragmentManager.findFragmentByTag("bottom_sheet_menu") as? BottomSheetMenuFragment
+            bottomSheet?.refreshQuotaUi()
+        }
+    }
+
+    fun showImageAd() {
+        imageAdManager?.show()
     }
 
 
@@ -1846,6 +1885,17 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
     }
 
+    private fun evaluateInvitePillVisibility() {
+        if (isInvitePillDismissed) {
+            binding.inviteFriendPill.isVisible = false
+            return
+        }
+        val isAnon = chatViewModel.isAnonymousChat
+        // Show pill with a 30% chance in active regular chats
+        val show = !isAnon && (java.util.Random().nextFloat() < 0.30f)
+        binding.inviteFriendPill.isVisible = show
+    }
+
     private fun startFreshChat() {
         invalidateActiveGeneration(cancelScroll = true)
         chatViewModel.resetChatState()
@@ -1862,6 +1912,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         refreshDrawerSelection()
         ChatGenerationManager.setVisibleChat(null, lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
         updateImeOptionsForIncognito()
+        evaluateInvitePillVisibility()
     }
 
     private fun toggleAnonymousChat() {
@@ -2051,6 +2102,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             ChatGenerationManager.setVisibleChat(chatViewModel.currentChatId, true)
             binding.drawerLayout.closeDrawer(GravityCompat.START)
             updateImeOptionsForIncognito()
+            evaluateInvitePillVisibility()
             onOpened?.invoke()
         }
     }

@@ -490,4 +490,8 @@ private class FakeAccountSessionStore : AccountSessionStore {
     override fun saveImageQuota(dailyImageLimit: Int?, imageRemaining: Int?) = Unit
 
     override fun consumeImageRequest() = Unit
+
+    override fun getImageAdWatchCount(): Int = 0
+
+    override fun saveImageAdWatchCount(count: Int) = Unit
 }

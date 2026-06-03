@@ -40,6 +40,17 @@ function createAiRouter({ userModel, aiUsageModel, authenticate }) {
     }),
     controller.rewardAd
   );
+  router.post(
+    "/reward-image-ad",
+    rateLimit({
+      windowMs: 5 * 1000, // 5 seconds
+      limit: 1,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Подождите перед получением следующего бонуса." }
+    }),
+    controller.rewardImageAd
+  );
   router.post("/chat", validate(aiChatSchema), controller.chat);
   router.post(
     "/notification-filter",

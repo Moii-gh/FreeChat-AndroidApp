@@ -43,9 +43,10 @@ function imageKeyFor(userId, now = new Date()) {
   return `${userId}:image:${getUsageDate(now)}`;
 }
 
-function buildImageSnapshot(dailyImageLimit, usedToday, now = new Date(), allowed = true) {
+function buildImageSnapshot(dailyImageLimit, usedToday, imageBonusRequests = 0, now = new Date(), allowed = true) {
   const normalizedUsedCount = Number(usedToday || 0);
-  const imageRemaining = Math.max(dailyImageLimit - normalizedUsedCount, 0);
+  const baseRemaining = Math.max(dailyImageLimit - normalizedUsedCount, 0);
+  const imageRemaining = baseRemaining + imageBonusRequests;
 
   return {
     allowed,
@@ -75,20 +76,31 @@ async function consumeDailyRequest(userId, { limit, now = new Date() }) {
 async function getDailyImageUsageSnapshot(userId, { limit, now = new Date() }) {
   const key = imageKeyFor(userId, now);
   const usedToday = imageUsageByKey.get(key) || 0;
-  return buildImageSnapshot(limit, usedToday, now);
+  const { findById } = require("./memoryUserModel");
+  const user = await findById(userId);
+  const imageBonusRequests = user?.image_bonus_requests || 0;
+  return buildImageSnapshot(limit, usedToday, imageBonusRequests, now);
 }
 
 async function consumeDailyImageRequest(userId, { limit, now = new Date() }) {
+  const { findById } = require("./memoryUserModel");
+  const user = await findById(userId);
+  const imageBonusRequests = user?.image_bonus_requests || 0;
   const key = imageKeyFor(userId, now);
   const usedToday = Number(imageUsageByKey.get(key) || 0);
+
+  if (imageBonusRequests > 0) {
+    if (user) user.image_bonus_requests = imageBonusRequests - 1;
+    return buildImageSnapshot(limit, usedToday, imageBonusRequests - 1, now, true);
+  }
 
   if (usedToday < limit) {
     const next = usedToday + 1;
     imageUsageByKey.set(key, next);
-    return buildImageSnapshot(limit, next, now, true);
+    return buildImageSnapshot(limit, next, 0, now, true);
   }
 
-  return buildImageSnapshot(limit, usedToday, now, false);
+  return buildImageSnapshot(limit, usedToday, 0, now, false);
 }
 
 module.exports = {

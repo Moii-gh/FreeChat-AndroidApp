@@ -405,6 +405,11 @@
     <string name="toast_limits_added">Limits successfully added! +5 requests.</string>
     <string name="toast_limits_exhausted">You have run out of free requests for today! Click the +5 button above.</string>
     <string name="toast_image_limits_exhausted">You have run out of image generation requests for today!</string>
+    <string name="toast_image_ad_watched">Ad watched. Progress: %d/10</string>
+    <string name="image_ad_progress_description">Huge model: need 10 ads (%d/10)</string>
+    <string name="image_ad_warning_title">Image Generation</string>
+    <string name="image_ad_warning_message">Image generation is now powered by a huge AI model. Due to high computational costs, you need to watch 10 sponsored videos for one generation.\n\nAds watched: %1$d out of 10.\n\nWatch an ad now?</string>
+    <string name="button_watch_ad">Watch</string>
     <string name="logout_limit_title">Logout limit</string>
     <string name="logout_limit_message_hours">You can log out again in %d hours.</string>
     <string name="logout_limit_message_less_than_hour">You can log out again in less than an hour.</string>
@@ -506,4 +511,8 @@
     <string name="toast_shortcut_added">Shortcut request sent</string>
     <string name="label_sponsored">Sponsored</string>
     <string name="settings_ad_support">Support us with a penny 👉👈</string>
+    <string name="invite_friends_pill">Invite Friends</string>
+    <string name="invite_friends_text">Join me on FreeChat! Download it from RuStore: https://www.rustore.ru/catalog/app/com.moii.freechat</string>
+    <string name="debug_rustore_title">RuStore</string>
+    <string name="debug_rustore_subtitle">Open app page on RuStore</string>
 </resources>
