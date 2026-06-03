@@ -515,4 +515,6 @@
     <string name="invite_friends_text">Join me on FreeChat! Download it from RuStore: https://www.rustore.ru/catalog/app/com.moii.freechat</string>
     <string name="debug_rustore_title">RuStore</string>
     <string name="debug_rustore_subtitle">Open app page on RuStore</string>
+    <string name="debug_force_invite_pill_title">Force Invite Pill</string>
+    <string name="debug_force_invite_pill_subtitle">Always show the invite friends pill in chat</string>
 </resources>

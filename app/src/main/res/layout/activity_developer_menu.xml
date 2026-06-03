@@ -226,6 +226,35 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/cardForceInvitePill"
+            style="@style/DebugActionCard">
+
+            <ImageView
+                style="@style/DebugActionIcon"
+                android:src="@drawable/ic_share"
+                app:tint="@color/security_text_primary" />
+
+            <LinearLayout
+                style="@style/DebugActionTextGroup">
+
+                <TextView
+                    style="@style/DebugActionTitle"
+                    android:text="@string/debug_force_invite_pill_title" />
+
+                <TextView
+                    style="@style/DebugActionSubtitle"
+                    android:text="@string/debug_force_invite_pill_subtitle" />
+            </LinearLayout>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchForceInvitePill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="4dp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/cardRuStore"
             style="@style/DebugActionCard">
 

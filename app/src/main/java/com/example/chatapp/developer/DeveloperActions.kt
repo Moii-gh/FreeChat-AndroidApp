@@ -9,6 +9,21 @@ import java.io.File
 
 object DeveloperActions {
 
+    private const val PREFS_NAME = "developer_prefs"
+    private const val KEY_FORCE_INVITE_PILL = "force_invite_pill"
+
+    fun isForceInvitePillEnabled(context: Context): Boolean {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_FORCE_INVITE_PILL, false)
+    }
+
+    fun setForceInvitePillEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_FORCE_INVITE_PILL, enabled)
+            .apply()
+    }
+
     fun clearTemporaryCache(context: Context): Boolean {
         val appContext = context.applicationContext
         val cacheRoots = listOfNotNull(appContext.cacheDir, appContext.externalCacheDir)

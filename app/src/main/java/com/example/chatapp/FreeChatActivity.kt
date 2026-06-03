@@ -1890,6 +1890,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.inviteFriendPill.isVisible = false
             return
         }
+        val forceShow = com.example.chatapp.developer.DeveloperActions.isForceInvitePillEnabled(this)
+        if (forceShow) {
+            binding.inviteFriendPill.isVisible = true
+            return
+        }
         val isAnon = chatViewModel.isAnonymousChat
         // Show pill with a 30% chance in active regular chats
         val show = !isAnon && (java.util.Random().nextFloat() < 0.30f)

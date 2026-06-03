@@ -515,4 +515,6 @@
     <string name="invite_friends_text">Приєднуйся до мене у FreeChat! Завантажуй з RuStore: https://www.rustore.ru/catalog/app/com.moii.freechat</string>
     <string name="debug_rustore_title">RuStore</string>
     <string name="debug_rustore_subtitle">Відкрити сторінку додатка в RuStore</string>
+    <string name="debug_force_invite_pill_title">Показувати пілюлю запрошення</string>
+    <string name="debug_force_invite_pill_subtitle">Завжди показувати пілюлю \"Запросити друзів\" у чаті</string>
 </resources>

@@ -113,6 +113,15 @@ class DeveloperMenuActivity : AppCompatActivity() {
             showLogsSheet()
         }
 
+        val switchForceInvitePill = findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchForceInvitePill)
+        switchForceInvitePill.isChecked = DeveloperActions.isForceInvitePillEnabled(this)
+        switchForceInvitePill.setOnCheckedChangeListener { _, isChecked ->
+            DeveloperActions.setForceInvitePillEnabled(this, isChecked)
+        }
+        findViewById<View>(R.id.cardForceInvitePill).setHapticClickListener {
+            switchForceInvitePill.isChecked = !switchForceInvitePill.isChecked
+        }
+
         findViewById<View>(R.id.cardRuStore).setHapticClickListener {
             runCatching {
                 val intent = android.content.Intent(
