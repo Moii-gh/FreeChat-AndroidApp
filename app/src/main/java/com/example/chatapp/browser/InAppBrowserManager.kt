@@ -62,6 +62,7 @@ class InAppBrowserManager(
     private var progressBar: ProgressBar? = null
     private var browserCloseButton: ImageButton? = null
     private var browserRefreshButton: ImageButton? = null
+    private var browserExternalButton: ImageButton? = null
     private var bottomFullscreenGestureView: View? = null
     private var pageSplashOverlay: FrameLayout? = null
     private var pageSplashLogo: ImageView? = null
@@ -246,6 +247,23 @@ class InAppBrowserManager(
             contentDescription = LocaleHelper.getString(activity, "auth_refresh_widget"),
             onClick = { refreshCurrentPageFromActionButton() }
         )
+        browserExternalButton = browserControlButton(
+            iconRes = R.drawable.ic_globe_new,
+            contentDescription = LocaleHelper.getString(activity, "button_open_in_browser"),
+            onClick = {
+                val url = controller?.currentUrl
+                if (!url.isNullOrBlank()) {
+                    runCatching {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                            addCategory(android.content.Intent.CATEGORY_BROWSABLE)
+                        }
+                        activity.startActivity(intent)
+                    }.onFailure {
+                        showBlockedToast()
+                    }
+                }
+            }
+        )
         browserCloseButton = browserControlButton(
             iconRes = R.drawable.ic_assistant_close,
             contentDescription = LocaleHelper.getString(activity, "digital_assistant_close"),
@@ -253,6 +271,12 @@ class InAppBrowserManager(
         )
         toolbar.addView(
             browserRefreshButton,
+            LinearLayout.LayoutParams(BROWSER_CONTROL_SIZE_DP.dp(), BROWSER_CONTROL_SIZE_DP.dp()).apply {
+                rightMargin = BROWSER_CONTROL_GAP_DP.dp()
+            }
+        )
+        toolbar.addView(
+            browserExternalButton,
             LinearLayout.LayoutParams(BROWSER_CONTROL_SIZE_DP.dp(), BROWSER_CONTROL_SIZE_DP.dp()).apply {
                 rightMargin = BROWSER_CONTROL_GAP_DP.dp()
             }
@@ -461,6 +485,7 @@ class InAppBrowserManager(
         panel?.animate()?.cancel()
         dimView?.animate()?.cancel()
         browserRefreshButton?.animate()?.cancel()
+        browserExternalButton?.animate()?.cancel()
         browserCloseButton?.animate()?.cancel()
         panel?.setLayerType(View.LAYER_TYPE_NONE, null)
         pageSplashToken += 1
@@ -486,6 +511,7 @@ class InAppBrowserManager(
         webContainer = null
         progressBar = null
         browserRefreshButton = null
+        browserExternalButton = null
         browserCloseButton = null
         bottomFullscreenGestureView = null
         searchOverlay = null
@@ -506,6 +532,8 @@ class InAppBrowserManager(
         }
         browserRefreshButton?.isEnabled = active != null
         browserRefreshButton?.alpha = if (active != null) BROWSER_CONTROL_ALPHA else 0.38f
+        browserExternalButton?.isEnabled = active != null && !active.currentUrl.isNullOrBlank()
+        browserExternalButton?.alpha = if (active != null && !active.currentUrl.isNullOrBlank()) BROWSER_CONTROL_ALPHA else 0.38f
     }
 
     private fun browserControlButton(
@@ -769,7 +797,7 @@ class InAppBrowserManager(
     }
 
     private fun showBrowserControls(immediate: Boolean, startDelay: Long = 0L) {
-        listOfNotNull(browserRefreshButton, browserCloseButton).forEach { button ->
+        listOfNotNull(browserRefreshButton, browserExternalButton, browserCloseButton).forEach { button ->
             button.animate().cancel()
             button.isVisible = true
             if (immediate) {
@@ -796,7 +824,7 @@ class InAppBrowserManager(
     }
 
     private fun hideBrowserControls(immediate: Boolean) {
-        listOfNotNull(browserRefreshButton, browserCloseButton).forEach { button ->
+        listOfNotNull(browserRefreshButton, browserExternalButton, browserCloseButton).forEach { button ->
             button.animate().cancel()
             if (immediate) {
                 button.alpha = 0f

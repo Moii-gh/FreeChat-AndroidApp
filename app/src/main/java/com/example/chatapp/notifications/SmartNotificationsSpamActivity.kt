@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -76,6 +77,9 @@ class SmartNotificationsSpamActivity : AppCompatActivity() {
             onDeleteClicked = { itemId ->
                 settingsStore.removeSpamNotification(itemId)
                 loadSpamNotifications()
+            },
+            onRestoreClicked = { item ->
+                restoreNotification(item)
             }
         )
         rvSpamList.adapter = spamAdapter
@@ -155,8 +159,87 @@ class SmartNotificationsSpamActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun restoreNotification(item: DisplaySpamItem) {
+        val context = applicationContext
+        val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val channel = android.app.NotificationChannel(
+                "smart_notifications_channel",
+                LocaleHelper.getString(context, "smart_notifications_title"),
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            )
+            manager.createNotificationChannel(channel)
+        }
+
+        val launchIntent = packageManager.getLaunchIntentForPackage(item.packageName)
+        val pendingIntent = if (launchIntent != null) {
+            android.app.PendingIntent.getActivity(
+                context,
+                System.currentTimeMillis().toInt(),
+                launchIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            null
+        }
+
+        val restoredTitle = "${item.appLabel}: ${item.title}"
+
+        val builder = androidx.core.app.NotificationCompat.Builder(context, "smart_notifications_channel")
+            .setSmallIcon(R.drawable.ic_freechat_notification)
+            .setContentTitle(restoredTitle)
+            .setContentText(item.text)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(item.text))
+            .setAutoCancel(true)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+
+        if (pendingIntent != null) {
+            builder.setContentIntent(pendingIntent)
+        }
+
+        item.appIcon?.let { icon ->
+            val bitmap = drawableToBitmap(icon)
+            if (bitmap != null) {
+                builder.setLargeIcon(bitmap)
+            }
+        }
+
+        runCatching {
+            notificationManager.notify(item.id.hashCode(), builder.build())
+            settingsStore.removeSpamNotification(item.id)
+            loadSpamNotifications()
+            Toast.makeText(
+                this,
+                LocaleHelper.getString(this, "smart_notifications_restored_toast"),
+                Toast.LENGTH_SHORT
+            ).show()
+        }.onFailure { e ->
+            com.example.chatapp.util.SafeLog.w("SpamActivity", "Failed to restore notification", e)
+        }
+    }
+
+    private fun drawableToBitmap(drawable: android.graphics.drawable.Drawable): android.graphics.Bitmap? {
+        if (drawable is android.graphics.drawable.BitmapDrawable) {
+            return drawable.bitmap
+        }
+        return runCatching {
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                drawable.intrinsicWidth.coerceAtLeast(1),
+                drawable.intrinsicHeight.coerceAtLeast(1),
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            bitmap
+        }.getOrNull()
+    }
+
     inner class SpamAdapter(
-        private val onDeleteClicked: (String) -> Unit
+        private val onDeleteClicked: (String) -> Unit,
+        private val onRestoreClicked: (DisplaySpamItem) -> Unit
     ) : RecyclerView.Adapter<SpamAdapter.ViewHolder>() {
 
         private val items = mutableListOf<DisplaySpamItem>()
@@ -184,6 +267,7 @@ class SmartNotificationsSpamActivity : AppCompatActivity() {
             private val tvTimestamp: TextView = itemView.findViewById(R.id.tvTimestamp)
             private val tvSpamTitle: TextView = itemView.findViewById(R.id.tvSpamTitle)
             private val tvSpamText: TextView = itemView.findViewById(R.id.tvSpamText)
+            private val btnRestoreSpam: View = itemView.findViewById(R.id.btnRestoreSpam)
             private val btnDeleteSpam: View = itemView.findViewById(R.id.btnDeleteSpam)
 
             fun bind(item: DisplaySpamItem) {
@@ -208,6 +292,10 @@ class SmartNotificationsSpamActivity : AppCompatActivity() {
                     tvSpamText.visibility = View.VISIBLE
                 } else {
                     tvSpamText.visibility = View.GONE
+                }
+
+                btnRestoreSpam.setHapticClickListener {
+                    onRestoreClicked(item)
                 }
 
                 btnDeleteSpam.setHapticClickListener {

@@ -511,4 +511,20 @@
     <string name="toast_shortcut_added">Demande de raccourci envoy?e</string>
     <string name="label_sponsored">Sponsorisé</string>
     <string name="settings_ad_support">Soutenez-nous avec une petite pièce 👉👈</string>
+    <string name="invite_friends_pill">Inviter des amis</string>
+    <string name="invite_friends_text">Rejoins-moi sur FreeChat ! Télécharge-le sur RuStore : https://www.rustore.ru/catalog/app/com.moii.freechat</string>
+    <string name="debug_rustore_title">RuStore</string>
+    <string name="debug_rustore_subtitle">Ouvrir la page de l\'application sur RuStore</string>
+    <string name="debug_force_invite_pill_title">Forcer la pilule d\'invitation</string>
+    <string name="debug_force_invite_pill_subtitle">Toujours afficher la pilule d\'invitation dans le chat</string>
+    <string name="button_open_in_browser">Ouvrir dans le navigateur</string>
+    <string name="smart_notifications_vip_words_title">Mots VIP</string>
+    <string name="smart_notifications_vip_words_desc">Toujours jouer un son pour ces mots-clés</string>
+    <string name="smart_notifications_spam_words_title">Mots d\'arrêt</string>
+    <string name="smart_notifications_spam_words_desc">Bloquer instantanément sans vérification de l\'IA</string>
+    <string name="smart_notifications_keywords_title_vip">Mots VIP</string>
+    <string name="smart_notifications_keywords_title_spam">Mots d\'arrêt</string>
+    <string name="smart_notifications_keywords_add_hint">Saisissez un mot-clé ou une phrase...</string>
+    <string name="smart_notifications_keywords_empty">Aucun mot-clé ajouté pour le moment</string>
+    <string name="smart_notifications_restored_toast">Notification restaurée</string>
 </resources>

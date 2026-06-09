@@ -517,4 +517,14 @@
     <string name="debug_rustore_subtitle">Открыть страницу приложения в RuStore</string>
     <string name="debug_force_invite_pill_title">Показывать пилюлю приглашения</string>
     <string name="debug_force_invite_pill_subtitle">Всегда показывать пилюлю \"Пригласить друзей\" в чате</string>
+    <string name="button_open_in_browser">Открыть в браузере</string>
+    <string name="smart_notifications_vip_words_title">VIP-слова</string>
+    <string name="smart_notifications_vip_words_desc">Всегда воспроизводить звук для этих слов</string>
+    <string name="smart_notifications_spam_words_title">Стоп-слова</string>
+    <string name="smart_notifications_spam_words_desc">Блокировать сразу без проверки ИИ</string>
+    <string name="smart_notifications_keywords_title_vip">VIP-слова</string>
+    <string name="smart_notifications_keywords_title_spam">Стоп-слова</string>
+    <string name="smart_notifications_keywords_add_hint">Введите слово или фразу...</string>
+    <string name="smart_notifications_keywords_empty">Список слов пуст</string>
+    <string name="smart_notifications_restored_toast">Уведомление восстановлено</string>
 </resources>

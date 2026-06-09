@@ -511,4 +511,20 @@
     <string name="toast_shortcut_added">მალსახმობის მოთხოვნა გაგზავნილია</string>
     <string name="label_sponsored">რეკლამა</string>
     <string name="settings_ad_support">დაგვიჭირეთ მხარი კაპიკით 👉👈</string>
+    <string name="invite_friends_pill">მეგობრების მოწვევა</string>
+    <string name="invite_friends_text">შემოგვიერთდით FreeChat-ში! ჩამოტვირთეთ RuStore-დან: https://www.rustore.ru/catalog/app/com.moii.freechat</string>
+    <string name="debug_rustore_title">RuStore</string>
+    <string name="debug_rustore_subtitle">აპლიკაციის გვერდის გახსნა RuStore-ზე</string>
+    <string name="debug_force_invite_pill_title">მოწვევის პილულის იძულება</string>
+    <string name="debug_force_invite_pill_subtitle">ყოვლთვის აჩვენე მეგობრების მოწვევის პილულა ჩატში</string>
+    <string name="button_open_in_browser">ბრაუზერში გახსნა</string>
+    <string name="smart_notifications_vip_words_title">VIP სიტყვები</string>
+    <string name="smart_notifications_vip_words_desc">ყოვლთვის დაუკარით ხმა ამ საკვანძო სიტყვებისთვის</string>
+    <string name="smart_notifications_spam_words_title">სტოპ სიტყვები</string>
+    <string name="smart_notifications_spam_words_desc">დაბლოკეთ მყისიერად ხელოვნური ინტელექტის შემოწმების გარეშე</string>
+    <string name="smart_notifications_keywords_title_vip">VIP სიტყვები</string>
+    <string name="smart_notifications_keywords_title_spam">სტოპ სიტყვები</string>
+    <string name="smart_notifications_keywords_add_hint">ჩაწერეთ საკვანძო სიტყვა ან ფრაზა...</string>
+    <string name="smart_notifications_keywords_empty">საკვანძო სიტყვები ჯერ არ არის დამატებული</string>
+    <string name="smart_notifications_restored_toast">შეტყობინება აღდგენილია</string>
 </resources>

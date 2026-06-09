@@ -517,4 +517,14 @@
     <string name="debug_rustore_subtitle">Open app page on RuStore</string>
     <string name="debug_force_invite_pill_title">Force Invite Pill</string>
     <string name="debug_force_invite_pill_subtitle">Always show the invite friends pill in chat</string>
+    <string name="button_open_in_browser">Open in browser</string>
+    <string name="smart_notifications_vip_words_title">VIP words</string>
+    <string name="smart_notifications_vip_words_desc">Always play sound for these keywords</string>
+    <string name="smart_notifications_spam_words_title">Stop words</string>
+    <string name="smart_notifications_spam_words_desc">Block instantly without AI check</string>
+    <string name="smart_notifications_keywords_title_vip">VIP words</string>
+    <string name="smart_notifications_keywords_title_spam">Stop words</string>
+    <string name="smart_notifications_keywords_add_hint">Type a keyword or phrase...</string>
+    <string name="smart_notifications_keywords_empty">No keywords added yet</string>
+    <string name="smart_notifications_restored_toast">Notification restored</string>
 </resources>

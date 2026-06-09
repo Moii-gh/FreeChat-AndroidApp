@@ -68,6 +68,20 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, SmartNotificationsWhitelistActivity::class.java))
         }
 
+        findViewById<View>(R.id.smartNotificationsVipWordsRow).setHapticClickListener {
+            val intent = Intent(this, com.example.chatapp.notifications.SmartNotificationsKeywordsActivity::class.java).apply {
+                putExtra("mode", "vip")
+            }
+            startActivity(intent)
+        }
+
+        findViewById<View>(R.id.smartNotificationsSpamWordsRow).setHapticClickListener {
+            val intent = Intent(this, com.example.chatapp.notifications.SmartNotificationsKeywordsActivity::class.java).apply {
+                putExtra("mode", "spam")
+            }
+            startActivity(intent)
+        }
+
         findViewById<View>(R.id.smartNotificationsSpamRow).setHapticClickListener {
             startActivity(Intent(this, com.example.chatapp.notifications.SmartNotificationsSpamActivity::class.java))
         }
@@ -90,6 +104,14 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "smart_notifications_whitelist_title")
         findViewById<TextView>(R.id.tvSmartNotificationsWhitelistDesc)?.text =
             LocaleHelper.getString(this, "smart_notifications_whitelist_desc")
+        findViewById<TextView>(R.id.tvSmartNotificationsVipWordsTitle)?.text =
+            LocaleHelper.getString(this, "smart_notifications_vip_words_title")
+        findViewById<TextView>(R.id.tvSmartNotificationsVipWordsDesc)?.text =
+            LocaleHelper.getString(this, "smart_notifications_vip_words_desc")
+        findViewById<TextView>(R.id.tvSmartNotificationsSpamWordsTitle)?.text =
+            LocaleHelper.getString(this, "smart_notifications_spam_words_title")
+        findViewById<TextView>(R.id.tvSmartNotificationsSpamWordsDesc)?.text =
+            LocaleHelper.getString(this, "smart_notifications_spam_words_desc")
         findViewById<TextView>(R.id.tvSmartNotificationsSpamTitle)?.text =
             LocaleHelper.getString(this, "smart_notifications_spam_button")
         findViewById<TextView>(R.id.tvSmartNotificationsSpamDesc)?.text =
@@ -135,6 +157,10 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
         val visibility = if (isEffectivelyEnabled) View.VISIBLE else View.GONE
         findViewById<View>(R.id.smartNotificationsDivider)?.visibility = visibility
         findViewById<View>(R.id.smartNotificationsWhitelistRow)?.visibility = visibility
+        findViewById<View>(R.id.smartNotificationsVipWordsDivider)?.visibility = visibility
+        findViewById<View>(R.id.smartNotificationsVipWordsRow)?.visibility = visibility
+        findViewById<View>(R.id.smartNotificationsSpamWordsDivider)?.visibility = visibility
+        findViewById<View>(R.id.smartNotificationsSpamWordsRow)?.visibility = visibility
 
         val hasSpam = smartNotificationsSettings.spamNotifications.isNotEmpty()
         val spamVisibility = if (isEffectivelyEnabled && hasSpam) View.VISIBLE else View.GONE

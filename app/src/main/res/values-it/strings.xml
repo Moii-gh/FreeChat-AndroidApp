@@ -511,4 +511,20 @@
     <string name="toast_shortcut_added">Richiesta scorciatoia inviata</string>
     <string name="label_sponsored">Sponsorizzato</string>
     <string name="settings_ad_support">Sostienici con un soldino 👉👈</string>
+    <string name="invite_friends_pill">Invita amici</string>
+    <string name="invite_friends_text">Unisciti a me su FreeChat! Scaricalo da RuStore: https://www.rustore.ru/catalog/app/com.moii.freechat</string>
+    <string name="debug_rustore_title">RuStore</string>
+    <string name="debug_rustore_subtitle">Apri la pagina dell\'app su RuStore</string>
+    <string name="debug_force_invite_pill_title">Forza pillola di invito</string>
+    <string name="debug_force_invite_pill_subtitle">Mostra sempre la pillola di invito nella chat</string>
+    <string name="button_open_in_browser">Apri nel browser</string>
+    <string name="smart_notifications_vip_words_title">Parole VIP</string>
+    <string name="smart_notifications_vip_words_desc">Riproduci sempre un suono per queste parole chiave</string>
+    <string name="smart_notifications_spam_words_title">Parole di stop</string>
+    <string name="smart_notifications_spam_words_desc">Blocca istantaneamente senza controllo dell\'IA</string>
+    <string name="smart_notifications_keywords_title_vip">Parole VIP</string>
+    <string name="smart_notifications_keywords_title_spam">Parole di stop</string>
+    <string name="smart_notifications_keywords_add_hint">Inserisci una parola chiave o frase...</string>
+    <string name="smart_notifications_keywords_empty">Nessuna parola chiave aggiunta</string>
+    <string name="smart_notifications_restored_toast">Notifica ripristinata</string>
 </resources>
