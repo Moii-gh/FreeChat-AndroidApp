@@ -216,7 +216,7 @@
     <string name="history_label_today">Сьогодні</string>
     <string name="image_creating">Створюється...</string>
     <string name="image_ready">Зображення готове</string>
-    <string name="label_email">Пошта</string>
+    <string name="label_email">ID акаунта</string>
     <string name="label_apps">Застосунки</string>
     <string name="label_file_analysis">Аналіз файлу</string>
     <string name="label_limits_requests">Запити</string>
@@ -448,7 +448,7 @@
     <string name="welcome_prompt_8">Готовий допомогти</string>
     <string name="welcome_question">Чим можу допомогти?</string>
     <string name="digital_assistant_title">Цифровий асистент</string>
-    <string name="digital_assistant_short_title">Асистент [beta]</string>
+    <string name="digital_assistant_short_title">Асистент</string>
     <string name="digital_assistant_description">Показує FreeChat поверх інших застосунків і дає змогу ставити запитання про поточний екран.</string>
     <string name="digital_assistant_enable">Увімкнути цифрового асистента</string>
     <string name="digital_assistant_permissions_explanation">FreeChat можна вибрати асистентом Android за замовчуванням. Дозволи на накладання та сповіщення використовуються лише як резерв; знімок екрана запитується тільки після натискання Запитати про екран.</string>

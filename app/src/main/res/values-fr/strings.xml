@@ -216,7 +216,7 @@
     <string name="history_label_today">Aujourd\'hui</string>
     <string name="image_creating">Création d\'images...</string>
     <string name="image_ready">Image prête</string>
-    <string name="label_email">Email</string>
+    <string name="label_email">ID du compte</string>
     <string name="label_apps">Applications</string>
     <string name="label_file_analysis">Analyse de fichier/photo</string>
     <string name="label_limits_requests">Requêtes</string>
@@ -448,7 +448,7 @@
     <string name="welcome_prompt_8">Prêt à aider</string>
     <string name="welcome_question">Comment puis-je vous aider?</string>
     <string name="digital_assistant_title">Assistant num?rique</string>
-    <string name="digital_assistant_short_title">Assistant [b?ta]</string>
+    <string name="digital_assistant_short_title">Assistant</string>
     <string name="digital_assistant_description">Affiche FreeChat par-dessus les autres applications et vous permet de poser des questions sur l\'?cran actuel.</string>
     <string name="digital_assistant_enable">Activer l\'assistant num?rique</string>
     <string name="digital_assistant_permissions_explanation">FreeChat peut ?tre s?lectionn? comme assistant Android par d?faut. Les autorisations de superposition et de notifications ne sont utilis?es qu\'en secours ; la capture d\'?cran n\'est demand?e qu\'apr?s avoir touch? Question sur l\'?cran.</string>

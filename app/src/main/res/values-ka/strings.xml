@@ -216,7 +216,7 @@
     <string name="history_label_today">დღეს</string>
     <string name="image_creating">სურათების შექმნა...</string>
     <string name="image_ready">სურათი მზადაა</string>
-    <string name="label_email">ფოსტა</string>
+    <string name="label_email">ანგარიშის ID</string>
     <string name="label_apps">აპები</string>
     <string name="label_file_analysis">ფაილის/ფოტოს ანალიზი</string>
     <string name="label_limits_requests">მოთხოვნები</string>
@@ -448,7 +448,7 @@
     <string name="welcome_prompt_8">მზად ვარ დაგეხმაროთ</string>
     <string name="welcome_question">რით შემიძლია დახმარება?</string>
     <string name="digital_assistant_title">ციფრული ასისტენტი</string>
-    <string name="digital_assistant_short_title">ასისტენტი [beta]</string>
+    <string name="digital_assistant_short_title">ასისტენტი</string>
     <string name="digital_assistant_description">აჩვენებს FreeChat-ს სხვა აპების ზემოთ და გაძლევთ მიმდინარე ეკრანზე კითხვების დასმის საშუალებას.</string>
     <string name="digital_assistant_enable">ციფრული ასისტენტის ჩართვა</string>
     <string name="digital_assistant_permissions_explanation">FreeChat შეიძლება არჩეულ იქნას Android-ის ნაგულისხმევ ასისტენტად. ზედდების და შეტყობინებების ნებართვები გამოიყენება მხოლოდ სარეზერვოდ; ეკრანის გადაღება ითხოვება მხოლოდ ეკრანზე კითხვის დასმის შემდეგ.</string>

@@ -216,7 +216,7 @@
     <string name="history_label_today">Oggi</string>
     <string name="image_creating">Creazione immagini...</string>
     <string name="image_ready">Immagine pronta</string>
-    <string name="label_email">Email</string>
+    <string name="label_email">ID account</string>
     <string name="label_apps">App</string>
     <string name="label_file_analysis">Analisi file/foto</string>
     <string name="label_limits_requests">Richieste</string>
@@ -448,7 +448,7 @@
     <string name="welcome_prompt_8">Pronto ad aiutarti</string>
     <string name="welcome_question">Come posso aiutarti?</string>
     <string name="digital_assistant_title">Assistente digitale</string>
-    <string name="digital_assistant_short_title">Assistente [beta]</string>
+    <string name="digital_assistant_short_title">Assistente</string>
     <string name="digital_assistant_description">Mostra FreeChat sopra le altre app e ti permette di fare domande sulla schermata attuale.</string>
     <string name="digital_assistant_enable">Attiva assistente digitale</string>
     <string name="digital_assistant_permissions_explanation">FreeChat pu? essere selezionato come assistente Android predefinito. Le autorizzazioni di overlay e notifiche sono usate solo come fallback; la cattura schermo viene richiesta solo dopo aver toccato Chiedi dello schermo.</string>

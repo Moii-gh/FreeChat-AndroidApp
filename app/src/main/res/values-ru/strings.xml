@@ -216,7 +216,7 @@
     <string name="history_label_today">Сегодня</string>
     <string name="image_creating">Создание изображений...</string>
     <string name="image_ready">Изображение готово</string>
-    <string name="label_email">Почта</string>
+    <string name="label_email">ID аккаунта</string>
     <string name="label_apps">Приложения</string>
     <string name="label_file_analysis">Анализ файла/фото</string>
     <string name="label_limits_requests">Запросы</string>
@@ -448,7 +448,7 @@
     <string name="welcome_prompt_8">Готов помочь</string>
     <string name="welcome_question">Добро пожаловать в FreeChat</string>
     <string name="digital_assistant_title">Цифровой помощник</string>
-    <string name="digital_assistant_short_title">Ассистент [beta]</string>
+    <string name="digital_assistant_short_title">Ассистент</string>
     <string name="digital_assistant_description">Показывает FreeChat поверх других приложений и позволяет задавать вопросы по текущему экрану.</string>
     <string name="digital_assistant_enable">Включить цифрового помощника</string>
     <string name="digital_assistant_permissions_explanation">FreeChat можно выбрать помощником Android по умолчанию. Разрешения overlay и уведомлений нужны только для резервного запуска; захват экрана запрашивается только после нажатия “Спросить об экране”.</string>
