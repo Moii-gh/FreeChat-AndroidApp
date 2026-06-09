@@ -110,7 +110,7 @@ class SecurityActivity : AppCompatActivity() {
                 )
         if (shouldAnimate) {
             TransitionManager.beginDelayedTransition(
-                binding.securityContent,
+                binding.securityRoot,
                 AutoTransition().apply { duration = 180L }
             )
         }
