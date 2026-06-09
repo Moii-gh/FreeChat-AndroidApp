@@ -320,11 +320,11 @@
     <string name="security_faq_telegram_answer">Telegram sign-in is used as a convenient authorization step. It helps confirm that the account belongs to you without adding extra login screens.</string>
     <string name="security_faq_telegram_title">Why sign in through Telegram?</string>
     <string name="security_faq_title">How do we protect your data?</string>
-    <string name="security_password_change_success">Password changed locally</string>
+    <string name="security_password_change_success">Password changed</string>
     <string name="security_password_mask">********************</string>
-    <string name="security_password_not_set">Not set locally</string>
+    <string name="security_password_not_set">Not set</string>
     <string name="security_password_unavailable">Password is not stored in the app</string>
-    <string name="security_password_set_title">Set local password</string>
+    <string name="security_password_set_title">Set password</string>
     <string name="security_password_disable">Disable password</string>
     <string name="security_password_unlock">Unlock</string>
     <string name="security_password_enter_hint">Enter password</string>

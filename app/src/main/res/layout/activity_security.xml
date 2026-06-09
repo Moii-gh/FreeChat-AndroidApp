@@ -106,6 +106,42 @@
                         android:scaleType="center"
                         android:src="@drawable/ic_security_eye_off" />
                 </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/passwordActionsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/btnPasswordDisable"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_delete_link_cancel_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:textColor="#D86A6A"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnPasswordChange"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_security_confirm_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:textColor="#000000"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout

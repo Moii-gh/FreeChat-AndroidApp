@@ -60,7 +60,18 @@ class SecurityActivity : AppCompatActivity() {
 
     private fun bindActions() {
         binding.btnBack.setHapticClickListener { finish() }
-        binding.passwordCard.setHapticClickListener { showLocalPasswordSettingsDialog() }
+        binding.passwordCard.setHapticClickListener {
+            if (!viewModel.uiState.value.hasRegistrationPassword) {
+                showLocalPasswordSettingsDialog()
+            }
+        }
+        binding.btnPasswordDisable.setHapticClickListener {
+            viewModel.setLocalPassword("")
+            toast(text("security_password_change_success"))
+        }
+        binding.btnPasswordChange.setHapticClickListener {
+            showLocalPasswordSettingsDialog()
+        }
         binding.btnShowPassword.setHapticClickListener { viewModel.togglePasswordVisibility() }
         binding.faqDataProtectionRow.setHapticClickListener {
             viewModel.toggleFaq(SecurityFaqItem.DATA_PROTECTION)
@@ -141,6 +152,8 @@ class SecurityActivity : AppCompatActivity() {
         binding.btnShowPassword.contentDescription = text(
             if (state.isPasswordVisible) "button_hide_password" else "button_show_password"
         )
+        binding.btnPasswordDisable.text = text("security_password_disable")
+        binding.btnPasswordChange.text = text("button_change_password")
     }
 
     private fun renderPasswordCard(state: SecurityUiState) {
@@ -153,6 +166,7 @@ class SecurityActivity : AppCompatActivity() {
         binding.btnShowPassword.setImageResource(
             if (state.isPasswordVisible) R.drawable.ic_security_eye else R.drawable.ic_security_eye_off
         )
+        binding.passwordActionsContainer.isVisible = state.hasRegistrationPassword
     }
 
     private fun showLocalPasswordSettingsDialog() {
@@ -183,8 +197,7 @@ class SecurityActivity : AppCompatActivity() {
         if (hasPass) {
             title.text = text("dialog_change_password")
             containerCurrent.visibility = android.view.View.VISIBLE
-            btnDisable.visibility = android.view.View.VISIBLE
-            btnDisable.text = text("security_password_disable")
+            btnDisable.visibility = android.view.View.GONE
             btnSave.text = text("button_save")
         } else {
             title.text = text("security_password_set_title")
@@ -199,18 +212,6 @@ class SecurityActivity : AppCompatActivity() {
         card.translationY = 18f * resources.displayMetrics.density
 
         btnCancel.setHapticClickListener { dialog.dismiss() }
-
-        btnDisable.setHapticClickListener {
-            val enteredCurrent = etCurrent.text.toString()
-            if (enteredCurrent != viewModel.getLocalPassword()) {
-                errorMsg.text = text("security_password_current_error")
-                errorMsg.visibility = android.view.View.VISIBLE
-            } else {
-                viewModel.setLocalPassword("")
-                toast(text("security_password_change_success"))
-                dialog.dismiss()
-            }
-        }
 
         btnSave.setHapticClickListener {
             val enteredCurrent = etCurrent.text.toString()
