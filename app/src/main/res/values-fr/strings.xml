@@ -324,6 +324,12 @@
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Non défini localement</string>
     <string name="security_password_unavailable">Le mot de passe est indisponible sur cet appareil</string>
+    <string name="security_password_set_title">Définir le mot de passe local</string>
+    <string name="security_password_disable">Désactiver le mot de passe</string>
+    <string name="security_password_unlock">Déverrouiller</string>
+    <string name="security_password_enter_hint">Saisir le mot de passe</string>
+    <string name="security_password_error_wrong">Mot de passe incorrect</string>
+    <string name="security_password_current_error">Le mot de passe actuel est incorrect</string>
     <string name="security_your_password_label">Votre mot de passe :</string>
     <string name="session_expired_sign_in">Session expirée. Connectez-vous à nouveau.</string>
     <string name="session_missing_sign_in">Session introuvable. Connectez-vous à nouveau.</string>

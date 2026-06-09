@@ -324,6 +324,12 @@
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Локально не задано</string>
     <string name="security_password_unavailable">Пароль не зберігається в застосунку</string>
+    <string name="security_password_set_title">Встановити пароль</string>
+    <string name="security_password_disable">Вимкнути пароль</string>
+    <string name="security_password_unlock">Розблокувати</string>
+    <string name="security_password_enter_hint">Введіть пароль</string>
+    <string name="security_password_error_wrong">Невірний пароль</string>
+    <string name="security_password_current_error">Поточний пароль вказано неправильно</string>
     <string name="security_your_password_label">Пароль:</string>
     <string name="session_expired_sign_in">Сесія закінчилася. Увійдіть знову.</string>
     <string name="session_missing_sign_in">Сесію не знайдено. Увійдіть знову.</string>

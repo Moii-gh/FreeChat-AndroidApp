@@ -324,6 +324,12 @@
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Not set locally</string>
     <string name="security_password_unavailable">Password is not stored in the app</string>
+    <string name="security_password_set_title">Set local password</string>
+    <string name="security_password_disable">Disable password</string>
+    <string name="security_password_unlock">Unlock</string>
+    <string name="security_password_enter_hint">Enter password</string>
+    <string name="security_password_error_wrong">Incorrect password</string>
+    <string name="security_password_current_error">Current password is incorrect</string>
     <string name="security_your_password_label">Password:</string>
     <string name="session_expired_sign_in">Session expired. Sign in again.</string>
     <string name="session_missing_sign_in">Session not found. Sign in again.</string>

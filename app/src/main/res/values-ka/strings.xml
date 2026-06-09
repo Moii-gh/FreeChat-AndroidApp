@@ -324,6 +324,12 @@
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">ლოკალურად არ არის დაყენებული</string>
     <string name="security_password_unavailable">პაროლი აპში არ ინახება</string>
+    <string name="security_password_set_title">ლოკალური პაროლის დაყენება</string>
+    <string name="security_password_disable">პაროლის გამორთვა</string>
+    <string name="security_password_unlock">განბლოკვა</string>
+    <string name="security_password_enter_hint">შეიყვანეთ პაროლი</string>
+    <string name="security_password_error_wrong">არასწორი პაროლი</string>
+    <string name="security_password_current_error">მიმდინარე პაროლი არასწორია</string>
     <string name="security_your_password_label">პაროლი:</string>
     <string name="session_expired_sign_in">სესია ამოიწურა. შედით ხელახლა.</string>
     <string name="session_missing_sign_in">სესია ვერ მოიძებნა. შედით ხელახლა.</string>

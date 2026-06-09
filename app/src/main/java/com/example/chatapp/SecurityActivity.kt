@@ -60,6 +60,7 @@ class SecurityActivity : AppCompatActivity() {
 
     private fun bindActions() {
         binding.btnBack.setHapticClickListener { finish() }
+        binding.passwordCard.setHapticClickListener { showLocalPasswordSettingsDialog() }
         binding.btnShowPassword.setHapticClickListener { viewModel.togglePasswordVisibility() }
         binding.faqDataProtectionRow.setHapticClickListener {
             viewModel.toggleFaq(SecurityFaqItem.DATA_PROTECTION)
@@ -144,13 +145,129 @@ class SecurityActivity : AppCompatActivity() {
 
     private fun renderPasswordCard(state: SecurityUiState) {
         binding.tvPasswordValue.text = when {
+            state.hasRegistrationPassword && state.isPasswordVisible -> viewModel.getLocalPassword()
             state.hasRegistrationPassword -> text("security_password_mask")
-            else -> text("security_password_unavailable")
+            else -> text("security_password_not_set")
         }
         binding.btnShowPassword.isVisible = state.hasRegistrationPassword
         binding.btnShowPassword.setImageResource(
             if (state.isPasswordVisible) R.drawable.ic_security_eye else R.drawable.ic_security_eye_off
         )
+    }
+
+    private fun showLocalPasswordSettingsDialog() {
+        val hasPass = viewModel.uiState.value.hasRegistrationPassword
+        val dialog = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_local_password_settings, null)
+        val card = dialogView.findViewById<android.view.View>(R.id.dialogCard)
+        val title = dialogView.findViewById<android.widget.TextView>(R.id.tvDialogTitle)
+        val errorMsg = dialogView.findViewById<android.widget.TextView>(R.id.tvErrorMsg)
+
+        val containerCurrent = dialogView.findViewById<android.view.View>(R.id.containerCurrentPassword)
+        val etCurrent = dialogView.findViewById<android.widget.EditText>(R.id.etCurrentPassword)
+
+        val containerNew = dialogView.findViewById<android.view.View>(R.id.containerNewPassword)
+        val etNew = dialogView.findViewById<android.widget.EditText>(R.id.etNewPassword)
+
+        val containerConfirm = dialogView.findViewById<android.view.View>(R.id.containerConfirmPassword)
+        val etConfirm = dialogView.findViewById<android.widget.EditText>(R.id.etConfirmPassword)
+
+        val btnCancel = dialogView.findViewById<android.widget.TextView>(R.id.btnCancel)
+        val btnDisable = dialogView.findViewById<android.widget.TextView>(R.id.btnDisable)
+        val btnSave = dialogView.findViewById<android.widget.TextView>(R.id.btnSave)
+
+        btnCancel.text = text("button_cancel")
+
+        if (hasPass) {
+            title.text = text("dialog_change_password")
+            containerCurrent.visibility = android.view.View.VISIBLE
+            btnDisable.visibility = android.view.View.VISIBLE
+            btnDisable.text = text("security_password_disable")
+            btnSave.text = text("button_save")
+        } else {
+            title.text = text("security_password_set_title")
+            containerCurrent.visibility = android.view.View.GONE
+            btnDisable.visibility = android.view.View.GONE
+            btnSave.text = text("button_save")
+        }
+
+        card.alpha = 0f
+        card.scaleX = 0.9f
+        card.scaleY = 0.9f
+        card.translationY = 18f * resources.displayMetrics.density
+
+        btnCancel.setHapticClickListener { dialog.dismiss() }
+
+        btnDisable.setHapticClickListener {
+            val enteredCurrent = etCurrent.text.toString()
+            if (enteredCurrent != viewModel.getLocalPassword()) {
+                errorMsg.text = text("security_password_current_error")
+                errorMsg.visibility = android.view.View.VISIBLE
+            } else {
+                viewModel.setLocalPassword("")
+                toast(text("security_password_change_success"))
+                dialog.dismiss()
+            }
+        }
+
+        btnSave.setHapticClickListener {
+            val enteredCurrent = etCurrent.text.toString()
+            val enteredNew = etNew.text.toString()
+            val enteredConfirm = etConfirm.text.toString()
+
+            if (hasPass && enteredCurrent != viewModel.getLocalPassword()) {
+                errorMsg.text = text("security_password_current_error")
+                errorMsg.visibility = android.view.View.VISIBLE
+                return@setHapticClickListener
+            }
+
+            if (enteredNew.length < 6) {
+                errorMsg.text = text("auth_error_password_too_short")
+                errorMsg.visibility = android.view.View.VISIBLE
+                return@setHapticClickListener
+            }
+
+            if (enteredNew != enteredConfirm) {
+                errorMsg.text = text("password_error_mismatch")
+                errorMsg.visibility = android.view.View.VISIBLE
+                return@setHapticClickListener
+            }
+
+            viewModel.setLocalPassword(enteredNew)
+            toast(text("security_password_change_success"))
+            dialog.dismiss()
+        }
+
+        dialog.setContentView(dialogView)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            setDimAmount(0.58f)
+            addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setGravity(android.view.Gravity.CENTER)
+            setWindowAnimations(0)
+            attributes = attributes.apply {
+                width = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            }
+        }
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            card.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(260L)
+                .setInterpolator(android.view.animation.PathInterpolator(0.16f, 1f, 0.3f, 1f))
+                .start()
+        }
+        dialog.show()
     }
 
     private fun renderFaq(state: SecurityUiState) {

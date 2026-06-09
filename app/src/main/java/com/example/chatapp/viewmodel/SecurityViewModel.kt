@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 private const val KEY_BIOMETRIC_ENABLED = "security_biometric_enabled"
+private const val KEY_LOCAL_PASSWORD = "security_local_password"
 
 enum class SecurityFaqItem {
     DATA_PROTECTION,
@@ -49,6 +50,8 @@ interface SecuritySettingsStore {
     fun getRegistrationPassword(): String
     fun isBiometricEnabled(): Boolean
     fun setBiometricEnabled(enabled: Boolean)
+    fun getLocalPassword(): String
+    fun setLocalPassword(password: String)
 }
 
 class AccountSecuritySettingsStore(
@@ -69,6 +72,14 @@ class AccountSecuritySettingsStore(
     override fun setBiometricEnabled(enabled: Boolean) {
         accountSettings.saveBoolean(KEY_BIOMETRIC_ENABLED, enabled)
     }
+
+    override fun getLocalPassword(): String {
+        return accountSettings.getString(KEY_LOCAL_PASSWORD)
+    }
+
+    override fun setLocalPassword(password: String) {
+        accountSettings.saveString(KEY_LOCAL_PASSWORD, password)
+    }
 }
 
 class SecurityViewModel(
@@ -85,6 +96,13 @@ class SecurityViewModel(
     private val _events = MutableSharedFlow<SecurityEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<SecurityEvent> = _events.asSharedFlow()
 
+    fun getLocalPassword(): String = settingsStore.getLocalPassword()
+
+    fun setLocalPassword(password: String) {
+        settingsStore.setLocalPassword(password)
+        refreshPassword()
+    }
+
     fun togglePasswordVisibility() {
         _uiState.update {
             if (it.hasRegistrationPassword) {
@@ -96,9 +114,10 @@ class SecurityViewModel(
     }
 
     fun refreshPassword() {
+        val hasPass = settingsStore.getLocalPassword().isNotEmpty()
         _uiState.update {
             it.copy(
-                hasRegistrationPassword = false,
+                hasRegistrationPassword = hasPass,
                 isPasswordVisible = false
             )
         }

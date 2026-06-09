@@ -324,6 +324,12 @@
     <string name="security_password_mask">********************</string>
     <string name="security_password_not_set">Non impostata localmente</string>
     <string name="security_password_unavailable">La password non è disponibile su questo dispositivo</string>
+    <string name="security_password_set_title">Imposta password locale</string>
+    <string name="security_password_disable">Disattiva password</string>
+    <string name="security_password_unlock">Sblocca</string>
+    <string name="security_password_enter_hint">Inserisci password</string>
+    <string name="security_password_error_wrong">Password errata</string>
+    <string name="security_password_current_error">La password attuale non è corretta</string>
     <string name="security_your_password_label">La tua password:</string>
     <string name="session_expired_sign_in">Sessione scaduta. Accedi di nuovo.</string>
     <string name="session_missing_sign_in">Sessione non trovata. Accedi di nuovo.</string>
