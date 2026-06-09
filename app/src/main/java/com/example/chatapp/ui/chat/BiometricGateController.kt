@@ -184,6 +184,8 @@ internal class BiometricGateController(
             addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             setGravity(android.view.Gravity.CENTER)
             setWindowAnimations(0)
+            @Suppress("DEPRECATION")
+            setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             attributes = attributes.apply {
                 width = android.view.ViewGroup.LayoutParams.MATCH_PARENT
                 height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
