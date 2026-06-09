@@ -116,12 +116,10 @@ internal class BiometricGateController(
         val errorMsg = dialogView.findViewById<android.widget.TextView>(R.id.tvEntryError)
         val etPassword = dialogView.findViewById<android.widget.EditText>(R.id.etEntryPassword)
         val btnToggle = dialogView.findViewById<android.widget.ImageButton>(R.id.btnToggleEntryPassword)
-        val btnLogout = dialogView.findViewById<android.widget.TextView>(R.id.btnEntryLogout)
         val btnFingerprint = dialogView.findViewById<android.widget.ImageButton>(R.id.btnEntryFingerprint)
         val btnUnlock = dialogView.findViewById<android.widget.TextView>(R.id.btnEntryUnlock)
 
         title.text = LocaleHelper.getString(activity, "security_biometric_required_title")
-        btnLogout.text = LocaleHelper.getString(activity, "security_biometric_use_login")
         btnUnlock.text = LocaleHelper.getString(activity, "security_password_unlock")
         etPassword.hint = LocaleHelper.getString(activity, "security_password_enter_hint")
 
@@ -148,19 +146,6 @@ internal class BiometricGateController(
                 btnToggle.setImageResource(R.drawable.ic_security_eye_off)
             }
             etPassword.setSelection(etPassword.text.length)
-        }
-
-        btnLogout.setOnClickListener {
-            dialog.dismiss()
-            gateDialog = null
-            SharedPrefsAccountSessionStore(activity.applicationContext).clearSession()
-            activity.startActivity(
-                Intent(activity, MainActivity::class.java).apply {
-                    putExtra(MainActivity.EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, true)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-            )
-            activity.finish()
         }
 
         btnFingerprint.setOnClickListener {
