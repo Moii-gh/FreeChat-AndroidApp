@@ -3,7 +3,7 @@
     <string name="action_create_image">Crea immagine</string>
     <string name="adult_badge">18+</string>
     <string name="adult_mode_title">Modalit? 18+</string>
-    <string name="adult_replies_title">Risposte per adulti</string>
+    <string name="adult_replies_title">L\'IA risponde senza censura a molte domande</string>
     <string name="ai_default_image_prompt">Immagine creativa</string>
     <string name="ai_mode_server_routing_desc">Modelli e limiti vengono scelti sul server per l\'account attivo.</string>
     <string name="ai_mode_server_routing_title">Instradamento server</string>
@@ -518,11 +518,8 @@
     <string name="debug_force_invite_pill_title">Forza pillola di invito</string>
     <string name="debug_force_invite_pill_subtitle">Mostra sempre la pillola di invito nella chat</string>
     <string name="button_open_in_browser">Apri nel browser</string>
-    <string name="smart_notifications_vip_words_title">Parole VIP</string>
-    <string name="smart_notifications_vip_words_desc">Riproduci sempre un suono per queste parole chiave</string>
     <string name="smart_notifications_spam_words_title">Parole di stop</string>
     <string name="smart_notifications_spam_words_desc">Blocca istantaneamente senza controllo dell\'IA</string>
-    <string name="smart_notifications_keywords_title_vip">Parole VIP</string>
     <string name="smart_notifications_keywords_title_spam">Parole di stop</string>
     <string name="smart_notifications_keywords_add_hint">Inserisci una parola chiave o frase...</string>
     <string name="smart_notifications_keywords_empty">Nessuna parola chiave aggiunta</string>

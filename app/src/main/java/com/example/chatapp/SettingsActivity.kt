@@ -123,20 +123,6 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, AiProviderActivity::class.java))
         }
 
-        findViewById<View>(R.id.itemAdultMode).setHapticClickListener {
-            val enabled = !aiProviderSettings.isAdultModeEnabled()
-            aiProviderSettings.setAdultModeEnabled(enabled)
-            animateAdultModeSwitch()
-            updateAdultModeUi()
-        }
-
-        findViewById<SwitchMaterial>(R.id.switchAdultMode).setOnCheckedChangeListener { _, isChecked ->
-            if (aiProviderSettings.isAdultModeEnabled() != isChecked) {
-                aiProviderSettings.setAdultModeEnabled(isChecked)
-                animateAdultModeSwitch()
-                updateAdultModeUi()
-            }
-        }
 
         findViewById<View>(R.id.itemDigitalAssistant).setHapticClickListener {
             startActivity(Intent(this, DigitalAssistantSettingsActivity::class.java))
@@ -215,7 +201,7 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.tvUserName).text = userName
         findViewById<TextView>(R.id.tvUserEmail).text = userEmail
-        updateAdultModeUi()
+
 
         val tvLetter = findViewById<TextView>(R.id.tvAvatarLetter)
         val ivAvatar = findViewById<ImageView>(R.id.ivAvatar)
@@ -268,8 +254,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvLabelSecurity)?.text = LocaleHelper.getString(this, "button_security")
         findViewById<TextView>(R.id.tvLabelAiProvider)?.text = LocaleHelper.getString(this, "ai_provider_title")
         findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSummary()
-        findViewById<TextView>(R.id.tvLabelAdultMode)?.text = LocaleHelper.getString(this, "adult_mode_title")
-        findViewById<TextView>(R.id.tvAdultModeValue)?.text = LocaleHelper.getString(this, "adult_replies_title")
+
         findViewById<TextView>(R.id.tvLabelDigitalAssistant)?.text =
             LocaleHelper.getString(this, "digital_assistant_short_title")
         findViewById<TextView>(R.id.tvLabelSmartNotifications)?.text =
@@ -284,33 +269,7 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
-    private fun updateAdultModeUi() {
-        val enabled = aiProviderSettings.isAdultModeEnabled()
-        val switch = findViewById<SwitchMaterial>(R.id.switchAdultMode)
-        if (switch.isChecked != enabled) {
-            switch.isChecked = enabled
-        }
-        findViewById<TextView>(R.id.tvAiProviderValue)?.text = aiProviderSummary()
-        findViewById<TextView>(R.id.tvAdultModeValue)?.text =
-            if (enabled) LocaleHelper.getString(this, "settings_value_on")
-            else LocaleHelper.getString(this, "adult_replies_title")
-    }
 
-    private fun animateAdultModeSwitch() {
-        findViewById<SwitchMaterial>(R.id.switchAdultMode)?.animate()
-            ?.scaleX(0.94f)
-            ?.scaleY(0.94f)
-            ?.setDuration(70L)
-            ?.withEndAction {
-                findViewById<SwitchMaterial>(R.id.switchAdultMode)?.animate()
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.setInterpolator(OvershootInterpolator(2.2f))
-                    ?.setDuration(180L)
-                    ?.start()
-            }
-            ?.start()
-    }
 
     private fun aiProviderSummary(): String {
         return aiProviderSettings.getSelectedModel().displayName

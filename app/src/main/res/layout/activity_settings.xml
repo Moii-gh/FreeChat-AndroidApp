@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="4dp"
-            android:background="@drawable/settings_profile_card_bg">
+            android:background="@drawable/settings_profile_card_bg_moderate">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -234,71 +234,7 @@
                 android:src="@drawable/ic_chevron_right"/>
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/itemAdultMode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="58dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="@android:color/transparent">
 
-            <TextView
-                android:id="@+id/tvAdultModeBadge"
-                android:layout_width="34dp"
-                android:layout_height="26dp"
-                android:background="@drawable/bg_adult_badge"
-                android:gravity="center"
-                android:text="@string/adult_badge"
-                android:textColor="#000000"
-                android:textSize="12sp"
-                android:textStyle="bold"/>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="16dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tvLabelAdultMode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/adult_mode_title"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"/>
-
-                <TextView
-                    android:id="@+id/tvAdultModeValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:text="@string/adult_replies_title"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp"/>
-            </LinearLayout>
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switchAdultMode"
-                android:layout_width="50dp"
-                android:layout_height="30dp"
-                android:minWidth="50dp"
-                android:minHeight="30dp"
-                android:paddingHorizontal="3dp"
-                android:paddingVertical="2dp"
-                android:showText="false"
-                android:splitTrack="false"
-                android:textOff=""
-                android:textOn=""
-                android:thumb="@drawable/bg_adult_switch_thumb"
-                app:track="@drawable/bg_adult_switch_track"
-                app:useMaterialThemeColors="false"/>
-        </LinearLayout>
 
         <!-- Assistant -->
         <LinearLayout
@@ -343,11 +279,6 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_weight="1"/>
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_chevron_right"/>
         </LinearLayout>
 
         <LinearLayout
@@ -375,11 +306,6 @@
                 android:text="@string/smart_notifications_title"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"/>
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_chevron_right"/>
         </LinearLayout>
 
         <LinearLayout

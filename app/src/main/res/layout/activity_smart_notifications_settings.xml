@@ -86,7 +86,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:background="@drawable/bg_assistant_card"
+            android:background="@drawable/bg_assistant_card_moderate"
             android:orientation="vertical"
             android:padding="16dp">
 
@@ -109,7 +109,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_check"
+                        android:src="@drawable/ic_bell_outline"
                         app:tint="#FFFFFF" />
                 </FrameLayout>
 
@@ -208,7 +208,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_menu"
+                        android:src="@drawable/ic_shield_check_outline"
                         app:tint="#FFFFFF" />
                 </FrameLayout>
 
@@ -237,78 +237,6 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="#8E8E93" />
-            </LinearLayout>
-
-            <!-- Divider VIP Words -->
-            <View
-                android:id="@+id/smartNotificationsVipWordsDivider"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
-                android:background="#1C1C1E"
-                android:visibility="gone" />
-
-            <!-- VIP Words Row -->
-            <LinearLayout
-                android:id="@+id/smartNotificationsVipWordsRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:minHeight="56dp"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <FrameLayout
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:background="@drawable/bg_about_action_icon">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_brain"
-                        app:tint="#FFFFFF" />
-                </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tvSmartNotificationsVipWordsTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/smart_notifications_vip_words_title"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp" />
-
-                    <TextView
-                        android:id="@+id/tvSmartNotificationsVipWordsDesc"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/smart_notifications_vip_words_desc"
-                        android:textColor="#8E8E93"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="#8E8E93" />
             </LinearLayout>
 
             <!-- Divider Spam Words -->
@@ -342,7 +270,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_palette"
+                        android:src="@drawable/ic_stop_sign_outline"
                         app:tint="#FFFFFF" />
                 </FrameLayout>
 
@@ -370,12 +298,6 @@
                         android:textColor="#8E8E93"
                         android:textSize="12sp" />
                 </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="#8E8E93" />
             </LinearLayout>
 
             <!-- Divider 2 -->
@@ -409,7 +331,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_delete"
+                        android:src="@drawable/ic_spam_log_outline"
                         app:tint="#FFFFFF" />
                 </FrameLayout>
 
@@ -434,12 +356,6 @@
                         android:textColor="#8E8E93"
                         android:textSize="12sp" />
                 </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="#8E8E93" />
             </LinearLayout>
         </LinearLayout>
 

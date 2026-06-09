@@ -3,7 +3,7 @@
     <string name="action_create_image">Créer une image</string>
     <string name="adult_badge">18+</string>
     <string name="adult_mode_title">Mode 18+</string>
-    <string name="adult_replies_title">R?ponses adultes</string>
+    <string name="adult_replies_title">L\'IA répond sans censure à de nombreuses questions</string>
     <string name="ai_default_image_prompt">Image créative</string>
     <string name="ai_mode_server_routing_desc">Les modèles et limites sont choisis côté serveur pour le compte actif.</string>
     <string name="ai_mode_server_routing_title">Routage serveur</string>
@@ -518,11 +518,8 @@
     <string name="debug_force_invite_pill_title">Forcer la pilule d\'invitation</string>
     <string name="debug_force_invite_pill_subtitle">Toujours afficher la pilule d\'invitation dans le chat</string>
     <string name="button_open_in_browser">Ouvrir dans le navigateur</string>
-    <string name="smart_notifications_vip_words_title">Mots VIP</string>
-    <string name="smart_notifications_vip_words_desc">Toujours jouer un son pour ces mots-clés</string>
     <string name="smart_notifications_spam_words_title">Mots d\'arrêt</string>
     <string name="smart_notifications_spam_words_desc">Bloquer instantanément sans vérification de l\'IA</string>
-    <string name="smart_notifications_keywords_title_vip">Mots VIP</string>
     <string name="smart_notifications_keywords_title_spam">Mots d\'arrêt</string>
     <string name="smart_notifications_keywords_add_hint">Saisissez un mot-clé ou une phrase...</string>
     <string name="smart_notifications_keywords_empty">Aucun mot-clé ajouté pour le moment</string>

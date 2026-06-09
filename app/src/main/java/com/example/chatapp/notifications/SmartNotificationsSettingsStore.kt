@@ -20,10 +20,6 @@ class SmartNotificationsSettingsStore(context: Context) {
         get() = prefs.getStringSet(KEY_WHITELIST, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_WHITELIST, value).apply()
 
-    var vipWords: Set<String>
-        get() = prefs.getStringSet(KEY_VIP_WORDS, emptySet()) ?: emptySet()
-        set(value) = prefs.edit().putStringSet(KEY_VIP_WORDS, value).apply()
-
     var spamWords: Set<String>
         get() = prefs.getStringSet(KEY_SPAM_WORDS, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_SPAM_WORDS, value).apply()
@@ -69,7 +65,6 @@ class SmartNotificationsSettingsStore(context: Context) {
         private const val PREFS_NAME = "smart_notifications_secure_prefs"
         private const val KEY_ENABLED = "smart_notifications_enabled"
         private const val KEY_WHITELIST = "smart_notifications_whitelist"
-        private const val KEY_VIP_WORDS = "smart_notifications_vip_words"
         private const val KEY_SPAM_WORDS = "smart_notifications_spam_words"
         private const val KEY_VSEGPT_API_KEY = "vsegpt_api_key"
         private const val KEY_SHOWN_SPAM_TIP = "smart_notifications_shown_spam_tip"

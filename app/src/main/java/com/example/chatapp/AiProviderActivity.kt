@@ -17,7 +17,9 @@ import com.example.chatapp.network.AiProvider
 import com.example.chatapp.network.AiProviderSettings
 import com.example.chatapp.network.NetworkModule
 import com.example.chatapp.network.dto.AiModelDescriptorResponse
+import android.view.animation.OvershootInterpolator
 import com.example.chatapp.util.setHapticClickListener
+import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +44,7 @@ class AiProviderActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnBack).setHapticClickListener { finish() }
 
         setupProviderSelection()
+        setupAdultMode()
         applyTranslations()
         updateUi()
         loadServerModels()
@@ -54,6 +57,7 @@ class AiProviderActivity : AppCompatActivity() {
     private fun updateUi() {
         findViewById<LinearLayout>(R.id.modelInfoSection).visibility = View.VISIBLE
         renderModelOptions()
+        updateAdultModeUi()
 
         findViewById<TextView>(R.id.tvToolsInfo)?.visibility = View.GONE
     }
@@ -168,6 +172,47 @@ class AiProviderActivity : AppCompatActivity() {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
+    private fun setupAdultMode() {
+        findViewById<View>(R.id.itemAdultMode)?.setHapticClickListener {
+            val enabled = !providerSettings.isAdultModeEnabled()
+            providerSettings.setAdultModeEnabled(enabled)
+            animateAdultModeSwitch()
+            updateUi()
+        }
+
+        findViewById<SwitchMaterial>(R.id.switchAdultMode)?.setOnCheckedChangeListener { _, isChecked ->
+            if (providerSettings.isAdultModeEnabled() != isChecked) {
+                providerSettings.setAdultModeEnabled(isChecked)
+                animateAdultModeSwitch()
+                updateUi()
+            }
+        }
+    }
+
+    private fun updateAdultModeUi() {
+        val enabled = providerSettings.isAdultModeEnabled()
+        val switch = findViewById<SwitchMaterial>(R.id.switchAdultMode) ?: return
+        if (switch.isChecked != enabled) {
+            switch.isChecked = enabled
+        }
+    }
+
+    private fun animateAdultModeSwitch() {
+        findViewById<SwitchMaterial>(R.id.switchAdultMode)?.animate()
+            ?.scaleX(0.94f)
+            ?.scaleY(0.94f)
+            ?.setDuration(70L)
+            ?.withEndAction {
+                findViewById<SwitchMaterial>(R.id.switchAdultMode)?.animate()
+                    ?.scaleX(1f)
+                    ?.scaleY(1f)
+                    ?.setInterpolator(OvershootInterpolator(2.2f))
+                    ?.setDuration(180L)
+                    ?.start()
+            }
+            ?.start()
+    }
+
     private fun applyTranslations() {
         findViewById<TextView>(R.id.tvToolbarTitle)?.text =
             LocaleHelper.getString(this, "ai_provider_title")
@@ -183,5 +228,11 @@ class AiProviderActivity : AppCompatActivity() {
             LocaleHelper.getString(this, "ai_provider_openai_desc")
         findViewById<TextView>(R.id.tvSectionModel)?.text =
             LocaleHelper.getString(this, "ai_provider_model_section")
+        findViewById<TextView>(R.id.tvLabelAdultMode)?.text =
+            LocaleHelper.getString(this, "adult_mode_title")
+        findViewById<TextView>(R.id.tvAdultModeValue)?.text =
+            LocaleHelper.getString(this, "adult_replies_title")
+        findViewById<TextView>(R.id.tvAdultModeBadge)?.text =
+            LocaleHelper.getString(this, "adult_badge")
     }
 }

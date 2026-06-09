@@ -3,7 +3,7 @@
     <string name="action_create_image">სურათის შექმნა</string>
     <string name="adult_badge">18+</string>
     <string name="adult_mode_title">18+ რეჟიმი</string>
-    <string name="adult_replies_title">ზრდასრულთა პასუხები</string>
+    <string name="adult_replies_title">ხელოვნური ინტელექტი პასუხობს ცენზურის გარეშე ბევრ კითხვაზე</string>
     <string name="ai_default_image_prompt">კრეატიული სურათი</string>
     <string name="ai_mode_server_routing_desc">მოდელები და ლიმიტები მიმდინარე ანგარიშისთვის სერვერზე ირჩევა.</string>
     <string name="ai_mode_server_routing_title">სერვერის მარშრუტიზაცია</string>
@@ -518,11 +518,8 @@
     <string name="debug_force_invite_pill_title">მოწვევის პილულის იძულება</string>
     <string name="debug_force_invite_pill_subtitle">ყოვლთვის აჩვენე მეგობრების მოწვევის პილულა ჩატში</string>
     <string name="button_open_in_browser">ბრაუზერში გახსნა</string>
-    <string name="smart_notifications_vip_words_title">VIP სიტყვები</string>
-    <string name="smart_notifications_vip_words_desc">ყოვლთვის დაუკარით ხმა ამ საკვანძო სიტყვებისთვის</string>
     <string name="smart_notifications_spam_words_title">სტოპ სიტყვები</string>
     <string name="smart_notifications_spam_words_desc">დაბლოკეთ მყისიერად ხელოვნური ინტელექტის შემოწმების გარეშე</string>
-    <string name="smart_notifications_keywords_title_vip">VIP სიტყვები</string>
     <string name="smart_notifications_keywords_title_spam">სტოპ სიტყვები</string>
     <string name="smart_notifications_keywords_add_hint">ჩაწერეთ საკვანძო სიტყვა ან ფრაზა...</string>
     <string name="smart_notifications_keywords_empty">საკვანძო სიტყვები ჯერ არ არის დამატებული</string>

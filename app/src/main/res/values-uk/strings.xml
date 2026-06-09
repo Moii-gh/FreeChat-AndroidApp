@@ -3,7 +3,7 @@
     <string name="action_create_image">Створити зображення</string>
     <string name="adult_badge">18+</string>
     <string name="adult_mode_title">Режим 18+</string>
-    <string name="adult_replies_title">Дорослі відповіді</string>
+    <string name="adult_replies_title">ШІ відповідає без цензури на багато запитань</string>
     <string name="ai_default_image_prompt">Креативне зображення</string>
     <string name="ai_mode_server_routing_desc">Моделі та ліміти обираються на сервері для поточного акаунта.</string>
     <string name="ai_mode_server_routing_title">Серверна маршрутизація</string>
@@ -518,11 +518,8 @@
     <string name="debug_force_invite_pill_title">Показувати пілюлю запрошення</string>
     <string name="debug_force_invite_pill_subtitle">Завжди показувати пілюлю \"Запросити друзів\" у чаті</string>
     <string name="button_open_in_browser">Відкрити в браузері</string>
-    <string name="smart_notifications_vip_words_title">VIP-слова</string>
-    <string name="smart_notifications_vip_words_desc">Завжди відтворювати звук для цих слів</string>
     <string name="smart_notifications_spam_words_title">Стоп-слова</string>
     <string name="smart_notifications_spam_words_desc">Блокувати миттєво без перевірки ШІ</string>
-    <string name="smart_notifications_keywords_title_vip">VIP-слова</string>
     <string name="smart_notifications_keywords_title_spam">Стоп-слова</string>
     <string name="smart_notifications_keywords_add_hint">Введіть слово або фразу...</string>
     <string name="smart_notifications_keywords_empty">Список слів порожній</string>

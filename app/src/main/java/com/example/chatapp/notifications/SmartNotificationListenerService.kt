@@ -50,18 +50,7 @@ class SmartNotificationListenerService : NotificationListenerService() {
         val titleLower = payload.title.lowercase()
         val textLower = payload.text.lowercase()
 
-        // 1. Check VIP words
-        val hasVipWord = settingsStore.vipWords.any { word ->
-            val wl = word.trim().lowercase()
-            wl.isNotEmpty() && (titleLower.contains(wl) || textLower.contains(wl))
-        }
-
-        if (hasVipWord) {
-            playVipSound()
-            return
-        }
-
-        // 2. Check Stop words
+        // 1. Check Stop words
         val hasStopWord = settingsStore.spamWords.any { word ->
             val bl = word.trim().lowercase()
             bl.isNotEmpty() && (titleLower.contains(bl) || textLower.contains(bl))
@@ -72,7 +61,7 @@ class SmartNotificationListenerService : NotificationListenerService() {
             return
         }
 
-        // 3. Otherwise, classify with AI
+        // 2. Otherwise, classify with AI
         serviceScope.launch {
             classificationLimiter.withPermit {
                 val decision = classifier.classify(payload)
@@ -85,7 +74,7 @@ class SmartNotificationListenerService : NotificationListenerService() {
 
     private fun handleSpamNotification(sbn: StatusBarNotification, payload: SmartNotificationPayload) {
         val spam = SpamNotification(
-            id = UUID.randomUUID().toString(),
+            id = java.util.UUID.randomUUID().toString(),
             packageName = sbn.packageName,
             title = payload.title,
             text = payload.text,
@@ -99,21 +88,6 @@ class SmartNotificationListenerService : NotificationListenerService() {
         if (!settingsStore.hasShownSpamNotificationTip) {
             settingsStore.hasShownSpamNotificationTip = true
             showFirstTimeSpamFilteredNotification()
-        }
-    }
-
-    private fun playVipSound() {
-        runCatching {
-            val notificationUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
-            val ringtone = android.media.RingtoneManager.getRingtone(applicationContext, notificationUri)
-            if (ringtone != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ringtone.isLooping = false
-                }
-                ringtone.play()
-            }
-        }.onFailure { e ->
-            SafeLog.w(TAG, "Failed to play VIP sound", e)
         }
     }
 

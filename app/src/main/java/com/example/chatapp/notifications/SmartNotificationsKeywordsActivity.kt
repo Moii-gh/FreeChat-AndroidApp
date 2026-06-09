@@ -32,7 +32,6 @@ class SmartNotificationsKeywordsActivity : AppCompatActivity() {
     private lateinit var tvToolbarTitle: TextView
 
     private lateinit var keywordsAdapter: KeywordsAdapter
-    private var isVipMode = false
     private val keywordsList = mutableListOf<String>()
 
     override fun attachBaseContext(newBase: Context) {
@@ -46,7 +45,7 @@ class SmartNotificationsKeywordsActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
 
         settingsStore = SmartNotificationsSettingsStore(this)
-        isVipMode = intent.getStringExtra("mode") == "vip"
+
 
         etNewKeyword = findViewById(R.id.etNewKeyword)
         btnAddKeyword = findViewById(R.id.btnAddKeyword)
@@ -63,8 +62,7 @@ class SmartNotificationsKeywordsActivity : AppCompatActivity() {
     }
 
     private fun applyTranslations() {
-        val titleKey = if (isVipMode) "smart_notifications_keywords_title_vip" else "smart_notifications_keywords_title_spam"
-        tvToolbarTitle.text = LocaleHelper.getString(this, titleKey)
+        tvToolbarTitle.text = LocaleHelper.getString(this, "smart_notifications_keywords_title_spam")
         etNewKeyword.hint = LocaleHelper.getString(this, "smart_notifications_keywords_add_hint")
         tvEmptyState.text = LocaleHelper.getString(this, "smart_notifications_keywords_empty")
     }
@@ -94,7 +92,7 @@ class SmartNotificationsKeywordsActivity : AppCompatActivity() {
 
     private fun loadKeywords() {
         keywordsList.clear()
-        val loaded = if (isVipMode) settingsStore.vipWords else settingsStore.spamWords
+        val loaded = settingsStore.spamWords
         keywordsList.addAll(loaded.sorted())
         keywordsAdapter.submitList(keywordsList)
         updateUiState()
@@ -124,11 +122,7 @@ class SmartNotificationsKeywordsActivity : AppCompatActivity() {
 
     private fun saveKeywords() {
         val set = keywordsList.toSet()
-        if (isVipMode) {
-            settingsStore.vipWords = set
-        } else {
-            settingsStore.spamWords = set
-        }
+        settingsStore.spamWords = set
     }
 
     private fun updateUiState() {
