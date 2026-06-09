@@ -224,25 +224,76 @@ internal class BiometricGateController(
     private fun showGateDialog(messageKey: String) {
         if (!isActive || activity.isFinishing || activity.isDestroyed) return
         gateDialog?.dismiss()
-        val alert = AlertDialog.Builder(activity)
-            .setTitle(LocaleHelper.getString(activity, "security_biometric_required_title"))
-            .setMessage(LocaleHelper.getString(activity, messageKey))
-            .setPositiveButton(LocaleHelper.getString(activity, "security_biometric_retry")) { _, _ ->
-                start()
+
+        val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+
+        val dialogView = activity.layoutInflater.inflate(R.layout.dialog_biometric_gate, null)
+        val card = dialogView.findViewById<android.view.View>(R.id.gateDialogCard)
+        val title = dialogView.findViewById<android.widget.TextView>(R.id.tvGateTitle)
+        val message = dialogView.findViewById<android.widget.TextView>(R.id.tvGateMessage)
+        val btnLogout = dialogView.findViewById<android.widget.TextView>(R.id.btnGateLogout)
+        val btnRetry = dialogView.findViewById<android.widget.TextView>(R.id.btnGateRetry)
+
+        title.text = LocaleHelper.getString(activity, "security_biometric_required_title")
+        message.text = LocaleHelper.getString(activity, messageKey)
+        btnLogout.text = LocaleHelper.getString(activity, "security_biometric_use_login")
+        btnRetry.text = LocaleHelper.getString(activity, "security_biometric_retry")
+
+        card.alpha = 0f
+        card.scaleX = 0.9f
+        card.scaleY = 0.9f
+        card.translationY = 18f * activity.resources.displayMetrics.density
+
+        btnLogout.setOnClickListener {
+            dialog.dismiss()
+            gateDialog = null
+            SharedPrefsAccountSessionStore(activity.applicationContext).clearSession()
+            activity.startActivity(
+                Intent(activity, MainActivity::class.java).apply {
+                    putExtra(MainActivity.EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, true)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+            )
+            activity.finish()
+        }
+
+        btnRetry.setOnClickListener {
+            dialog.dismiss()
+            gateDialog = null
+            start()
+        }
+
+        dialog.setContentView(dialogView)
+        dialog.setCancelable(false)
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            setDimAmount(0.58f)
+            addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setGravity(android.view.Gravity.CENTER)
+            setWindowAnimations(0)
+            attributes = attributes.apply {
+                width = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
             }
-            .setNegativeButton(LocaleHelper.getString(activity, "security_biometric_use_login")) { _, _ ->
-                SharedPrefsAccountSessionStore(activity.applicationContext).clearSession()
-                activity.startActivity(
-                    Intent(activity, MainActivity::class.java).apply {
-                        putExtra(MainActivity.EXTRA_SKIP_BIOMETRIC_ONCE_AFTER_LOGIN, true)
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                )
-                activity.finish()
-            }
-            .setCancelable(false)
-            .show()
-        gateDialog = alert
+        }
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            card.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(260L)
+                .setInterpolator(android.view.animation.PathInterpolator(0.16f, 1f, 0.3f, 1f))
+                .start()
+        }
+
+        gateDialog = dialog
+        dialog.show()
     }
 
     private fun biometricAvailability(): Int =
