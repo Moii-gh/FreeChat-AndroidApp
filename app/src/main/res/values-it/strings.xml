@@ -320,11 +320,11 @@
     <string name="security_faq_telegram_answer">L\'accesso tramite Telegram è un passaggio di autorizzazione comodo. Aiuta a confermare che l\'account appartiene a te senza aggiungere schermate di accesso inutili.</string>
     <string name="security_faq_telegram_title">Perché accedere tramite Telegram?</string>
     <string name="security_faq_title">Come proteggiamo i tuoi dati?</string>
-    <string name="security_password_change_success">Password modificata localmente</string>
+    <string name="security_password_change_success">Password modificata</string>
     <string name="security_password_mask">********************</string>
-    <string name="security_password_not_set">Non impostata localmente</string>
+    <string name="security_password_not_set">Non impostata</string>
     <string name="security_password_unavailable">La password non è disponibile su questo dispositivo</string>
-    <string name="security_password_set_title">Imposta password locale</string>
+    <string name="security_password_set_title">Imposta password</string>
     <string name="security_password_disable">Disattiva password</string>
     <string name="security_password_unlock">Sblocca</string>
     <string name="security_password_enter_hint">Inserisci password</string>

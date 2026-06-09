@@ -320,11 +320,11 @@
     <string name="security_faq_telegram_answer">La connexion via Telegram sert d\'étape d\'autorisation pratique. Elle aide à confirmer que le compte vous appartient sans ajouter d\'écrans de connexion inutiles.</string>
     <string name="security_faq_telegram_title">Pourquoi se connecter via Telegram ?</string>
     <string name="security_faq_title">Comment protégeons-nous vos données ?</string>
-    <string name="security_password_change_success">Mot de passe modifié localement</string>
+    <string name="security_password_change_success">Mot de passe modifié</string>
     <string name="security_password_mask">********************</string>
-    <string name="security_password_not_set">Non défini localement</string>
+    <string name="security_password_not_set">Non défini</string>
     <string name="security_password_unavailable">Le mot de passe est indisponible sur cet appareil</string>
-    <string name="security_password_set_title">Définir le mot de passe local</string>
+    <string name="security_password_set_title">Définir le mot de passe</string>
     <string name="security_password_disable">Désactiver le mot de passe</string>
     <string name="security_password_unlock">Déverrouiller</string>
     <string name="security_password_enter_hint">Saisir le mot de passe</string>

@@ -320,9 +320,9 @@
     <string name="security_faq_telegram_answer">Вход через Telegram используется как удобный шаг авторизации. Он помогает подтвердить, что аккаунт принадлежит вам, без лишних экранов входа.</string>
     <string name="security_faq_telegram_title">Почему вход через Telegram?</string>
     <string name="security_faq_title">Как мы защищаем ваши данные?</string>
-    <string name="security_password_change_success">Пароль изменен локально</string>
+    <string name="security_password_change_success">Пароль изменен</string>
     <string name="security_password_mask">********************</string>
-    <string name="security_password_not_set">Локально не задан</string>
+    <string name="security_password_not_set">Не задан</string>
     <string name="security_password_unavailable">Пароль не хранится в приложении</string>
     <string name="security_password_set_title">Задать пароль</string>
     <string name="security_password_disable">Отключить пароль</string>

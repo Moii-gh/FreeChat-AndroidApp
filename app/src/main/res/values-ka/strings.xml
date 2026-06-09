@@ -320,11 +320,11 @@
     <string name="security_faq_telegram_answer">Telegram-ით შესვლა გამოიყენება როგორც მოსახერხებელი ავტორიზაციის ნაბიჯი. ის გვეხმარება დავადასტუროთ, რომ ანგარიში თქვენ გეკუთვნით, ზედმეტი შესვლის ეკრანების გარეშე.</string>
     <string name="security_faq_telegram_title">რატომ შესვლა Telegram-ით?</string>
     <string name="security_faq_title">როგორ ვიცავთ თქვენს მონაცემებს?</string>
-    <string name="security_password_change_success">პაროლი ლოკალურად შეიცვალა</string>
+    <string name="security_password_change_success">პაროლი შეიცვალა</string>
     <string name="security_password_mask">********************</string>
-    <string name="security_password_not_set">ლოკალურად არ არის დაყენებული</string>
+    <string name="security_password_not_set">არ არის დაყენებული</string>
     <string name="security_password_unavailable">პაროლი აპში არ ინახება</string>
-    <string name="security_password_set_title">ლოკალური პაროლის დაყენება</string>
+    <string name="security_password_set_title">პაროლის დაყენება</string>
     <string name="security_password_disable">პაროლის გამორთვა</string>
     <string name="security_password_unlock">განბლოკვა</string>
     <string name="security_password_enter_hint">შეიყვანეთ პაროლი</string>
