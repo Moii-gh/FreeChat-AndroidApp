@@ -154,6 +154,11 @@ class SmartNotificationsSettingsActivity : AppCompatActivity() {
         val spamVisibility = if (isEffectivelyEnabled && hasSpam) View.VISIBLE else View.GONE
         findViewById<View>(R.id.smartNotificationsSpamDivider)?.visibility = spamVisibility
         findViewById<View>(R.id.smartNotificationsSpamRow)?.visibility = spamVisibility
+
+        // Hide 'Allow Access' button and description if the user has already granted access
+        val accessViewsVisibility = if (hasAccess) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.btnSmartNotificationsAllowAccess)?.visibility = accessViewsVisibility
+        findViewById<View>(R.id.tvSmartNotificationsPermissions)?.visibility = accessViewsVisibility
     }
 
     private fun openSmartNotificationsAccessSettings() {

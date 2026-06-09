@@ -111,6 +111,19 @@ class DigitalAssistantSettingsActivity : AppCompatActivity() {
         val status = digitalAssistantPermissions.status(digitalAssistantSettings)
         findViewById<TextView>(R.id.tvDigitalAssistantStatus)?.text =
             digitalAssistantPermissions.statusLabel(status)
+
+        val isDefaultAssistant = digitalAssistantPermissions.isFreeChatDefaultAssistant()
+        val hasOtherPermissions = digitalAssistantPermissions.canDrawOverlays() && digitalAssistantPermissions.hasNotificationPermission()
+
+        findViewById<View>(R.id.btnAssignDigitalAssistant)?.visibility =
+            if (isDefaultAssistant) View.GONE else View.VISIBLE
+
+        findViewById<View>(R.id.btnGrantDigitalAssistantPermissions)?.visibility =
+            if (hasOtherPermissions) View.GONE else View.VISIBLE
+
+        // Hide description if both default assistant is assigned and all other permissions are granted
+        findViewById<View>(R.id.tvDigitalAssistantPermissions)?.visibility =
+            if (isDefaultAssistant && hasOtherPermissions) View.GONE else View.VISIBLE
     }
 
     private fun openAssistantSettingsOrExplain() {
