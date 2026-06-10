@@ -2,7 +2,7 @@ const { env } = require("../config/env");
 
 const PROVIDER_OPENAI = "openai";
 const PROVIDER_VSEGPT = "vsegpt";
-const DEFAULT_PROVIDER = PROVIDER_OPENAI;
+const DEFAULT_PROVIDER = PROVIDER_VSEGPT;
 const VSEGPT_DEEPSEEK_MODEL_KEY = "deepseek";
 const VSEGPT_DEEPSEEK_MODEL_ID = "deepseek/deepseek-chat";
 

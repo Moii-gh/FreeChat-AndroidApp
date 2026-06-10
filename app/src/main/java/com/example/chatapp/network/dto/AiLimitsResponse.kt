@@ -22,7 +22,7 @@ data class AiTrendingResponse(
 
 @Keep
 data class AiModelsResponse(
-    val defaultProvider: String = "openai",
+    val defaultProvider: String = "vsegpt",
     val models: List<AiModelDescriptorResponse> = emptyList()
 )
 

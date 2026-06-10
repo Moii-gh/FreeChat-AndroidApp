@@ -338,7 +338,7 @@ function createAiController({ aiUsageModel }) {
     getModels: async (_req, res) => {
       return res.status(200).json({
         providers: ["openai", "vsegpt"],
-        defaultProvider: "openai",
+        defaultProvider: "vsegpt",
         models: publicModels()
       });
     },

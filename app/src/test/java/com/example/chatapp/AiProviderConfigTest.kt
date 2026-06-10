@@ -10,10 +10,10 @@ import org.junit.Test
 class AiProviderConfigTest {
 
     @Test
-    fun `unknown or missing provider defaults to OpenAI`() {
-        assertEquals(AiProvider.OPENAI, AiProvider.fromCode(null))
-        assertEquals(AiProvider.OPENAI, AiProvider.fromCode(""))
-        assertEquals(AiProvider.OPENAI, AiProvider.fromCode("unknown"))
+    fun `unknown or missing provider defaults to VseGPT`() {
+        assertEquals(AiProvider.VSEGPT, AiProvider.fromCode(null))
+        assertEquals(AiProvider.VSEGPT, AiProvider.fromCode(""))
+        assertEquals(AiProvider.VSEGPT, AiProvider.fromCode("unknown"))
     }
 
     @Test

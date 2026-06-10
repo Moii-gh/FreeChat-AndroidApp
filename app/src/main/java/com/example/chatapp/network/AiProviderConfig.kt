@@ -9,7 +9,7 @@ enum class AiProvider(val code: String, val displayLabel: String) {
 
     companion object {
         fun fromCode(code: String?): AiProvider =
-            entries.firstOrNull { it.code == code } ?: OPENAI
+            entries.firstOrNull { it.code == code } ?: VSEGPT
     }
 }
 

@@ -178,7 +178,7 @@ function authHeader(user) {
   return `Bearer ${createJwtToken(user)}`;
 }
 
-test("POST /api/ai/chat defaults to OpenAI when provider and model are omitted", async () => {
+test("POST /api/ai/chat defaults to VseGPT (Gemini-3) when provider and model are omitted", async () => {
   const restoreEnv = setAiEnv({ dailyAiRequestLimit: 5 });
   const originalFetch = global.fetch;
   let upstreamUrl = "";
@@ -210,9 +210,9 @@ test("POST /api/ai/chat defaults to OpenAI when provider and model are omitted",
       });
 
     assert.equal(response.status, 200);
-    assert.equal(upstreamUrl, env.openAiChatUrl);
-    assert.equal(authorization, "Bearer openai-test-key");
-    assert.equal(upstreamBody.model, "gpt-5.4-mini");
+    assert.equal(upstreamUrl, env.vsegptChatUrl);
+    assert.equal(authorization, "Bearer vsegpt-test-key");
+    assert.equal(upstreamBody.model, "google/gemma-4-26b-a4b-it");
   } finally {
     global.fetch = originalFetch;
     restoreEnv();
@@ -1093,7 +1093,7 @@ test("GET /api/ai/models returns public model metadata without technical model i
       .set("Authorization", authHeader(user));
 
     assert.equal(response.status, 200);
-    assert.equal(response.body.defaultProvider, "openai");
+    assert.equal(response.body.defaultProvider, "vsegpt");
     const openAiModels = response.body.models.filter((model) => model.provider === "openai");
     assert.equal(openAiModels.length, 1);
     assert.deepEqual(openAiModels[0], {
