@@ -55,7 +55,7 @@ function providerConfig(provider) {
       imageEditUrl: env.vsegptImageEditUrl,
       filesUrl: "",
       vectorStoresUrl: "",
-      imageModel: env.aiImageModel || "img-flux/flux-2-klein-4b",
+      imageModel: env.aiImageModel || "img-openai/gpt-image-2",
       imageEditModel: env.aiImageEditModel || "img2img-openai/gpt-image-2-edit-multi",
       adultTextModel: env.aiAdultTextModel,
       searchModel: env.aiSearchModel,
