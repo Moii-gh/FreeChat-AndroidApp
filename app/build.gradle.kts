@@ -21,6 +21,13 @@ if (envFile.exists()) {
         }
     }
 }
+println("--- DEBUG GRADLE ---")
+println("envFile path: ${envFile.absolutePath}")
+println("envFile exists: ${envFile.exists()}")
+println("envVars: $envVars")
+println("configuredApiBaseUrl: $configuredApiBaseUrl")
+println("--------------------")
+
 
 fun String.toBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
