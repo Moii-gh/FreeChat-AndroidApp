@@ -31,5 +31,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "chatapp"
+rootProject.name = "FreeChat - AI Assistant"
 include(":app")
