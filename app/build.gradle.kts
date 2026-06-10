@@ -10,7 +10,7 @@ plugins {
     id("kotlin-kapt")
 }
 
-val envFile = rootProject.file(".env")
+val envFile = File(rootDir, ".env")
 val envVars = mutableMapOf<String, String>()
 if (envFile.exists()) {
     envFile.readLines().forEach { line ->
@@ -21,12 +21,7 @@ if (envFile.exists()) {
         }
     }
 }
-println("--- DEBUG GRADLE ---")
-println("envFile path: ${envFile.absolutePath}")
-println("envFile exists: ${envFile.exists()}")
-println("envVars: $envVars")
-println("configuredApiBaseUrl: $configuredApiBaseUrl")
-println("--------------------")
+
 
 
 fun String.toBuildConfigString(): String =
@@ -86,7 +81,7 @@ val configuredVkIdClientId = envVars["VKID_CLIENT_ID"] ?: ""
 val configuredVkIdScopes = envVars["VKID_SCOPES"] ?: "email"
 val vkIdManifestClientId = configuredVkIdClientId.ifBlank { "0" }
 val isVkNativeLoginConfigured = configuredVkIdClientId.isNotBlank()
-val releasePropertiesFile = rootProject.file("release.properties")
+val releasePropertiesFile = File(rootDir, "release.properties")
 val releaseProperties = Properties().apply {
     if (releasePropertiesFile.exists()) {
         releasePropertiesFile.inputStream().use(::load)
