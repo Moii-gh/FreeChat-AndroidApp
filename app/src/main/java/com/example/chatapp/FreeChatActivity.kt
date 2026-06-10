@@ -1677,6 +1677,18 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         }
         val finalBottomPadding = dynamicBottomPadding + navigationBarInsetBottom
 
+        val topScrimParams = binding.topInputScrim.layoutParams
+        if (topScrimParams.height != finalTopPadding) {
+            topScrimParams.height = finalTopPadding
+            binding.topInputScrim.layoutParams = topScrimParams
+        }
+
+        val bottomScrimParams = binding.bottomInputScrim.layoutParams
+        if (bottomScrimParams.height != finalBottomPadding) {
+            bottomScrimParams.height = finalBottomPadding
+            binding.bottomInputScrim.layoutParams = bottomScrimParams
+        }
+
         if (
             binding.messagesScrollView.paddingTop == finalTopPadding &&
             binding.messagesScrollView.paddingBottom == finalBottomPadding
@@ -1699,9 +1711,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.bottomInputArea.layoutParams = inputParams
         }
 
-        binding.bottomInputScrim.animate().cancel()
-        binding.bottomInputScrim.alpha = 0f
-        binding.bottomInputScrim.isGone = true
+        val isChatActive = binding.messagesScrollView.isVisible
+        if (isChatActive) {
+            binding.bottomInputScrim.isVisible = true
+            binding.bottomInputScrim.alpha = 1f
+        } else {
+            binding.bottomInputScrim.alpha = 0f
+            binding.bottomInputScrim.isGone = true
+        }
     }
 
     private fun updateTopInputSystemInset() {
@@ -1712,9 +1729,14 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.topBar.layoutParams = topBarParams
         }
 
-        binding.topInputScrim.animate().cancel()
-        binding.topInputScrim.alpha = 0f
-        binding.topInputScrim.isGone = true
+        val isChatActive = binding.messagesScrollView.isVisible
+        if (isChatActive) {
+            binding.topInputScrim.isVisible = true
+            binding.topInputScrim.alpha = 1f
+        } else {
+            binding.topInputScrim.alpha = 0f
+            binding.topInputScrim.isGone = true
+        }
     }
 
     private fun updateMessagesViewportAnchor() {
@@ -1819,6 +1841,20 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.tvBtnIdea.text = LocaleHelper.getString(this, "button_create_idea")
         binding.tvBtnMore.text = LocaleHelper.getString(this, "button_more")
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
+
+        binding.topInputScrim.animate().cancel()
+        binding.topInputScrim.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction { binding.topInputScrim.isGone = true }
+            .start()
+
+        binding.bottomInputScrim.animate().cancel()
+        binding.bottomInputScrim.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction { binding.bottomInputScrim.isGone = true }
+            .start()
     }
 
     private fun showAnonymousWelcomeState() {
@@ -1835,6 +1871,20 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
         binding.tvAnonymousDesc.text = LocaleHelper.getString(this, "anonymous_mode_desc")
         binding.etInput.hint = LocaleHelper.getString(this, "main_panel_input")
+
+        binding.topInputScrim.animate().cancel()
+        binding.topInputScrim.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction { binding.topInputScrim.isGone = true }
+            .start()
+
+        binding.bottomInputScrim.animate().cancel()
+        binding.bottomInputScrim.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction { binding.bottomInputScrim.isGone = true }
+            .start()
     }
 
     private fun showMessagesState(animateTopActions: Boolean = false) {
@@ -1850,6 +1900,20 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             binding.topRightMain.isGone = true
             binding.topRightChat.isVisible = true
         }
+
+        binding.topInputScrim.animate().cancel()
+        binding.topInputScrim.isVisible = true
+        binding.topInputScrim.animate()
+            .alpha(1f)
+            .setDuration(250)
+            .start()
+
+        binding.bottomInputScrim.animate().cancel()
+        binding.bottomInputScrim.isVisible = true
+        binding.bottomInputScrim.animate()
+            .alpha(1f)
+            .setDuration(250)
+            .start()
     }
 
     private fun resetTopActionsAnimation() {
