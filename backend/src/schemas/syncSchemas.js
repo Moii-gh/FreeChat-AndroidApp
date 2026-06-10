@@ -33,7 +33,8 @@ const syncMessageSchema = z.object({
 
 const syncPayloadSchema = z.object({
   chats: z.array(syncChatSchema).max(500).default([]),
-  messages: z.array(syncMessageSchema).max(5000).default([])
+  messages: z.array(syncMessageSchema).max(5000).default([]),
+  sinceLastUpdatedMs: z.number().int().nonnegative().optional()
 }).strict();
 
 module.exports = {

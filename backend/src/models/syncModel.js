@@ -32,8 +32,8 @@ async function upsertChats(userId, chats, executor) {
       AND chats.last_updated_ms <= EXCLUDED.last_updated_ms
   `;
 
-  for (const chat of chats) {
-    await db.query(query, [
+  const promises = chats.map(chat =>
+    db.query(query, [
       chat.id,
       userId,
       chat.title,
@@ -43,8 +43,9 @@ async function upsertChats(userId, chats, executor) {
       chat.summary,
       chat.isDeleted || false,
       Boolean(chat.isTitleManuallyEdited)
-    ]);
-  }
+    ])
+  );
+  await Promise.all(promises);
 }
 
 async function upsertMessages(userId, messages, executor) {
@@ -102,10 +103,10 @@ async function upsertMessages(userId, messages, executor) {
       )
   `;
 
-  for (const msg of messages) {
+  const promises = messages.map(msg => {
     const isDeleted = Boolean(msg.isDeleted);
     const canonicalUpdatedAt = Date.now();
-    await db.query(query, [
+    return db.query(query, [
       msg.syncId,
       msg.chatId,
       msg.role,
@@ -121,11 +122,17 @@ async function upsertMessages(userId, messages, executor) {
       msg.editRevision || 0,
       userId
     ]);
-  }
+  });
+  await Promise.all(promises);
 }
 
-async function getUserChats(userId, executor) {
-  const result = await getExecutor(executor).query(
+async function getUserChats(userId, sinceLastUpdatedMs = 0, executor) {
+  if (sinceLastUpdatedMs && (typeof sinceLastUpdatedMs === "object" || typeof sinceLastUpdatedMs.query === "function")) {
+    executor = sinceLastUpdatedMs;
+    sinceLastUpdatedMs = 0;
+  }
+  const db = getExecutor(executor);
+  const result = await db.query(
     `SELECT
         id,
         title,
@@ -136,14 +143,19 @@ async function getUserChats(userId, executor) {
         is_deleted as "isDeleted",
         is_title_manually_edited as "isTitleManuallyEdited"
      FROM chats
-     WHERE user_id = $1`,
-    [userId]
+     WHERE user_id = $1 AND last_updated_ms > $2`,
+    [userId, Number(sinceLastUpdatedMs) || 0]
   );
   return result.rows;
 }
 
-async function getUserMessages(userId, executor) {
-  const result = await getExecutor(executor).query(
+async function getUserMessages(userId, sinceLastUpdatedMs = 0, executor) {
+  if (sinceLastUpdatedMs && (typeof sinceLastUpdatedMs === "object" || typeof sinceLastUpdatedMs.query === "function")) {
+    executor = sinceLastUpdatedMs;
+    sinceLastUpdatedMs = 0;
+  }
+  const db = getExecutor(executor);
+  const result = await db.query(
     `SELECT
         m.id as "syncId",
         m.chat_id as "chatId",
@@ -160,9 +172,9 @@ async function getUserMessages(userId, executor) {
         m.edit_revision as "editRevision"
      FROM messages m 
      JOIN chats c ON m.chat_id = c.id 
-     WHERE c.user_id = $1 AND c.is_deleted = false
+     WHERE c.user_id = $1 AND c.is_deleted = false AND m.updated_at_ms > $2
      ORDER BY m.timestamp_ms ASC, m.created_at ASC`,
-    [userId]
+    [userId, Number(sinceLastUpdatedMs) || 0]
   );
   return result.rows;
 }

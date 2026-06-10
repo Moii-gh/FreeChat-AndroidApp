@@ -4,7 +4,8 @@ const { upsertChats, upsertMessages, getUserChats, getUserMessages } = require("
 async function syncData(req, res, next) {
   try {
     const userId = req.user.id;
-    const { chats, messages } = req.validatedBody || req.body;
+    const { chats, messages, sinceLastUpdatedMs } = req.validatedBody || req.body;
+    const since = sinceLastUpdatedMs || 0;
 
     const { remoteChats, remoteMessages } = await withTransaction(async (executor) => {
       if (chats && chats.length > 0) {
@@ -16,8 +17,8 @@ async function syncData(req, res, next) {
       }
 
       return {
-        remoteChats: await getUserChats(userId, executor),
-        remoteMessages: await getUserMessages(userId, executor)
+        remoteChats: await getUserChats(userId, since, executor),
+        remoteMessages: await getUserMessages(userId, since, executor)
       };
     });
 

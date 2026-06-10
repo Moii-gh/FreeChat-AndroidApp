@@ -1,4 +1,5 @@
 const express = require("express");
+const compression = require("compression");
 const path = require("path");
 const fs = require("fs");
 const { env } = require("./config/env");
@@ -23,6 +24,7 @@ const { createFileRouter } = require("./routes/fileRoutes");
 
 function createApp(options = {}) {
   const app = express();
+  app.use(compression());
   app.set("trust proxy", 1);
   const resolvedUserModel = options.userModel || userModel;
   const resolvedTelegramChallengeModel =

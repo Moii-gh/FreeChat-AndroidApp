@@ -181,3 +181,17 @@ test("getUserMessages excludes tombstoned chats from the sync response", async (
   assert.match(executor.queries[0].text, /m\.is_deleted as "isDeleted"/);
   assert.match(executor.queries[0].text, /m\.edit_revision as "editRevision"/);
 });
+
+test("getUserChats and getUserMessages apply sinceLastUpdatedMs filter", async () => {
+  const executor = createFakeExecutor();
+
+  await getUserChats("user-1", 12345678, executor);
+  assert.equal(executor.queries.length, 1);
+  assert.match(executor.queries[0].text, /last_updated_ms > \$2/);
+  assert.equal(executor.queries[0].params[1], 12345678);
+
+  await getUserMessages("user-1", 87654321, executor);
+  assert.equal(executor.queries.length, 2);
+  assert.match(executor.queries[1].text, /m\.updated_at_ms > \$2/);
+  assert.equal(executor.queries[1].params[1], 87654321);
+});

@@ -167,6 +167,9 @@ alter table if exists messages add column if not exists edit_revision integer no
 create index if not exists idx_messages_chat_active_order
     on messages(chat_id, is_deleted, timestamp_ms);
 
+create index if not exists idx_messages_updated_at
+    on messages(updated_at_ms);
+
 create index if not exists idx_chats_user_updated
     on chats(user_id, is_deleted, last_updated_ms desc);
 
