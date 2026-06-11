@@ -1125,7 +1125,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             return
         }
         binding.messagesScrollView.post {
-            binding.messagesScrollView.smoothScrollTo(0, binding.messagesContainer.bottom)
+            smoothScrollWithBounce(binding.messagesContainer.bottom)
         }
     }
 
@@ -2893,7 +2893,27 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun scrollToBottom() {
         binding.messagesScrollView.post {
-            binding.messagesScrollView.smoothScrollTo(0, bottomScrollY())
+            smoothScrollWithBounce(bottomScrollY())
+        }
+    }
+
+    private fun smoothScrollWithBounce(targetScrollY: Int) {
+        val current = binding.messagesScrollView.scrollY
+        if (kotlin.math.abs(targetScrollY - current) > 10) {
+            val animator = android.animation.ObjectAnimator.ofInt(binding.messagesScrollView, "scrollY", targetScrollY)
+            animator.duration = 450L
+            animator.interpolator = android.view.animation.DecelerateInterpolator(1.8f)
+            animator.start()
+
+            // Эффект пружинящего отскока для контента
+            binding.messagesContainer.translationY = 40f
+            binding.messagesContainer.animate()
+                .translationY(0f)
+                .setDuration(500L)
+                .setInterpolator(android.view.animation.OvershootInterpolator(1.0f))
+                .start()
+        } else {
+            binding.messagesScrollView.scrollTo(0, targetScrollY)
         }
     }
 
