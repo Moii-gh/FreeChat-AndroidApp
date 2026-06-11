@@ -230,6 +230,7 @@
     <string name="label_select_language">Select language</string>
     <string name="label_user">User</string>
     <string name="label_your_password">Your password</string>
+    <string name="language_name_be">Belarusian</string>
     <string name="language_name_br">Belarusian</string>
     <string name="language_name_en">English</string>
     <string name="language_name_fr">French</string>
@@ -238,6 +239,15 @@
     <string name="language_name_ka">Georgian</string>
     <string name="language_name_ru">Russian</string>
     <string name="language_name_uk">Ukrainian</string>
+    <string name="language_name_es">Spanish</string>
+    <string name="language_name_de">German</string>
+    <string name="language_name_pt">Portuguese</string>
+    <string name="language_name_tr">Turkish</string>
+    <string name="language_name_zh">Chinese</string>
+    <string name="language_name_ja">Japanese</string>
+    <string name="language_name_ko">Korean</string>
+    <string name="language_name_ar">Arabic</string>
+    <string name="language_name_hi">Hindi</string>
     <string name="main_panel_input">Ask a question</string>
     <string name="main_panel_input_create_image">Create image</string>
     <string name="main_panel_input_panel_search">Search the web</string>

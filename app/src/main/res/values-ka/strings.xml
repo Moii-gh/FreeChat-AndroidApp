@@ -230,6 +230,7 @@
     <string name="label_select_language">აირჩიეთ ენა</string>
     <string name="label_user">მომხმარებელი</string>
     <string name="label_your_password">თქვენი პაროლი</string>
+    <string name="language_name_be">ბელარუსული</string>
     <string name="language_name_br">ბელარუსული</string>
     <string name="language_name_en">ინგლისური</string>
     <string name="language_name_fr">ფრანგული</string>
@@ -238,6 +239,15 @@
     <string name="language_name_ka">ქართული</string>
     <string name="language_name_ru">რუსული</string>
     <string name="language_name_uk">უკრაინული</string>
+    <string name="language_name_es">ესპანური</string>
+    <string name="language_name_de">გერმანული</string>
+    <string name="language_name_pt">პორტუგალიური</string>
+    <string name="language_name_tr">თურქული</string>
+    <string name="language_name_zh">ჩინური</string>
+    <string name="language_name_ja">იაპონური</string>
+    <string name="language_name_ko">კორეული</string>
+    <string name="language_name_ar">არაბული</string>
+    <string name="language_name_hi">ჰინდი</string>
     <string name="main_panel_input">დასვით კითხვა</string>
     <string name="main_panel_input_create_image">შექმენით სურათი</string>
     <string name="main_panel_input_panel_search">მოძებნეთ ინტერნეტში</string>

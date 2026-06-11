@@ -230,6 +230,7 @@
     <string name="label_select_language">Выбрать язык</string>
     <string name="label_user">Пользователь</string>
     <string name="label_your_password">Ваш пароль</string>
+    <string name="language_name_be">Белорусский</string>
     <string name="language_name_br">Белорусский</string>
     <string name="language_name_en">Английский</string>
     <string name="language_name_fr">Французский</string>
@@ -238,6 +239,15 @@
     <string name="language_name_ka">Грузинский</string>
     <string name="language_name_ru">Русский</string>
     <string name="language_name_uk">Украинский</string>
+    <string name="language_name_es">Испанский</string>
+    <string name="language_name_de">Немецкий</string>
+    <string name="language_name_pt">Португальский</string>
+    <string name="language_name_tr">Турецкий</string>
+    <string name="language_name_zh">Китайский</string>
+    <string name="language_name_ja">Японский</string>
+    <string name="language_name_ko">Корейский</string>
+    <string name="language_name_ar">Арабский</string>
+    <string name="language_name_hi">Хинди</string>
     <string name="main_panel_input">Задайте вопрос</string>
     <string name="main_panel_input_create_image">Создать изображение</string>
     <string name="main_panel_input_panel_search">Поиск в сети</string>

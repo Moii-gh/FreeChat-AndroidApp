@@ -19,7 +19,17 @@ object LanguageManager {
         "fr" to Locale.FRENCH,
         "it" to Locale.ITALIAN,
         "uk" to Locale("uk"),
-        "ka" to Locale("ka")
+        "ka" to Locale("ka"),
+        "es" to Locale("es"),
+        "de" to Locale("de"),
+        "pt" to Locale("pt"),
+        "tr" to Locale("tr"),
+        "zh" to Locale("zh"),
+        "ja" to Locale("ja"),
+        "ko" to Locale("ko"),
+        "ar" to Locale("ar"),
+        "hi" to Locale("hi"),
+        "be" to Locale("be")
     )
 
     val supportedLanguageCodes: List<String> = supportedLocales.keys.toList()
@@ -113,6 +123,7 @@ object LanguageManager {
     private fun normalizeLanguageCode(languageCode: String): String {
         return when (languageCode.lowercase(Locale.ROOT)) {
             "go" -> "ka"
+            "br" -> "be"
             else -> languageCode.lowercase(Locale.ROOT)
         }
     }

@@ -230,6 +230,7 @@
     <string name="label_select_language">Вибрати мову</string>
     <string name="label_user">Користувач</string>
     <string name="label_your_password">Ваш пароль</string>
+    <string name="language_name_be">Білоруська</string>
     <string name="language_name_br">Білоруська</string>
     <string name="language_name_en">Англійська</string>
     <string name="language_name_fr">Французька</string>
@@ -238,6 +239,15 @@
     <string name="language_name_ka">Грузинська</string>
     <string name="language_name_ru">Російська</string>
     <string name="language_name_uk">Українська</string>
+    <string name="language_name_es">Іспанська</string>
+    <string name="language_name_de">Німецька</string>
+    <string name="language_name_pt">Португальська</string>
+    <string name="language_name_tr">Турецька</string>
+    <string name="language_name_zh">Китайська</string>
+    <string name="language_name_ja">Японська</string>
+    <string name="language_name_ko">Корейська</string>
+    <string name="language_name_ar">Арабська</string>
+    <string name="language_name_hi">Хінді</string>
     <string name="main_panel_input">Поставте запитання</string>
     <string name="main_panel_input_create_image">Створити зображення</string>
     <string name="main_panel_input_panel_search">Пошук в мережі</string>
