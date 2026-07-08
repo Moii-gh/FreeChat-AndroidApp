@@ -200,6 +200,9 @@
     <string name="content_desc_menu">Menu</string>
     <string name="content_desc_microphone">Microphone</string>
     <string name="content_desc_more_options">Plus d\'options</string>
+    <string name="content_desc_chat_search_close">Close chat search</string>
+    <string name="content_desc_chat_search_next">Next search result</string>
+    <string name="content_desc_chat_search_previous">Previous search result</string>
     <string name="content_desc_new_chat">Nouvelle discussion</string>
     <string name="content_desc_remove_attachment">Retirer la pièce jointe</string>
     <string name="content_desc_scroll_to_bottom">Aller au dernier message</string>
@@ -258,6 +261,9 @@
     <string name="menu_pin_chat">Épingler le chat</string>
     <string name="menu_regenerate">Régénérer</string>
     <string name="menu_rename">Renommer</string>
+    <string name="menu_search_chat">Search chat</string>
+    <string name="chat_search_hint">Search in chat</string>
+    <string name="chat_search_count_format">%1$d of %2$d</string>
     <string name="menu_revoke_share_links">Désactiver les liens partagés</string>
     <string name="menu_unpin_chat">Désépingler le chat</string>
     <string name="network_connect_error">Impossible de se connecter au serveur</string>

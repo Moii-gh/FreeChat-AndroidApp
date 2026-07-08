@@ -66,6 +66,7 @@
     <string name="attachment_unsupported_type">지원되지 않는 첨부 유형</string>
     <string name="attachment_text_truncated">[파일 내용 생략]</string>
     <string name="attachment_too_large">첨부 파일이 너무 커서 분석할 수 없습니다</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="widget_config_title">위젯 설정</string>
     <string name="widget_config_description">깔끔한 위젯 스타일을 선택하고 투명도와 모서리 반경만 조정하세요.</string>
     <string name="widget_config_style_section">위젯 스타일</string>
@@ -147,6 +148,11 @@
     <string name="auth_welcome_title">로그인 또는 가입</string>
     <string name="button_about">정보</string>
     <string name="button_camera">카메라</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
     <string name="content_desc_close_camera">카메라 닫기</string>
     <string name="content_desc_flip_camera">카메라 전환</string>
     <string name="content_desc_take_photo">사진 촬영</string>
@@ -194,6 +200,9 @@
     <string name="content_desc_menu">메뉴</string>
     <string name="content_desc_microphone">마이크</string>
     <string name="content_desc_more_options">더 많은 옵션</string>
+    <string name="content_desc_chat_search_close">Close chat search</string>
+    <string name="content_desc_chat_search_next">Next search result</string>
+    <string name="content_desc_chat_search_previous">Previous search result</string>
     <string name="content_desc_new_chat">새 채팅</string>
     <string name="content_desc_remove_attachment">첨부 삭제</string>
     <string name="content_desc_scroll_to_bottom">최신 메시지로 이동</string>
@@ -252,6 +261,9 @@
     <string name="menu_pin_chat">채팅 고정</string>
     <string name="menu_regenerate">다시 생성</string>
     <string name="menu_rename">이름 바꾸기</string>
+    <string name="menu_search_chat">Search chat</string>
+    <string name="chat_search_hint">Search in chat</string>
+    <string name="chat_search_count_format">%1$d of %2$d</string>
     <string name="menu_revoke_share_links">공유 링크 비활성화</string>
     <string name="menu_unpin_chat">고정 해제</string>
     <string name="network_connect_error">서버에 연결할 수 없습니다</string>

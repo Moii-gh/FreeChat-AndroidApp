@@ -66,6 +66,7 @@
     <string name="attachment_unsupported_type">サポートされていない添付タイプ</string>
     <string name="attachment_text_truncated">[ファイル内容を省略]</string>
     <string name="attachment_too_large">添付ファイルが大きすぎて分析できません</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="widget_config_title">ウィジェット設定</string>
     <string name="widget_config_description">クリーンなウィジェットスタイルを選択し、透明度と角の丸みのみを調整します。</string>
     <string name="widget_config_style_section">ウィジェットスタイル</string>
@@ -147,6 +148,11 @@
     <string name="auth_welcome_title">ログインまたは登録</string>
     <string name="button_about">概要</string>
     <string name="button_camera">カメラ</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
     <string name="content_desc_close_camera">カメラを閉じる</string>
     <string name="content_desc_flip_camera">カメラを切り替え</string>
     <string name="content_desc_take_photo">写真を撮る</string>
@@ -194,6 +200,9 @@
     <string name="content_desc_menu">メニュー</string>
     <string name="content_desc_microphone">マイク</string>
     <string name="content_desc_more_options">その他のオプション</string>
+    <string name="content_desc_chat_search_close">Close chat search</string>
+    <string name="content_desc_chat_search_next">Next search result</string>
+    <string name="content_desc_chat_search_previous">Previous search result</string>
     <string name="content_desc_new_chat">新しいチャット</string>
     <string name="content_desc_remove_attachment">添付を削除</string>
     <string name="content_desc_scroll_to_bottom">最新メッセージへ</string>
@@ -252,6 +261,9 @@
     <string name="menu_pin_chat">チャットをピン留め</string>
     <string name="menu_regenerate">再生成</string>
     <string name="menu_rename">名前を変更</string>
+    <string name="menu_search_chat">Search chat</string>
+    <string name="chat_search_hint">Search in chat</string>
+    <string name="chat_search_count_format">%1$d of %2$d</string>
     <string name="menu_revoke_share_links">共有リンクを無効化</string>
     <string name="menu_unpin_chat">ピン留めを解除</string>
     <string name="network_connect_error">サーバーに接続できません</string>

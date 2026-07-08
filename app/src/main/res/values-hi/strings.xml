@@ -66,6 +66,7 @@
     <string name="attachment_unsupported_type">असमर्थित संलग्नक प्रकार</string>
     <string name="attachment_text_truncated">[फ़ाइल सामग्री संक्षिप्त की गई]</string>
     <string name="attachment_too_large">संलग्नक विश्लेषण करने के लिए बहुत बड़ा है</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="widget_config_title">विजेट सेटिंग्स</string>
     <string name="widget_config_description">एक साफ़ विजेट शैली चुनें और केवल पारदर्शिता और कोने की त्रिज्या को ट्यून करें।</string>
     <string name="widget_config_style_section">विजेट शैली</string>
@@ -147,6 +148,11 @@
     <string name="auth_welcome_title">साइन इन करें या साइन अप करें</string>
     <string name="button_about">के बारे में</string>
     <string name="button_camera">कैमरा</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
     <string name="content_desc_close_camera">कैमरा बंद करें</string>
     <string name="content_desc_flip_camera">कैमरा पलटें</string>
     <string name="content_desc_take_photo">फ़ोटो लें</string>
@@ -194,6 +200,9 @@
     <string name="content_desc_menu">मेनू</string>
     <string name="content_desc_microphone">माइक्रोफ़ोन</string>
     <string name="content_desc_more_options">अधिक विकल्प</string>
+    <string name="content_desc_chat_search_close">Close chat search</string>
+    <string name="content_desc_chat_search_next">Next search result</string>
+    <string name="content_desc_chat_search_previous">Previous search result</string>
     <string name="content_desc_new_chat">नया चैट</string>
     <string name="content_desc_remove_attachment">संलग्नक हटाएं</string>
     <string name="content_desc_scroll_to_bottom">नवीनतम संदेश पर जाएं</string>
@@ -252,6 +261,9 @@
     <string name="menu_pin_chat">चैट पिन करें</string>
     <string name="menu_regenerate">पुनः उत्पन्न करें</string>
     <string name="menu_rename">नाम बदलें</string>
+    <string name="menu_search_chat">Search chat</string>
+    <string name="chat_search_hint">Search in chat</string>
+    <string name="chat_search_count_format">%1$d of %2$d</string>
     <string name="menu_revoke_share_links">साझा लिंक अक्षम करें</string>
     <string name="menu_unpin_chat">चैट अनपिन करें</string>
     <string name="network_connect_error">सर्वर से कनेक्ट नहीं हो सका</string>

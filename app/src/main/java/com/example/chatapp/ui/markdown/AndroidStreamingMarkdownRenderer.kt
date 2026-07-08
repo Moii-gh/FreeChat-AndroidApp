@@ -27,6 +27,7 @@ import com.example.chatapp.browser.BrowserUrlSanitizer
 import com.example.chatapp.ui.ChatMessageRenderer
 import com.example.chatapp.ui.MarkdownTableRenderer
 import com.example.chatapp.ui.SelectableTextSupport
+import com.example.chatapp.ui.chat.ChatSearchController
 import com.example.chatapp.util.FileUtils
 import com.example.chatapp.util.SyntaxHighlighter
 import com.example.chatapp.util.dpToPx
@@ -194,12 +195,16 @@ internal class AndroidStreamingMarkdownRenderer(
         view.setTag(R.id.table_raw_content, chunk.content)
     }
 
+    private fun currentSearchMessageKey(): String? =
+        contentArea.getTag(R.id.chat_search_message_key) as? String
+
     private fun createTextView(): TextView =
         TextView(context).apply {
             setTextColor(ContextCompat.getColor(context, android.R.color.white))
             textSize = 16f
             setLineSpacing(0f, 1.2f)
             setPadding(0, 6.dpToPx(), 0, 6.dpToPx())
+            ChatSearchController.tagSearchTextView(this, currentSearchMessageKey())
             configureLinkableTextView()
         }
 
@@ -252,6 +257,7 @@ internal class AndroidStreamingMarkdownRenderer(
             setLineSpacing((2 * density), 1.0f)
             setHorizontallyScrolling(true)
             setPadding(14.dpToPx(), 13.dpToPx(), 14.dpToPx(), 13.dpToPx())
+            ChatSearchController.tagSearchTextView(this, currentSearchMessageKey())
             minWidth = (context.resources.displayMetrics.widthPixels - 48.dpToPx()).coerceAtLeast(0)
         }
 
@@ -280,13 +286,16 @@ internal class AndroidStreamingMarkdownRenderer(
         container.setTag(R.id.code_text_view, codeText)
         container.setTag(R.id.code_language, chunk.language)
         codeText.text = SyntaxHighlighter.highlight(chunk.content, chunk.language)
+        ChatSearchController.tagSearchTextView(codeText, currentSearchMessageKey())
         return container
     }
 
     private fun createTableView(chunk: MarkdownChunk): View {
         val parsed = MarkdownTableRenderer.parseTableLines(chunk.content.lines())
         return if (parsed != null) {
-            MarkdownTableRenderer.createTableView(context, parsed, chunk.content)
+            MarkdownTableRenderer.createTableView(context, parsed, chunk.content).also {
+                ChatSearchController.tagTableTextViews(it, currentSearchMessageKey())
+            }
         } else {
             createTextView()
         }

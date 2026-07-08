@@ -149,6 +149,91 @@
                     app:tint="#FFFFFF"/>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout
+            android:id="@+id/chatSearchBar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/search_bar_bg"
+            android:elevation="32dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="8dp"
+            android:translationZ="32dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBar"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_search"
+                app:tint="#B3B3B3" />
+
+            <EditText
+                android:id="@+id/etChatSearch"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="@string/chat_search_hint"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:padding="0dp"
+                android:singleLine="true"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#8E8E93"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvChatSearchStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:minWidth="58dp"
+                android:paddingHorizontal="6dp"
+                android:textColor="#B3B3B3"
+                android:textSize="12sp"
+                android:maxLines="1"
+                tools:text="1 из 5" />
+
+            <ImageButton
+                android:id="@+id/btnChatSearchPrevious"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/content_desc_chat_search_previous"
+                android:padding="9dp"
+                android:rotation="180"
+                android:src="@drawable/ic_arrow_down"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnChatSearchNext"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/content_desc_chat_search_next"
+                android:padding="9dp"
+                android:src="@drawable/ic_arrow_down"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnChatSearchClose"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/content_desc_chat_search_close"
+                android:padding="9dp"
+                android:src="@drawable/ic_assistant_close"
+                app:tint="#FFFFFF" />
+        </LinearLayout>
 
         <!-- НАЧАЛЬНЫЙ ЭКРАН -->
         <LinearLayout

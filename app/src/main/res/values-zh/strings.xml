@@ -66,6 +66,7 @@
     <string name="attachment_unsupported_type">不支持的附件类型</string>
     <string name="attachment_text_truncated">[文件内容已截断]</string>
     <string name="attachment_too_large">附件太大，无法分析</string>
+    <string name="home_widget_attachment_label" translatable="false">FreeChat attachment widget</string>
     <string name="widget_config_title">小组件设置</string>
     <string name="widget_config_description">选择一个简洁的小组件样式，仅调整透明度和圆角半径。</string>
     <string name="widget_config_style_section">小组件样式</string>
@@ -147,6 +148,11 @@
     <string name="auth_welcome_title">登录或注册</string>
     <string name="button_about">关于</string>
     <string name="button_camera">相机</string>
+    <string name="label_beta" translatable="false">BETA</string>
+    <string name="camera_format_square" translatable="false">1:1</string>
+    <string name="camera_format_three_four" translatable="false">3:4</string>
+    <string name="camera_format_nine_sixteen" translatable="false">9:16</string>
+    <string name="camera_format_full" translatable="false">Full</string>
     <string name="content_desc_close_camera">关闭相机</string>
     <string name="content_desc_flip_camera">切换相机</string>
     <string name="content_desc_take_photo">拍照</string>
@@ -194,6 +200,9 @@
     <string name="content_desc_menu">菜单</string>
     <string name="content_desc_microphone">麦克风</string>
     <string name="content_desc_more_options">更多选项</string>
+    <string name="content_desc_chat_search_close">Close chat search</string>
+    <string name="content_desc_chat_search_next">Next search result</string>
+    <string name="content_desc_chat_search_previous">Previous search result</string>
     <string name="content_desc_new_chat">新对话</string>
     <string name="content_desc_remove_attachment">移除附件</string>
     <string name="content_desc_scroll_to_bottom">跳到最新消息</string>
@@ -252,6 +261,9 @@
     <string name="menu_pin_chat">置顶对话</string>
     <string name="menu_regenerate">重新生成</string>
     <string name="menu_rename">重命名</string>
+    <string name="menu_search_chat">Search chat</string>
+    <string name="chat_search_hint">Search in chat</string>
+    <string name="chat_search_count_format">%1$d of %2$d</string>
     <string name="menu_revoke_share_links">停用分享链接</string>
     <string name="menu_unpin_chat">取消置顶</string>
     <string name="network_connect_error">无法连接到服务器</string>

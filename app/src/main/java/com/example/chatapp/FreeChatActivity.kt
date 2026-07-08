@@ -53,6 +53,8 @@ import com.example.chatapp.ui.SelectableTextSupport
 import com.example.chatapp.ui.chat.BiometricGateController
 import com.example.chatapp.ui.chat.ChatAttachmentPreviewController
 import com.example.chatapp.ui.chat.ChatModePresentation
+import com.example.chatapp.ui.chat.ChatSearchController
+import com.example.chatapp.ui.chat.ChatSearchMessage
 import com.example.chatapp.ui.chat.StreamingUiController
 import com.example.chatapp.ui.chat.WelcomePromptController
 import com.example.chatapp.util.FileUtils
@@ -111,6 +113,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
     private lateinit var streamingUiController: StreamingUiController
     private lateinit var biometricGateController: BiometricGateController
     private lateinit var attachmentPreviewController: ChatAttachmentPreviewController
+    private var chatSearchController: ChatSearchController? = null
     private val attachmentHelper by lazy { ChatAttachmentHelper(this) }
     private val fileIntentHandler by lazy { FileIntentHandler(this) }
     private val lastChatStore by lazy { LastChatStore(applicationContext) }
@@ -208,6 +211,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             onContentApplied = {
                 scheduleScrollToBottomIfPinned()
                 updateGeneratingIndicatorVisibility()
+                chatSearchController?.refreshAfterMessagesChanged()
             },
             onCancelAutoScroll = ::cancelPendingAutoScroll
         )
@@ -403,6 +407,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     return
                 }
 
+                if (chatSearchController?.close() == true) {
+                    return
+                }
+
                 isEnabled = false
                 onBackPressedDispatcher.onBackPressed()
                 isEnabled = true
@@ -500,6 +508,10 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         binding.btnMic.contentDescription = LocaleHelper.getString(this, "content_desc_microphone")
         binding.btnSend.contentDescription = LocaleHelper.getString(this, "content_desc_send")
         binding.btnCloseChip.contentDescription = LocaleHelper.getString(this, "content_desc_clear_mode")
+        binding.etChatSearch.hint = LocaleHelper.getString(this, "chat_search_hint")
+        binding.btnChatSearchPrevious.contentDescription = LocaleHelper.getString(this, "content_desc_chat_search_previous")
+        binding.btnChatSearchNext.contentDescription = LocaleHelper.getString(this, "content_desc_chat_search_next")
+        binding.btnChatSearchClose.contentDescription = LocaleHelper.getString(this, "content_desc_chat_search_close")
         binding.tvEditMessageTitle.text = LocaleHelper.getString(this, "menu_edit_message")
 
         // Тексты бокового меню.
@@ -1227,6 +1239,18 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             onBeforeOpen = ::clearTextSelectionBeforeBrowserOpen
         )
 
+        chatSearchController = ChatSearchController(
+            context = this,
+            searchBar = binding.chatSearchBar,
+            input = binding.etChatSearch,
+            statusView = binding.tvChatSearchStatus,
+            previousButton = binding.btnChatSearchPrevious,
+            nextButton = binding.btnChatSearchNext,
+            closeButton = binding.btnChatSearchClose,
+            messagesScrollView = binding.messagesScrollView,
+            messagesContainer = binding.messagesContainer,
+            messagesProvider = ::currentChatSearchMessages
+        )
         popupMenuHelper = PopupMenuHelper(
             activity = this,
             onRename = { chat, newTitle, complete ->
@@ -1258,6 +1282,9 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             },
             onShare = { chat ->
                 shareChat(chat)
+            },
+            onSearchChat = {
+                chatSearchController?.open()
             },
             onRevokeShares = { chat ->
                 revokeChatShareLinks(chat)
@@ -1967,6 +1994,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
 
     private fun startFreshChat() {
         invalidateActiveGeneration(cancelScroll = true)
+        chatSearchController?.close()
         chatViewModel.resetChatState()
         currentAssistantMessage = null
         isSending = false
@@ -2065,8 +2093,23 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         drawerManager.populateChats(chats, trimmed)
     }
 
+    private fun currentChatSearchMessages(): List<ChatSearchMessage> {
+        return chatViewModel.chatHistory.mapIndexedNotNull { index, message ->
+            if (message.optBoolean("isDeleted", false)) return@mapIndexedNotNull null
+            val role = message.optString("role")
+            if (role != "user" && role != "assistant") return@mapIndexedNotNull null
+            val content = message.optString("content").takeIf { it.isNotBlank() }
+                ?: return@mapIndexedNotNull null
+            ChatSearchMessage(
+                messageKey = ChatSearchController.messageKeyForHistoryIndex(index),
+                text = content
+            )
+        }
+    }
+
     private fun openChat(chatId: String, onOpened: (() -> Unit)? = null) {
         invalidateActiveGeneration(cancelScroll = true)
+        chatSearchController?.close()
         lifecycleScope.launch {
             val chat = chatViewModel.getChatById(chatId) ?: return@launch
             val messages = try {
@@ -2144,7 +2187,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                         animate = false,
                         isImageMode = AssistantMessageWrapper.containsImageReply(assistantContent),
                         messageSyncId = message.syncId,
-                        reaction = message.reaction
+                        reaction = message.reaction,
+                        historyIndex = historyIndex
                     )
                     if (activeGeneration?.assistantSyncId == message.syncId) {
                         currentAssistantMessage = wrapper
@@ -2323,7 +2367,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val wrapper = messageRenderer.addAssistantMessage(
             text = "",
             animate = false,
-            isImageMode = isImageRequest
+            isImageMode = isImageRequest,
+            historyIndex = userHistoryIndex + 1
         )
         currentAssistantMessage = wrapper
         scheduleScrollToBottomIfPinned()
@@ -2371,9 +2416,11 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
                     hideGeneratingIndicator()
                     refreshDailyQuotaUi()
                     refreshChats()
+                    chatSearchController?.refreshAfterMessagesChanged()
                 }
             }
         )
+        chatSearchController?.refreshAfterMessagesChanged()
     }
 
     private fun stopGeneration() {
@@ -2652,11 +2699,13 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val wrapper = messageRenderer.addAssistantMessage(
             text = "",
             animate = false,
-            isImageMode = isImageRequest
+            isImageMode = isImageRequest,
+            historyIndex = historyIndex + 1
         )
         currentAssistantMessage = wrapper
         scheduleScrollToBottomIfPinned()
         updateSendState()
+        chatSearchController?.refreshAfterMessagesChanged()
 
         retryWithCurrentProvider(
             wrapper = wrapper,
@@ -2754,7 +2803,8 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
         val freshWrapper = messageRenderer.addAssistantMessage(
             text = "",
             animate = false,
-            isImageMode = isImageRequest
+            isImageMode = isImageRequest,
+            historyIndex = safeTruncateIndex
         )
         currentAssistantMessage = freshWrapper
         scheduleScrollToBottomIfPinned()
@@ -2764,6 +2814,7 @@ class FreeChatActivity : AppCompatActivity(), ChatInputHost {
             modeOverride = if (isImageRequest) ChatMode.CREATE_IMAGE else null,
             useModeOverride = true
         )
+        chatSearchController?.refreshAfterMessagesChanged()
     }
 
     private fun showCurrentChatMenu() {

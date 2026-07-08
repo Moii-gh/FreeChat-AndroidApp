@@ -75,9 +75,16 @@ class SecurityViewModelTest {
 
 private class FakeSecuritySettingsStore(
     var savedRegistrationPassword: String = "",
-    var savedBiometricEnabled: Boolean = false
+    var savedBiometricEnabled: Boolean = false,
+    var savedLocalPassword: String = ""
 ) : SecuritySettingsStore {
     override fun getRegistrationPassword(): String = savedRegistrationPassword
+
+    override fun getLocalPassword(): String = savedLocalPassword
+
+    override fun setLocalPassword(password: String) {
+        savedLocalPassword = password
+    }
 
     override fun isBiometricEnabled(): Boolean = savedBiometricEnabled
 

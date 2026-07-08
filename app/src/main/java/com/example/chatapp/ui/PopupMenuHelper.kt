@@ -33,6 +33,7 @@ class PopupMenuHelper(
     private val onRename: (ChatEntity, String, () -> Unit) -> Unit,
     private val onTogglePin: (ChatEntity) -> Unit,
     private val onShare: (ChatEntity) -> Unit,
+    private val onSearchChat: (ChatEntity) -> Unit,
     private val onRevokeShares: (ChatEntity) -> Unit,
     private val onDelete: (ChatEntity) -> Unit,
     private val onRegenerate: ((AssistantMessageWrapper) -> Unit)? = null,
@@ -241,6 +242,11 @@ class PopupMenuHelper(
         popupView.addView(createPopupMenuItem(R.drawable.ic_rename, LocaleHelper.getString(activity, "menu_rename"), Color.WHITE) {
             popupWindow.dismiss()
             showRenameDialog(chat)
+        })
+
+        popupView.addView(createPopupMenuItem(R.drawable.ic_search, LocaleHelper.getString(activity, "menu_search_chat"), Color.WHITE) {
+            popupWindow.dismiss()
+            onSearchChat(chat)
         })
 
         // Закрепить/Открепить

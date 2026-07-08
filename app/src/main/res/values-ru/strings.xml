@@ -200,6 +200,9 @@
     <string name="content_desc_menu">Меню</string>
     <string name="content_desc_microphone">Микрофон</string>
     <string name="content_desc_more_options">Больше действий</string>
+    <string name="content_desc_chat_search_close">Закрыть поиск по чату</string>
+    <string name="content_desc_chat_search_next">Следующее совпадение</string>
+    <string name="content_desc_chat_search_previous">Предыдущее совпадение</string>
     <string name="content_desc_new_chat">Новый чат</string>
     <string name="content_desc_remove_attachment">Удалить вложение</string>
     <string name="content_desc_scroll_to_bottom">Перейти к последнему сообщению</string>
@@ -258,6 +261,9 @@
     <string name="menu_pin_chat">Закрепить чат</string>
     <string name="menu_regenerate">Перегенерировать</string>
     <string name="menu_rename">Переименовать</string>
+    <string name="menu_search_chat">Поиск по чату</string>
+    <string name="chat_search_hint">Поиск по чату</string>
+    <string name="chat_search_count_format">%1$d из %2$d</string>
     <string name="menu_revoke_share_links">Отключить ссылки</string>
     <string name="menu_unpin_chat">Открепить чат</string>
     <string name="network_connect_error">Не удалось подключиться к серверу</string>

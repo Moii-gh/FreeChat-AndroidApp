@@ -200,6 +200,9 @@
     <string name="content_desc_menu">მენიუ</string>
     <string name="content_desc_microphone">მიკროფონი</string>
     <string name="content_desc_more_options">მეტი მოქმედება</string>
+    <string name="content_desc_chat_search_close">Close chat search</string>
+    <string name="content_desc_chat_search_next">Next search result</string>
+    <string name="content_desc_chat_search_previous">Previous search result</string>
     <string name="content_desc_new_chat">ახალი ჩატი</string>
     <string name="content_desc_remove_attachment">დანართის წაშლა</string>
     <string name="content_desc_scroll_to_bottom">ბოლო შეტყობინებაზე გადასვლა</string>
@@ -258,6 +261,9 @@
     <string name="menu_pin_chat">ჩატის მიმაგრება</string>
     <string name="menu_regenerate">ხელახლა გენერირება</string>
     <string name="menu_rename">გადარქმევა</string>
+    <string name="menu_search_chat">Search chat</string>
+    <string name="chat_search_hint">Search in chat</string>
+    <string name="chat_search_count_format">%1$d of %2$d</string>
     <string name="menu_revoke_share_links">გაზიარებული ბმულების გამორთვა</string>
     <string name="menu_unpin_chat">ჩატის მოხსნა</string>
     <string name="network_connect_error">სერვერთან დაკავშირება ვერ მოხერხდა</string>

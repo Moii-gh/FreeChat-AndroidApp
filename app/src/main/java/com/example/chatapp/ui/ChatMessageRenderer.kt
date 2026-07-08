@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import com.example.chatapp.LocaleHelper
 import com.example.chatapp.R
 import com.example.chatapp.util.FileUtils
+import com.example.chatapp.ui.chat.ChatSearchController
 import com.example.chatapp.util.SafeImageLoader
 import com.example.chatapp.util.bounce
 import com.example.chatapp.util.dpToPx
@@ -37,6 +38,7 @@ class ChatMessageRenderer(
 
     /** Добавляет текстовое сообщение пользователя */
     fun addUserMessage(message: String, historyIndex: Int) {
+        val messageKey = ChatSearchController.messageKeyForHistoryIndex(historyIndex)
         val tv = TextView(context).apply {
             text = message
             setTextColor(ContextCompat.getColor(context, android.R.color.white))
@@ -44,6 +46,8 @@ class ChatMessageRenderer(
             setBackgroundResource(R.drawable.bg_user_message)
             setPadding(32, 20, 32, 20)
             maxWidth = (context.resources.displayMetrics.widthPixels * 0.75).toInt()
+            ChatSearchController.tagMessageContainer(this, messageKey)
+            ChatSearchController.tagSearchTextView(this, messageKey)
         }
         attachUserMessageLongClick(tv, message, historyIndex)
         messagesContainer.addView(
@@ -373,13 +377,17 @@ class ChatMessageRenderer(
         animate: Boolean = true,
         isImageMode: Boolean = false,
         messageSyncId: String? = null,
-        reaction: String? = null
+        reaction: String? = null,
+        historyIndex: Int? = null
     ): AssistantMessageWrapper {
+        val messageKey = historyIndex?.let(ChatSearchController::messageKeyForHistoryIndex)
         val rootContainer = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
+            ChatSearchController.tagMessageContainer(this, messageKey)
         }
         val contentArea = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
+            ChatSearchController.tagMessageContainer(this, messageKey)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             )

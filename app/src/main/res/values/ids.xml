@@ -9,4 +9,6 @@
     <item name="streaming_markdown_renderer" type="id" />
     <item name="ai_activity_view" type="id" />
     <item name="safe_image_load_token" type="id" />
+    <item name="chat_search_message_key" type="id" />
+    <item name="chat_search_text_view" type="id" />
 </resources>
